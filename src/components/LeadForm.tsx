@@ -1,4 +1,3 @@
-
 import React from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -27,6 +26,8 @@ const formSchema = z.object({
   name: z.string().min(3, { message: "O nome deve ter pelo menos 3 caracteres." }),
   cpf: z.string().min(11, { message: "CPF inválido." }),
   phone: z.string().min(10, { message: "Telefone inválido." }),
+  phone2: z.string().optional(),
+  phone3: z.string().optional(),
   bank: z.string().min(1, { message: "Selecione um banco." }),
   product: z.string().min(1, { message: "Selecione um produto." }),
   amount: z.string().min(1, { message: "Digite um valor." }),
@@ -49,6 +50,8 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel }) => {
       name: "",
       cpf: "",
       phone: "",
+      phone2: "",
+      phone3: "",
       bank: "",
       product: "",
       amount: "",
@@ -58,7 +61,6 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel }) => {
     },
   });
 
-  // Handle CPF mask
   const handleCPFChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let value = e.target.value.replace(/\D/g, "");
     if (value.length > 11) value = value.slice(0, 11);
@@ -74,8 +76,7 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel }) => {
     form.setValue("cpf", value);
   };
 
-  // Handle phone mask
-  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>, field: string) => {
     let value = e.target.value.replace(/\D/g, "");
     if (value.length > 11) value = value.slice(0, 11);
     
@@ -87,10 +88,9 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel }) => {
       value = `(${value}`;
     }
     
-    form.setValue("phone", value);
+    form.setValue(field, value);
   };
 
-  // Handle amount mask (currency format)
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let value = e.target.value.replace(/\D/g, "");
     value = (parseInt(value) / 100).toLocaleString('pt-BR', {
@@ -148,12 +148,50 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel }) => {
             name="phone"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Telefone</FormLabel>
+                <FormLabel>Telefone Principal</FormLabel>
                 <FormControl>
                   <Input 
                     placeholder="(00) 00000-0000" 
                     {...field}
-                    onChange={handlePhoneChange}
+                    onChange={(e) => handlePhoneChange(e, "phone")}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="phone2"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Telefone 2</FormLabel>
+                <FormControl>
+                  <Input 
+                    placeholder="(00) 00000-0000" 
+                    {...field}
+                    onChange={(e) => handlePhoneChange(e, "phone2")}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="phone3"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Telefone 3</FormLabel>
+                <FormControl>
+                  <Input 
+                    placeholder="(00) 00000-0000" 
+                    {...field}
+                    onChange={(e) => handlePhoneChange(e, "phone3")}
                   />
                 </FormControl>
                 <FormMessage />

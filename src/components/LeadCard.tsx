@@ -52,9 +52,23 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate }) => {
               <Mail className="mr-1 h-3.5 w-3.5" />
               <span>{lead.cpf || "CPF não cadastrado"}</span>
             </div>
-            <div className="flex items-center text-sm text-muted-foreground">
-              <Phone className="mr-1 h-3.5 w-3.5" />
-              <span>{lead.phone}</span>
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center text-sm text-muted-foreground">
+                <Phone className="mr-1 h-3.5 w-3.5" />
+                <span>{lead.phone}</span>
+              </div>
+              {lead.phone2 && (
+                <div className="flex items-center text-sm text-muted-foreground">
+                  <Phone className="mr-1 h-3.5 w-3.5" />
+                  <span>{lead.phone2}</span>
+                </div>
+              )}
+              {lead.phone3 && (
+                <div className="flex items-center text-sm text-muted-foreground">
+                  <Phone className="mr-1 h-3.5 w-3.5" />
+                  <span>{lead.phone3}</span>
+                </div>
+              )}
             </div>
             {lead.amount && (
               <div className="text-sm font-medium">

@@ -1,10 +1,11 @@
-
 export interface Lead {
   id: string;
   name: string;
-  email: string; // Add email field
+  email: string;
   cpf: string;
   phone: string;
+  phone2?: string;
+  phone3?: string;
   bank: string;
   product: string;
   amount: string;
