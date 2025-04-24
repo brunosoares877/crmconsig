@@ -76,7 +76,10 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel }) => {
     form.setValue("cpf", value);
   };
 
-  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>, field: string) => {
+  const handlePhoneChange = (
+    e: React.ChangeEvent<HTMLInputElement>, 
+    field: "phone" | "phone2" | "phone3"
+  ) => {
     let value = e.target.value.replace(/\D/g, "");
     if (value.length > 11) value = value.slice(0, 11);
     
