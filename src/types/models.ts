@@ -2,6 +2,7 @@
 export interface Lead {
   id: string;
   name: string;
+  email: string; // Add email field
   cpf: string;
   phone: string;
   bank: string;
