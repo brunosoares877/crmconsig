@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
@@ -11,8 +11,24 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Search, Plus, Filter } from "lucide-react";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import LeadForm from "./LeadForm";
 
 const Filters = () => {
+  const [isOpenSheet, setIsOpenSheet] = useState(false);
+  
+  const handleLeadSubmit = (values: any) => {
+    console.log("New lead:", values);
+    setIsOpenSheet(false);
+  };
+
   return (
     <div className="rounded-lg border bg-card p-4">
       <div className="flex flex-col space-y-4">
@@ -57,10 +73,27 @@ const Filters = () => {
                 <SelectItem value="perdido">Perdido</SelectItem>
               </SelectContent>
             </Select>
-            <Button className="h-8 gap-1">
-              <Plus className="h-3.5 w-3.5" />
-              <span>Novo Lead</span>
-            </Button>
+            
+            <Sheet open={isOpenSheet} onOpenChange={setIsOpenSheet}>
+              <SheetTrigger asChild>
+                <Button className="h-8 gap-1">
+                  <Plus className="h-3.5 w-3.5" />
+                  <span>Novo Lead</span>
+                </Button>
+              </SheetTrigger>
+              <SheetContent className="w-full sm:max-w-[540px] overflow-y-auto">
+                <SheetHeader className="mb-4">
+                  <SheetTitle>Adicionar Novo Lead</SheetTitle>
+                  <SheetDescription>
+                    Preencha os dados do novo lead no formulário abaixo.
+                  </SheetDescription>
+                </SheetHeader>
+                <LeadForm 
+                  onSubmit={handleLeadSubmit}
+                  onCancel={() => setIsOpenSheet(false)} 
+                />
+              </SheetContent>
+            </Sheet>
           </div>
         </div>
       </div>
