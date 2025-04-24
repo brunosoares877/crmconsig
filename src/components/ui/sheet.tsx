@@ -1,37 +1,22 @@
+
 import * as React from "react"
 import * as DialogPrimitive from "@radix-ui/react-dialog"
 import { X } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
-const Sheet = React.forwardRef<
-  HTMLDivElement,
-  React.ComponentProps<typeof DialogPrimitive.Root>
->(({ className, children, ...props }, ref) => (
-  <DialogPrimitive.Root className={cn(className)} {...props} ref={ref}>
-    {children}
-  </DialogPrimitive.Root>
-))
-Sheet.displayName = DialogPrimitive.Root.displayName
+const Sheet = DialogPrimitive.Root
 
 const SheetTrigger = DialogPrimitive.Trigger
 
 const SheetClose = DialogPrimitive.Close
 
-const SheetPortal = React.forwardRef<
-  HTMLDivElement,
-  React.ComponentProps<typeof DialogPrimitive.Portal>
->(({ className, children, ...props }, ref) => (
-  <DialogPrimitive.Portal className={cn(className)} {...props} ref={ref}>
-    {children}
-  </DialogPrimitive.Portal>
-))
-SheetPortal.displayName = DialogPrimitive.Portal.displayName
+const SheetPortal = DialogPrimitive.Portal
 
 const SheetOverlay = React.forwardRef<
-  HTMLDivElement,
-  React.ComponentProps<typeof DialogPrimitive.Overlay>
->(({ className, children, ...props }, ref) => (
+  React.ElementRef<typeof DialogPrimitive.Overlay>,
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Overlay>
+>(({ className, ...props }, ref) => (
   <DialogPrimitive.Overlay
     className={cn(
       "fixed inset-0 z-50 bg-background/80 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-100 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-right-1/2 data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-right-1/2",
@@ -39,15 +24,17 @@ const SheetOverlay = React.forwardRef<
     )}
     {...props}
     ref={ref}
-  >
-    {children}
-  </DialogPrimitive.Overlay>
+  />
 ))
 SheetOverlay.displayName = DialogPrimitive.Overlay.displayName
 
+interface SheetContentProps extends React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> {
+  side?: "left" | "right" | "top" | "bottom"
+}
+
 const SheetContent = React.forwardRef<
-  HTMLDivElement,
-  React.ComponentProps<typeof DialogPrimitive.Content>
+  React.ElementRef<typeof DialogPrimitive.Content>,
+  SheetContentProps
 >(({ className, children, side = "right", ...props }, ref) => (
   <DialogPrimitive.Content
     ref={ref}

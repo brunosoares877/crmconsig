@@ -1,8 +1,9 @@
 
 import React from "react";
-import LeadCard, { Lead } from "./LeadCard";
+import LeadCard from "./LeadCard";
 import EmptyState from "./EmptyState";
 import Filters from "./Filters";
+import { Lead } from "@/types/models";
 
 const LeadList = () => {
   // Mock leads data
@@ -14,8 +15,11 @@ const LeadList = () => {
       phone: "(11) 98765-4321",
       createdAt: "24 Abr 2025",
       status: "novo",
-      loanValue: "R$ 15.000",
-      source: "Site"
+      amount: "R$ 15.000",
+      source: "Site",
+      cpf: "123.456.789-00",
+      product: "Novo",
+      bank: "Banco do Brasil"
     },
     {
       id: "2",
@@ -24,8 +28,11 @@ const LeadList = () => {
       phone: "(11) 91234-5678",
       createdAt: "23 Abr 2025",
       status: "contatado",
-      loanValue: "R$ 8.500",
-      source: "WhatsApp"
+      amount: "R$ 8.500",
+      source: "WhatsApp",
+      cpf: "987.654.321-00",
+      product: "Portabilidade",
+      bank: "Caixa"
     },
     {
       id: "3",
@@ -34,8 +41,11 @@ const LeadList = () => {
       phone: "(11) 99876-5432",
       createdAt: "22 Abr 2025",
       status: "qualificado",
-      loanValue: "R$ 25.000",
-      source: "Indicação"
+      amount: "R$ 25.000",
+      source: "Indicação",
+      cpf: "111.222.333-44",
+      product: "Refinanciamento",
+      bank: "Itaú"
     },
     {
       id: "4",
@@ -44,8 +54,11 @@ const LeadList = () => {
       phone: "(11) 98877-6655",
       createdAt: "21 Abr 2025",
       status: "negociando",
-      loanValue: "R$ 12.000", 
-      source: "Facebook"
+      amount: "R$ 12.000", 
+      source: "Facebook",
+      cpf: "444.555.666-77",
+      product: "FGTS",
+      bank: "Santander"
     },
     {
       id: "5",
@@ -54,8 +67,11 @@ const LeadList = () => {
       phone: "(11) 97788-9900",
       createdAt: "20 Abr 2025",
       status: "convertido",
-      loanValue: "R$ 30.000",
-      source: "Instagram"
+      amount: "R$ 30.000",
+      source: "Instagram",
+      cpf: "777.888.999-00",
+      product: "Novo",
+      bank: "Bradesco"
     },
     {
       id: "6",
@@ -64,8 +80,11 @@ const LeadList = () => {
       phone: "(11) 96655-4433",
       createdAt: "19 Abr 2025",
       status: "perdido",
-      loanValue: "R$ 18.000",
-      source: "Google"
+      amount: "R$ 18.000",
+      source: "Google",
+      cpf: "000.111.222-33",
+      product: "Portabilidade",
+      bank: "Banco do Brasil"
     }
   ];
 
