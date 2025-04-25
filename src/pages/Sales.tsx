@@ -29,7 +29,7 @@ const Sales = () => {
             </p>
           </div>
           <div className="md:w-1/2">
-            <img src="https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?auto=format&fit=crop&q=80" alt="CRM Dashboard Preview" className="rounded-lg shadow-xl w-full" />
+            <img alt="CRM Dashboard Preview" className="rounded-lg shadow-xl w-full" src="/lovable-uploads/406aa32b-8872-4e79-b7e3-681a3c81491b.png" />
           </div>
         </section>
 
