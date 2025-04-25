@@ -12,27 +12,42 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { LogIn, Key } from "lucide-react";
+import { LogIn, Key, UserPlus } from "lucide-react";
 import { toast } from "@/components/ui/sonner";
+import { useSubscription } from "@/contexts/SubscriptionContext";
 
 const Login = () => {
   const navigate = useNavigate();
+  const { startTrial } = useSubscription();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isLogin, setIsLogin] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
-    // Simulate login process
+    // Simulate login/signup process
     setTimeout(() => {
-      // For demonstration purposes, we're just doing a simple check
-      if (email && password) {
-        toast.success("Login realizado com sucesso");
-        navigate("/");
+      if (isLogin) {
+        // Login logic
+        if (email && password) {
+          toast.success("Login realizado com sucesso");
+          navigate("/dashboard");
+        } else {
+          toast.error("Por favor, preencha todos os campos");
+        }
       } else {
-        toast.error("Por favor, preencha todos os campos");
+        // Signup logic
+        if (email && password) {
+          // Start the trial
+          startTrial();
+          toast.success("Conta criada com sucesso! Seu período de teste de 7 dias começou.");
+          navigate("/dashboard");
+        } else {
+          toast.error("Por favor, preencha todos os campos");
+        }
       }
       setIsLoading(false);
     }, 1000);
@@ -43,10 +58,12 @@ const Login = () => {
       <Card className="w-full max-w-md animate-fade-in">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold text-center">
-            CRM Lead Hub
+            {isLogin ? "CRM Lead Hub" : "Criar Conta"}
           </CardTitle>
           <CardDescription className="text-center">
-            Entre com suas credenciais para acessar o sistema
+            {isLogin 
+              ? "Entre com suas credenciais para acessar o sistema" 
+              : "Crie sua conta para começar o período de teste gratuito de 7 dias"}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -92,21 +109,40 @@ const Login = () => {
               {isLoading ? (
                 <>
                   <div className="h-4 w-4 mr-2 animate-spin rounded-full border-2 border-t-transparent"></div>
-                  Entrando...
+                  {isLogin ? "Entrando..." : "Criando conta..."}
                 </>
               ) : (
                 <>
-                  <LogIn className="mr-2 h-4 w-4" />
-                  Entrar
+                  {isLogin ? (
+                    <>
+                      <LogIn className="mr-2 h-4 w-4" />
+                      Entrar
+                    </>
+                  ) : (
+                    <>
+                      <UserPlus className="mr-2 h-4 w-4" />
+                      Criar conta e iniciar teste
+                    </>
+                  )}
                 </>
               )}
             </Button>
           </form>
         </CardContent>
-        <CardFooter className="flex justify-center">
-          <p className="text-sm text-muted-foreground">
-            Esqueceu a senha? Entre em contato com o administrador
-          </p>
+        <CardFooter className="flex flex-col space-y-4">
+          <Button
+            variant="link"
+            className="w-full"
+            onClick={() => setIsLogin(!isLogin)}
+            disabled={isLoading}
+          >
+            {isLogin ? "Não tem uma conta? Criar agora" : "Já tem uma conta? Faça login"}
+          </Button>
+          {isLogin && (
+            <p className="text-sm text-muted-foreground text-center">
+              Esqueceu a senha? Entre em contato com o administrador
+            </p>
+          )}
         </CardFooter>
       </Card>
     </div>
