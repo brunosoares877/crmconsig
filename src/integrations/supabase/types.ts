@@ -9,7 +9,93 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      leads: {
+        Row: {
+          amount: string | null
+          bank: string | null
+          cpf: string | null
+          created_at: string
+          email: string | null
+          employee: string | null
+          id: string
+          name: string
+          notes: string | null
+          phone: string | null
+          phone2: string | null
+          phone3: string | null
+          product: string | null
+          source: string | null
+          status: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount?: string | null
+          bank?: string | null
+          cpf?: string | null
+          created_at?: string
+          email?: string | null
+          employee?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          phone?: string | null
+          phone2?: string | null
+          phone3?: string | null
+          product?: string | null
+          source?: string | null
+          status?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: string | null
+          bank?: string | null
+          cpf?: string | null
+          created_at?: string
+          email?: string | null
+          employee?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          phone2?: string | null
+          phone3?: string | null
+          product?: string | null
+          source?: string | null
+          status?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          company_name: string | null
+          created_at: string
+          first_name: string | null
+          id: string
+          last_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          company_name?: string | null
+          created_at?: string
+          first_name?: string | null
+          id: string
+          last_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          company_name?: string | null
+          created_at?: string
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

@@ -12,45 +12,40 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { LogIn, Key, UserPlus } from "lucide-react";
-import { toast } from "@/components/ui/sonner";
-import { useSubscription } from "@/contexts/SubscriptionContext";
+import { LogIn, Key, UserPlus, Building } from "lucide-react";
+import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Login = () => {
   const navigate = useNavigate();
-  const { startTrial } = useSubscription();
+  const { signIn, signUp } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [company, setCompany] = useState("");
   const [isLogin, setIsLogin] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
-    // Simulate login/signup process
-    setTimeout(() => {
+    try {
       if (isLogin) {
-        // Login logic
-        if (email && password) {
-          toast.success("Login realizado com sucesso");
-          navigate("/dashboard");
-        } else {
-          toast.error("Por favor, preencha todos os campos");
-        }
+        await signIn(email, password);
+        toast.success("Login realizado com sucesso");
       } else {
-        // Signup logic
-        if (email && password) {
-          // Start the trial
-          startTrial();
-          toast.success("Conta criada com sucesso! Seu período de teste de 7 dias começou.");
-          navigate("/dashboard");
-        } else {
-          toast.error("Por favor, preencha todos os campos");
+        if (!company) {
+          toast.error("Por favor, informe o nome da sua empresa");
+          return;
         }
+        await signUp(email, password, company);
+        toast.success("Conta criada com sucesso! Seu período de teste de 7 dias começou.");
       }
+    } catch (error: any) {
+      toast.error(error.message || "Ocorreu um erro ao processar sua solicitação");
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   return (
@@ -85,6 +80,7 @@ const Login = () => {
                 />
               </div>
             </div>
+            
             <div className="space-y-2">
               <Label htmlFor="password">Senha</Label>
               <div className="relative">
@@ -93,7 +89,7 @@ const Login = () => {
                   id="password"
                   type="password"
                   required
-                  autoComplete="current-password"
+                  autoComplete={isLogin ? "current-password" : "new-password"}
                   className="pl-10"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -101,6 +97,26 @@ const Login = () => {
                 />
               </div>
             </div>
+
+            {!isLogin && (
+              <div className="space-y-2">
+                <Label htmlFor="company">Nome da Empresa</Label>
+                <div className="relative">
+                  <Building className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="company"
+                    type="text"
+                    required
+                    placeholder="Sua empresa"
+                    className="pl-10"
+                    value={company}
+                    onChange={(e) => setCompany(e.target.value)}
+                    disabled={isLoading}
+                  />
+                </div>
+              </div>
+            )}
+
             <Button 
               type="submit" 
               className="w-full" 

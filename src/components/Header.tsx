@@ -1,8 +1,13 @@
+
 import React from "react";
-import { Bell, Search, UserCircle } from "lucide-react";
+import { Bell, Search, LogOut } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
+
 const Header = () => {
+  const { signOut } = useAuth();
+
   return <header className="border-b bg-white shadow-sm">
       <div className="container flex h-16 items-center justify-between px-4">
         <div className="flex items-center gap-4">
@@ -21,11 +26,12 @@ const Header = () => {
             <Bell className="h-5 w-5" />
             <span className="absolute right-1 top-1 flex h-2 w-2 rounded-full bg-red-500"></span>
           </Button>
-          <Button variant="ghost" size="icon">
-            <UserCircle className="h-5 w-5" />
+          <Button variant="ghost" size="icon" onClick={signOut}>
+            <LogOut className="h-5 w-5" />
           </Button>
         </div>
       </div>
     </header>;
 };
+
 export default Header;
