@@ -25,8 +25,7 @@ const Sales = () => {
               Começar Teste Gratuito <ArrowRight className="ml-2" />
             </Button>
             <p className="text-sm text-gray-500 mt-4">
-              Sem necessidade de cartão de crédito
-            </p>
+          </p>
           </div>
           <div className="md:w-1/2">
             <img alt="CRM Dashboard Preview" className="rounded-lg shadow-xl w-full" src="/lovable-uploads/406aa32b-8872-4e79-b7e3-681a3c81491b.png" />
