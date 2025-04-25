@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -6,16 +5,12 @@ import { ArrowRight, CheckCircle } from "lucide-react";
 import SalesHeader from "@/components/sales/SalesHeader";
 import SubscriptionPlans from "@/components/sales/SubscriptionPlans";
 import FeaturesList from "@/components/sales/FeaturesList";
-
 const Sales = () => {
   const navigate = useNavigate();
-
   const handleStartTrial = () => {
     navigate("/login");
   };
-
-  return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-white to-blue-50">
+  return <div className="min-h-screen flex flex-col bg-gradient-to-b from-white to-blue-50">
       <SalesHeader />
       
       <main className="flex-1">
@@ -25,14 +20,8 @@ const Sales = () => {
             <h1 className="text-4xl md:text-5xl font-bold text-gray-800 mb-4">
               Use o CRM completo por <span className="text-primary">7 dias grátis!</span>
             </h1>
-            <p className="text-xl md:text-2xl text-gray-600 mb-8">
-              Ideal para empresas de crédito consignado
-            </p>
-            <Button 
-              onClick={handleStartTrial} 
-              size="lg" 
-              className="text-lg px-8 py-6"
-            >
+            <p className="text-xl md:text-2xl text-gray-600 mb-8">Feito de corban para corban.</p>
+            <Button onClick={handleStartTrial} size="lg" className="text-lg px-8 py-6">
               Começar Teste Gratuito <ArrowRight className="ml-2" />
             </Button>
             <p className="text-sm text-gray-500 mt-4">
@@ -40,11 +29,7 @@ const Sales = () => {
             </p>
           </div>
           <div className="md:w-1/2">
-            <img 
-              src="https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?auto=format&fit=crop&q=80" 
-              alt="CRM Dashboard Preview" 
-              className="rounded-lg shadow-xl w-full" 
-            />
+            <img src="https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?auto=format&fit=crop&q=80" alt="CRM Dashboard Preview" className="rounded-lg shadow-xl w-full" />
           </div>
         </section>
 
@@ -80,12 +65,7 @@ const Sales = () => {
             <p className="text-xl mb-8 max-w-2xl mx-auto">
               Experimente nosso CRM por 7 dias gratuitamente e veja como podemos ajudar sua empresa a crescer.
             </p>
-            <Button 
-              onClick={handleStartTrial}
-              variant="secondary" 
-              size="lg" 
-              className="text-primary text-lg px-8 py-6"
-            >
+            <Button onClick={handleStartTrial} variant="secondary" size="lg" className="text-primary text-lg px-8 py-6">
               Começar agora mesmo <ArrowRight className="ml-2" />
             </Button>
           </div>
@@ -97,8 +77,6 @@ const Sales = () => {
           <p>© 2025 ConsignadoLeadHub - Todos os direitos reservados</p>
         </div>
       </footer>
-    </div>
-  );
+    </div>;
 };
-
 export default Sales;
