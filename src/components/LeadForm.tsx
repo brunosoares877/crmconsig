@@ -1,3 +1,4 @@
+
 import React from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -20,7 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 
 const formSchema = z.object({
   name: z.string().min(3, { message: "O nome deve ter pelo menos 3 caracteres." }),
@@ -41,12 +42,19 @@ type FormValues = z.infer<typeof formSchema>;
 interface LeadFormProps {
   onSubmit: (values: FormValues) => void;
   onCancel: () => void;
+  initialData?: any;
+  isLoading?: boolean;
 }
 
-const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel }) => {
+const LeadForm: React.FC<LeadFormProps> = ({ 
+  onSubmit, 
+  onCancel, 
+  initialData, 
+  isLoading = false 
+}) => {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
+    defaultValues: initialData || {
       name: "",
       cpf: "",
       phone: "",
@@ -106,7 +114,6 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel }) => {
   };
 
   const handleSubmit = (values: FormValues) => {
-    toast.success("Lead cadastrado com sucesso!");
     onSubmit(values);
   };
 
@@ -120,7 +127,7 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel }) => {
             <FormItem>
               <FormLabel>Nome completo</FormLabel>
               <FormControl>
-                <Input placeholder="Nome do cliente" {...field} />
+                <Input placeholder="Nome do cliente" {...field} disabled={isLoading} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -139,6 +146,7 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel }) => {
                     placeholder="000.000.000-00" 
                     {...field} 
                     onChange={handleCPFChange}
+                    disabled={isLoading}
                   />
                 </FormControl>
                 <FormMessage />
@@ -157,6 +165,7 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel }) => {
                     placeholder="(00) 00000-0000" 
                     {...field}
                     onChange={(e) => handlePhoneChange(e, "phone")}
+                    disabled={isLoading}
                   />
                 </FormControl>
                 <FormMessage />
@@ -177,6 +186,7 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel }) => {
                     placeholder="(00) 00000-0000" 
                     {...field}
                     onChange={(e) => handlePhoneChange(e, "phone2")}
+                    disabled={isLoading}
                   />
                 </FormControl>
                 <FormMessage />
@@ -195,6 +205,7 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel }) => {
                     placeholder="(00) 00000-0000" 
                     {...field}
                     onChange={(e) => handlePhoneChange(e, "phone3")}
+                    disabled={isLoading}
                   />
                 </FormControl>
                 <FormMessage />
@@ -210,7 +221,7 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel }) => {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Banco</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione o banco" />
@@ -236,7 +247,7 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel }) => {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Funcionário Responsável</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione o funcionário" />
@@ -261,7 +272,7 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel }) => {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Produto</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione o produto" />
@@ -292,6 +303,7 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel }) => {
                     placeholder="R$ 0,00" 
                     {...field}
                     onChange={handleAmountChange}
+                    disabled={isLoading}
                   />
                 </FormControl>
                 <FormMessage />
@@ -306,7 +318,7 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel }) => {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Status</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione o status" />
@@ -337,6 +349,7 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel }) => {
                   placeholder="Observações sobre o lead" 
                   className="min-h-24"
                   {...field} 
+                  disabled={isLoading}
                 />
               </FormControl>
               <FormMessage />
@@ -345,10 +358,19 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel }) => {
         />
 
         <div className="pt-4 flex justify-end space-x-2">
-          <Button variant="outline" type="button" onClick={onCancel}>
+          <Button variant="outline" type="button" onClick={onCancel} disabled={isLoading}>
             Cancelar
           </Button>
-          <Button type="submit">Salvar Lead</Button>
+          <Button type="submit" disabled={isLoading}>
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Salvando...
+              </>
+            ) : (
+              "Salvar Lead"
+            )}
+          </Button>
         </div>
       </form>
     </Form>

@@ -9,6 +9,85 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      commissions: {
+        Row: {
+          amount: number
+          created_at: string | null
+          id: string
+          lead_id: string | null
+          status: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          id?: string
+          lead_id?: string | null
+          status: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          id?: string
+          lead_id?: string | null
+          status?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commissions_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      documents: {
+        Row: {
+          created_at: string | null
+          file_name: string
+          file_path: string
+          file_type: string
+          id: string
+          lead_id: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          file_name: string
+          file_path: string
+          file_type: string
+          id?: string
+          lead_id?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          file_name?: string
+          file_path?: string
+          file_type?: string
+          id?: string
+          lead_id?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documents_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leads: {
         Row: {
           amount: string | null
@@ -95,6 +174,50 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      reminders: {
+        Row: {
+          created_at: string | null
+          due_date: string
+          id: string
+          is_completed: boolean | null
+          lead_id: string | null
+          notes: string | null
+          title: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          due_date: string
+          id?: string
+          is_completed?: boolean | null
+          lead_id?: string | null
+          notes?: string | null
+          title: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          due_date?: string
+          id?: string
+          is_completed?: boolean | null
+          lead_id?: string | null
+          notes?: string | null
+          title?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reminders_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

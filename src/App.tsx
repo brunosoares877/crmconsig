@@ -12,8 +12,9 @@ import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 import Sales from "./pages/Sales";
 import PaymentPlans from "./pages/PaymentPlans";
+import Portability from "./pages/Portability";
+import Commission from "./pages/Commission";
 import { useEffect } from "react";
-import { z } from "zod";
 
 const queryClient = new QueryClient();
 
@@ -41,6 +42,8 @@ const App = () => {
                   <Route path="/login" element={<Login />} />
                   <Route path="/dashboard" element={<Index />} />
                   <Route path="/plans" element={<PaymentPlans />} />
+                  <Route path="/portability" element={<Portability />} />
+                  <Route path="/commission" element={<Commission />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </TooltipProvider>

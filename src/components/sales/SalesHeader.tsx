@@ -12,18 +12,12 @@ const SalesHeader = () => {
         <div className="flex items-center">
           <h1 className="text-xl font-bold text-primary">LeadConsig</h1>
         </div>
-        <div className="space-x-4">
+        <div>
           <Button 
             variant="outline" 
             onClick={() => navigate("/login")}
           >
             Entrar
-          </Button>
-          <Button 
-            className="bg-blue-600 hover:bg-blue-700"
-            onClick={() => navigate("/login")}
-          >
-            Teste Grátis
           </Button>
         </div>
       </div>

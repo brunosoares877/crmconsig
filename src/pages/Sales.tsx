@@ -1,3 +1,4 @@
+
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -6,28 +7,45 @@ import SalesHeader from "@/components/sales/SalesHeader";
 import SubscriptionPlans from "@/components/sales/SubscriptionPlans";
 import FeaturesList from "@/components/sales/FeaturesList";
 import Testimonials from "@/components/sales/Testimonials";
+
 const Sales = () => {
   const navigate = useNavigate();
   const handleStartTrial = () => {
     navigate("/login");
   };
+  
   return <div className="min-h-screen flex flex-col bg-gradient-to-b from-white to-blue-50">
       <SalesHeader />
       
       <main className="flex-1">
-        {/* Hero Section */}
+        {/* Hero Section with 7-day free trial highlight */}
         <section className="container mx-auto px-4 py-16 md:py-24 flex flex-col md:flex-row items-center">
           <div className="md:w-1/2 mb-10 md:mb-0 md:pr-8">
+            <div className="mb-6">
+              <span className="inline-block bg-blue-600 text-white text-sm font-bold px-4 py-2 rounded-full animate-pulse">
+                7 DIAS GRÁTIS!
+              </span>
+            </div>
             <h1 className="text-4xl md:text-5xl font-bold text-gray-800 mb-4">
               Use o CRM completo por <span className="text-primary">7 dias grátis!</span>
             </h1>
             <p className="text-xl md:text-2xl text-gray-600 mb-8">Feito de corban para corban.</p>
-            <Button onClick={handleStartTrial} size="lg" className="text-lg px-8 py-6 bg-blue-600 hover:bg-blue-700">
-              Começar Teste Gratuito <ArrowRight className="ml-2" />
-            </Button>
+            <div className="flex flex-col sm:flex-row items-center gap-4">
+              <Button onClick={handleStartTrial} size="lg" className="text-lg px-8 py-6 bg-blue-600 hover:bg-blue-700 w-full sm:w-auto">
+                Começar Teste Gratuito <ArrowRight className="ml-2" />
+              </Button>
+              <p className="text-green-600 font-medium text-lg mt-2 sm:mt-0">
+                Comece agora sem pagar nada!
+              </p>
+            </div>
           </div>
           <div className="md:w-1/2">
-            <img alt="CRM Dashboard Preview" className="rounded-lg shadow-xl w-full" src="/lovable-uploads/406aa32b-8872-4e79-b7e3-681a3c81491b.png" />
+            <div className="relative">
+              <img alt="CRM Dashboard Preview" className="rounded-lg shadow-xl w-full" src="/lovable-uploads/406aa32b-8872-4e79-b7e3-681a3c81491b.png" />
+              <div className="absolute -top-4 -right-4 bg-yellow-400 text-blue-900 font-bold py-2 px-4 rounded-lg transform rotate-12 shadow-lg">
+                7 DIAS GRÁTIS!
+              </div>
+            </div>
           </div>
         </section>
 
@@ -44,15 +62,20 @@ const Sales = () => {
         {/* Testimonials Section */}
         <Testimonials />
 
-        {/* Subscription Plans */}
+        {/* Subscription Plans with Free Trial Highlight */}
         <section className="py-16 bg-gray-50">
           <div className="container mx-auto px-4">
             <h2 className="text-3xl md:text-4xl font-bold text-center mb-4">
               Escolha o plano ideal para você
             </h2>
-            <p className="text-xl text-center text-gray-600 mb-12">
+            <p className="text-xl text-center text-gray-600 mb-4">
               Comece grátis e escolha seu plano quando estiver pronto
             </p>
+            <div className="text-center mb-8">
+              <span className="inline-block bg-blue-600 text-white text-lg font-bold px-6 py-3 rounded-full">
+                EXPERIMENTE 7 DIAS GRÁTIS!
+              </span>
+            </div>
             <SubscriptionPlans />
           </div>
         </section>
@@ -66,7 +89,7 @@ const Sales = () => {
             <p className="text-xl mb-8 max-w-2xl mx-auto text-slate-950">
               Experimente nosso CRM por 7 dias gratuitamente e veja como podemos ajudar sua empresa a crescer.
             </p>
-            <Button onClick={handleStartTrial} variant="secondary" size="lg" className="text-primary text-lg px-8 py-6 bg-zinc-950 hover:bg-zinc-800">
+            <Button onClick={handleStartTrial} size="lg" className="text-lg px-8 py-6 bg-blue-600 hover:bg-blue-700">
               Começar agora mesmo <ArrowRight className="ml-2" />
             </Button>
           </div>
@@ -122,4 +145,5 @@ const Sales = () => {
       </footer>
     </div>;
 };
+
 export default Sales;
