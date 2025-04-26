@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -7,13 +6,11 @@ import SalesHeader from "@/components/sales/SalesHeader";
 import SubscriptionPlans from "@/components/sales/SubscriptionPlans";
 import FeaturesList from "@/components/sales/FeaturesList";
 import Testimonials from "@/components/sales/Testimonials";
-
 const Sales = () => {
   const navigate = useNavigate();
   const handleStartTrial = () => {
     navigate("/login");
   };
-  
   return <div className="min-h-screen flex flex-col bg-gradient-to-b from-white to-blue-50">
       <SalesHeader />
       
@@ -21,11 +18,7 @@ const Sales = () => {
         {/* Hero Section with 7-day free trial highlight */}
         <section className="container mx-auto px-4 py-16 md:py-24 flex flex-col md:flex-row items-center">
           <div className="md:w-1/2 mb-10 md:mb-0 md:pr-8">
-            <div className="mb-6">
-              <span className="inline-block bg-blue-600 text-white text-sm font-bold px-4 py-2 rounded-full animate-pulse">
-                7 DIAS GRÁTIS!
-              </span>
-            </div>
+            
             <h1 className="text-4xl md:text-5xl font-bold text-gray-800 mb-4">
               Use o CRM completo por <span className="text-primary">7 dias grátis!</span>
             </h1>
@@ -34,9 +27,7 @@ const Sales = () => {
               <Button onClick={handleStartTrial} size="lg" className="text-lg px-8 py-6 bg-blue-600 hover:bg-blue-700 w-full sm:w-auto">
                 Começar Teste Gratuito <ArrowRight className="ml-2" />
               </Button>
-              <p className="text-green-600 font-medium text-lg mt-2 sm:mt-0">
-                Comece agora sem pagar nada!
-              </p>
+              
             </div>
           </div>
           <div className="md:w-1/2">
@@ -134,7 +125,7 @@ const Sales = () => {
               <h3 className="text-xl font-semibold mb-4">Localização</h3>
               <div className="flex items-start gap-2">
                 <MapPin size={20} />
-                <p>Salvador, BA</p>
+                <p>Natal - RN</p>
               </div>
             </div>
           </div>
@@ -145,5 +136,4 @@ const Sales = () => {
       </footer>
     </div>;
 };
-
 export default Sales;
