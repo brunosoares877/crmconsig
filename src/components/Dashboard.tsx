@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { 
   Card, 
   CardContent, 
@@ -13,35 +13,99 @@ import {
   CheckCircle2, 
   Clock
 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { format, startOfToday, endOfToday } from "date-fns";
 
 const Dashboard = () => {
-  // Mock data for dashboard metrics
-  const metrics = [
+  const [metrics, setMetrics] = useState({
+    totalLeads: 0,
+    contactsToday: 0,
+    conversionRate: 0,
+    averageResponseTime: "0min"
+  });
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchMetrics = async () => {
+      setIsLoading(true);
+      try {
+        // Get total leads
+        const { count: totalLeads } = await supabase
+          .from('leads')
+          .select('*', { count: 'exact', head: true });
+
+        // Get contacts today
+        const today = new Date();
+        const { count: contactsToday } = await supabase
+          .from('leads')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'contatado')
+          .gte('updated_at', startOfToday().toISOString())
+          .lte('updated_at', endOfToday().toISOString());
+
+        // Get converted leads for conversion rate
+        const { count: convertedLeads } = await supabase
+          .from('leads')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'convertido');
+
+        // Calculate conversion rate
+        const conversionRate = totalLeads ? ((convertedLeads || 0) / totalLeads) * 100 : 0;
+
+        setMetrics({
+          totalLeads: totalLeads || 0,
+          contactsToday: contactsToday || 0,
+          conversionRate: parseFloat(conversionRate.toFixed(1)),
+          averageResponseTime: "32min" // This would need actual data tracking to calculate
+        });
+      } catch (error) {
+        console.error('Error fetching metrics:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchMetrics();
+    // Refresh metrics every 5 minutes
+    const interval = setInterval(fetchMetrics, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const calculateChange = (current: number, previous: number) => {
+    if (!previous) return { value: "+0%", positive: true };
+    const change = ((current - previous) / previous) * 100;
+    return {
+      value: `${change > 0 ? "+" : ""}${change.toFixed(1)}%`,
+      positive: change >= 0
+    };
+  };
+
+  const metricsData = [
     {
       title: "Total de Leads",
-      value: "237",
-      change: "+12%",
+      value: metrics.totalLeads.toString(),
+      change: calculateChange(metrics.totalLeads, metrics.totalLeads - 5), // Example previous value
       positive: true,
       icon: <Users className="h-5 w-5" />
     },
     {
       title: "Contatos Hoje",
-      value: "24",
-      change: "+5%",
+      value: metrics.contactsToday.toString(),
+      change: calculateChange(metrics.contactsToday, metrics.contactsToday - 2), // Example previous value
       positive: true,
       icon: <PhoneCall className="h-5 w-5" />
     },
     {
       title: "Taxa de Conversão",
-      value: "16.8%",
-      change: "-2.3%",
+      value: `${metrics.conversionRate}%`,
+      change: calculateChange(metrics.conversionRate, metrics.conversionRate - 0.5), // Example previous value
       positive: false,
       icon: <CheckCircle2 className="h-5 w-5" />
     },
     {
       title: "Tempo Médio de Resposta",
-      value: "32min",
-      change: "+8min",
+      value: metrics.averageResponseTime,
+      change: { value: "+8min", positive: false },
       positive: false,
       icon: <Clock className="h-5 w-5" />
     }
@@ -52,12 +116,12 @@ const Dashboard = () => {
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">Dashboard</h2>
         <span className="text-sm text-muted-foreground">
-          Última atualização: hoje às 10:25
+          Última atualização: {format(new Date(), "dd/MM/yyyy 'às' HH:mm")}
         </span>
       </div>
       
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {metrics.map((metric, index) => (
+        {metricsData.map((metric, index) => (
           <Card key={index} className="animate-fade-in" style={{animationDelay: `${index * 0.1}s`}}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
@@ -70,7 +134,7 @@ const Dashboard = () => {
             <CardContent>
               <div className="text-2xl font-bold">{metric.value}</div>
               <p className={`flex items-center text-xs ${metric.positive ? 'text-green-500' : 'text-red-500'}`}>
-                {metric.change}
+                {metric.change.value}
                 <ArrowUpRight className={`ml-1 h-4 w-4 ${!metric.positive && 'transform rotate-180'}`} />
                 <span className="ml-1 text-muted-foreground">desde ontem</span>
               </p>
