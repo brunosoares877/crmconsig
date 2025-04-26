@@ -1,5 +1,4 @@
-
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -22,6 +21,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const formSchema = z.object({
   name: z.string().min(3, { message: "O nome deve ter pelo menos 3 caracteres." }),
@@ -35,6 +35,7 @@ const formSchema = z.object({
   status: z.string().default("novo"),
   employee: z.string().optional(),
   notes: z.string().optional(),
+  benefit_type: z.string().min(1, { message: "Selecione a espécie de benefício." }),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -52,6 +53,26 @@ const LeadForm: React.FC<LeadFormProps> = ({
   initialData, 
   isLoading = false 
 }) => {
+  const [benefitTypes, setBenefitTypes] = useState<{code: string, description: string}[]>([]);
+
+  useEffect(() => {
+    const fetchBenefitTypes = async () => {
+      const { data, error } = await supabase
+        .from('benefit_types')
+        .select('code, description')
+        .order('description');
+
+      if (error) {
+        console.error('Error fetching benefit types:', error);
+        return;
+      }
+
+      setBenefitTypes(data || []);
+    };
+
+    fetchBenefitTypes();
+  }, []);
+
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: initialData || {
@@ -66,6 +87,7 @@ const LeadForm: React.FC<LeadFormProps> = ({
       status: "novo",
       employee: "",
       notes: "",
+      benefit_type: "",
     },
   });
 
@@ -352,6 +374,35 @@ const LeadForm: React.FC<LeadFormProps> = ({
                   disabled={isLoading}
                 />
               </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="benefit_type"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Espécie de Benefício</FormLabel>
+              <Select 
+                onValueChange={field.onChange} 
+                defaultValue={field.value} 
+                disabled={isLoading}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione a espécie de benefício" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {benefitTypes.map((type) => (
+                    <SelectItem key={type.code} value={type.code}>
+                      {type.description}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <FormMessage />
             </FormItem>
           )}
