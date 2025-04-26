@@ -1,11 +1,24 @@
-
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { CircleCheck } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const SubscriptionPlans = () => {
-  const openPaymentLink = (url: string) => {
-    window.open(url, "_blank");
+  const handlePayment = async (priceId: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('create-checkout', {
+        body: { priceId, mode: "subscription" }
+      });
+
+      if (error) throw error;
+      if (data?.url) {
+        window.location.href = data.url;
+      }
+    } catch (error) {
+      console.error("Payment error:", error);
+      toast.error("Erro ao processar pagamento. Tente novamente.");
+    }
   };
 
   return (
@@ -26,7 +39,7 @@ const SubscriptionPlans = () => {
           <Button 
             className="w-full" 
             size="lg"
-            onClick={() => openPaymentLink("https://luana-santos3.pay.yampi.com.br/r/IRK51VOO8J")}
+            onClick={() => handlePayment("price_monthly")}
           >
             Assinar Plano Mensal
           </Button>
@@ -39,7 +52,8 @@ const SubscriptionPlans = () => {
               "Gerenciamento de leads ilimitados",
               "Controle de comissões",
               "Suporte por email",
-              "Renovação automática"
+              "Renovação automática",
+              "Pagamento via PIX ou Cartão"
             ].map((feature, index) => (
               <li key={index} className="flex items-center">
                 <CircleCheck className="h-5 w-5 mr-3 text-green-500" />
@@ -72,7 +86,7 @@ const SubscriptionPlans = () => {
           <Button 
             className="w-full" 
             size="lg"
-            onClick={() => openPaymentLink("https://luana-santos3.pay.yampi.com.br/r/PY3XIQ7XMA")}
+            onClick={() => handlePayment("price_semestral")}
           >
             Assinar Plano Semestral
           </Button>
@@ -119,7 +133,7 @@ const SubscriptionPlans = () => {
           <Button 
             className="w-full" 
             size="lg"
-            onClick={() => openPaymentLink("https://luana-santos3.pay.yampi.com.br/r/PBYIFKXNB9")}
+            onClick={() => handlePayment("price_annual")}
           >
             Assinar Plano Anual
           </Button>
