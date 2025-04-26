@@ -1,7 +1,8 @@
+
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Facebook, Instagram, WhatsApp, MapPin } from "lucide-react";
+import { ArrowRight, Facebook, Instagram, Send, MapPin } from "lucide-react";
 import SalesHeader from "@/components/sales/SalesHeader";
 import SubscriptionPlans from "@/components/sales/SubscriptionPlans";
 import FeaturesList from "@/components/sales/FeaturesList";
@@ -89,7 +90,7 @@ const Sales = () => {
                   <Instagram size={24} />
                 </a>
                 <a href="#" className="hover:text-primary transition-colors">
-                  <WhatsApp size={24} />
+                  <Send size={24} />
                 </a>
               </div>
             </div>
@@ -99,7 +100,7 @@ const Sales = () => {
               <h3 className="text-xl font-semibold mb-4">Nossos Contatos</h3>
               <div className="space-y-2">
                 <a href="#" className="flex items-center gap-2 hover:text-primary transition-colors">
-                  <WhatsApp size={20} />
+                  <Send size={20} />
                   (71) 98764-8829
                 </a>
                 <a href="mailto:consignadoleadhub@gmail.com" className="hover:text-primary transition-colors">
