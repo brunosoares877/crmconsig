@@ -1,4 +1,3 @@
-
 import React from "react";
 import { toast } from "@/components/ui/sonner";
 import { Button } from "@/components/ui/button";
@@ -54,14 +53,14 @@ const PaymentPlans = () => {
             <CardFooter>
               <Button 
                 className="w-full" 
-                onClick={() => openPaymentLink("Mensal", "https://luana-santos3.pay.yampi.com.br/r/IRK51VOO8J")}
+                onClick={() => openPaymentLink("Mensal", "https://buy.stripe.com/test_6oE03haZsbuP5sAeUU")}
               >
                 Assinar Plano Mensal
               </Button>
             </CardFooter>
           </Card>
 
-          {/* Semestral Plan (New) */}
+          {/* Semestral Plan */}
           <Card className="border-2 border-amber-400 relative animate-fade-in" style={{animationDelay: "0.15s"}}>
             <div className="absolute top-0 right-0 bg-amber-400 text-primary-foreground px-3 py-1 text-sm rounded-bl-lg">
               Recomendado
@@ -98,7 +97,7 @@ const PaymentPlans = () => {
             <CardFooter>
               <Button 
                 className="w-full" 
-                onClick={() => openPaymentLink("Semestral", "https://luana-santos3.pay.yampi.com.br/r/PY3XIQ7XMA")}
+                onClick={() => openPaymentLink("Semestral", "https://buy.stripe.com/test_28o03h8RkgP92go3cd")}
               >
                 Assinar Plano Semestral
               </Button>
@@ -142,7 +141,7 @@ const PaymentPlans = () => {
             <CardFooter>
               <Button 
                 className="w-full" 
-                onClick={() => openPaymentLink("Anual", "https://luana-santos3.pay.yampi.com.br/r/PBYIFKXNB9")}
+                onClick={() => openPaymentLink("Anual", "https://buy.stripe.com/test_5kA5nBd7A2YjcV23ce")}
               >
                 Assinar Plano Anual
               </Button>

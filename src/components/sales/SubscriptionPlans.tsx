@@ -5,16 +5,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 const SubscriptionPlans = () => {
-  const handlePayment = async (priceId: string) => {
+  const handlePayment = async (priceId: string, url: string) => {
     try {
-      const { data, error } = await supabase.functions.invoke('create-checkout', {
-        body: { priceId, mode: "subscription" }
-      });
-
-      if (error) throw error;
-      if (data?.url) {
-        window.location.href = data.url;
-      }
+      window.location.href = url;
     } catch (error) {
       console.error("Payment error:", error);
       toast.error("Erro ao processar pagamento. Tente novamente.");
@@ -39,7 +32,7 @@ const SubscriptionPlans = () => {
           <Button 
             className="w-full" 
             size="lg"
-            onClick={() => handlePayment("price_monthly")}
+            onClick={() => handlePayment("price_monthly", "https://buy.stripe.com/test_6oE03haZsbuP5sAeUU")}
           >
             Assinar Plano Mensal
           </Button>
@@ -86,7 +79,7 @@ const SubscriptionPlans = () => {
           <Button 
             className="w-full" 
             size="lg"
-            onClick={() => handlePayment("price_semestral")}
+            onClick={() => handlePayment("price_semestral", "https://buy.stripe.com/test_28o03h8RkgP92go3cd")}
           >
             Assinar Plano Semestral
           </Button>
@@ -133,7 +126,7 @@ const SubscriptionPlans = () => {
           <Button 
             className="w-full" 
             size="lg"
-            onClick={() => handlePayment("price_annual")}
+            onClick={() => handlePayment("price_annual", "https://buy.stripe.com/test_5kA5nBd7A2YjcV23ce")}
           >
             Assinar Plano Anual
           </Button>
