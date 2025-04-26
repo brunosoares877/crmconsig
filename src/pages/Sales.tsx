@@ -6,14 +6,12 @@ import SalesHeader from "@/components/sales/SalesHeader";
 import SubscriptionPlans from "@/components/sales/SubscriptionPlans";
 import FeaturesList from "@/components/sales/FeaturesList";
 import Testimonials from "@/components/sales/Testimonials";
-
 const Sales = () => {
   const navigate = useNavigate();
   const handleStartTrial = () => {
     navigate("/login");
   };
-  return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-white to-blue-50">
+  return <div className="min-h-screen flex flex-col bg-gradient-to-b from-white to-blue-50">
       <SalesHeader />
       
       <main className="flex-1">
@@ -63,7 +61,7 @@ const Sales = () => {
 
         {/* CTA Section */}
         <section className="bg-primary text-white py-16">
-          <div className="container mx-auto px-4 text-center">
+          <div className="container mx-auto px-4 text-center bg-[#4848ff]">
             <h2 className="text-3xl md:text-4xl font-bold mb-6">
               Pronto para aumentar suas vendas?
             </h2>
@@ -82,8 +80,6 @@ const Sales = () => {
           <p>© 2025 ConsignadoLeadHub - Todos os direitos reservados</p>
         </div>
       </footer>
-    </div>
-  );
+    </div>;
 };
-
 export default Sales;
