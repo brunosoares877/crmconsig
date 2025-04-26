@@ -5,12 +5,15 @@ import { ArrowRight, CheckCircle } from "lucide-react";
 import SalesHeader from "@/components/sales/SalesHeader";
 import SubscriptionPlans from "@/components/sales/SubscriptionPlans";
 import FeaturesList from "@/components/sales/FeaturesList";
+import Testimonials from "@/components/sales/Testimonials";
+
 const Sales = () => {
   const navigate = useNavigate();
   const handleStartTrial = () => {
     navigate("/login");
   };
-  return <div className="min-h-screen flex flex-col bg-gradient-to-b from-white to-blue-50">
+  return (
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-white to-blue-50">
       <SalesHeader />
       
       <main className="flex-1">
@@ -41,6 +44,9 @@ const Sales = () => {
             <FeaturesList />
           </div>
         </section>
+
+        {/* Testimonials Section */}
+        <Testimonials />
 
         {/* Subscription Plans */}
         <section className="py-16 bg-gray-50">
@@ -76,6 +82,8 @@ const Sales = () => {
           <p>© 2025 ConsignadoLeadHub - Todos os direitos reservados</p>
         </div>
       </footer>
-    </div>;
+    </div>
+  );
 };
+
 export default Sales;
