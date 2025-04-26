@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -34,6 +33,14 @@ import DocumentUpload from "./leads/DocumentUpload";
 import { Lead } from "@/types/models";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import {
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 
 // Status color map
 const statusColorMap = {
@@ -164,27 +171,27 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete }) => {
             <span className="hidden sm:inline">Ligar</span>
           </Button>
 
-          <Sheet open={isOpenSheet} onOpenChange={setIsOpenSheet}>
-            <SheetTrigger asChild>
+          <Dialog>
+            <DialogTrigger asChild>
               <Button variant="outline" size="icon" className="h-8 w-8">
                 <Edit className="h-3.5 w-3.5" />
               </Button>
-            </SheetTrigger>
-            <SheetContent className="w-full sm:max-w-[540px] overflow-y-auto">
-              <SheetHeader className="mb-4">
-                <SheetTitle>Editar Lead</SheetTitle>
-                <SheetDescription>
+            </DialogTrigger>
+            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Editar Lead</DialogTitle>
+                <DialogDescription>
                   Atualize os dados do lead no formulário abaixo.
-                </SheetDescription>
-              </SheetHeader>
+                </DialogDescription>
+              </DialogHeader>
               <LeadForm 
                 initialData={lead}
                 onSubmit={handleLeadUpdate}
-                onCancel={() => setIsOpenSheet(false)}
+                onCancel={() => {}}
                 isLoading={isLoading}
               />
-            </SheetContent>
-          </Sheet>
+            </DialogContent>
+          </Dialog>
 
           <Sheet open={isDocumentsOpen} onOpenChange={setIsDocumentsOpen}>
             <SheetTrigger asChild>
