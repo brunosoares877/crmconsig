@@ -23,7 +23,7 @@ const PaymentPlans = () => {
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+        <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
           {/* Monthly Plan */}
           <Card className="border-2 relative animate-fade-in" style={{animationDelay: "0.1s"}}>
             <CardHeader>
@@ -57,6 +57,50 @@ const PaymentPlans = () => {
                 onClick={() => openPaymentLink("Mensal", "https://luana-santos3.pay.yampi.com.br/r/IRK51VOO8J")}
               >
                 Assinar Plano Mensal
+              </Button>
+            </CardFooter>
+          </Card>
+
+          {/* Semestral Plan (New) */}
+          <Card className="border-2 border-amber-400 relative animate-fade-in" style={{animationDelay: "0.15s"}}>
+            <div className="absolute top-0 right-0 bg-amber-400 text-primary-foreground px-3 py-1 text-sm rounded-bl-lg">
+              Recomendado
+            </div>
+            <CardHeader>
+              <CardTitle>Plano Semestral</CardTitle>
+              <CardDescription>Economia sem compromisso de longo prazo</CardDescription>
+              <div className="mt-4">
+                <span className="text-4xl font-bold">R$187,00</span>
+                <span className="text-muted-foreground">/6 meses</span>
+                <div className="text-green-600 text-sm font-medium mt-1">
+                  Apenas R$31,17/mês (Economize 17%)
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <ul className="space-y-2">
+                {[
+                  "Acesso completo ao sistema",
+                  "Dashboard e relatórios",
+                  "Gerenciamento de leads ilimitados",
+                  "Controle de comissões",
+                  "Suporte prioritário",
+                  "Economia semestral",
+                  "Ideal para equipes em crescimento"
+                ].map((feature, i) => (
+                  <li key={i} className="flex items-center">
+                    <CircleCheck className="h-5 w-5 mr-2 text-green-500" />
+                    <span>{feature}</span>
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+            <CardFooter>
+              <Button 
+                className="w-full" 
+                onClick={() => openPaymentLink("Semestral", "https://luana-santos3.pay.yampi.com.br/r/PY3XIQ7XMA")}
+              >
+                Assinar Plano Semestral
               </Button>
             </CardFooter>
           </Card>

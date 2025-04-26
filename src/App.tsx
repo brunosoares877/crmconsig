@@ -6,13 +6,25 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { SubscriptionProvider } from "./contexts/SubscriptionContext";
+import { WhiteLabelProvider } from "./contexts/WhiteLabelContext";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 import Sales from "./pages/Sales";
 import PaymentPlans from "./pages/PaymentPlans";
+import { useEffect } from "react";
+import { z } from "zod";
 
 const queryClient = new QueryClient();
+
+// Fix the redirect URL issue
+if (typeof window !== "undefined") {
+  const currentUrl = window.location.href;
+  // Check if the URL contains error due to expired email link
+  if (currentUrl.includes("error=access_denied") && currentUrl.includes("error_code=otp_expired")) {
+    window.location.href = "/login?error=email_link_expired";
+  }
+}
 
 const App = () => {
   return (
@@ -20,17 +32,19 @@ const App = () => {
       <BrowserRouter>
         <AuthProvider>
           <SubscriptionProvider>
-            <TooltipProvider>
-              <Toaster />
-              <Sonner />
-              <Routes>
-                <Route path="/" element={<Sales />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/dashboard" element={<Index />} />
-                <Route path="/plans" element={<PaymentPlans />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </TooltipProvider>
+            <WhiteLabelProvider>
+              <TooltipProvider>
+                <Toaster />
+                <Sonner />
+                <Routes>
+                  <Route path="/" element={<Sales />} />
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/dashboard" element={<Index />} />
+                  <Route path="/plans" element={<PaymentPlans />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </TooltipProvider>
+            </WhiteLabelProvider>
           </SubscriptionProvider>
         </AuthProvider>
       </BrowserRouter>

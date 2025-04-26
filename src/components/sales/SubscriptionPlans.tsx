@@ -9,7 +9,7 @@ const SubscriptionPlans = () => {
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-4xl mx-auto">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
       {/* Monthly Plan */}
       <div className="bg-white rounded-xl shadow-lg border-2 border-gray-100 overflow-hidden transition-all hover:shadow-xl">
         <div className="p-8">
@@ -40,6 +40,53 @@ const SubscriptionPlans = () => {
               "Controle de comissões",
               "Suporte por email",
               "Renovação automática"
+            ].map((feature, index) => (
+              <li key={index} className="flex items-center">
+                <CircleCheck className="h-5 w-5 mr-3 text-green-500" />
+                <span>{feature}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+
+      {/* Semestral Plan */}
+      <div className="bg-white rounded-xl shadow-lg border-2 border-amber-400 overflow-hidden transition-all hover:shadow-xl relative">
+        <div className="absolute top-0 right-0 bg-amber-400 text-amber-950 px-4 py-1 text-sm font-medium rounded-bl-lg">
+          Recomendado
+        </div>
+        <div className="p-8">
+          <div className="inline-block px-4 py-1 bg-amber-100 text-amber-700 rounded-full text-sm font-medium mb-4">
+            Plano Semestral
+          </div>
+          <div className="flex items-end mb-2">
+            <span className="text-5xl font-bold">R$187,00</span>
+            <span className="text-gray-500 ml-2">/6 meses</span>
+          </div>
+          <div className="text-green-600 font-medium mb-4">
+            Apenas R$31,17/mês (Economize 17%)
+          </div>
+          <p className="text-gray-600 mb-6">
+            Economia sem um compromisso de longo prazo.
+          </p>
+          <Button 
+            className="w-full" 
+            size="lg"
+            onClick={() => openPaymentLink("https://luana-santos3.pay.yampi.com.br/r/PY3XIQ7XMA")}
+          >
+            Assinar Plano Semestral
+          </Button>
+        </div>
+        <div className="border-t border-gray-100 p-8">
+          <ul className="space-y-4">
+            {[
+              "Acesso completo ao sistema",
+              "Dashboard e relatórios",
+              "Gerenciamento de leads ilimitados",
+              "Controle de comissões",
+              "Suporte prioritário",
+              "Economia semestral",
+              "Ideal para equipes em crescimento"
             ].map((feature, index) => (
               <li key={index} className="flex items-center">
                 <CircleCheck className="h-5 w-5 mr-3 text-green-500" />
