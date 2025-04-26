@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -7,14 +6,12 @@ import SalesHeader from "@/components/sales/SalesHeader";
 import SubscriptionPlans from "@/components/sales/SubscriptionPlans";
 import FeaturesList from "@/components/sales/FeaturesList";
 import Testimonials from "@/components/sales/Testimonials";
-
 const Sales = () => {
   const navigate = useNavigate();
   const handleStartTrial = () => {
     navigate("/login");
   };
-  return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-white to-blue-50">
+  return <div className="min-h-screen flex flex-col bg-gradient-to-b from-white to-blue-50">
       <SalesHeader />
       
       <main className="flex-1">
@@ -61,15 +58,15 @@ const Sales = () => {
         </section>
 
         {/* CTA Section */}
-        <section className="bg-primary text-white py-16">
+        <section className="text-white py-16 bg-slate-300">
           <div className="container mx-auto px-4 text-center">
-            <h2 className="text-3xl md:text-4xl font-bold mb-6">
+            <h2 className="text-3xl md:text-4xl font-bold mb-6 text-slate-950">
               Pronto para aumentar suas vendas?
             </h2>
-            <p className="text-xl mb-8 max-w-2xl mx-auto">
+            <p className="text-xl mb-8 max-w-2xl mx-auto text-slate-950">
               Experimente nosso CRM por 7 dias gratuitamente e veja como podemos ajudar sua empresa a crescer.
             </p>
-            <Button onClick={handleStartTrial} variant="secondary" size="lg" className="text-primary bg-white hover:bg-gray-100 text-lg px-8 py-6">
+            <Button onClick={handleStartTrial} variant="secondary" size="lg" className="text-primary text-lg px-8 py-6 bg-zinc-950 hover:bg-zinc-800">
               Começar agora mesmo <ArrowRight className="ml-2" />
             </Button>
           </div>
@@ -123,8 +120,6 @@ const Sales = () => {
           </div>
         </div>
       </footer>
-    </div>
-  );
+    </div>;
 };
-
 export default Sales;
