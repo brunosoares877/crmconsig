@@ -1,20 +1,23 @@
 export interface Lead {
   id: string;
   name: string;
-  email: string;
-  cpf: string;
-  phone: string;
-  phone2?: string;
-  phone3?: string;
-  bank: string;
-  product: string;
-  amount: string;
-  status: "novo" | "contatado" | "qualificado" | "negociando" | "convertido" | "perdido";
-  employee?: string;
-  notes?: string;
+  email: string | null;
+  cpf: string | null;
+  phone: string | null;
+  phone2?: string | null;
+  phone3?: string | null;
+  bank: string | null;
+  product: string | null;
+  amount: string | null;
+  status: string;
+  employee?: string | null;
+  notes?: string | null;
   documents?: string[];
   createdAt: string;
-  source?: string;
+  source?: string | null;
+  user_id: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface Employee {

@@ -28,8 +28,9 @@ const LeadList = () => {
           day: '2-digit',
           month: 'short',
           year: 'numeric'
-        })
-      }));
+        }),
+        status: lead.status || "novo" // Ensure status has a default value
+      })) as Lead[];
 
       setLeads(formattedLeads);
     } catch (error: any) {

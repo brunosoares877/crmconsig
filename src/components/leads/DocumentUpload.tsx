@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -59,20 +58,15 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ leadId }) => {
       const userId = userData.user.id;
       const filePath = `${userId}/${leadId}/${Date.now()}_${file.name}`;
       
-      // Upload file to storage
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from("lead-documents")
         .upload(filePath, file, {
           cacheControl: "3600",
-          upsert: false,
-          onUploadProgress: (progress) => {
-            setProgress(Math.round((progress.loaded / progress.total) * 100));
-          },
+          upsert: false
         });
         
       if (uploadError) throw uploadError;
       
-      // Create document record in database
       const { error: dbError } = await supabase.from("documents").insert({
         lead_id: leadId,
         user_id: userId,
@@ -85,26 +79,25 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ leadId }) => {
       
       toast.success("Documento enviado com sucesso!");
       await fetchDocuments();
+      setProgress(100);
     } catch (error: any) {
       console.error("Error uploading document:", error);
       toast.error(`Erro ao enviar documento: ${error.message}`);
     } finally {
       setIsUploading(false);
-      setProgress(0);
+      setTimeout(() => setProgress(0), 1000);
       e.target.value = "";
     }
   };
 
   const handleDelete = async (document: Document) => {
     try {
-      // Delete file from storage
       const { error: storageError } = await supabase.storage
         .from("lead-documents")
         .remove([document.file_path]);
         
       if (storageError) throw storageError;
       
-      // Delete record from database
       const { error: dbError } = await supabase
         .from("documents")
         .delete()

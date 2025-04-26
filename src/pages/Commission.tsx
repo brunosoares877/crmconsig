@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
@@ -248,8 +247,18 @@ const Commission = () => {
                         initialFocus
                         mode="range"
                         defaultMonth={dateRange.from}
-                        selected={dateRange}
-                        onSelect={setDateRange}
+                        selected={{
+                          from: dateRange.from,
+                          to: dateRange.to
+                        }}
+                        onSelect={(range) => {
+                          if (range) {
+                            setDateRange({
+                              from: range.from,
+                              to: range.to
+                            });
+                          }
+                        }}
                         numberOfMonths={2}
                       />
                     </PopoverContent>

@@ -103,12 +103,16 @@ const Portability = () => {
     
     setIsSubmitting(true);
     try {
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) throw new Error("Usuário não autenticado");
+      
       const { error } = await supabase.from("reminders").insert({
         title,
         lead_id: leadId || null,
         notes,
         due_date: date?.toISOString(),
         is_completed: false,
+        user_id: userData.user.id // Add the required user_id field
       });
       
       if (error) throw error;
