@@ -14,6 +14,8 @@ import Sales from "./pages/Sales";
 import PaymentPlans from "./pages/PaymentPlans";
 import Portability from "./pages/Portability";
 import Commission from "./pages/Commission";
+import CookiePolicy from "./pages/CookiePolicy";
+import CookieConsent from "./components/CookieConsent";
 import { useEffect } from "react";
 
 const queryClient = new QueryClient();
@@ -35,6 +37,7 @@ const App = () => {
           <SubscriptionProvider>
             <WhiteLabelProvider>
               <TooltipProvider>
+                <CookieConsent />
                 <Toaster />
                 <Sonner />
                 <Routes>
@@ -44,6 +47,9 @@ const App = () => {
                   <Route path="/plans" element={<PaymentPlans />} />
                   <Route path="/portability" element={<Portability />} />
                   <Route path="/commission" element={<Commission />} />
+                  <Route path="/politica-de-cookies" element={<CookiePolicy />} />
+                  <Route path="/payment-success" element={<Navigate to="/dashboard" />} />
+                  <Route path="/payment-canceled" element={<Navigate to="/plans" />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </TooltipProvider>

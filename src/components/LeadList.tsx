@@ -4,6 +4,7 @@ import LeadCard from "./LeadCard";
 import EmptyState from "./EmptyState";
 import Filters from "./Filters";
 import AddLeadButton from "./leads/AddLeadButton";
+import ImportLeads from "./leads/ImportLeads";
 import { Lead } from "@/types/models";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -57,10 +58,11 @@ const LeadList = () => {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">Leads</h2>
-        <div className="flex items-center gap-4">
-          <span className="text-sm text-muted-foreground">
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground mr-2">
             Mostrando {leads.length} leads
           </span>
+          <ImportLeads onLeadsImported={fetchLeads} />
           <AddLeadButton onLeadAdded={fetchLeads} />
         </div>
       </div>
