@@ -1,17 +1,16 @@
-
 import React from "react";
 import { Bell, Search, LogOut } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-
 const Header = () => {
-  const { signOut } = useAuth();
-
+  const {
+    signOut
+  } = useAuth();
   return <header className="border-b bg-white shadow-sm">
       <div className="container flex h-16 items-center justify-between px-4">
         <div className="flex items-center gap-4">
-          <h1 className="text-xl font-bold text-primary">Leadconsig</h1>
+          
         </div>
 
         <div className="hidden md:flex items-center">
@@ -33,5 +32,4 @@ const Header = () => {
       </div>
     </header>;
 };
-
 export default Header;
