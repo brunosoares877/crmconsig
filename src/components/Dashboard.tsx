@@ -11,7 +11,9 @@ import {
   Users, 
   PhoneCall, 
   CheckCircle2, 
-  Clock
+  Clock,
+  TrendingUp,
+  TrendingDown
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { format, startOfToday, endOfToday } from "date-fns";
@@ -86,61 +88,114 @@ const Dashboard = () => {
       value: metrics.totalLeads.toString(),
       change: calculateChange(metrics.totalLeads, metrics.totalLeads - 5), // Example previous value
       positive: true,
-      icon: <Users className="h-5 w-5" />
+      icon: <Users className="h-5 w-5 text-blue-500" />
     },
     {
       title: "Contatos Hoje",
       value: metrics.contactsToday.toString(),
       change: calculateChange(metrics.contactsToday, metrics.contactsToday - 2), // Example previous value
       positive: true,
-      icon: <PhoneCall className="h-5 w-5" />
+      icon: <PhoneCall className="h-5 w-5 text-green-500" />
     },
     {
       title: "Taxa de Conversão",
       value: `${metrics.conversionRate}%`,
       change: calculateChange(metrics.conversionRate, metrics.conversionRate - 0.5), // Example previous value
       positive: false,
-      icon: <CheckCircle2 className="h-5 w-5" />
+      icon: <CheckCircle2 className="h-5 w-5 text-purple-500" />
     },
     {
       title: "Tempo Médio de Resposta",
       value: metrics.averageResponseTime,
       change: { value: "+8min", positive: false },
       positive: false,
-      icon: <Clock className="h-5 w-5" />
+      icon: <Clock className="h-5 w-5 text-amber-500" />
     }
   ];
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Dashboard</h2>
-        <span className="text-sm text-muted-foreground">
+        <h2 className="text-2xl font-bold text-gray-800">Dashboard</h2>
+        <span className="text-sm text-muted-foreground bg-muted px-3 py-1 rounded-full">
           Última atualização: {format(new Date(), "dd/MM/yyyy 'às' HH:mm")}
         </span>
       </div>
       
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
         {metricsData.map((metric, index) => (
-          <Card key={index} className="animate-fade-in" style={{animationDelay: `${index * 0.1}s`}}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <Card key={index} className="dashboard-card animate-fade-in overflow-hidden" style={{animationDelay: `${index * 0.1}s`}}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 bg-gradient-to-r from-gray-50 to-transparent dark:from-gray-800 dark:to-transparent">
               <CardTitle className="text-sm font-medium">
                 {metric.title}
               </CardTitle>
-              <div className={`rounded-full p-1.5 ${metric.positive ? 'bg-green-100' : 'bg-red-100'}`}>
+              <div className={`rounded-full p-2 ${metric.positive ? 'bg-green-100' : 'bg-red-100'}`}>
                 {metric.icon}
               </div>
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{metric.value}</div>
-              <p className={`flex items-center text-xs ${metric.positive ? 'text-green-500' : 'text-red-500'}`}>
+            <CardContent className="pt-4">
+              <div className="text-3xl font-bold">{metric.value}</div>
+              <p className={`mt-2 flex items-center text-xs ${metric.positive ? 'text-green-600' : 'text-red-600'}`}>
                 {metric.change.value}
-                <ArrowUpRight className={`ml-1 h-4 w-4 ${!metric.positive && 'transform rotate-180'}`} />
+                {metric.positive ? 
+                  <TrendingUp className="ml-1 h-4 w-4" /> : 
+                  <TrendingDown className="ml-1 h-4 w-4" />
+                }
                 <span className="ml-1 text-muted-foreground">desde ontem</span>
               </p>
             </CardContent>
           </Card>
         ))}
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+        <Card className="dashboard-card">
+          <CardHeader>
+            <CardTitle className="text-lg">Leads por Status</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[200px] w-full flex items-center justify-center text-muted-foreground">
+              Gráfico de status (em desenvolvimento)
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="dashboard-card">
+          <CardHeader>
+            <CardTitle className="text-lg">Atividades Recentes</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-4">
+              {isLoading ? (
+                <div className="text-muted-foreground text-center py-4">Carregando...</div>
+              ) : (
+                <>
+                  <li className="flex items-start space-x-3">
+                    <span className="flex h-2 w-2 translate-y-1 rounded-full bg-green-500" />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium">Novo lead adicionado</p>
+                      <p className="text-xs text-muted-foreground">Hoje às 14:30</p>
+                    </div>
+                  </li>
+                  <li className="flex items-start space-x-3">
+                    <span className="flex h-2 w-2 translate-y-1 rounded-full bg-blue-500" />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium">Lead contatado</p>
+                      <p className="text-xs text-muted-foreground">Hoje às 11:45</p>
+                    </div>
+                  </li>
+                  <li className="flex items-start space-x-3">
+                    <span className="flex h-2 w-2 translate-y-1 rounded-full bg-purple-500" />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium">Proposta enviada</p>
+                      <p className="text-xs text-muted-foreground">Ontem às 16:20</p>
+                    </div>
+                  </li>
+                </>
+              )}
+            </ul>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

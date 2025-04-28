@@ -22,7 +22,7 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <Sidebar />
-      <div className="md:ml-64">
+      <div className="md:ml-64 transition-all duration-300">
         <Header />
         <main className="container mx-auto space-y-8 p-4 py-8">
           <TrialBanner />

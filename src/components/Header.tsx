@@ -1,22 +1,24 @@
+
 import React from "react";
 import { Bell, Search, LogOut } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
+
 const Header = () => {
-  const {
-    signOut
-  } = useAuth();
-  return <header className="border-b bg-white shadow-sm">
+  const { signOut } = useAuth();
+  
+  return (
+    <header className="border-b bg-white shadow-sm sticky top-0 z-30">
       <div className="container flex h-16 items-center justify-between px-4">
         <div className="flex items-center gap-4">
-          
+          <h2 className="text-lg font-medium text-gray-700 hidden md:block">Leadconsig</h2>
         </div>
 
         <div className="hidden md:flex items-center">
           <div className="relative w-64">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Buscar leads..." className="pl-8" />
+            <Input placeholder="Buscar leads..." className="pl-8 bg-gray-50 border-gray-100" />
           </div>
         </div>
 
@@ -30,6 +32,8 @@ const Header = () => {
           </Button>
         </div>
       </div>
-    </header>;
+    </header>
+  );
 };
+
 export default Header;
