@@ -3,21 +3,43 @@ import React, { useState } from "react";
 import { UsersRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import LeadForm from "./LeadForm";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const EmptyState = () => {
-  const [isOpenSheet, setIsOpenSheet] = useState(false);
+  const [isOpenDialog, setIsOpenDialog] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   
-  const handleLeadSubmit = (values: any) => {
-    console.log("New lead:", values);
-    setIsOpenSheet(false);
+  const handleLeadSubmit = async (values: any) => {
+    setIsLoading(true);
+    try {
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (userError) throw userError;
+
+      const { data, error } = await supabase.from("leads").insert({
+        ...values,
+        user_id: userData.user.id,
+      });
+
+      if (error) throw error;
+      
+      toast.success("Lead cadastrado com sucesso!");
+      setIsOpenDialog(false);
+      // Reload the page to show the new lead
+      window.location.reload();
+    } catch (error: any) {
+      toast.error(`Erro ao cadastrar lead: ${error.message}`);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -32,23 +54,24 @@ const EmptyState = () => {
       <div className="flex gap-2">
         <Button variant="secondary">Importar Leads</Button>
         
-        <Sheet open={isOpenSheet} onOpenChange={setIsOpenSheet}>
-          <SheetTrigger asChild>
+        <Dialog open={isOpenDialog} onOpenChange={setIsOpenDialog}>
+          <DialogTrigger asChild>
             <Button>Adicionar Lead</Button>
-          </SheetTrigger>
-          <SheetContent className="w-full sm:max-w-[540px] overflow-y-auto">
-            <SheetHeader className="mb-4">
-              <SheetTitle>Adicionar Novo Lead</SheetTitle>
-              <SheetDescription>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Adicionar Novo Lead</DialogTitle>
+              <DialogDescription>
                 Preencha os dados do novo lead no formulário abaixo.
-              </SheetDescription>
-            </SheetHeader>
+              </DialogDescription>
+            </DialogHeader>
             <LeadForm 
               onSubmit={handleLeadSubmit}
-              onCancel={() => setIsOpenSheet(false)} 
+              onCancel={() => setIsOpenDialog(false)}
+              isLoading={isLoading}
             />
-          </SheetContent>
-        </Sheet>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
