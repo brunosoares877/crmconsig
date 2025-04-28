@@ -4,9 +4,19 @@ import { Bell, Search, LogOut } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 const Header = () => {
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
+  const navigate = useNavigate();
+  
+  const handleSignOut = () => {
+    if (signOut) {
+      signOut();
+    } else {
+      navigate("/login");
+    }
+  };
   
   return (
     <header className="border-b bg-white shadow-sm sticky top-0 z-30">
@@ -27,7 +37,7 @@ const Header = () => {
             <Bell className="h-5 w-5" />
             <span className="absolute right-1 top-1 flex h-2 w-2 rounded-full bg-red-500"></span>
           </Button>
-          <Button variant="ghost" size="icon" onClick={signOut}>
+          <Button variant="ghost" size="icon" onClick={handleSignOut}>
             <LogOut className="h-5 w-5" />
           </Button>
         </div>
