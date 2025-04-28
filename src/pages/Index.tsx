@@ -3,7 +3,6 @@ import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
 import Dashboard from "@/components/Dashboard";
-import LeadList from "@/components/LeadList";
 import TrialBanner from "@/components/TrialBanner";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import Sidebar from "@/components/Sidebar";
@@ -27,7 +26,6 @@ const Index = () => {
         <main className="container mx-auto space-y-8 p-4 py-8">
           <TrialBanner />
           <Dashboard />
-          <LeadList />
         </main>
       </div>
     </div>
