@@ -91,6 +91,11 @@ const LeadForm: React.FC<LeadFormProps> = ({
     },
   });
 
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.toUpperCase();
+    form.setValue("name", value);
+  };
+
   const handleCPFChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let value = e.target.value.replace(/\D/g, "");
     if (value.length > 11) value = value.slice(0, 11);
@@ -149,7 +154,13 @@ const LeadForm: React.FC<LeadFormProps> = ({
             <FormItem>
               <FormLabel>Nome completo</FormLabel>
               <FormControl>
-                <Input placeholder="Nome do cliente" {...field} disabled={isLoading} />
+                <Input 
+                  placeholder="Nome do cliente" 
+                  {...field} 
+                  onChange={handleNameChange}
+                  value={field.value}
+                  disabled={isLoading} 
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
