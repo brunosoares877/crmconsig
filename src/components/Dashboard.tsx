@@ -81,20 +81,40 @@ const Dashboard = () => {
           setDailyProduction(dailyData || []);
         }
         
-        // Fetch employee sales data
-        const { data: salesData, error: salesError } = await supabase
+        // Fetch employee sales data - FIX: use separate queries to count by employee
+        const { data: employeeData, error: employeeError } = await supabase
           .from('leads')
-          .select('employee, count(*), amount')
+          .select('employee, amount')
           .eq('status', 'convertido')
-          .not('employee', 'is', null)
-          .group('employee')
-          .order('count', { ascending: false });
+          .not('employee', 'is', null);
           
-        if (salesError) {
-          console.error('Error fetching employee sales:', salesError);
+        if (employeeError) {
+          console.error('Error fetching employee sales:', employeeError);
           toast.error("Erro ao carregar vendas por funcionário");
         } else {
-          setEmployeeSales(salesData || []);
+          // Process employee data to count sales per employee
+          const employeeSalesMap = {};
+          
+          // Count sales per employee
+          employeeData?.forEach(lead => {
+            if (lead.employee) {
+              if (!employeeSalesMap[lead.employee]) {
+                employeeSalesMap[lead.employee] = { count: 0 };
+              }
+              employeeSalesMap[lead.employee].count += 1;
+            }
+          });
+          
+          // Convert to array format for display
+          const employeeSalesArray = Object.entries(employeeSalesMap).map(([employee, data]) => ({
+            employee,
+            count: data.count
+          }));
+          
+          // Sort by count (highest first)
+          employeeSalesArray.sort((a, b) => b.count - a.count);
+          
+          setEmployeeSales(employeeSalesArray);
         }
 
         setMetrics({
