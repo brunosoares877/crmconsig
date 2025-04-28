@@ -7,16 +7,26 @@ import {
   CardTitle 
 } from "@/components/ui/card";
 import { 
-  ArrowUpRight, 
   Users, 
   PhoneCall, 
   CheckCircle2, 
   Clock,
   TrendingUp,
-  TrendingDown
+  TrendingDown,
+  CalendarDays,
+  User
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { format, startOfToday, endOfToday } from "date-fns";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { toast } from "sonner";
 
 const Dashboard = () => {
   const [metrics, setMetrics] = useState({
@@ -26,6 +36,8 @@ const Dashboard = () => {
     averageResponseTime: "0min"
   });
   const [isLoading, setIsLoading] = useState(true);
+  const [dailyProduction, setDailyProduction] = useState([]);
+  const [employeeSales, setEmployeeSales] = useState([]);
 
   useEffect(() => {
     const fetchMetrics = async () => {
@@ -54,6 +66,37 @@ const Dashboard = () => {
         // Calculate conversion rate
         const conversionRate = totalLeads ? ((convertedLeads || 0) / totalLeads) * 100 : 0;
 
+        // Fetch daily production data
+        const { data: dailyData, error: dailyError } = await supabase
+          .from('leads')
+          .select('*')
+          .eq('status', 'convertido')
+          .gte('updated_at', startOfToday().toISOString())
+          .lte('updated_at', endOfToday().toISOString());
+        
+        if (dailyError) {
+          console.error('Error fetching daily production:', dailyError);
+          toast.error("Erro ao carregar produção diária");
+        } else {
+          setDailyProduction(dailyData || []);
+        }
+        
+        // Fetch employee sales data
+        const { data: salesData, error: salesError } = await supabase
+          .from('leads')
+          .select('employee, count(*), amount')
+          .eq('status', 'convertido')
+          .not('employee', 'is', null)
+          .group('employee')
+          .order('count', { ascending: false });
+          
+        if (salesError) {
+          console.error('Error fetching employee sales:', salesError);
+          toast.error("Erro ao carregar vendas por funcionário");
+        } else {
+          setEmployeeSales(salesData || []);
+        }
+
         setMetrics({
           totalLeads: totalLeads || 0,
           contactsToday: contactsToday || 0,
@@ -62,6 +105,7 @@ const Dashboard = () => {
         });
       } catch (error) {
         console.error('Error fetching metrics:', error);
+        toast.error("Erro ao carregar métricas do dashboard");
       } finally {
         setIsLoading(false);
       }
@@ -113,6 +157,14 @@ const Dashboard = () => {
     }
   ];
 
+  // Function to calculate daily production total
+  const calculateDailyTotal = () => {
+    return dailyProduction.reduce((total, lead) => {
+      const amount = parseFloat(lead.amount || "0");
+      return isNaN(amount) ? total : total + amount;
+    }, 0).toFixed(2);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -149,51 +201,110 @@ const Dashboard = () => {
       </div>
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+        {/* Daily Production Section */}
         <Card className="dashboard-card">
-          <CardHeader>
-            <CardTitle className="text-lg">Leads por Status</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="text-lg flex items-center">
+              <CalendarDays className="mr-2 h-5 w-5 text-blue-500" />
+              Produção Diária
+            </CardTitle>
+            <div className="text-2xl font-bold text-green-600">
+              R$ {calculateDailyTotal()}
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="h-[200px] w-full flex items-center justify-center text-muted-foreground">
-              Gráfico de status (em desenvolvimento)
-            </div>
+            {isLoading ? (
+              <div className="flex items-center justify-center h-32 text-muted-foreground">
+                Carregando...
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Cliente</TableHead>
+                      <TableHead>Produto</TableHead>
+                      <TableHead className="text-right">Valor</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {dailyProduction.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={3} className="text-center py-4 text-muted-foreground">
+                          Nenhuma venda registrada hoje
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      dailyProduction.map((lead) => (
+                        <TableRow key={lead.id}>
+                          <TableCell className="font-medium">{lead.name}</TableCell>
+                          <TableCell>{lead.product || "—"}</TableCell>
+                          <TableCell className="text-right">
+                            {lead.amount ? `R$ ${lead.amount}` : "—"}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
           </CardContent>
         </Card>
         
+        {/* Employee Sales Section */}
         <Card className="dashboard-card">
           <CardHeader>
-            <CardTitle className="text-lg">Atividades Recentes</CardTitle>
+            <CardTitle className="text-lg flex items-center">
+              <User className="mr-2 h-5 w-5 text-purple-500" />
+              Vendas por Funcionário
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <ul className="space-y-4">
-              {isLoading ? (
-                <div className="text-muted-foreground text-center py-4">Carregando...</div>
-              ) : (
-                <>
-                  <li className="flex items-start space-x-3">
-                    <span className="flex h-2 w-2 translate-y-1 rounded-full bg-green-500" />
-                    <div className="flex-1">
-                      <p className="text-sm font-medium">Novo lead adicionado</p>
-                      <p className="text-xs text-muted-foreground">Hoje às 14:30</p>
-                    </div>
-                  </li>
-                  <li className="flex items-start space-x-3">
-                    <span className="flex h-2 w-2 translate-y-1 rounded-full bg-blue-500" />
-                    <div className="flex-1">
-                      <p className="text-sm font-medium">Lead contatado</p>
-                      <p className="text-xs text-muted-foreground">Hoje às 11:45</p>
-                    </div>
-                  </li>
-                  <li className="flex items-start space-x-3">
-                    <span className="flex h-2 w-2 translate-y-1 rounded-full bg-purple-500" />
-                    <div className="flex-1">
-                      <p className="text-sm font-medium">Proposta enviada</p>
-                      <p className="text-xs text-muted-foreground">Ontem às 16:20</p>
-                    </div>
-                  </li>
-                </>
-              )}
-            </ul>
+            {isLoading ? (
+              <div className="flex items-center justify-center h-32 text-muted-foreground">
+                Carregando...
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Funcionário</TableHead>
+                      <TableHead className="text-center">Vendas</TableHead>
+                      <TableHead className="text-right">Performance</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {employeeSales.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={3} className="text-center py-4 text-muted-foreground">
+                          Nenhuma venda por funcionário registrada
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      employeeSales.map((employee) => (
+                        <TableRow key={employee.employee}>
+                          <TableCell className="font-medium">{employee.employee}</TableCell>
+                          <TableCell className="text-center">{employee.count}</TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end">
+                              <div className={`h-2 w-24 rounded-full bg-gray-200 mr-2 overflow-hidden`}>
+                                <div 
+                                  className="h-full bg-green-500" 
+                                  style={{ width: `${Math.min(employee.count * 10, 100)}%` }}
+                                />
+                              </div>
+                              {Math.min(employee.count * 10, 100)}%
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
