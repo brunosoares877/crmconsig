@@ -84,27 +84,22 @@ const Leads = () => {
                   </CardContent>
                 </Card>
               </div>
-              <Filters />
               <LeadList />
             </TabsContent>
             
             <TabsContent value="new">
-              <Filters />
               <LeadList />
             </TabsContent>
             
             <TabsContent value="contacted">
-              <Filters />
               <LeadList />
             </TabsContent>
             
             <TabsContent value="qualified">
-              <Filters />
               <LeadList />
             </TabsContent>
             
             <TabsContent value="converted">
-              <Filters />
               <LeadList />
             </TabsContent>
           </Tabs>

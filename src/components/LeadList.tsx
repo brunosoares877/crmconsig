@@ -2,17 +2,39 @@
 import React, { useState, useEffect } from "react";
 import LeadCard from "./LeadCard";
 import EmptyState from "./EmptyState";
-import Filters from "./Filters";
-import AddLeadButton from "./leads/AddLeadButton";
-import ImportLeads from "./leads/ImportLeads";
 import { Lead } from "@/types/models";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { Search, Plus, Filter, X } from "lucide-react";
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import LeadForm from "./LeadForm";
 
 const LeadList = () => {
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [filteredLeads, setFilteredLeads] = useState<Lead[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-
+  const [isOpenSheet, setIsOpenSheet] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("todos");
+  const [activeFilters, setActiveFilters] = useState<Array<{id: string, label: string}>>([]);
+  
   const fetchLeads = async () => {
     setIsLoading(true);
     try {
@@ -34,6 +56,7 @@ const LeadList = () => {
       })) as Lead[];
 
       setLeads(formattedLeads);
+      setFilteredLeads(formattedLeads);
     } catch (error: any) {
       console.error("Error fetching leads:", error);
       toast.error(`Erro ao carregar leads: ${error.message}`);
@@ -45,7 +68,47 @@ const LeadList = () => {
   useEffect(() => {
     fetchLeads();
   }, []);
+  
+  useEffect(() => {
+    let result = [...leads];
+    
+    // Apply search filter
+    if (searchQuery) {
+      result = result.filter(lead => 
+        lead.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        lead.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        lead.phone?.includes(searchQuery)
+      );
+    }
+    
+    // Apply status filter
+    if (statusFilter && statusFilter !== "todos") {
+      result = result.filter(lead => lead.status === statusFilter);
+    }
+    
+    // Apply active filters
+    activeFilters.forEach(filter => {
+      if (filter.id === "novos") {
+        result = result.filter(lead => lead.status === "novo");
+      } else if (filter.id === "ultimos30dias") {
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        result = result.filter(lead => {
+          const leadDate = new Date(lead.created_at);
+          return leadDate >= thirtyDaysAgo;
+        });
+      }
+    });
+    
+    setFilteredLeads(result);
+  }, [leads, searchQuery, statusFilter, activeFilters]);
 
+  const handleLeadSubmit = (values: any) => {
+    console.log("New lead:", values);
+    setIsOpenSheet(false);
+    fetchLeads();
+  };
+  
   const handleLeadUpdate = (updatedLead: Lead) => {
     setLeads(leads.map(lead => lead.id === updatedLead.id ? updatedLead : lead));
   };
@@ -53,21 +116,111 @@ const LeadList = () => {
   const handleLeadDelete = (id: string) => {
     setLeads(leads.filter(lead => lead.id !== id));
   };
+  
+  const addFilter = (id: string, label: string) => {
+    if (!activeFilters.some(filter => filter.id === id)) {
+      setActiveFilters([...activeFilters, { id, label }]);
+    }
+  };
+  
+  const removeFilter = (id: string) => {
+    setActiveFilters(activeFilters.filter(filter => filter.id !== id));
+  };
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mb-4">
         <h2 className="text-2xl font-bold">Leads</h2>
         <div className="flex items-center gap-2">
           <span className="text-sm text-muted-foreground mr-2">
-            Mostrando {leads.length} leads
+            Mostrando {filteredLeads.length} leads
           </span>
-          <ImportLeads onLeadsImported={fetchLeads} />
-          <AddLeadButton onLeadAdded={fetchLeads} />
+          <Button variant="outline" className="gap-1" onClick={() => {
+            window.location.href = "/leads/import";
+          }}>
+            <Plus className="h-3.5 w-3.5" />
+            <span>Importar</span>
+          </Button>
+          <Button className="gap-1" onClick={() => {
+            window.location.href = "/leads/new";
+          }}>
+            <Plus className="h-3.5 w-3.5" />
+            <span>Novo Lead</span>
+          </Button>
         </div>
       </div>
-
-      <Filters />
+      
+      <div className="rounded-lg border bg-card p-4">
+        <div className="flex flex-col space-y-4">
+          <div className="flex flex-col space-y-2 md:flex-row md:items-center md:justify-between md:space-y-0">
+            <div className="flex items-center space-x-2">
+              <Button variant="outline" className="h-8 gap-1" 
+                onClick={() => addFilter("novos", "Novos")}>
+                <Filter className="h-3.5 w-3.5" />
+                <span>Filtros</span>
+              </Button>
+              <div className="flex flex-wrap gap-2">
+                {activeFilters.map(filter => (
+                  <Badge key={filter.id} variant="outline" className="h-8 gap-1 pl-2 pr-1">
+                    {filter.label}
+                    <Button variant="ghost" className="h-5 w-5 p-0 hover:bg-transparent"
+                      onClick={() => removeFilter(filter.id)}>
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  </Badge>
+                ))}
+              </div>
+            </div>
+            
+            <div className="flex w-full items-center space-x-2 md:w-auto">
+              <div className="relative w-full md:w-[180px]">
+                <Search className="absolute left-2 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+                <Input 
+                  placeholder="Buscar leads" 
+                  className="pl-8" 
+                  value={searchQuery} 
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="h-8 w-full md:w-[180px]">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos os status</SelectItem>
+                  <SelectItem value="novo">Novo</SelectItem>
+                  <SelectItem value="contatado">Contatado</SelectItem>
+                  <SelectItem value="qualificado">Qualificado</SelectItem>
+                  <SelectItem value="negociando">Negociando</SelectItem>
+                  <SelectItem value="convertido">Convertido</SelectItem>
+                  <SelectItem value="perdido">Perdido</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <Sheet open={isOpenSheet} onOpenChange={setIsOpenSheet}>
+                <SheetTrigger asChild>
+                  <Button className="h-8 gap-1">
+                    <Plus className="h-3.5 w-3.5" />
+                    <span>Novo Lead</span>
+                  </Button>
+                </SheetTrigger>
+                <SheetContent className="w-full sm:max-w-[540px] overflow-y-auto">
+                  <SheetHeader className="mb-4">
+                    <SheetTitle>Adicionar Novo Lead</SheetTitle>
+                    <SheetDescription>
+                      Preencha os dados do novo lead no formulário abaixo.
+                    </SheetDescription>
+                  </SheetHeader>
+                  <LeadForm 
+                    onSubmit={handleLeadSubmit}
+                    onCancel={() => setIsOpenSheet(false)} 
+                  />
+                </SheetContent>
+              </Sheet>
+            </div>
+          </div>
+        </div>
+      </div>
       
       {isLoading ? (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -75,9 +228,9 @@ const LeadList = () => {
             <div key={i} className="h-56 animate-pulse rounded-md bg-gray-100"></div>
           ))}
         </div>
-      ) : leads.length > 0 ? (
+      ) : filteredLeads.length > 0 ? (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {leads.map((lead) => (
+          {filteredLeads.map((lead) => (
             <LeadCard 
               key={lead.id} 
               lead={lead} 
