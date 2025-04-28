@@ -15,7 +15,9 @@ import {
   FolderPlus,
   UserCheck,
   Phone,
-  Calendar
+  Calendar,
+  Import,
+  ListCheck
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -46,12 +48,13 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
   ];
 
   const leadMenuItems = [
-    { icon: Users, label: "Todos os Leads", href: "/leads" },
-    { icon: FolderPlus, label: "Novo Lead", href: "/leads/new" },
-    { icon: FileText, label: "Importar Leads", href: "/leads/import" },
-    { icon: UserCheck, label: "Leads Qualificados", href: "/leads/qualified" },
-    { icon: Phone, label: "Leads para Contato", href: "/leads/to-contact" },
-    { icon: Calendar, label: "Agendamentos", href: "/leads/scheduled" },
+    { icon: Users, label: "Todos os Leads", href: "/leads", description: "Visão completa de todos os seus leads" },
+    { icon: FolderPlus, label: "Novo Lead", href: "/leads/new", description: "Cadastre um novo lead manualmente" },
+    { icon: Import, label: "Importar Leads", href: "/leads/import", description: "Importe leads de um arquivo CSV" },
+    { icon: UserCheck, label: "Leads Qualificados", href: "/leads/qualified", description: "Leads prontos para conversão" },
+    { icon: Phone, label: "Para Contato", href: "/leads/to-contact", description: "Leads que precisam ser contatados" },
+    { icon: ListCheck, label: "Pendentes", href: "/leads/pending", description: "Leads com documentação pendente" },
+    { icon: Calendar, label: "Agendamentos", href: "/leads/scheduled", description: "Leads com visitas agendadas" },
   ];
 
   const toggleSidebar = () => setIsOpen(!isOpen);
@@ -136,19 +139,25 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
                   {leadMenuItems.map((subItem, idx) => {
                     const isSubActive = location.pathname === subItem.href;
                     return (
-                      <Link
-                        key={idx}
-                        to={subItem.href}
-                        className={cn(
-                          "flex items-center rounded-md px-4 py-2 text-sm transition-colors",
-                          isSubActive
-                            ? "bg-[#1e4976] text-white shadow-sm"
-                            : "text-gray-300 hover:bg-[#1e4976]/70 hover:text-white"
-                        )}
-                      >
-                        <subItem.icon className="mr-2 h-4 w-4" />
-                        {subItem.label}
-                      </Link>
+                      <div key={idx} className="group relative">
+                        <Link
+                          to={subItem.href}
+                          className={cn(
+                            "flex items-center rounded-md px-4 py-2 text-sm transition-colors",
+                            isSubActive
+                              ? "bg-[#1e4976] text-white shadow-sm"
+                              : "text-gray-300 hover:bg-[#1e4976]/70 hover:text-white"
+                          )}
+                        >
+                          <subItem.icon className="mr-2 h-4 w-4" />
+                          {subItem.label}
+                        </Link>
+                        {/* Tooltip */}
+                        <div className="absolute left-full ml-2 top-0 z-50 w-48 rounded-md bg-[#1e4976] p-2 text-xs text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
+                          {subItem.description}
+                          <div className="absolute -left-1 top-3 h-2 w-2 rotate-45 bg-[#1e4976]"></div>
+                        </div>
+                      </div>
                     );
                   })}
                 </CollapsibleContent>
