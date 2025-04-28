@@ -157,10 +157,7 @@ const ImportLeads = ({
                 <p className="text-xs text-muted-foreground">
                   Formato: CSV com colunas Nome, Telefone, Banco, Produto, Valor
                 </p>
-                <Button variant="ghost" size="sm" onClick={downloadCsvTemplate} className="text-xs h-6">
-                  <Download className="h-3 w-3 mr-1" />
-                  Baixar Modelo
-                </Button>
+                
               </div>
             </div>
 
