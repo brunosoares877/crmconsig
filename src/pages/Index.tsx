@@ -9,15 +9,15 @@ import { useSubscription } from "@/contexts/SubscriptionContext";
 import Sidebar from "@/components/Sidebar";
 
 const Index = () => {
-  const { status } = useSubscription();
+  const { status, isTrialActive } = useSubscription();
   const navigate = useNavigate();
 
-  // Redirect to payment plans if trial is expired
+  // Redirect to payment plans ONLY if trial is expired (not during active trial)
   useEffect(() => {
-    if (status === 'expired') {
+    if (status === 'expired' && !isTrialActive) {
       navigate("/plans");
     }
-  }, [status, navigate]);
+  }, [status, isTrialActive, navigate]);
 
   return (
     <div className="min-h-screen bg-background">

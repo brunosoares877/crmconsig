@@ -29,6 +29,16 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const [subscriptionEndDate, setSubscriptionEndDate] = useState<string | null>(null);
   const [trialDaysLeft, setTrialDaysLeft] = useState(0);
 
+  // Auto-start trial for new users if no trial has been started before
+  useEffect(() => {
+    const storedTrialStartDate = localStorage.getItem('trialStartDate');
+    const storedSubscriptionEndDate = localStorage.getItem('subscriptionEndDate');
+
+    if (!storedTrialStartDate && !storedSubscriptionEndDate) {
+      startTrial();
+    }
+  }, []);
+
   // Load subscription data from localStorage on mount
   useEffect(() => {
     const storedTrialStartDate = localStorage.getItem('trialStartDate');
@@ -63,8 +73,8 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
         setTrialDaysLeft(0);
       }
     } else {
-      setStatus('expired');
-      setTrialDaysLeft(0);
+      // No trial or subscription data found - auto-start trial
+      startTrial();
     }
   }, []);
 
