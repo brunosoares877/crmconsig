@@ -38,6 +38,7 @@ const Dashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [dailyProduction, setDailyProduction] = useState([]);
   const [employeeSales, setEmployeeSales] = useState([]);
+  const [latestLeads, setLatestLeads] = useState([]);
 
   useEffect(() => {
     const fetchMetrics = async () => {
@@ -108,13 +109,36 @@ const Dashboard = () => {
           // Convert to array format for display
           const employeeSalesArray = Object.entries(employeeSalesMap).map(([employee, data]) => ({
             employee,
-            count: data.count
+            count: (data as { count: number }).count
           }));
           
           // Sort by count (highest first)
           employeeSalesArray.sort((a, b) => b.count - a.count);
           
           setEmployeeSales(employeeSalesArray);
+        }
+        
+        // Fetch latest 6 registered leads
+        const { data: latestLeadsData, error: latestLeadsError } = await supabase
+          .from('leads')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(6);
+          
+        if (latestLeadsError) {
+          console.error('Error fetching latest leads:', latestLeadsError);
+          toast.error("Erro ao carregar leads recentes");
+        } else {
+          const formattedLatestLeads = latestLeadsData?.map(lead => ({
+            ...lead,
+            createdAt: new Date(lead.created_at).toLocaleDateString('pt-BR', {
+              day: '2-digit',
+              month: 'short',
+              year: 'numeric'
+            })
+          })) || [];
+          
+          setLatestLeads(formattedLatestLeads);
         }
 
         setMetrics({
@@ -328,6 +352,64 @@ const Dashboard = () => {
           </CardContent>
         </Card>
       </div>
+      
+      {/* Latest Leads Section */}
+      <Card className="dashboard-card">
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center">
+            <Users className="mr-2 h-5 w-5 text-amber-500" />
+            Últimos Leads Cadastrados
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="flex items-center justify-center h-32 text-muted-foreground">
+              Carregando...
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nome</TableHead>
+                    <TableHead>Telefone</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Data de Cadastro</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {latestLeads.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center py-4 text-muted-foreground">
+                        Nenhum lead cadastrado recentemente
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    latestLeads.map((lead) => (
+                      <TableRow key={lead.id}>
+                        <TableCell className="font-medium">{lead.name}</TableCell>
+                        <TableCell>{lead.phone || "—"}</TableCell>
+                        <TableCell>
+                          <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium
+                            ${lead.status === 'novo' ? 'bg-blue-100 text-blue-800' : 
+                              lead.status === 'contatado' ? 'bg-purple-100 text-purple-800' :
+                              lead.status === 'qualificado' ? 'bg-amber-100 text-amber-800' :
+                              lead.status === 'negociando' ? 'bg-emerald-100 text-emerald-800' :
+                              lead.status === 'convertido' ? 'bg-green-100 text-green-800' : 
+                              'bg-gray-100 text-gray-800'}`}>
+                            {lead.status.charAt(0).toUpperCase() + lead.status.slice(1)}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-right text-muted-foreground">{lead.createdAt}</TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };
