@@ -9,7 +9,7 @@ import {
 import { 
   Users, 
   PhoneCall, 
-  CheckCircle2, 
+  CalendarCheck, 
   Clock,
   TrendingUp,
   TrendingDown,
@@ -17,7 +17,7 @@ import {
   User
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { format, startOfToday, endOfToday } from "date-fns";
+import { format, startOfToday, endOfToday, startOfMonth, endOfMonth, differenceInMinutes } from "date-fns";
 import {
   Table,
   TableBody,
@@ -30,10 +30,10 @@ import { toast } from "sonner";
 
 const Dashboard = () => {
   const [metrics, setMetrics] = useState({
-    totalLeads: 0,
-    contactsToday: 0,
-    conversionRate: 0,
-    averageResponseTime: "0min"
+    leadsToday: 0,
+    leadsThisMonth: 0,
+    averageLeadsPerDay: 0,
+    averageTimeBetweenLeads: "0min"
   });
   const [isLoading, setIsLoading] = useState(true);
   const [dailyProduction, setDailyProduction] = useState([]);
@@ -44,36 +44,74 @@ const Dashboard = () => {
     const fetchMetrics = async () => {
       setIsLoading(true);
       try {
-        // Get total leads
-        const { count: totalLeads } = await supabase
-          .from('leads')
-          .select('*', { count: 'exact', head: true });
-
-        // Get contacts today
+        // Get today's date range
         const today = new Date();
-        const { count: contactsToday } = await supabase
+        const todayStart = startOfToday().toISOString();
+        const todayEnd = endOfToday().toISOString();
+        
+        // Get month's date range
+        const monthStart = startOfMonth(today).toISOString();
+        const monthEnd = endOfMonth(today).toISOString();
+        
+        // Get leads created today
+        const { count: leadsToday } = await supabase
           .from('leads')
           .select('*', { count: 'exact', head: true })
-          .eq('status', 'contatado')
-          .gte('updated_at', startOfToday().toISOString())
-          .lte('updated_at', endOfToday().toISOString());
-
-        // Get converted leads for conversion rate
-        const { count: convertedLeads } = await supabase
+          .gte('created_at', todayStart)
+          .lte('created_at', todayEnd);
+        
+        // Get leads created this month
+        const { count: leadsThisMonth } = await supabase
           .from('leads')
           .select('*', { count: 'exact', head: true })
-          .eq('status', 'convertido');
-
-        // Calculate conversion rate
-        const conversionRate = totalLeads ? ((convertedLeads || 0) / totalLeads) * 100 : 0;
+          .gte('created_at', monthStart)
+          .lte('created_at', monthEnd);
+        
+        // Get all leads from this month to calculate average time between leads
+        const { data: monthLeads, error: monthLeadsError } = await supabase
+          .from('leads')
+          .select('created_at')
+          .gte('created_at', monthStart)
+          .lte('created_at', monthEnd)
+          .order('created_at', { ascending: true });
+          
+        if (monthLeadsError) {
+          console.error('Error fetching month leads:', monthLeadsError);
+        }
+        
+        // Calculate average time between leads (in minutes)
+        let averageTimeBetweenLeads = "0min";
+        if (monthLeads && monthLeads.length > 1) {
+          let totalMinutesDiff = 0;
+          let diffCount = 0;
+          
+          for (let i = 1; i < monthLeads.length; i++) {
+            const prevDate = new Date(monthLeads[i-1].created_at);
+            const currentDate = new Date(monthLeads[i].created_at);
+            const diffMinutes = differenceInMinutes(currentDate, prevDate);
+            
+            // Only count reasonable differences (ignore batch imports, etc.)
+            if (diffMinutes > 0 && diffMinutes < 1440) { // Less than 24 hours
+              totalMinutesDiff += diffMinutes;
+              diffCount += 1;
+            }
+          }
+          
+          const avgMinutes = diffCount > 0 ? Math.round(totalMinutesDiff / diffCount) : 0;
+          averageTimeBetweenLeads = `${avgMinutes}min`;
+        }
+        
+        // Calculate average leads per day in this month
+        const daysPassed = Math.max(1, new Date().getDate());
+        const averageLeadsPerDay = leadsThisMonth ? parseFloat((leadsThisMonth / daysPassed).toFixed(1)) : 0;
 
         // Fetch daily production data
         const { data: dailyData, error: dailyError } = await supabase
           .from('leads')
           .select('*')
           .eq('status', 'convertido')
-          .gte('updated_at', startOfToday().toISOString())
-          .lte('updated_at', endOfToday().toISOString());
+          .gte('updated_at', todayStart)
+          .lte('updated_at', todayEnd);
         
         if (dailyError) {
           console.error('Error fetching daily production:', dailyError);
@@ -82,7 +120,7 @@ const Dashboard = () => {
           setDailyProduction(dailyData || []);
         }
         
-        // Fetch employee sales data - FIX: use separate queries to count by employee
+        // Fetch employee sales data
         const { data: employeeData, error: employeeError } = await supabase
           .from('leads')
           .select('employee, amount')
@@ -141,11 +179,12 @@ const Dashboard = () => {
           setLatestLeads(formattedLatestLeads);
         }
 
+        // Update metrics
         setMetrics({
-          totalLeads: totalLeads || 0,
-          contactsToday: contactsToday || 0,
-          conversionRate: parseFloat(conversionRate.toFixed(1)),
-          averageResponseTime: "32min" // This would need actual data tracking to calculate
+          leadsToday: leadsToday || 0,
+          leadsThisMonth: leadsThisMonth || 0,
+          averageLeadsPerDay: averageLeadsPerDay,
+          averageTimeBetweenLeads: averageTimeBetweenLeads
         });
       } catch (error) {
         console.error('Error fetching metrics:', error);
@@ -172,31 +211,31 @@ const Dashboard = () => {
 
   const metricsData = [
     {
-      title: "Total de Leads",
-      value: metrics.totalLeads.toString(),
-      change: calculateChange(metrics.totalLeads, metrics.totalLeads - 5), // Example previous value
+      title: "Leads Hoje",
+      value: metrics.leadsToday.toString(),
+      change: calculateChange(metrics.leadsToday, metrics.leadsToday - 2), // Example previous value
       positive: true,
       icon: <Users className="h-5 w-5 text-blue-500" />
     },
     {
-      title: "Contatos Hoje",
-      value: metrics.contactsToday.toString(),
-      change: calculateChange(metrics.contactsToday, metrics.contactsToday - 2), // Example previous value
+      title: "Leads do Mês",
+      value: metrics.leadsThisMonth.toString(),
+      change: calculateChange(metrics.leadsThisMonth, metrics.leadsThisMonth - 5), // Example previous value
       positive: true,
       icon: <PhoneCall className="h-5 w-5 text-green-500" />
     },
     {
-      title: "Taxa de Conversão",
-      value: `${metrics.conversionRate}%`,
-      change: calculateChange(metrics.conversionRate, metrics.conversionRate - 0.5), // Example previous value
-      positive: false,
-      icon: <CheckCircle2 className="h-5 w-5 text-purple-500" />
+      title: "Média por Dia",
+      value: metrics.averageLeadsPerDay.toString(),
+      change: calculateChange(metrics.averageLeadsPerDay, metrics.averageLeadsPerDay - 0.2), // Example previous value
+      positive: true,
+      icon: <CalendarCheck className="h-5 w-5 text-purple-500" />
     },
     {
-      title: "Tempo Médio de Resposta",
-      value: metrics.averageResponseTime,
-      change: { value: "+8min", positive: false },
-      positive: false,
+      title: "Intervalo entre Leads",
+      value: metrics.averageTimeBetweenLeads,
+      change: { value: "-3min", positive: true },
+      positive: true,
       icon: <Clock className="h-5 w-5 text-amber-500" />
     }
   ];
@@ -415,3 +454,4 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
+
