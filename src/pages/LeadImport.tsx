@@ -5,6 +5,9 @@ import Sidebar from "@/components/Sidebar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import ImportLeads from "@/components/leads/ImportLeads";
 import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Download } from "lucide-react";
+import { downloadCsvTemplate } from "@/utils/csvTemplate";
 
 const LeadImport = () => {
   const navigate = useNavigate();
@@ -50,8 +53,12 @@ const LeadImport = () => {
                 
                 <div className="mt-6">
                   <h3 className="text-sm font-medium mb-2">Modelo do arquivo CSV:</h3>
-                  <div className="bg-muted/50 p-2 rounded-md overflow-x-auto">
-                    <pre className="text-xs">Nome,Telefone,Banco,Produto,Valor<br/>João Silva,(11)99999-9999,Banco do Brasil,Portabilidade,50000<br/>Maria Souza,(21)88888-8888,Caixa,Novo,30000</pre>
+                  <div className="bg-muted/50 p-4 rounded-md flex items-center justify-between">
+                    <p className="text-xs">Baixe o modelo de planilha para importação de leads</p>
+                    <Button variant="outline" size="sm" onClick={downloadCsvTemplate}>
+                      <Download className="h-4 w-4 mr-2" />
+                      Baixar Modelo CSV
+                    </Button>
                   </div>
                 </div>
               </div>

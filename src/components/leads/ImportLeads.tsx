@@ -10,9 +10,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Loader2, Upload } from "lucide-react";
+import { Loader2, Upload, Download } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { downloadCsvTemplate } from "@/utils/csvTemplate";
 
 interface CsvLead {
   name: string;
@@ -51,7 +52,12 @@ const ImportLeads = ({ onLeadsImported }: { onLeadsImported: () => void }) => {
       const amountIndex = headers.indexOf("valor");
       
       if (nameIndex === -1 || phoneIndex === -1 || bankIndex === -1 || productIndex === -1 || amountIndex === -1) {
-        toast.error("Formato CSV inválido. Os cabeçalhos devem incluir: Nome, Telefone, Banco, Produto, Valor");
+        toast.error("Formato CSV inválido. Os cabeçalhos devem incluir: Nome, Telefone, Banco, Produto, Valor", {
+          action: {
+            label: "Baixar Modelo",
+            onClick: downloadCsvTemplate
+          }
+        });
         setFile(null);
         return;
       }
@@ -163,10 +169,16 @@ const ImportLeads = ({ onLeadsImported }: { onLeadsImported: () => void }) => {
 
   return (
     <>
-      <Button variant="outline" onClick={() => setOpen(true)}>
-        <Upload className="h-4 w-4 mr-2" />
-        Importar Leads
-      </Button>
+      <div className="flex items-center gap-2">
+        <Button variant="outline" onClick={() => setOpen(true)}>
+          <Upload className="h-4 w-4 mr-2" />
+          Importar Leads
+        </Button>
+        <Button variant="ghost" size="sm" onClick={downloadCsvTemplate} className="text-xs">
+          <Download className="h-3.5 w-3.5 mr-1" />
+          Modelo CSV
+        </Button>
+      </div>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-md">
@@ -186,9 +198,15 @@ const ImportLeads = ({ onLeadsImported }: { onLeadsImported: () => void }) => {
                 onChange={handleFileChange}
                 disabled={isUploading}
               />
-              <p className="text-xs text-muted-foreground">
-                Formato: CSV com colunas Nome, Telefone, Banco, Produto, Valor
-              </p>
+              <div className="flex justify-between items-center">
+                <p className="text-xs text-muted-foreground">
+                  Formato: CSV com colunas Nome, Telefone, Banco, Produto, Valor
+                </p>
+                <Button variant="ghost" size="sm" onClick={downloadCsvTemplate} className="text-xs h-6">
+                  <Download className="h-3 w-3 mr-1" />
+                  Baixar Modelo
+                </Button>
+              </div>
             </div>
 
             {preview.length > 0 && (
