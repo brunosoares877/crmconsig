@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Calendar as CalendarIcon, Loader2, Plus, Trash2, Check } from "lucide-react";
+import { Calendar as CalendarIcon, Loader2, Plus, Trash2, Check, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -30,6 +30,20 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
 import Header from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
 import { toast } from "sonner";
@@ -44,6 +58,7 @@ interface Reminder {
   is_completed: boolean;
   created_at: string;
   bank?: string | null;
+  status?: string; // Added status field
 }
 
 interface Lead {
@@ -65,6 +80,8 @@ const Portability = () => {
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [notes, setNotes] = useState("");
   const [bankFilter, setBankFilter] = useState("");
+  const [status, setStatus] = useState<string>("pendente"); // New status state
+  const [activeTab, setActiveTab] = useState("all"); // For tab management
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -125,7 +142,8 @@ const Portability = () => {
         due_date: date?.toISOString(),
         is_completed: false,
         user_id: userData.user.id,
-        bank
+        bank,
+        status: status // Add status to the reminder
       });
       
       if (error) throw error;
@@ -162,6 +180,26 @@ const Portability = () => {
     }
   };
 
+  const handleUpdateReminderStatus = async (reminder: Reminder, newStatus: string) => {
+    try {
+      const { error } = await supabase
+        .from("reminders")
+        .update({ status: newStatus })
+        .eq("id", reminder.id);
+        
+      if (error) throw error;
+      
+      setReminders(reminders.map(r => 
+        r.id === reminder.id ? { ...r, status: newStatus } : r
+      ));
+      
+      toast.success(`Status do lembrete atualizado para ${getStatusLabel(newStatus)}`);
+    } catch (error: any) {
+      console.error("Error updating reminder status:", error);
+      toast.error(`Erro ao atualizar status do lembrete: ${error.message}`);
+    }
+  };
+
   const handleDeleteReminder = async (id: string) => {
     try {
       const { error } = await supabase
@@ -185,6 +223,7 @@ const Portability = () => {
     setDate(new Date());
     setNotes("");
     setBankFilter("");
+    setStatus("pendente");
   };
 
   const getLeadName = (id: string | null) => {
@@ -220,6 +259,26 @@ const Portability = () => {
     }
   };
 
+  const getStatusLabel = (statusCode: string | undefined) => {
+    switch (statusCode) {
+      case "integrado": return "Integrado";
+      case "cancelado": return "Cancelado";
+      case "redigitado": return "Redigitado";
+      case "pendente": return "Pendente";
+      default: return "Pendente";
+    }
+  };
+
+  const getStatusColor = (statusCode: string | undefined) => {
+    switch (statusCode) {
+      case "integrado": return "bg-green-100 text-green-800";
+      case "cancelado": return "bg-red-100 text-red-800";
+      case "redigitado": return "bg-orange-100 text-orange-800";
+      case "pendente": return "bg-blue-100 text-blue-800";
+      default: return "bg-gray-100 text-gray-800";
+    }
+  };
+
   const formatDate = (dateString: string) => {
     return format(new Date(dateString), "PPP", { locale: ptBR });
   };
@@ -230,6 +289,12 @@ const Portability = () => {
     const today = new Date();
     return dueDate < today;
   };
+
+  // Filter reminders based on active tab
+  const filteredReminders = reminders.filter(reminder => {
+    if (activeTab === "all") return true;
+    return reminder.status === activeTab;
+  });
 
   return (
     <div className="min-h-screen bg-background">
@@ -326,6 +391,21 @@ const Portability = () => {
                       </Select>
                     </div>
                   )}
+
+                  <div className="space-y-2">
+                    <Label htmlFor="status">Status</Label>
+                    <Select value={status} onValueChange={setStatus}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione um status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pendente">Pendente</SelectItem>
+                        <SelectItem value="integrado">Integrado</SelectItem>
+                        <SelectItem value="cancelado">Cancelado</SelectItem>
+                        <SelectItem value="redigitado">Redigitado</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                   
                   <div className="space-y-2">
                     <Label htmlFor="date">Data*</Label>
@@ -387,15 +467,25 @@ const Portability = () => {
             </Dialog>
           </div>
 
+          {/* Status filtering tabs */}
+          <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab} className="mb-6">
+            <TabsList className="grid grid-cols-4 w-full md:w-auto">
+              <TabsTrigger value="all">Todos</TabsTrigger>
+              <TabsTrigger value="integrado">Integrados</TabsTrigger>
+              <TabsTrigger value="cancelado">Cancelados</TabsTrigger>
+              <TabsTrigger value="redigitado">Redigitados</TabsTrigger>
+            </TabsList>
+          </Tabs>
+
           {isLoading ? (
             <div className="space-y-4">
               {[1, 2, 3].map(i => (
                 <div key={i} className="h-24 animate-pulse rounded-md bg-gray-100" />
               ))}
             </div>
-          ) : reminders.length > 0 ? (
+          ) : filteredReminders.length > 0 ? (
             <div className="space-y-4">
-              {reminders.map((reminder) => (
+              {filteredReminders.map((reminder) => (
                 <div
                   key={reminder.id}
                   className={cn(
@@ -405,7 +495,7 @@ const Portability = () => {
                   )}
                 >
                   <div className="flex-1">
-                    <div className="flex items-center">
+                    <div className="flex items-center flex-wrap gap-2">
                       <h3 className={cn(
                         "font-medium",
                         reminder.is_completed && "line-through text-gray-500"
@@ -413,8 +503,13 @@ const Portability = () => {
                         {reminder.title}
                       </h3>
                       {isPastDue(reminder.due_date, reminder.is_completed) && (
-                        <span className="ml-2 text-xs bg-red-100 text-red-800 px-2 py-1 rounded">
+                        <span className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded">
                           Atrasado
+                        </span>
+                      )}
+                      {reminder.status && (
+                        <span className={`text-xs px-2 py-1 rounded ${getStatusColor(reminder.status)}`}>
+                          {getStatusLabel(reminder.status)}
                         </span>
                       )}
                     </div>
@@ -435,6 +530,33 @@ const Portability = () => {
                   </div>
                   
                   <div className="flex space-x-2">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-8"
+                        >
+                          Status <Filter className="ml-2 h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Alterar Status</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => handleUpdateReminderStatus(reminder, "pendente")}>
+                          Pendente
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleUpdateReminderStatus(reminder, "integrado")}>
+                          Integrado
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleUpdateReminderStatus(reminder, "cancelado")}>
+                          Cancelado
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleUpdateReminderStatus(reminder, "redigitado")}>
+                          Redigitado
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                     <Button
                       variant="outline"
                       size="icon"
@@ -462,7 +584,9 @@ const Portability = () => {
             <div className="text-center py-10 border rounded-md">
               <h3 className="text-lg font-medium text-gray-900">Nenhum lembrete</h3>
               <p className="mt-1 text-sm text-gray-500">
-                Crie o seu primeiro lembrete para acompanhamento de portabilidade.
+                {activeTab === "all" 
+                  ? "Crie o seu primeiro lembrete para acompanhamento de portabilidade."
+                  : `Não há lembretes com status "${getStatusLabel(activeTab)}".`}
               </p>
             </div>
           )}
