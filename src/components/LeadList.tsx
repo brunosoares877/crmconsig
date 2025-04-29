@@ -26,22 +26,33 @@ import {
 } from "@/components/ui/sheet";
 import LeadForm from "./LeadForm";
 
-const LeadList = () => {
+interface LeadListProps {
+  searchQuery?: string;
+  status?: string;
+}
+
+const LeadList: React.FC<LeadListProps> = ({ searchQuery = "", status }) => {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [filteredLeads, setFilteredLeads] = useState<Lead[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isOpenSheet, setIsOpenSheet] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("todos");
+  const [internalSearchQuery, setInternalSearchQuery] = useState(searchQuery);
+  const [statusFilter, setStatusFilter] = useState(status || "todos");
   const [activeFilters, setActiveFilters] = useState<Array<{id: string, label: string}>>([]);
   
   const fetchLeads = async () => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from("leads")
-        .select("*")
-        .order("created_at", { ascending: false });
+        .select("*");
+        
+      // Apply status filter from props if provided
+      if (status) {
+        query = query.eq("status", status);
+      }
+      
+      const { data, error } = await query.order("created_at", { ascending: false });
 
       if (error) throw error;
 
@@ -67,26 +78,31 @@ const LeadList = () => {
 
   useEffect(() => {
     fetchLeads();
-  }, []);
+  }, [status]);
+  
+  useEffect(() => {
+    setInternalSearchQuery(searchQuery);
+  }, [searchQuery]);
   
   useEffect(() => {
     let result = [...leads];
     
-    // Apply search filter - agora busca por nome, telefone ou CPF
-    if (searchQuery) {
-      const searchLower = searchQuery.toLowerCase();
+    // Apply search filter - busca por nome, telefone, CPF ou email
+    const searchTerms = internalSearchQuery || searchQuery;
+    if (searchTerms) {
+      const searchLower = searchTerms.toLowerCase();
       result = result.filter(lead => 
         (lead.name && lead.name.toLowerCase().includes(searchLower)) ||
-        (lead.phone && lead.phone.includes(searchQuery)) ||
-        (lead.phone2 && lead.phone2.includes(searchQuery)) ||
-        (lead.phone3 && lead.phone3.includes(searchQuery)) ||
-        (lead.cpf && lead.cpf.includes(searchQuery)) ||
-        (lead.email && lead.email.toLowerCase().includes(searchLower))
+        (lead.phone && lead.phone.includes(searchTerms)) ||
+        (lead.phone2 && lead.phone2.includes(searchTerms)) ||
+        (lead.phone3 && lead.phone3.includes(searchTerms)) ||
+        (lead.cpf && lead.cpf.includes(searchTerms)) ||
+        (lead.email && lead.email?.toLowerCase().includes(searchLower))
       );
     }
     
-    // Apply status filter
-    if (statusFilter && statusFilter !== "todos") {
+    // Apply status filter from internal state if not coming from props
+    if (!status && statusFilter && statusFilter !== "todos") {
       result = result.filter(lead => lead.status === statusFilter);
     }
     
@@ -105,7 +121,7 @@ const LeadList = () => {
     });
     
     setFilteredLeads(result);
-  }, [leads, searchQuery, statusFilter, activeFilters]);
+  }, [leads, searchQuery, internalSearchQuery, statusFilter, activeFilters, status]);
 
   const handleLeadSubmit = (values: any) => {
     console.log("New lead:", values);
@@ -182,8 +198,8 @@ const LeadList = () => {
                 <Input 
                   placeholder="Buscar por nome, telefone ou CPF..." 
                   className="pl-10 border-blue-100 bg-blue-50/50 hover:bg-blue-50 focus:border-blue-200 focus:ring-1 focus:ring-blue-200 transition-all rounded-full"
-                  value={searchQuery} 
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  value={internalSearchQuery} 
+                  onChange={(e) => setInternalSearchQuery(e.target.value)}
                 />
               </div>
               <Select value={statusFilter} onValueChange={setStatusFilter}>

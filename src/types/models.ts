@@ -89,7 +89,7 @@ export interface CommissionRate {
   created_at?: string;
   updated_at?: string;
   user_id?: string | null;
-  name?: string | null;
+  name: string | null;
 }
 
 export interface CommissionTier {
@@ -102,5 +102,5 @@ export interface CommissionTier {
   created_at?: string;
   updated_at?: string;
   user_id?: string | null;
-  name?: string | null;
+  name: string | null;
 }
