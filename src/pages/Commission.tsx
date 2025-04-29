@@ -99,7 +99,7 @@ const CommissionPage = () => {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [commissions, setCommissions] = useState<Commission[]>([]);
   const [filteredCommissions, setFilteredCommissions] = useState<Commission[]>([]);
-  const [leads, setLeads] = useState<Lead[]>([]);
+  const [leads, setLeads] = useState<Partial<Lead>[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("all");
   
@@ -133,7 +133,7 @@ const CommissionPage = () => {
       if (leadsError) throw leadsError;
       
       if (leadsData) {
-        setLeads(leadsData);
+        setLeads(leadsData as Partial<Lead>[]);
       }
       
       const { data, error } = await supabase
@@ -154,7 +154,7 @@ const CommissionPage = () => {
           user_id: item.user_id,
           created_at: item.created_at,
           updated_at: item.updated_at,
-          lead: leadsData?.find(lead => lead.id === item.lead_id) || undefined
+          lead: leadsData?.find(lead => lead.id === item.lead_id) as Lead["lead"]
         }));
         
         setCommissions(mappedData);

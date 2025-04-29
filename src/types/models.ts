@@ -65,10 +65,7 @@ export interface Commission {
   percentage?: number;
   createdAt?: string;
   paidAt?: string;
-  lead?: {
-    name: string;
-    product: string | null;
-  };
+  lead?: Partial<Lead>;
 }
 
 export interface Appointment {
