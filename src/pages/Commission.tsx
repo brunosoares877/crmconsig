@@ -29,11 +29,18 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import Header from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
+import NewCommissionForm from "@/components/commission/NewCommissionForm";
 import type { Commission, Lead } from "@/types/models";
 
 interface Employee {
@@ -102,6 +109,7 @@ const CommissionPage = () => {
   const [leads, setLeads] = useState<Partial<Lead>[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("all");
+  const [newCommissionDialogOpen, setNewCommissionDialogOpen] = useState(false);
   
   const [selectedEmployee, setSelectedEmployee] = useState("all");
   const [selectedStatus, setSelectedStatus] = useState("all");
@@ -269,6 +277,11 @@ const CommissionPage = () => {
   
   const summary = calculateSummary(filteredCommissions);
 
+  const handleNewCommissionSuccess = () => {
+    setNewCommissionDialogOpen(false);
+    fetchData();
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Sidebar />
@@ -284,7 +297,7 @@ const CommissionPage = () => {
                   Configurações
                 </Link>
               </Button>
-              <Button>
+              <Button onClick={() => setNewCommissionDialogOpen(true)}>
                 <Plus className="mr-2 h-4 w-4" />
                 Nova Comissão
               </Button>
@@ -549,6 +562,19 @@ const CommissionPage = () => {
           )}
         </main>
       </div>
+      
+      <Dialog open={newCommissionDialogOpen} onOpenChange={setNewCommissionDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Nova Comissão</DialogTitle>
+          </DialogHeader>
+          <NewCommissionForm 
+            leads={leads.map(lead => ({ id: lead.id || '', name: lead.name || '' }))} 
+            onSuccess={handleNewCommissionSuccess} 
+            onCancel={() => setNewCommissionDialogOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
