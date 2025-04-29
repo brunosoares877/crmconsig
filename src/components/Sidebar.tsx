@@ -60,6 +60,10 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
     setIsOpen(!isMobile);
   }, [isMobile]);
 
+  // Get the dashboard item
+  const dashboardItem = mainMenuItems[0];
+  const DashboardIcon = dashboardItem.icon;
+
   return (
     <>
       {/* Mobile menu toggle */}
@@ -89,16 +93,16 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
             {/* Dashboard item */}
             <li>
               <Link
-                to={mainMenuItems[0].href}
+                to={dashboardItem.href}
                 className={cn(
                   "flex items-center rounded-md px-4 py-3 text-sm transition-colors",
-                  (location.pathname === mainMenuItems[0].href || location.pathname === "/")
+                  (location.pathname === dashboardItem.href || location.pathname === "/")
                     ? "bg-[#133b66] text-white font-medium shadow-sm"
                     : "text-gray-300 hover:bg-[#133b66]/70 hover:text-white"
                 )}
               >
-                <mainMenuItems[0].icon className="mr-3 h-5 w-5" />
-                {mainMenuItems[0].label}
+                <DashboardIcon className="mr-3 h-5 w-5" />
+                {dashboardItem.label}
               </Link>
             </li>
             
@@ -128,6 +132,7 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
                 <CollapsibleContent className="ml-5 mt-1 space-y-1">
                   {leadMenuItems.map((subItem, idx) => {
                     const isSubActive = location.pathname === subItem.href;
+                    const SubItemIcon = subItem.icon;
                     return (
                       <div key={idx} className="group relative">
                         <Link
@@ -139,7 +144,7 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
                               : "text-gray-300 hover:bg-[#1e4976]/70 hover:text-white"
                           )}
                         >
-                          <subItem.icon className="mr-2 h-4 w-4" />
+                          <SubItemIcon className="mr-2 h-4 w-4" />
                           {subItem.label}
                         </Link>
                         <div className="absolute left-full ml-2 top-0 z-50 w-48 rounded-md bg-[#1e4976] p-2 text-xs text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
@@ -156,6 +161,7 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
             {/* Render the rest of the main menu items (skipping Dashboard which was already rendered) */}
             {mainMenuItems.slice(1).map((item, index) => {
               const isActive = location.pathname === item.href;
+              const ItemIcon = item.icon;
               
               return (
                 <li key={index}>
@@ -168,7 +174,7 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
                         : "text-gray-300 hover:bg-[#133b66]/70 hover:text-white"
                     )}
                   >
-                    <item.icon className="mr-3 h-5 w-5" />
+                    <ItemIcon className="mr-3 h-5 w-5" />
                     {item.label}
                   </Link>
                 </li>
