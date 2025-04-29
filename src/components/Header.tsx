@@ -19,18 +19,18 @@ const Header = () => {
   };
   
   return (
-    <header className="border-b bg-white shadow-sm sticky top-0 z-30">
+    <header className="border-b bg-white dark:bg-gray-900 shadow-sm sticky top-0 z-30">
       <div className="container flex h-16 items-center justify-between px-4">
         <div className="flex items-center gap-4">
-          <h2 className="text-lg font-medium text-gray-700 hidden md:block">Leadconsig</h2>
+          <h2 className="text-lg font-medium text-gray-700 dark:text-gray-200 hidden md:block">Leadconsig</h2>
         </div>
 
         <div className="hidden md:flex items-center">
           <div className="relative w-80">
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-blue-500" />
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-primary" />
             <Input 
               placeholder="Buscar por nome, telefone ou CPF..." 
-              className="pl-10 py-2 border-blue-100 bg-blue-50/50 hover:bg-blue-50 focus:border-blue-200 focus:ring-1 focus:ring-blue-200 transition-all rounded-full" 
+              className="pl-10 py-2 border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 hover:bg-gray-50 dark:hover:bg-gray-800 focus:border-primary/20 focus:ring-1 focus:ring-primary/20 transition-all rounded-full" 
             />
           </div>
         </div>

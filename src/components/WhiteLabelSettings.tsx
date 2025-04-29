@@ -46,20 +46,20 @@ const WhiteLabelSettings = () => {
   };
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle>Personalização do Sistema</CardTitle>
+    <Card className="w-full border border-gray-200 dark:border-gray-800 shadow-md">
+      <CardHeader className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
+        <CardTitle className="text-primary">Personalização do Sistema</CardTitle>
         <CardDescription>
           Configure as cores e o logo da sua empresa para personalizar o sistema
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="pt-6">
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-4">
             <div>
-              <Label htmlFor="logo" className="block mb-2">Logo da Empresa</Label>
+              <Label htmlFor="logo" className="block mb-2 font-medium">Logo da Empresa</Label>
               <div className="flex items-center space-x-4">
-                <div className="w-32 h-32 border rounded flex items-center justify-center bg-gray-50">
+                <div className="w-32 h-32 border rounded-md flex items-center justify-center bg-gray-50 dark:bg-gray-900">
                   {logoPreview ? (
                     <img 
                       src={logoPreview} 
@@ -94,9 +94,9 @@ const WhiteLabelSettings = () => {
               </div>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="primary-color">Cor Primária</Label>
+                <Label htmlFor="primary-color" className="font-medium">Cor Primária</Label>
                 <div className="flex space-x-2">
                   <Input
                     type="color"
@@ -109,7 +109,7 @@ const WhiteLabelSettings = () => {
                     type="text"
                     value={primaryColor}
                     onChange={(e) => setPrimaryColor(e.target.value)}
-                    placeholder="#0078D7"
+                    placeholder="#0D2357"
                     className="flex-1"
                   />
                 </div>
@@ -119,7 +119,7 @@ const WhiteLabelSettings = () => {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="secondary-color">Cor Secundária</Label>
+                <Label htmlFor="secondary-color" className="font-medium">Cor Secundária</Label>
                 <div className="flex space-x-2">
                   <Input
                     type="color"
@@ -132,7 +132,7 @@ const WhiteLabelSettings = () => {
                     type="text"
                     value={secondaryColor}
                     onChange={(e) => setSecondaryColor(e.target.value)}
-                    placeholder="#00A2ED"
+                    placeholder="#193366"
                     className="flex-1"
                   />
                 </div>
@@ -143,36 +143,37 @@ const WhiteLabelSettings = () => {
             </div>
           </div>
           
-          <div className="preview-section border rounded-md p-4">
+          <div className="preview-section border rounded-md p-4 bg-gray-50 dark:bg-gray-900">
             <h3 className="text-sm font-medium mb-2">Preview:</h3>
             <div className="flex flex-wrap gap-2">
               <div 
-                className="w-32 h-10 rounded-md flex items-center justify-center text-white"
+                className="w-32 h-10 rounded-md flex items-center justify-center text-white shadow-sm"
                 style={{ backgroundColor: primaryColor }}
               >
                 Cor Primária
               </div>
               <div 
-                className="w-32 h-10 rounded-md flex items-center justify-center text-white"
+                className="w-32 h-10 rounded-md flex items-center justify-center text-white shadow-sm"
                 style={{ backgroundColor: secondaryColor }}
               >
                 Cor Secundária
               </div>
-              <Button variant="default" className="h-10">
+              <Button variant="default" className="h-10 shadow-sm">
                 Botão Primário
               </Button>
-              <Button variant="secondary" className="h-10">
+              <Button variant="secondary" className="h-10 shadow-sm">
                 Botão Secundário
               </Button>
             </div>
           </div>
         </form>
       </CardContent>
-      <CardFooter>
+      <CardFooter className="bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800">
         <Button 
           type="submit" 
           onClick={handleSubmit} 
           disabled={isLoading}
+          className="shadow-sm"
         >
           {isLoading && (
             <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-t-transparent" />

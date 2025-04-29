@@ -20,11 +20,11 @@ const Sidebar = () => {
   };
 
   return (
-    <div className="fixed left-0 top-0 h-full w-16 md:w-64 z-10 bg-white border-r shadow-sm">
-      <div className="h-16 flex items-center justify-center md:justify-start border-b">
+    <div className="fixed left-0 top-0 h-full w-16 md:w-64 z-10 bg-sidebar shadow-lg">
+      <div className="h-16 flex items-center justify-center md:justify-start border-b border-sidebar-border">
         <Link to="/" className="px-4">
-          <h1 className="text-xl font-bold hidden md:block">CRM</h1>
-          <span className="md:hidden">CRM</span>
+          <h1 className="text-xl font-bold hidden md:block text-white">CRM</h1>
+          <span className="md:hidden text-white">CRM</span>
         </Link>
       </div>
       <nav className="p-4">
@@ -34,8 +34,8 @@ const Sidebar = () => {
               to="/dashboard"
               className={`flex items-center ${
                 isActive("/") || isActive("/dashboard")
-                  ? "text-primary bg-primary/10 font-medium"
-                  : "text-gray-600 hover:bg-primary/5"
+                  ? "bg-sidebar-accent text-white font-medium"
+                  : "text-gray-300 hover:bg-sidebar-accent/50"
               } p-2 rounded-md transition-colors`}
             >
               <ListCheck className="h-5 w-5 mr-3" />
@@ -47,8 +47,8 @@ const Sidebar = () => {
               to="/leads"
               className={`flex items-center ${
                 isActive("/leads")
-                  ? "text-primary bg-primary/10 font-medium"
-                  : "text-gray-600 hover:bg-primary/5"
+                  ? "bg-sidebar-accent text-white font-medium"
+                  : "text-gray-300 hover:bg-sidebar-accent/50"
               } p-2 rounded-md transition-colors`}
             >
               <List className="h-5 w-5 mr-3" />
@@ -60,8 +60,8 @@ const Sidebar = () => {
               to="/reminders"
               className={`flex items-center ${
                 isActive("/reminders")
-                  ? "text-primary bg-primary/10 font-medium"
-                  : "text-gray-600 hover:bg-primary/5"
+                  ? "bg-sidebar-accent text-white font-medium"
+                  : "text-gray-300 hover:bg-sidebar-accent/50"
               } p-2 rounded-md transition-colors`}
             >
               <Calendar className="h-5 w-5 mr-3" />
@@ -73,8 +73,8 @@ const Sidebar = () => {
               to="/reminders/calendar"
               className={`flex items-center ${
                 isActive("/reminders/calendar")
-                  ? "text-primary bg-primary/10 font-medium"
-                  : "text-gray-600 hover:bg-primary/5"
+                  ? "bg-sidebar-accent text-white font-medium"
+                  : "text-gray-300 hover:bg-sidebar-accent/50"
               } p-2 rounded-md transition-colors`}
             >
               <CalendarDays className="h-5 w-5 mr-3" />
@@ -86,8 +86,8 @@ const Sidebar = () => {
               to="/leads/scheduled"
               className={`flex items-center ${
                 isActive("/leads/scheduled")
-                  ? "text-primary bg-primary/10 font-medium"
-                  : "text-gray-600 hover:bg-primary/5"
+                  ? "bg-sidebar-accent text-white font-medium"
+                  : "text-gray-300 hover:bg-sidebar-accent/50"
               } p-2 rounded-md transition-colors`}
             >
               <CalendarPlus className="h-5 w-5 mr-3" />
@@ -99,8 +99,8 @@ const Sidebar = () => {
               to="/portability"
               className={`flex items-center ${
                 isActive("/portability")
-                  ? "text-primary bg-primary/10 font-medium"
-                  : "text-gray-600 hover:bg-primary/5"
+                  ? "bg-sidebar-accent text-white font-medium"
+                  : "text-gray-300 hover:bg-sidebar-accent/50"
               } p-2 rounded-md transition-colors`}
             >
               <ListCheck className="h-5 w-5 mr-3" />
@@ -112,8 +112,8 @@ const Sidebar = () => {
               to="/commission"
               className={`flex items-center ${
                 isActive("/commission")
-                  ? "text-primary bg-primary/10 font-medium"
-                  : "text-gray-600 hover:bg-primary/5"
+                  ? "bg-sidebar-accent text-white font-medium"
+                  : "text-gray-300 hover:bg-sidebar-accent/50"
               } p-2 rounded-md transition-colors`}
             >
               <DollarSign className="h-5 w-5 mr-3" />
