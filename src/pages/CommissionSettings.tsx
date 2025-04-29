@@ -58,7 +58,7 @@ const CommissionSettings = () => {
           created_at: rate.created_at,
           updated_at: rate.updated_at,
           user_id: rate.user_id,
-          name: rate.name || ""
+          name: rate.name || null
         }));
         setCommissionRates(typedData);
       } else {
@@ -67,7 +67,7 @@ const CommissionSettings = () => {
           product: product.id as CommissionRate["product"],
           percentage: 0,
           active: true,
-          name: ""
+          name: null
         }));
         setCommissionRates(defaultRates);
       }
@@ -100,7 +100,7 @@ const CommissionSettings = () => {
           created_at: tier.created_at,
           updated_at: tier.updated_at,
           user_id: tier.user_id,
-          name: tier.name || ""
+          name: tier.name || null
         }));
         setCommissionTiers(typedData);
       }
@@ -154,7 +154,7 @@ const CommissionSettings = () => {
               product: rate.product,
               percentage: rate.percentage,
               active: rate.active,
-              name: rate.name || "",
+              name: rate.name || null,
               updated_at: new Date().toISOString(),
             },
             { onConflict: "id" }
@@ -181,7 +181,7 @@ const CommissionSettings = () => {
               max_amount: tier.max_amount,
               percentage: tier.percentage,
               active: tier.active,
-              name: tier.name || "",
+              name: tier.name || null,
               updated_at: new Date().toISOString(),
             },
             { onConflict: "id" }
@@ -218,7 +218,7 @@ const CommissionSettings = () => {
           min_amount: minAmount,
           max_amount: maxAmount,
           percentage: percentage,
-          name: newTier.name || "",
+          name: newTier.name || null,
           active: true,
         })
         .select();
@@ -407,6 +407,7 @@ const CommissionSettings = () => {
                                 <div className="col-span-1 flex items-center">
                                   <Input
                                     type="number"
+                                    placeholder="%"
                                     min="0"
                                     max="100"
                                     step="0.5"
