@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
@@ -34,7 +33,7 @@ import Sidebar from "@/components/Sidebar";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
-import { Commission } from "@/types/models";
+import type { Commission } from "@/types/models";
 
 interface Employee {
   id: string;
@@ -95,14 +94,13 @@ const getPeriodLabel = (periodValue: string) => {
   return period ? period.label : periodValue;
 };
 
-const Commission = () => {
+const CommissionPage = () => {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [commissions, setCommissions] = useState<Commission[]>([]);
   const [filteredCommissions, setFilteredCommissions] = useState<Commission[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("all");
   
-  // Filters
   const [selectedEmployee, setSelectedEmployee] = useState("all");
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [selectedProduct, setSelectedProduct] = useState("all");
@@ -118,7 +116,6 @@ const Commission = () => {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      // Temporary employees data (in a real app, fetch from database)
       setEmployees([
         { id: "all", name: "Todos os Funcionários" },
         { id: "jose", name: "José Silva" },
@@ -126,7 +123,6 @@ const Commission = () => {
         { id: "joao", name: "João Santos" }
       ]);
       
-      // Fetch commissions with lead names
       const { data, error } = await supabase
         .from("commissions")
         .select(`
@@ -173,7 +169,6 @@ const Commission = () => {
   const applyFilters = () => {
     let filtered = [...commissions];
     
-    // Filter by tab first
     if (activeTab === "weekly") {
       filtered = filtered.filter(commission => commission.payment_period === "weekly");
     } else if (activeTab === "biweekly") {
@@ -182,27 +177,22 @@ const Commission = () => {
       filtered = filtered.filter(commission => commission.payment_period === "monthly");
     }
     
-    // Filter by employee
     if (selectedEmployee !== "all") {
       filtered = filtered.filter(commission => commission.id === selectedEmployee);
     }
     
-    // Filter by status
     if (selectedStatus !== "all") {
       filtered = filtered.filter(commission => commission.status === selectedStatus);
     }
     
-    // Filter by product
     if (selectedProduct !== "all") {
       filtered = filtered.filter(commission => commission.product === selectedProduct);
     }
     
-    // Filter by payment period
     if (selectedPeriod !== "all") {
       filtered = filtered.filter(commission => commission.payment_period === selectedPeriod);
     }
     
-    // Filter by date range
     if (dateRange.from) {
       filtered = filtered.filter(commission => {
         const commissionDate = new Date(commission.created_at || "");
@@ -213,7 +203,6 @@ const Commission = () => {
     if (dateRange.to) {
       filtered = filtered.filter(commission => {
         const commissionDate = new Date(commission.created_at || "");
-        // Add one day to the end date to include the entire day
         const endDate = new Date(dateRange.to!);
         endDate.setDate(endDate.getDate() + 1);
         return commissionDate <= endDate;
@@ -231,7 +220,6 @@ const Commission = () => {
     setDateRange({ from: undefined, to: undefined });
   };
 
-  // Calculate summary statistics
   const calculateSummary = (commissions: Commission[]) => {
     const total = commissions.reduce((sum, commission) => sum + commission.amount, 0);
     
@@ -334,7 +322,6 @@ const Commission = () => {
             </Card>
           </div>
           
-          {/* Filters */}
           <div className="bg-white p-4 rounded-md border mb-6">
             <div className="flex items-center gap-2 mb-4">
               <Filter className="h-5 w-5" />
@@ -449,7 +436,6 @@ const Commission = () => {
             </div>
           </div>
           
-          {/* Results */}
           {isLoading ? (
             <div className="space-y-4">
               <div className="h-12 animate-pulse rounded-md bg-gray-100" />
@@ -520,4 +506,4 @@ const Commission = () => {
   );
 };
 
-export default Commission;
+export default CommissionPage;
