@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { 
@@ -34,8 +35,10 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
   const [isOpen, setIsOpen] = React.useState(!isMobile);
   const [leadsOpen, setLeadsOpen] = React.useState(true);
 
+  // Reordered menu items to place Leads directly after Dashboard
   const mainMenuItems = [
     { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
+    // Leads collapsible menu will be rendered separately between Dashboard and Reminders
     { icon: Bell, label: "Lembretes", href: "/reminders" },
     { icon: ArrowRight, label: "Portabilidade", href: "/portability" },
     { icon: DollarSign, label: "Comissão", href: "/commission" },
@@ -83,28 +86,23 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
 
         <nav className="mt-6 px-2">
           <ul className="space-y-1">
-            {mainMenuItems.map((item, index) => {
-              const isActive = location.pathname === item.href || 
-                               (item.href === "/dashboard" && location.pathname === "/");
-              
-              return (
-                <li key={index}>
-                  <Link
-                    to={item.href}
-                    className={cn(
-                      "flex items-center rounded-md px-4 py-3 text-sm transition-colors",
-                      isActive
-                        ? "bg-[#133b66] text-white font-medium shadow-sm"
-                        : "text-gray-300 hover:bg-[#133b66]/70 hover:text-white"
-                    )}
-                  >
-                    <item.icon className="mr-3 h-5 w-5" />
-                    {item.label}
-                  </Link>
-                </li>
-              );
-            })}
-
+            {/* Dashboard item */}
+            <li>
+              <Link
+                to={mainMenuItems[0].href}
+                className={cn(
+                  "flex items-center rounded-md px-4 py-3 text-sm transition-colors",
+                  (location.pathname === mainMenuItems[0].href || location.pathname === "/")
+                    ? "bg-[#133b66] text-white font-medium shadow-sm"
+                    : "text-gray-300 hover:bg-[#133b66]/70 hover:text-white"
+                )}
+              >
+                <mainMenuItems[0].icon className="mr-3 h-5 w-5" />
+                {mainMenuItems[0].label}
+              </Link>
+            </li>
+            
+            {/* Leads collapsible (moved up to be after Dashboard) */}
             <li>
               <Collapsible 
                 open={leadsOpen} 
@@ -154,6 +152,28 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
                 </CollapsibleContent>
               </Collapsible>
             </li>
+            
+            {/* Render the rest of the main menu items (skipping Dashboard which was already rendered) */}
+            {mainMenuItems.slice(1).map((item, index) => {
+              const isActive = location.pathname === item.href;
+              
+              return (
+                <li key={index}>
+                  <Link
+                    to={item.href}
+                    className={cn(
+                      "flex items-center rounded-md px-4 py-3 text-sm transition-colors",
+                      isActive
+                        ? "bg-[#133b66] text-white font-medium shadow-sm"
+                        : "text-gray-300 hover:bg-[#133b66]/70 hover:text-white"
+                    )}
+                  >
+                    <item.icon className="mr-3 h-5 w-5" />
+                    {item.label}
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
         </nav>
 
