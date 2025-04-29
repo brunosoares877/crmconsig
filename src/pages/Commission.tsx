@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
@@ -35,7 +34,7 @@ import Sidebar from "@/components/Sidebar";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
-import type { Commission } from "@/types/models";
+import type { Commission, Lead } from "@/types/models";
 
 interface Employee {
   id: string;
@@ -100,6 +99,7 @@ const CommissionPage = () => {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [commissions, setCommissions] = useState<Commission[]>([]);
   const [filteredCommissions, setFilteredCommissions] = useState<Commission[]>([]);
+  const [leads, setLeads] = useState<Lead[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("all");
   
@@ -126,12 +126,19 @@ const CommissionPage = () => {
         { id: "joao", name: "João Santos" }
       ]);
       
+      const { data: leadsData, error: leadsError } = await supabase
+        .from("leads")
+        .select("id, name, product");
+      
+      if (leadsError) throw leadsError;
+      
+      if (leadsData) {
+        setLeads(leadsData);
+      }
+      
       const { data, error } = await supabase
         .from("commissions")
-        .select(`
-          *,
-          lead:leads(name, product)
-        `)
+        .select("*")
         .order("created_at", { ascending: false });
         
       if (error) throw error;
@@ -147,7 +154,7 @@ const CommissionPage = () => {
           user_id: item.user_id,
           created_at: item.created_at,
           updated_at: item.updated_at,
-          lead: item.lead
+          lead: leadsData?.find(lead => lead.id === item.lead_id) || undefined
         }));
         
         setCommissions(mappedData);
@@ -185,7 +192,10 @@ const CommissionPage = () => {
     }
     
     if (selectedProduct !== "all") {
-      filtered = filtered.filter(commission => commission.product === selectedProduct);
+      filtered = filtered.filter(commission => 
+        commission.product === selectedProduct || 
+        (commission.lead?.product === selectedProduct && !commission.product)
+      );
     }
     
     if (selectedPeriod !== "all") {
@@ -223,12 +233,8 @@ const CommissionPage = () => {
   };
   
   useEffect(() => {
-    if (activeTab !== "all" || selectedEmployee !== "all" || selectedStatus !== "all" || 
-        selectedProduct !== "all" || selectedPeriod !== "all" || 
-        dateRange.from || dateRange.to) {
+    if (commissions.length > 0) {
       applyFilters();
-    } else {
-      setFilteredCommissions(commissions);
     }
   }, [activeTab, selectedEmployee, selectedStatus, selectedProduct, selectedPeriod, dateRange, commissions]);
   
