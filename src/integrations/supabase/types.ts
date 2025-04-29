@@ -254,6 +254,7 @@ export type Database = {
           is_completed: boolean | null
           lead_id: string | null
           notes: string | null
+          status: string | null
           title: string
           updated_at: string | null
           user_id: string
@@ -265,6 +266,7 @@ export type Database = {
           is_completed?: boolean | null
           lead_id?: string | null
           notes?: string | null
+          status?: string | null
           title: string
           updated_at?: string | null
           user_id: string
@@ -276,6 +278,7 @@ export type Database = {
           is_completed?: boolean | null
           lead_id?: string | null
           notes?: string | null
+          status?: string | null
           title?: string
           updated_at?: string | null
           user_id?: string

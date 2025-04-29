@@ -38,6 +38,7 @@ export interface Reminder {
   employeeId: string;
   leadId?: string;
   completed: boolean;
+  status?: string;
 }
 
 export interface Commission {
