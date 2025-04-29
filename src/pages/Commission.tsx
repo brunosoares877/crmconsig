@@ -1,8 +1,9 @@
+
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Calendar as CalendarIcon, Plus, Settings, Filter, BarChart } from "lucide-react";
+import { Calendar as CalendarIcon, Plus, Settings, Filter, BarChart, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -28,6 +29,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import Header from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
 import { toast } from "sonner";
@@ -105,6 +107,7 @@ const CommissionPage = () => {
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [selectedProduct, setSelectedProduct] = useState("all");
   const [selectedPeriod, setSelectedPeriod] = useState("all");
+  const [searchTerm, setSearchTerm] = useState("");
   const [dateRange, setDateRange] = useState<{
     from: Date | undefined;
     to: Date | undefined;
@@ -162,10 +165,6 @@ const CommissionPage = () => {
     fetchData();
   }, []);
   
-  useEffect(() => {
-    applyFilters();
-  }, [selectedEmployee, selectedStatus, selectedProduct, selectedPeriod, dateRange, commissions, activeTab]);
-
   const applyFilters = () => {
     let filtered = [...commissions];
     
@@ -193,6 +192,13 @@ const CommissionPage = () => {
       filtered = filtered.filter(commission => commission.payment_period === selectedPeriod);
     }
     
+    if (searchTerm.trim() !== "") {
+      filtered = filtered.filter(commission => {
+        const clientName = commission.lead?.name?.toLowerCase() || '';
+        return clientName.includes(searchTerm.toLowerCase());
+      });
+    }
+    
     if (dateRange.from) {
       filtered = filtered.filter(commission => {
         const commissionDate = new Date(commission.created_at || "");
@@ -212,11 +218,26 @@ const CommissionPage = () => {
     setFilteredCommissions(filtered);
   };
   
+  const handleSearch = () => {
+    applyFilters();
+  };
+  
+  useEffect(() => {
+    if (activeTab !== "all" || selectedEmployee !== "all" || selectedStatus !== "all" || 
+        selectedProduct !== "all" || selectedPeriod !== "all" || 
+        dateRange.from || dateRange.to) {
+      applyFilters();
+    } else {
+      setFilteredCommissions(commissions);
+    }
+  }, [activeTab, selectedEmployee, selectedStatus, selectedProduct, selectedPeriod, dateRange, commissions]);
+  
   const resetFilters = () => {
     setSelectedEmployee("all");
     setSelectedStatus("all");
     setSelectedProduct("all");
     setSelectedPeriod("all");
+    setSearchTerm("");
     setDateRange({ from: undefined, to: undefined });
   };
 
@@ -327,7 +348,7 @@ const CommissionPage = () => {
               <Filter className="h-5 w-5" />
               <h2 className="font-medium">Filtros</h2>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
               <div>
                 <label className="text-sm text-gray-500 mb-1 block">Funcionário</label>
                 <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
@@ -428,11 +449,27 @@ const CommissionPage = () => {
                 </div>
               </div>
               
-              <div className="flex items-end">
-                <Button variant="outline" onClick={resetFilters}>
-                  Limpar Filtros
-                </Button>
+              <div>
+                <label className="text-sm text-gray-500 mb-1 block">Nome do Cliente</label>
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Buscar por nome"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="flex-1"
+                  />
+                </div>
               </div>
+            </div>
+            
+            <div className="flex justify-between mt-4">
+              <Button variant="outline" onClick={resetFilters}>
+                Limpar Filtros
+              </Button>
+              <Button onClick={handleSearch}>
+                <Search className="mr-2 h-4 w-4" />
+                Buscar
+              </Button>
             </div>
           </div>
           
