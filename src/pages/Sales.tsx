@@ -7,6 +7,8 @@ import SalesHeader from "@/components/sales/SalesHeader";
 import SubscriptionPlans from "@/components/sales/SubscriptionPlans";
 import FeaturesList from "@/components/sales/FeaturesList";
 import Testimonials from "@/components/sales/Testimonials";
+import WhatsAppButton from "@/components/WhatsAppButton";
+
 const Sales = () => {
   const navigate = useNavigate();
   const handleStartTrial = () => {
@@ -14,6 +16,13 @@ const Sales = () => {
   };
   return <div className="min-h-screen flex flex-col bg-gradient-to-b from-white to-blue-50">
       <SalesHeader />
+      
+      {/* WhatsApp Floating Button */}
+      <WhatsAppButton 
+        phoneNumber="5571987648829" 
+        message="Olá! Gostaria de saber mais sobre o sistema LeadConsig"
+        variant="floating" 
+      />
       
       <main className="flex-1">
         {/* Hero Section with 7-day free trial highlight */}
@@ -29,6 +38,11 @@ const Sales = () => {
                 Começar Teste Gratuito <ArrowRight className="ml-2" />
               </Button>
               
+              <WhatsAppButton 
+                phoneNumber="5571987648829" 
+                message="Olá! Gostaria de saber mais sobre o sistema LeadConsig"
+                label="Falar com Consultor" 
+              />
             </div>
           </div>
           <div className="md:w-1/2">
@@ -81,9 +95,16 @@ const Sales = () => {
             <p className="text-xl mb-8 max-w-2xl mx-auto text-slate-950">
               Experimente nosso CRM por 7 dias gratuitamente e veja como podemos ajudar sua empresa a crescer.
             </p>
-            <Button onClick={handleStartTrial} size="lg" className="text-lg px-8 py-6 bg-blue-600 hover:bg-blue-700">
-              Começar agora mesmo <ArrowRight className="ml-2" />
-            </Button>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <Button onClick={handleStartTrial} size="lg" className="text-lg px-8 py-6 bg-blue-600 hover:bg-blue-700">
+                Começar agora mesmo <ArrowRight className="ml-2" />
+              </Button>
+              <WhatsAppButton 
+                phoneNumber="5571987648829" 
+                message="Olá! Tenho dúvidas sobre o LeadConsig"
+                label="Falar com Suporte" 
+              />
+            </div>
           </div>
         </section>
       </main>

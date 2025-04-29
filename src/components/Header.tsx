@@ -1,49 +1,50 @@
 
 import React from "react";
-import { Bell, Search, LogOut } from "lucide-react";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { Bell, Menu, Settings, User } from "lucide-react";
+import { useSidebar } from "@/components/ui/sidebar";
+import { useMediaQuery } from "@/hooks/use-mobile";
+import SupportButton from "@/components/SupportButton";
 
 const Header = () => {
-  const { signOut, user } = useAuth();
   const navigate = useNavigate();
-  
-  const handleSignOut = () => {
-    if (signOut) {
-      signOut();
-    } else {
-      navigate("/login");
-    }
-  };
-  
+  const sidebar = useSidebar();
+  const isMobile = useMediaQuery("(max-width: 768px)");
+
   return (
-    <header className="border-b bg-white dark:bg-gray-900 shadow-sm sticky top-0 z-30">
-      <div className="container flex h-16 items-center justify-between px-4">
-        <div className="flex items-center gap-4">
-          <h2 className="text-lg font-medium text-gray-700 dark:text-gray-200 hidden md:block">Leadconsig</h2>
-        </div>
-
-        <div className="hidden md:flex items-center">
-          <div className="relative w-80">
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-primary" />
-            <Input 
-              placeholder="Buscar por nome, telefone ou CPF..." 
-              className="pl-10 py-2 border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 hover:bg-gray-50 dark:hover:bg-gray-800 focus:border-primary/20 focus:ring-1 focus:ring-primary/20 transition-all rounded-full" 
-            />
-          </div>
-        </div>
-
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" className="relative">
-            <Bell className="h-5 w-5" />
-            <span className="absolute right-1 top-1 flex h-2 w-2 rounded-full bg-red-500"></span>
+    <header className="border-b py-3 px-4 flex justify-between items-center bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="flex items-center gap-2">
+        {isMobile && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => sidebar?.toggle()}
+          >
+            <Menu />
           </Button>
-          <Button variant="ghost" size="icon" onClick={handleSignOut}>
-            <LogOut className="h-5 w-5" />
-          </Button>
-        </div>
+        )}
+      </div>
+
+      <div className="flex items-center gap-2">
+        <SupportButton />
+        <Button variant="ghost" size="icon">
+          <Bell />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => navigate('/settings')}
+        >
+          <Settings />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => navigate('/profile')}
+        >
+          <User />
+        </Button>
       </div>
     </header>
   );
