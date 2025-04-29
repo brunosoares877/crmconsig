@@ -13,8 +13,8 @@ import {
   FolderPlus,
   Import,
   Calendar,
-  Clock,
-  CheckSquare
+  CheckSquare,
+  Clock
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -39,12 +39,10 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
   // Dashboard menu item
   const dashboardItem = { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" };
   
-  // Reminders submenu items
+  // Reminders submenu items - simplified as requested
   const reminderMenuItems = [
     { icon: Bell, label: "Todos", href: "/reminders", description: "Ver todos os lembretes" },
-    { icon: Calendar, label: "Calendário", href: "/reminders/calendar", description: "Visualizar lembretes em um calendário" },
-    { icon: Clock, label: "Agendamento", href: "/reminders/schedule", description: "Agendar novos lembretes" },
-    { icon: CheckSquare, label: "Tarefas", href: "/reminders/tasks", description: "Verificar tarefas pendentes" },
+    { icon: CheckSquare, label: "Gestão", href: "/reminders/management", description: "Filtrar por status dos lembretes" },
   ];
 
   // Other main menu items
@@ -167,7 +165,7 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
               </Collapsible>
             </li>
             
-            {/* Reminders collapsible - New expanded section */}
+            {/* Reminders collapsible - Simplified as requested */}
             <li>
               <Collapsible 
                 open={remindersOpen} 
