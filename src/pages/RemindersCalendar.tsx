@@ -31,11 +31,13 @@ interface Reminder {
   due_date: string;
   is_completed: boolean;
   created_at: string;
+  bank?: string | null;
 }
 
 interface Lead {
   id: string;
   name: string;
+  bank?: string;
 }
 
 interface DayWithReminders {
@@ -56,7 +58,7 @@ const RemindersCalendar = () => {
       // Fetch leads for the mapping
       const { data: leadsData, error: leadsError } = await supabase
         .from("leads")
-        .select("id, name")
+        .select("id, name, bank")
         .order("name");
         
       if (leadsError) throw leadsError;
@@ -135,6 +137,33 @@ const RemindersCalendar = () => {
     if (!id) return "Nenhum cliente";
     const lead = leads.find(l => l.id === id);
     return lead ? lead.name : "Cliente não encontrado";
+  };
+
+  const getBankName = (bankCode: string | undefined) => {
+    switch (bankCode) {
+      case "caixa": return "Caixa Econômica Federal";
+      case "bb": return "Banco do Brasil";
+      case "itau": return "Itaú";
+      case "bradesco": return "Bradesco";
+      case "santander": return "Santander";
+      case "c6": return "C6 Bank";
+      case "brb": return "BRB - Banco de Brasília";
+      case "bmg": return "BMG";
+      case "pan": return "Banco Pan";
+      case "ole": return "Banco Olé";
+      case "daycoval": return "Daycoval";
+      case "mercantil": return "Mercantil";
+      case "cetelem": return "Cetelem";
+      case "safra": return "Safra";
+      case "inter": return "Inter";
+      case "original": return "Original";
+      case "facta": return "Facta";
+      case "bonsucesso": return "Bonsucesso";
+      case "banrisul": return "Banrisul";
+      case "sicoob": return "Sicoob";
+      case "outro": return "Outro";
+      default: return "Banco não especificado";
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -267,6 +296,11 @@ const RemindersCalendar = () => {
                           <p className="text-sm text-gray-500 mt-1">
                             Cliente: {getLeadName(reminder.lead_id)}
                           </p>
+                          {reminder.bank && (
+                            <p className="text-sm text-gray-500">
+                              Banco: {getBankName(reminder.bank)}
+                            </p>
+                          )}
                           <div className="flex items-center mt-1 text-sm text-gray-500">
                             <CalendarIcon className="h-4 w-4 mr-1" />
                             <span>{formatDate(reminder.due_date)} às {formatTime(reminder.due_date)}</span>

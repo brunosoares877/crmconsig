@@ -43,6 +43,7 @@ interface Reminder {
   due_date: string;
   is_completed: boolean;
   created_at: string;
+  bank?: string | null;
 }
 
 interface Lead {
@@ -63,6 +64,7 @@ const Portability = () => {
   const [leadId, setLeadId] = useState("");
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [notes, setNotes] = useState("");
+  const [bankFilter, setBankFilter] = useState("");
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -107,13 +109,23 @@ const Portability = () => {
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) throw new Error("Usuário não autenticado");
       
+      // Get the bank from the selected lead
+      let bank = null;
+      if (leadId) {
+        const selectedLead = leads.find(lead => lead.id === leadId);
+        bank = selectedLead?.bank || null;
+      } else if (bankFilter) {
+        bank = bankFilter;
+      }
+      
       const { error } = await supabase.from("reminders").insert({
         title,
         lead_id: leadId || null,
         notes,
         due_date: date?.toISOString(),
         is_completed: false,
-        user_id: userData.user.id // Add the required user_id field
+        user_id: userData.user.id,
+        bank
       });
       
       if (error) throw error;
@@ -172,6 +184,7 @@ const Portability = () => {
     setLeadId("");
     setDate(new Date());
     setNotes("");
+    setBankFilter("");
   };
 
   const getLeadName = (id: string | null) => {
@@ -254,7 +267,16 @@ const Portability = () => {
                   
                   <div className="space-y-2">
                     <Label htmlFor="lead">Cliente</Label>
-                    <Select value={leadId} onValueChange={setLeadId}>
+                    <Select value={leadId} onValueChange={(value) => {
+                      setLeadId(value);
+                      // Clear bank filter when selecting a client that already has a bank
+                      if (value) {
+                        const selectedLead = leads.find(lead => lead.id === value);
+                        if (selectedLead?.bank) {
+                          setBankFilter("");
+                        }
+                      }
+                    }}>
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione um cliente (opcional)" />
                       </SelectTrigger>
@@ -267,6 +289,43 @@ const Portability = () => {
                       </SelectContent>
                     </Select>
                   </div>
+                  
+                  {!leadId && (
+                    <div className="space-y-2">
+                      <Label htmlFor="bank">Banco</Label>
+                      <Select value={bankFilter} onValueChange={setBankFilter}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione um banco (opcional)" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {/* Bancos principais */}
+                          <SelectItem value="caixa">Caixa Econômica Federal</SelectItem>
+                          <SelectItem value="bb">Banco do Brasil</SelectItem>
+                          <SelectItem value="itau">Itaú</SelectItem>
+                          <SelectItem value="bradesco">Bradesco</SelectItem>
+                          <SelectItem value="santander">Santander</SelectItem>
+                          <SelectItem value="c6">C6 Bank</SelectItem>
+                          <SelectItem value="brb">BRB - Banco de Brasília</SelectItem>
+                          
+                          {/* Todos os bancos da Rede */}
+                          <SelectItem value="bmg">BMG</SelectItem>
+                          <SelectItem value="pan">Banco Pan</SelectItem>
+                          <SelectItem value="ole">Banco Olé</SelectItem>
+                          <SelectItem value="daycoval">Daycoval</SelectItem>
+                          <SelectItem value="mercantil">Mercantil</SelectItem>
+                          <SelectItem value="cetelem">Cetelem</SelectItem>
+                          <SelectItem value="safra">Safra</SelectItem>
+                          <SelectItem value="inter">Inter</SelectItem>
+                          <SelectItem value="original">Original</SelectItem>
+                          <SelectItem value="facta">Facta</SelectItem>
+                          <SelectItem value="bonsucesso">Bonsucesso</SelectItem>
+                          <SelectItem value="banrisul">Banrisul</SelectItem>
+                          <SelectItem value="sicoob">Sicoob</SelectItem>
+                          <SelectItem value="outro">Outro</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                   
                   <div className="space-y-2">
                     <Label htmlFor="date">Data*</Label>
@@ -362,6 +421,11 @@ const Portability = () => {
                     <p className="text-sm text-gray-500 mt-1">
                       Cliente: {getLeadName(reminder.lead_id)}
                     </p>
+                    {reminder.bank && (
+                      <p className="text-sm text-gray-500">
+                        Banco: {getBankName(reminder.bank)}
+                      </p>
+                    )}
                     <p className="text-sm text-gray-500">
                       Data: {formatDate(reminder.due_date)}
                     </p>
