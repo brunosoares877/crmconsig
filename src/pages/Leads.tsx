@@ -97,7 +97,7 @@ const Leads = () => {
               <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100">Gestão de Leads</h1>
               <p className="text-muted-foreground mt-1">Gerencie e acompanhe todos os seus leads em um só lugar</p>
             </div>
-            <div className="mt-4 md:mt-0 relative">
+            <div className="mt-4 md:mt-0 relative w-full md:w-auto">
               <Search className="absolute left-3 top-2.5 h-4 w-4 text-blue-500" />
               <Input 
                 placeholder="Buscar por nome, telefone ou CPF..." 
@@ -164,23 +164,23 @@ const Leads = () => {
                   </CardContent>
                 </Card>
               </div>
-              <LeadList />
+              <LeadList searchQuery={searchQuery} />
             </TabsContent>
             
             <TabsContent value="new">
-              <LeadList />
+              <LeadList searchQuery={searchQuery} status="novo" />
             </TabsContent>
             
             <TabsContent value="contacted">
-              <LeadList />
+              <LeadList searchQuery={searchQuery} status="contatado" />
             </TabsContent>
             
             <TabsContent value="qualified">
-              <LeadList />
+              <LeadList searchQuery={searchQuery} status="qualificado" />
             </TabsContent>
             
             <TabsContent value="converted">
-              <LeadList />
+              <LeadList searchQuery={searchQuery} status="convertido" />
             </TabsContent>
           </Tabs>
         </main>

@@ -59,6 +59,9 @@ const CommissionSettings = () => {
         error
       } = await supabase.from("commission_rates").select("*").order("product");
       if (error) throw error;
+      
+      console.log("Commission rates data:", data);
+      
       if (data && data.length > 0) {
         const typedData: CommissionRate[] = data.map(rate => ({
           id: rate.id,
@@ -96,6 +99,9 @@ const CommissionSettings = () => {
         error
       } = await supabase.from("commission_tiers").select("*").order("product").order("min_amount");
       if (error) throw error;
+      
+      console.log("Commission tiers data:", data);
+      
       if (data && data.length > 0) {
         const typedData: CommissionTier[] = data.map(tier => ({
           id: tier.id,
@@ -161,6 +167,7 @@ const CommissionSettings = () => {
 
   const saveCommissionRates = async () => {
     try {
+      console.log("Saving commission rates:", commissionRates);
       for (const rate of commissionRates) {
         const {
           error
@@ -184,6 +191,7 @@ const CommissionSettings = () => {
 
   const saveCommissionTiers = async () => {
     try {
+      console.log("Saving commission tiers:", commissionTiers);
       for (const tier of commissionTiers) {
         const {
           error
@@ -249,6 +257,7 @@ const CommissionSettings = () => {
       }
       
       if (data) {
+        console.log("New tier created:", data);
         setCommissionTiers([...commissionTiers, data[0] as CommissionTier]);
         setNewTier({
           min_amount: "",
