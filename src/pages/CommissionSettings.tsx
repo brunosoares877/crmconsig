@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/Header";
@@ -226,7 +227,8 @@ const CommissionSettings = () => {
         min_amount: minAmount,
         max_amount: maxAmount,
         percentage: percentage,
-        active: true
+        active: true,
+        name: newTier.name || null
       });
       
       const {
@@ -237,7 +239,8 @@ const CommissionSettings = () => {
         min_amount: minAmount,
         max_amount: maxAmount,
         percentage: percentage,
-        active: true
+        active: true,
+        name: newTier.name || null
       }).select();
       
       if (error) {
