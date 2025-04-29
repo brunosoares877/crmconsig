@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -107,6 +108,19 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete }) => {
     }
   };
 
+  const openWhatsApp = (phoneNumber: string) => {
+    // Remove any non-digit characters from phone number
+    const formattedNumber = phoneNumber.replace(/\D/g, "");
+    
+    // Check if the number starts with country code, if not add Brazil's code
+    const numberWithCountryCode = formattedNumber.startsWith("55") 
+      ? formattedNumber 
+      : `55${formattedNumber}`;
+    
+    // Open WhatsApp web with the phone number
+    window.open(`https://wa.me/${numberWithCountryCode}`, "_blank");
+  };
+
   return (
     <Card className="overflow-hidden transition-all hover:shadow-md animate-fade-in">
       <CardContent className="p-4">
@@ -118,20 +132,52 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete }) => {
               <span>{lead.cpf || "CPF não cadastrado"}</span>
             </div>
             <div className="flex flex-col gap-1">
-              <div className="flex items-center text-sm text-muted-foreground">
-                <Phone className="mr-1 h-3.5 w-3.5" />
-                <span>{lead.phone}</span>
-              </div>
+              {lead.phone && (
+                <div className="flex items-center text-sm text-muted-foreground">
+                  <Phone className="mr-1 h-3.5 w-3.5" />
+                  <span className="mr-2">{lead.phone}</span>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-6 w-6 p-0 rounded-full bg-green-500 hover:bg-green-600"
+                    onClick={() => openWhatsApp(lead.phone || "")}
+                  >
+                    <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 text-white" fill="currentColor">
+                      <path d="M17.6 6.32A7.85 7.85 0 0 0 12.05 4a7.94 7.94 0 0 0-6.88 11.94L4 20l4.06-1.17A7.93 7.93 0 0 0 20 12.05a7.83 7.83 0 0 0-2.4-5.73Zm-5.55 12.2a6.6 6.6 0 0 1-3.36-.92l-.24-.15-2.5.72.74-2.5-.14-.24a6.6 6.6 0 0 1-1.01-3.49 6.59 6.59 0 0 1 6.6-6.59c1.76 0 3.42.69 4.67 1.94a6.59 6.59 0 0 1 1.94 4.67 6.59 6.59 0 0 1-6.59 6.56Zm3.63-4.94c-.2-.1-1.17-.58-1.36-.64-.18-.07-.32-.1-.45.1-.13.2-.5.64-.62.77-.11.13-.23.15-.43.05a5.44 5.44 0 0 1-2.7-2.33c-.2-.35.21-.33.58-1.08a.36.36 0 0 0-.03-.34c-.05-.1-.45-1.07-.62-1.47-.16-.38-.32-.33-.45-.34h-.38c-.13 0-.35.05-.53.25-.18.2-.7.7-.7 1.69 0 1 .72 1.95.81 2.08.1.13 1.37 2.08 3.3 2.92.46.2.82.32 1.1.4.46.15.88.13 1.21.08.37-.06 1.17-.48 1.33-.94.16-.46.16-.86.11-.94-.05-.08-.18-.13-.38-.23Z"/>
+                    </svg>
+                  </Button>
+                </div>
+              )}
               {lead.phone2 && (
                 <div className="flex items-center text-sm text-muted-foreground">
                   <Phone className="mr-1 h-3.5 w-3.5" />
-                  <span>{lead.phone2}</span>
+                  <span className="mr-2">{lead.phone2}</span>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-6 w-6 p-0 rounded-full bg-green-500 hover:bg-green-600"
+                    onClick={() => openWhatsApp(lead.phone2 || "")}
+                  >
+                    <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 text-white" fill="currentColor">
+                      <path d="M17.6 6.32A7.85 7.85 0 0 0 12.05 4a7.94 7.94 0 0 0-6.88 11.94L4 20l4.06-1.17A7.93 7.93 0 0 0 20 12.05a7.83 7.83 0 0 0-2.4-5.73Zm-5.55 12.2a6.6 6.6 0 0 1-3.36-.92l-.24-.15-2.5.72.74-2.5-.14-.24a6.6 6.6 0 0 1-1.01-3.49 6.59 6.59 0 0 1 6.6-6.59c1.76 0 3.42.69 4.67 1.94a6.59 6.59 0 0 1 1.94 4.67 6.59 6.59 0 0 1-6.59 6.56Zm3.63-4.94c-.2-.1-1.17-.58-1.36-.64-.18-.07-.32-.1-.45.1-.13.2-.5.64-.62.77-.11.13-.23.15-.43.05a5.44 5.44 0 0 1-2.7-2.33c-.2-.35.21-.33.58-1.08a.36.36 0 0 0-.03-.34c-.05-.1-.45-1.07-.62-1.47-.16-.38-.32-.33-.45-.34h-.38c-.13 0-.35.05-.53.25-.18.2-.7.7-.7 1.69 0 1 .72 1.95.81 2.08.1.13 1.37 2.08 3.3 2.92.46.2.82.32 1.1.4.46.15.88.13 1.21.08.37-.06 1.17-.48 1.33-.94.16-.46.16-.86.11-.94-.05-.08-.18-.13-.38-.23Z"/>
+                    </svg>
+                  </Button>
                 </div>
               )}
               {lead.phone3 && (
                 <div className="flex items-center text-sm text-muted-foreground">
                   <Phone className="mr-1 h-3.5 w-3.5" />
-                  <span>{lead.phone3}</span>
+                  <span className="mr-2">{lead.phone3}</span>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-6 w-6 p-0 rounded-full bg-green-500 hover:bg-green-600"
+                    onClick={() => openWhatsApp(lead.phone3 || "")}
+                  >
+                    <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 text-white" fill="currentColor">
+                      <path d="M17.6 6.32A7.85 7.85 0 0 0 12.05 4a7.94 7.94 0 0 0-6.88 11.94L4 20l4.06-1.17A7.93 7.93 0 0 0 20 12.05a7.83 7.83 0 0 0-2.4-5.73Zm-5.55 12.2a6.6 6.6 0 0 1-3.36-.92l-.24-.15-2.5.72.74-2.5-.14-.24a6.6 6.6 0 0 1-1.01-3.49 6.59 6.59 0 0 1 6.6-6.59c1.76 0 3.42.69 4.67 1.94a6.59 6.59 0 0 1 1.94 4.67 6.59 6.59 0 0 1-6.59 6.56Zm3.63-4.94c-.2-.1-1.17-.58-1.36-.64-.18-.07-.32-.1-.45.1-.13.2-.5.64-.62.77-.11.13-.23.15-.43.05a5.44 5.44 0 0 1-2.7-2.33c-.2-.35.21-.33.58-1.08a.36.36 0 0 0-.03-.34c-.05-.1-.45-1.07-.62-1.47-.16-.38-.32-.33-.45-.34h-.38c-.13 0-.35.05-.53.25-.18.2-.7.7-.7 1.69 0 1 .72 1.95.81 2.08.1.13 1.37 2.08 3.3 2.92.46.2.82.32 1.1.4.46.15.88.13 1.21.08.37-.06 1.17-.48 1.33-.94.16-.46.16-.86.11-.94-.05-.08-.18-.13-.38-.23Z"/>
+                    </svg>
+                  </Button>
                 </div>
               )}
             </div>
