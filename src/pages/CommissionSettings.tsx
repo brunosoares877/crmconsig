@@ -99,7 +99,8 @@ const CommissionSettings = () => {
           active: tier.active,
           created_at: tier.created_at,
           updated_at: tier.updated_at,
-          user_id: tier.user_id
+          user_id: tier.user_id,
+          name: tier.name || ""
         }));
         setCommissionTiers(typedData);
       }
@@ -180,6 +181,7 @@ const CommissionSettings = () => {
               max_amount: tier.max_amount,
               percentage: tier.percentage,
               active: tier.active,
+              name: tier.name || "",
               updated_at: new Date().toISOString(),
             },
             { onConflict: "id" }
