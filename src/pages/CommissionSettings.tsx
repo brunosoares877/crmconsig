@@ -260,7 +260,7 @@ const CommissionSettings = () => {
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="rates">Comissões Fixas</TabsTrigger>
-              <TabsTrigger value="tiers">Taxas por Faixa</TabsTrigger>
+              <TabsTrigger value="tiers">Tabelas</TabsTrigger>
               <TabsTrigger value="periods">Períodos de Pagamento</TabsTrigger>
             </TabsList>
             
