@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/Header";
@@ -31,7 +30,8 @@ const CommissionSettings = () => {
   const [newTier, setNewTier] = useState({
     min_amount: "",
     max_amount: "",
-    percentage: ""
+    percentage: "",
+    name: ""
   });
 
   useEffect(() => {
@@ -57,16 +57,17 @@ const CommissionSettings = () => {
           active: rate.active,
           created_at: rate.created_at,
           updated_at: rate.updated_at,
-          user_id: rate.user_id
+          user_id: rate.user_id,
+          name: rate.name || ""
         }));
         setCommissionRates(typedData);
       } else {
-        // Inicializar taxas padrão se não houver nenhuma
         const defaultRates = productOptions.map((product) => ({
           id: product.id,
           product: product.id as CommissionRate["product"],
           percentage: 0,
           active: true,
+          name: ""
         }));
         setCommissionRates(defaultRates);
       }
@@ -109,9 +110,9 @@ const CommissionSettings = () => {
     }
   };
 
-  const handleRateChange = (index: number, value: number) => {
+  const handleRateChange = (index: number, field: string, value: any) => {
     const updatedRates = [...commissionRates];
-    updatedRates[index].percentage = value;
+    updatedRates[index] = { ...updatedRates[index], [field]: value };
     setCommissionRates(updatedRates);
   };
 
@@ -143,7 +144,6 @@ const CommissionSettings = () => {
 
   const saveCommissionRates = async () => {
     try {
-      // Para cada taxa, inserir ou atualizar no banco de dados
       for (const rate of commissionRates) {
         const { error } = await supabase
           .from("commission_rates")
@@ -153,6 +153,7 @@ const CommissionSettings = () => {
               product: rate.product,
               percentage: rate.percentage,
               active: rate.active,
+              name: rate.name || "",
               updated_at: new Date().toISOString(),
             },
             { onConflict: "id" }
@@ -168,7 +169,6 @@ const CommissionSettings = () => {
 
   const saveCommissionTiers = async () => {
     try {
-      // Para cada faixa, inserir ou atualizar no banco de dados
       for (const tier of commissionTiers) {
         const { error } = await supabase
           .from("commission_tiers")
@@ -195,16 +195,16 @@ const CommissionSettings = () => {
 
   const addNewTier = async () => {
     try {
-      if (!newTier.min_amount || !newTier.percentage) {
-        toast.error("Valor mínimo e porcentagem são obrigatórios");
+      if (!newTier.percentage) {
+        toast.error("Porcentagem é obrigatória");
         return;
       }
 
-      const minAmount = parseFloat(newTier.min_amount);
+      const minAmount = newTier.min_amount ? parseFloat(newTier.min_amount) : 0;
       const maxAmount = newTier.max_amount ? parseFloat(newTier.max_amount) : null;
       const percentage = parseFloat(newTier.percentage);
 
-      if (minAmount < 0 || percentage < 0 || (maxAmount !== null && maxAmount <= minAmount)) {
+      if (percentage < 0 || (minAmount < 0) || (maxAmount !== null && maxAmount <= minAmount)) {
         toast.error("Valores inválidos. Verifique se o valor máximo é maior que o mínimo");
         return;
       }
@@ -216,6 +216,7 @@ const CommissionSettings = () => {
           min_amount: minAmount,
           max_amount: maxAmount,
           percentage: percentage,
+          name: newTier.name || "",
           active: true,
         })
         .select();
@@ -224,7 +225,7 @@ const CommissionSettings = () => {
 
       if (data) {
         setCommissionTiers([...commissionTiers, data[0] as CommissionTier]);
-        setNewTier({ min_amount: "", max_amount: "", percentage: "" });
+        setNewTier({ min_amount: "", max_amount: "", percentage: "", name: "" });
         setShowAddTier(false);
         toast.success("Nova faixa de comissão adicionada");
       }
@@ -249,10 +250,7 @@ const CommissionSettings = () => {
     }
   };
 
-  // Filtrar faixas por produto selecionado
   const filteredTiers = commissionTiers.filter(tier => tier.product === selectedProduct);
-
-  // Ordenar faixas por valor mínimo
   const sortedTiers = [...filteredTiers].sort((a, b) => a.min_amount - b.min_amount);
 
   return (
@@ -292,6 +290,15 @@ const CommissionSettings = () => {
                               <div className="flex-1">
                                 <label className="text-sm font-medium">{product?.label || rate.product}</label>
                               </div>
+                              <div className="w-48">
+                                <Input
+                                  placeholder="Nome/Descrição"
+                                  value={rate.name || ""}
+                                  onChange={(e) => handleRateChange(index, "name", e.target.value)}
+                                  disabled={!rate.active}
+                                  className="text-left"
+                                />
+                              </div>
                               <div className="w-20">
                                 <Input
                                   type="number"
@@ -299,7 +306,7 @@ const CommissionSettings = () => {
                                   max="100"
                                   step="0.5"
                                   value={rate.percentage || 0}
-                                  onChange={(e) => handleRateChange(index, parseFloat(e.target.value))}
+                                  onChange={(e) => handleRateChange(index, "percentage", parseFloat(e.target.value))}
                                   disabled={!rate.active}
                                   className="text-right"
                                 />
@@ -350,69 +357,81 @@ const CommissionSettings = () => {
                   ) : (
                     <>
                       <div className="space-y-4 mb-6">
-                        <div className="grid grid-cols-8 gap-4 font-medium text-sm border-b pb-2">
-                          <div className="col-span-2">Valor Mínimo (R$)</div>
-                          <div className="col-span-2">Valor Máximo (R$)</div>
+                        <div className="grid grid-cols-9 gap-4 font-medium text-sm border-b pb-2">
+                          <div className="col-span-2">Descrição</div>
+                          <div className="col-span-1">Valor Mínimo (R$)</div>
+                          <div className="col-span-1">Valor Máximo (R$)</div>
                           <div className="col-span-1">Comissão (%)</div>
                           <div className="col-span-1">Status</div>
                           <div className="col-span-2">Ações</div>
                         </div>
 
-                        {sortedTiers.length > 0 ? (
-                          sortedTiers.map((tier) => (
-                            <div key={tier.id} className="grid grid-cols-8 gap-4 items-center">
-                              <div className="col-span-2">
-                                <Input
-                                  type="number"
-                                  value={tier.min_amount}
-                                  onChange={(e) => handleTierChange(tier.id, "min_amount", parseFloat(e.target.value))}
-                                  disabled={!tier.active}
-                                  min="0"
-                                />
+                        {commissionTiers.filter(tier => tier.product === selectedProduct).length > 0 ? (
+                          commissionTiers.filter(tier => tier.product === selectedProduct)
+                            .sort((a, b) => a.min_amount - b.min_amount)
+                            .map((tier) => (
+                              <div key={tier.id} className="grid grid-cols-9 gap-4 items-center">
+                                <div className="col-span-2">
+                                  <Input
+                                    type="text"
+                                    placeholder="Descrição"
+                                    value={tier.name || ""}
+                                    onChange={(e) => handleTierChange(tier.id, "name", e.target.value)}
+                                    disabled={!tier.active}
+                                  />
+                                </div>
+                                <div className="col-span-1">
+                                  <Input
+                                    type="number"
+                                    value={tier.min_amount}
+                                    onChange={(e) => handleTierChange(tier.id, "min_amount", parseFloat(e.target.value))}
+                                    disabled={!tier.active}
+                                    min="0"
+                                  />
+                                </div>
+                                <div className="col-span-1">
+                                  <Input
+                                    type="number"
+                                    value={tier.max_amount || ""}
+                                    onChange={(e) => {
+                                      const value = e.target.value ? parseFloat(e.target.value) : null;
+                                      handleTierChange(tier.id, "max_amount", value);
+                                    }}
+                                    disabled={!tier.active}
+                                    min={tier.min_amount}
+                                    placeholder="Sem limite"
+                                  />
+                                </div>
+                                <div className="col-span-1 flex items-center">
+                                  <Input
+                                    type="number"
+                                    min="0"
+                                    max="100"
+                                    step="0.5"
+                                    value={tier.percentage}
+                                    onChange={(e) => handleTierChange(tier.id, "percentage", parseFloat(e.target.value))}
+                                    disabled={!tier.active}
+                                    className="w-16"
+                                  />
+                                  <Percent className="h-4 w-4 ml-1" />
+                                </div>
+                                <div className="col-span-1">
+                                  <Switch
+                                    checked={tier.active}
+                                    onCheckedChange={() => handleToggleTierActive(tier.id)}
+                                  />
+                                </div>
+                                <div className="col-span-2 flex space-x-2">
+                                  <Button 
+                                    variant="destructive" 
+                                    size="sm"
+                                    onClick={() => deleteTier(tier.id)}
+                                  >
+                                    Excluir
+                                  </Button>
+                                </div>
                               </div>
-                              <div className="col-span-2">
-                                <Input
-                                  type="number"
-                                  value={tier.max_amount || ""}
-                                  onChange={(e) => {
-                                    const value = e.target.value ? parseFloat(e.target.value) : null;
-                                    handleTierChange(tier.id, "max_amount", value);
-                                  }}
-                                  disabled={!tier.active}
-                                  min={tier.min_amount}
-                                  placeholder="Sem limite"
-                                />
-                              </div>
-                              <div className="col-span-1 flex items-center">
-                                <Input
-                                  type="number"
-                                  min="0"
-                                  max="100"
-                                  step="0.5"
-                                  value={tier.percentage}
-                                  onChange={(e) => handleTierChange(tier.id, "percentage", parseFloat(e.target.value))}
-                                  disabled={!tier.active}
-                                  className="w-16"
-                                />
-                                <Percent className="h-4 w-4 ml-1" />
-                              </div>
-                              <div className="col-span-1">
-                                <Switch
-                                  checked={tier.active}
-                                  onCheckedChange={() => handleToggleTierActive(tier.id)}
-                                />
-                              </div>
-                              <div className="col-span-2 flex space-x-2">
-                                <Button 
-                                  variant="destructive" 
-                                  size="sm"
-                                  onClick={() => deleteTier(tier.id)}
-                                >
-                                  Excluir
-                                </Button>
-                              </div>
-                            </div>
-                          ))
+                            ))
                         ) : (
                           <div className="text-center py-4 text-muted-foreground">
                             Nenhuma faixa definida para este produto
@@ -420,8 +439,16 @@ const CommissionSettings = () => {
                         )}
 
                         {showAddTier ? (
-                          <div className="grid grid-cols-8 gap-4 items-center mt-4 pt-4 border-t">
+                          <div className="grid grid-cols-9 gap-4 items-center mt-4 pt-4 border-t">
                             <div className="col-span-2">
+                              <Input
+                                type="text"
+                                placeholder="Descrição"
+                                value={newTier.name}
+                                onChange={(e) => setNewTier({...newTier, name: e.target.value})}
+                              />
+                            </div>
+                            <div className="col-span-1">
                               <Input
                                 type="number"
                                 placeholder="Valor Mínimo"
@@ -430,7 +457,7 @@ const CommissionSettings = () => {
                                 min="0"
                               />
                             </div>
-                            <div className="col-span-2">
+                            <div className="col-span-1">
                               <Input
                                 type="number"
                                 placeholder="Valor Máximo (opcional)"
@@ -452,7 +479,7 @@ const CommissionSettings = () => {
                               />
                               <Percent className="h-4 w-4 ml-1" />
                             </div>
-                            <div className="col-span-3 flex space-x-2">
+                            <div className="col-span-4 flex space-x-2">
                               <Button 
                                 variant="default" 
                                 size="sm"
@@ -465,7 +492,7 @@ const CommissionSettings = () => {
                                 size="sm"
                                 onClick={() => {
                                   setShowAddTier(false);
-                                  setNewTier({ min_amount: "", max_amount: "", percentage: "" });
+                                  setNewTier({ min_amount: "", max_amount: "", percentage: "", name: "" });
                                 }}
                               >
                                 Cancelar
