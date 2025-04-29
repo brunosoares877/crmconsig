@@ -4,13 +4,13 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { Bell, Menu, Settings, User } from "lucide-react";
 import { useSidebar } from "@/components/ui/sidebar";
-import { useMediaQuery } from "@/hooks/use-mobile";
+import { useIsMobile } from "@/hooks/use-mobile";
 import SupportButton from "@/components/SupportButton";
 
 const Header = () => {
   const navigate = useNavigate();
   const sidebar = useSidebar();
-  const isMobile = useMediaQuery("(max-width: 768px)");
+  const isMobile = useIsMobile();
 
   return (
     <header className="border-b py-3 px-4 flex justify-between items-center bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -19,7 +19,7 @@ const Header = () => {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => sidebar?.toggle()}
+            onClick={() => sidebar?.setIsOpen?.(prev => !prev)}
           >
             <Menu />
           </Button>

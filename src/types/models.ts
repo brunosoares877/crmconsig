@@ -24,3 +24,51 @@ export interface CommissionTier {
   created_at: string;
   updated_at: string;
 }
+
+// Add Lead interface
+export interface Lead {
+  id: string;
+  user_id?: string;
+  name: string;
+  email?: string;
+  phone?: string;
+  phone2?: string;
+  phone3?: string;
+  cpf?: string;
+  status: 'novo' | 'contatado' | 'qualificado' | 'negociando' | 'convertido' | 'perdido';
+  source?: string;
+  notes?: string;
+  amount?: string;
+  createdAt: string;
+  updatedAt?: string;
+  scheduledAt?: string;
+}
+
+// Add Appointment interface
+export interface Appointment {
+  id: string;
+  lead_id: string;
+  user_id: string;
+  title: string;
+  date: string;
+  time: string;
+  notes?: string;
+  status: 'scheduled' | 'completed' | 'cancelled';
+  created_at: string;
+  updated_at: string;
+}
+
+// Add Commission interface
+export interface Commission {
+  id: string;
+  user_id: string;
+  lead_id: string;
+  amount: number;
+  percentage: number;
+  commission_value: number;
+  product: string;
+  status: 'pending' | 'approved' | 'paid' | 'cancelled';
+  payment_date?: string;
+  created_at: string;
+  updated_at: string;
+}
