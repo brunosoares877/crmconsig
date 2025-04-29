@@ -48,6 +48,7 @@ interface Reminder {
 interface Lead {
   id: string;
   name: string;
+  bank?: string;
 }
 
 const Portability = () => {
@@ -69,7 +70,7 @@ const Portability = () => {
       // Fetch leads for the dropdown
       const { data: leadsData, error: leadsError } = await supabase
         .from("leads")
-        .select("id, name")
+        .select("id, name, bank")
         .order("name");
         
       if (leadsError) throw leadsError;
@@ -179,6 +180,33 @@ const Portability = () => {
     return lead ? lead.name : "Cliente não encontrado";
   };
 
+  const getBankName = (bankCode: string | undefined) => {
+    switch (bankCode) {
+      case "caixa": return "Caixa Econômica Federal";
+      case "bb": return "Banco do Brasil";
+      case "itau": return "Itaú";
+      case "bradesco": return "Bradesco";
+      case "santander": return "Santander";
+      case "c6": return "C6 Bank";
+      case "brb": return "BRB - Banco de Brasília";
+      case "bmg": return "BMG";
+      case "pan": return "Banco Pan";
+      case "ole": return "Banco Olé";
+      case "daycoval": return "Daycoval";
+      case "mercantil": return "Mercantil";
+      case "cetelem": return "Cetelem";
+      case "safra": return "Safra";
+      case "inter": return "Inter";
+      case "original": return "Original";
+      case "facta": return "Facta";
+      case "bonsucesso": return "Bonsucesso";
+      case "banrisul": return "Banrisul";
+      case "sicoob": return "Sicoob";
+      case "outro": return "Outro";
+      default: return "Banco não especificado";
+    }
+  };
+
   const formatDate = (dateString: string) => {
     return format(new Date(dateString), "PPP", { locale: ptBR });
   };
@@ -233,7 +261,7 @@ const Portability = () => {
                       <SelectContent>
                         {leads.map((lead) => (
                           <SelectItem key={lead.id} value={lead.id}>
-                            {lead.name}
+                            {lead.name} - {getBankName(lead.bank)}
                           </SelectItem>
                         ))}
                       </SelectContent>

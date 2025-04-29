@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -261,11 +262,29 @@ const LeadForm: React.FC<LeadFormProps> = ({
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="caixa">Caixa Econômica</SelectItem>
+                    {/* Bancos principais */}
+                    <SelectItem value="caixa">Caixa Econômica Federal</SelectItem>
                     <SelectItem value="bb">Banco do Brasil</SelectItem>
                     <SelectItem value="itau">Itaú</SelectItem>
                     <SelectItem value="bradesco">Bradesco</SelectItem>
                     <SelectItem value="santander">Santander</SelectItem>
+                    <SelectItem value="c6">C6 Bank</SelectItem>
+                    <SelectItem value="brb">BRB - Banco de Brasília</SelectItem>
+                    
+                    {/* Todos os bancos da Rede */}
+                    <SelectItem value="bmg">BMG</SelectItem>
+                    <SelectItem value="pan">Banco Pan</SelectItem>
+                    <SelectItem value="ole">Banco Olé</SelectItem>
+                    <SelectItem value="daycoval">Daycoval</SelectItem>
+                    <SelectItem value="mercantil">Mercantil</SelectItem>
+                    <SelectItem value="cetelem">Cetelem</SelectItem>
+                    <SelectItem value="safra">Safra</SelectItem>
+                    <SelectItem value="inter">Inter</SelectItem>
+                    <SelectItem value="original">Original</SelectItem>
+                    <SelectItem value="facta">Facta</SelectItem>
+                    <SelectItem value="bonsucesso">Bonsucesso</SelectItem>
+                    <SelectItem value="banrisul">Banrisul</SelectItem>
+                    <SelectItem value="sicoob">Sicoob</SelectItem>
                     <SelectItem value="outro">Outro</SelectItem>
                   </SelectContent>
                 </Select>
