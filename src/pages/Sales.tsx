@@ -1,3 +1,4 @@
+
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -33,7 +34,7 @@ const Sales = () => {
           <div className="md:w-1/2">
             <div className="relative">
               <img alt="CRM Dashboard Preview" className="rounded-lg shadow-xl w-full" src="/lovable-uploads/406aa32b-8872-4e79-b7e3-681a3c81491b.png" />
-              <div className="absolute -top-4 -right-4 bg-yellow-400 text-blue-900 font-bold py-2 px-4 rounded-lg transform rotate-12 shadow-lg">
+              <div className="absolute -top-4 -right-4 bg-blue-600 text-white font-bold py-2 px-4 rounded-lg transform rotate-12 shadow-lg">
                 7 DIAS GRÁTIS!
               </div>
             </div>

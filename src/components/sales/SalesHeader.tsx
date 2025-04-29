@@ -16,6 +16,7 @@ const SalesHeader = () => {
           <Button 
             variant="outline" 
             onClick={() => navigate("/login")}
+            className="border-primary text-primary hover:bg-primary hover:text-white"
           >
             Entrar
           </Button>

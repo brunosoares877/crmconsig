@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { CircleCheck } from "lucide-react";
@@ -58,12 +59,12 @@ const SubscriptionPlans = () => {
       </div>
 
       {/* Semestral Plan */}
-      <div className="bg-white rounded-xl shadow-lg border-2 border-amber-400 overflow-hidden transition-all hover:shadow-xl relative">
-        <div className="absolute top-0 right-0 bg-amber-400 text-amber-950 px-4 py-1 text-sm font-medium rounded-bl-lg">
+      <div className="bg-white rounded-xl shadow-lg border-2 border-primary overflow-hidden transition-all hover:shadow-xl relative">
+        <div className="absolute top-0 right-0 bg-primary text-primary-foreground px-4 py-1 text-sm font-medium rounded-bl-lg">
           Recomendado
         </div>
         <div className="p-8">
-          <div className="inline-block px-4 py-1 bg-amber-100 text-amber-700 rounded-full text-sm font-medium mb-4">
+          <div className="inline-block px-4 py-1 bg-blue-100 text-primary rounded-full text-sm font-medium mb-4">
             Plano Semestral
           </div>
           <div className="flex items-end mb-2">
