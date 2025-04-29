@@ -39,7 +39,16 @@ const CommissionSettings = () => {
       if (error) throw error;
 
       if (data && data.length > 0) {
-        setCommissionRates(data as CommissionRate[]);
+        const typedData: CommissionRate[] = data.map(rate => ({
+          id: rate.id,
+          product: rate.product as CommissionRate["product"],
+          percentage: rate.percentage,
+          active: rate.active,
+          created_at: rate.created_at,
+          updated_at: rate.updated_at,
+          user_id: rate.user_id
+        }));
+        setCommissionRates(typedData);
       } else {
         // Inicializar taxas padrão se não houver nenhuma
         const defaultRates = productOptions.map((product) => ({

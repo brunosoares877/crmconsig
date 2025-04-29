@@ -77,12 +77,44 @@ export type Database = {
         }
         Relationships: []
       }
+      commission_rates: {
+        Row: {
+          active: boolean
+          created_at: string | null
+          id: string
+          percentage: number
+          product: string
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string | null
+          id?: string
+          percentage?: number
+          product: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          active?: boolean
+          created_at?: string | null
+          id?: string
+          percentage?: number
+          product?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       commissions: {
         Row: {
           amount: number
           created_at: string | null
           id: string
           lead_id: string | null
+          payment_period: string | null
+          product: string | null
           status: string
           updated_at: string | null
           user_id: string
@@ -92,6 +124,8 @@ export type Database = {
           created_at?: string | null
           id?: string
           lead_id?: string | null
+          payment_period?: string | null
+          product?: string | null
           status: string
           updated_at?: string | null
           user_id: string
@@ -101,6 +135,8 @@ export type Database = {
           created_at?: string | null
           id?: string
           lead_id?: string | null
+          payment_period?: string | null
+          product?: string | null
           status?: string
           updated_at?: string | null
           user_id?: string

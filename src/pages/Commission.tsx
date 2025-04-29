@@ -34,24 +34,11 @@ import Sidebar from "@/components/Sidebar";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
+import { Commission } from "@/types/models";
 
 interface Employee {
   id: string;
   name: string;
-}
-
-interface Commission {
-  id: string;
-  lead_id: string;
-  amount: number;
-  created_at: string;
-  status: string;
-  product: string;
-  paymentPeriod: string;
-  lead: {
-    name: string;
-    product: string;
-  };
 }
 
 const statusOptions = [
@@ -150,8 +137,23 @@ const Commission = () => {
         
       if (error) throw error;
       
-      setCommissions(data || []);
-      setFilteredCommissions(data || []);
+      if (data) {
+        const mappedData: Commission[] = data.map(item => ({
+          id: item.id,
+          lead_id: item.lead_id,
+          amount: item.amount,
+          status: item.status,
+          product: item.product,
+          payment_period: item.payment_period,
+          user_id: item.user_id,
+          created_at: item.created_at,
+          updated_at: item.updated_at,
+          lead: item.lead
+        }));
+        
+        setCommissions(mappedData);
+        setFilteredCommissions(mappedData);
+      }
     } catch (error: any) {
       console.error("Error fetching data:", error);
       toast.error(`Erro ao carregar dados: ${error.message}`);
@@ -173,11 +175,11 @@ const Commission = () => {
     
     // Filter by tab first
     if (activeTab === "weekly") {
-      filtered = filtered.filter(commission => commission.paymentPeriod === "weekly");
+      filtered = filtered.filter(commission => commission.payment_period === "weekly");
     } else if (activeTab === "biweekly") {
-      filtered = filtered.filter(commission => commission.paymentPeriod === "biweekly");
+      filtered = filtered.filter(commission => commission.payment_period === "biweekly");
     } else if (activeTab === "monthly") {
-      filtered = filtered.filter(commission => commission.paymentPeriod === "monthly");
+      filtered = filtered.filter(commission => commission.payment_period === "monthly");
     }
     
     // Filter by employee
@@ -197,20 +199,20 @@ const Commission = () => {
     
     // Filter by payment period
     if (selectedPeriod !== "all") {
-      filtered = filtered.filter(commission => commission.paymentPeriod === selectedPeriod);
+      filtered = filtered.filter(commission => commission.payment_period === selectedPeriod);
     }
     
     // Filter by date range
     if (dateRange.from) {
       filtered = filtered.filter(commission => {
-        const commissionDate = new Date(commission.created_at);
+        const commissionDate = new Date(commission.created_at || "");
         return commissionDate >= dateRange.from!;
       });
     }
     
     if (dateRange.to) {
       filtered = filtered.filter(commission => {
-        const commissionDate = new Date(commission.created_at);
+        const commissionDate = new Date(commission.created_at || "");
         // Add one day to the end date to include the entire day
         const endDate = new Date(dateRange.to!);
         endDate.setDate(endDate.getDate() + 1);
@@ -482,16 +484,17 @@ const Commission = () => {
                           {getProductLabel(commission.product || commission.lead?.product || "não_especificado")}
                         </TableCell>
                         <TableCell>
-                          {format(new Date(commission.created_at), "dd/MM/yyyy")}
+                          {commission.created_at ? format(new Date(commission.created_at), "dd/MM/yyyy") : "N/A"}
                         </TableCell>
                         <TableCell>
-                          {getPeriodLabel(commission.paymentPeriod || "não_especificado")}
+                          {getPeriodLabel(commission.payment_period || "não_especificado")}
                         </TableCell>
                         <TableCell>
                           <span className={`px-2 py-1 rounded-full text-xs ${getStatusColor(commission.status)}`}>
                             {commission.status === "aprovado" && "Aprovado"}
                             {commission.status === "em_andamento" && "Em andamento"}
                             {commission.status === "cancelado" && "Cancelado"}
+                            {!["aprovado", "em_andamento", "cancelado"].includes(commission.status) && commission.status}
                           </span>
                         </TableCell>
                         <TableCell className="text-right">

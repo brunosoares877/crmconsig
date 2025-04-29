@@ -33,26 +33,42 @@ export interface Employee {
 export interface Reminder {
   id: string;
   title: string;
-  description: string;
-  date: string;
-  employeeId: string;
+  description?: string;
+  date?: string;
+  due_date: string;
+  employeeId?: string;
   leadId?: string;
-  completed: boolean;
-  status?: string;
+  lead_id?: string;
+  user_id: string;
+  completed?: boolean;
+  is_completed?: boolean;
+  status: string;
+  notes?: string | null;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface Commission {
   id: string;
-  employeeId: string;
-  leadId: string;
+  employeeId?: string;
+  leadId?: string;
+  lead_id?: string;
+  user_id: string;
   amount: number;
-  date: string;
-  status: "pending" | "paid";
-  product: string;
-  paymentPeriod: "weekly" | "biweekly" | "monthly";
+  date?: string;
+  created_at?: string;
+  updated_at?: string;
+  status: string;
+  product: string | null;
+  paymentPeriod?: string;
+  payment_period?: string | null;
   percentage?: number;
   createdAt?: string;
   paidAt?: string;
+  lead?: {
+    name: string;
+    product: string | null;
+  };
 }
 
 export interface Appointment {
@@ -75,4 +91,5 @@ export interface CommissionRate {
   active: boolean;
   created_at?: string;
   updated_at?: string;
+  user_id?: string | null;
 }
