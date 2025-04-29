@@ -1,4 +1,3 @@
-
 export interface Lead {
   id: string;
   name: string;
@@ -84,6 +83,18 @@ export interface Appointment {
 export interface CommissionRate {
   id: string;
   product: "portabilidade" | "refinanciamento" | "crefaz" | "novo" | "clt" | "fgts";
+  percentage: number;
+  active: boolean;
+  created_at?: string;
+  updated_at?: string;
+  user_id?: string | null;
+}
+
+export interface CommissionTier {
+  id: string;
+  product: "portabilidade" | "refinanciamento" | "crefaz" | "novo" | "clt" | "fgts";
+  min_amount: number;
+  max_amount: number | null;
   percentage: number;
   active: boolean;
   created_at?: string;

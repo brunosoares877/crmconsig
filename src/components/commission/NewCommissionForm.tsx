@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { CommissionTier } from "@/types/models";
 
 const formSchema = z.object({
   lead_id: z.string().min(1, { message: "Cliente é obrigatório" }),
@@ -71,7 +72,102 @@ export default function NewCommissionForm({ leads, onSuccess, onCancel }: NewCom
     },
   });
 
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [commissionTiers, setCommissionTiers] = useState<CommissionTier[]>([]);
+  const [calculatedCommission, setCalculatedCommission] = useState<number | null>(null);
+  const [flatRates, setFlatRates] = useState<Record<string, number>>({});
+
+  const watchAmount = form.watch("amount");
+  const watchProduct = form.watch("product");
+
+  useEffect(() => {
+    // Fetch commission tiers from the database
+    async function fetchCommissionTiers() {
+      try {
+        const { data, error } = await supabase
+          .from("commission_tiers")
+          .select("*")
+          .eq("active", true);
+
+        if (error) throw error;
+
+        if (data) {
+          setCommissionTiers(data as CommissionTier[]);
+        }
+      } catch (error: any) {
+        console.error("Error fetching commission tiers:", error);
+      }
+    }
+
+    // Fetch flat commission rates
+    async function fetchCommissionRates() {
+      try {
+        const { data, error } = await supabase
+          .from("commission_rates")
+          .select("*")
+          .eq("active", true);
+
+        if (error) throw error;
+
+        if (data) {
+          const rateMap: Record<string, number> = {};
+          data.forEach(rate => {
+            rateMap[rate.product] = rate.percentage;
+          });
+          setFlatRates(rateMap);
+        }
+      } catch (error: any) {
+        console.error("Error fetching commission rates:", error);
+      }
+    }
+
+    fetchCommissionTiers();
+    fetchCommissionRates();
+  }, []);
+
+  // Calculate commission based on amount and product whenever they change
+  useEffect(() => {
+    if (watchAmount && watchProduct) {
+      calculateCommission(parseFloat(watchAmount.replace(/\./g, "").replace(",", ".")), watchProduct);
+    } else {
+      setCalculatedCommission(null);
+    }
+  }, [watchAmount, watchProduct, commissionTiers, flatRates]);
+
+  const calculateCommission = (amount: number, product: string) => {
+    // First check if there are any tiers for this product
+    const productTiers = commissionTiers.filter(tier => tier.product === product);
+    
+    if (productTiers.length > 0) {
+      // Find the applicable tier
+      const applicableTier = productTiers.find(tier => {
+        const minAmount = tier.min_amount;
+        const maxAmount = tier.max_amount;
+        
+        if (maxAmount === null) {
+          // No maximum, just check minimum
+          return amount >= minAmount;
+        } else {
+          // Check if amount is in range
+          return amount >= minAmount && amount <= maxAmount;
+        }
+      });
+      
+      if (applicableTier) {
+        const commission = (amount * applicableTier.percentage) / 100;
+        setCalculatedCommission(commission);
+        return;
+      }
+    }
+    
+    // If no tiers found or no applicable tier, use flat rate
+    if (flatRates[product]) {
+      const commission = (amount * flatRates[product]) / 100;
+      setCalculatedCommission(commission);
+    } else {
+      setCalculatedCommission(null);
+    }
+  };
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true);
@@ -81,10 +177,13 @@ export default function NewCommissionForm({ leads, onSuccess, onCancel }: NewCom
       if (userError) throw userError;
 
       const amount = parseFloat(values.amount.replace(/\./g, "").replace(",", "."));
+      
+      // If we have a calculated commission, use that as the commission amount
+      const commissionAmount = calculatedCommission !== null ? calculatedCommission : amount;
 
       const { data, error } = await supabase.from("commissions").insert({
         lead_id: values.lead_id,
-        amount: amount, 
+        amount: commissionAmount, 
         status: values.status,
         product: values.product,
         payment_period: values.payment_period,
@@ -154,31 +253,6 @@ export default function NewCommissionForm({ leads, onSuccess, onCancel }: NewCom
 
         <FormField
           control={form.control}
-          name="amount"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Valor da Comissão</FormLabel>
-              <FormControl>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2">R$</span>
-                  <Input
-                    className="pl-9"
-                    placeholder="0,00"
-                    {...field}
-                    onChange={(e) => {
-                      const formattedValue = formatCurrencyInput(e.target.value);
-                      field.onChange(formattedValue);
-                    }}
-                  />
-                </div>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
           name="product"
           render={({ field }) => (
             <FormItem>
@@ -201,6 +275,42 @@ export default function NewCommissionForm({ leads, onSuccess, onCancel }: NewCom
             </FormItem>
           )}
         />
+
+        <FormField
+          control={form.control}
+          name="amount"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Valor da Operação</FormLabel>
+              <FormControl>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2">R$</span>
+                  <Input
+                    className="pl-9"
+                    placeholder="0,00"
+                    {...field}
+                    onChange={(e) => {
+                      const formattedValue = formatCurrencyInput(e.target.value);
+                      field.onChange(formattedValue);
+                    }}
+                  />
+                </div>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {calculatedCommission !== null && (
+          <div className="p-3 bg-green-50 border border-green-200 rounded-md">
+            <p className="text-sm font-medium">
+              Comissão calculada: 
+              <span className="text-green-600 ml-2">
+                R$ {calculatedCommission.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              </span>
+            </p>
+          </div>
+        )}
 
         <FormField
           control={form.control}
