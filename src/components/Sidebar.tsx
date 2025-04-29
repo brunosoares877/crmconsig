@@ -13,7 +13,6 @@ import {
   FolderPlus,
   Import,
   Calendar,
-  CheckSquare,
   Clock
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -39,10 +38,9 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
   // Dashboard menu item
   const dashboardItem = { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" };
   
-  // Reminders submenu items - updated with calendar
+  // Reminders submenu items - updated to remove "Gestão"
   const reminderMenuItems = [
     { icon: Bell, label: "Todos", href: "/reminders", description: "Ver todos os lembretes" },
-    { icon: CheckSquare, label: "Gestão", href: "/reminders/management", description: "Filtrar por status dos lembretes" },
     { icon: Calendar, label: "Calendário", href: "/reminders/calendar", description: "Visualizar lembretes no calendário" },
   ];
 
@@ -166,7 +164,7 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
               </Collapsible>
             </li>
             
-            {/* Reminders collapsible - Updated with Calendar option */}
+            {/* Reminders collapsible - Updated to show only Todos and Calendário */}
             <li>
               <Collapsible 
                 open={remindersOpen} 
