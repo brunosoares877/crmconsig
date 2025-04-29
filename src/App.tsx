@@ -10,8 +10,10 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import Leads from "@/pages/Leads";
 import LeadNew from "@/pages/LeadNew";
 import LeadImport from "@/pages/LeadImport";
+import LeadScheduling from "@/pages/LeadScheduling";
 import Login from "@/pages/Login";
 import Sales from "@/pages/Sales";
+import Portability from "@/pages/Portability";
 
 function App() {
   return (
@@ -27,9 +29,10 @@ function App() {
             <Route path="/leads" element={<Leads />} />
             <Route path="/leads/new" element={<LeadNew />} />
             <Route path="/leads/import" element={<LeadImport />} />
-            <Route path="/leads/scheduled" element={<Leads />} />
+            <Route path="/leads/scheduled" element={<LeadScheduling />} />
             <Route path="/login" element={<Login />} />
             <Route path="/sales" element={<Sales />} />
+            <Route path="/portability" element={<Portability />} />
           </Routes>
         </AuthProvider>
       </Router>
