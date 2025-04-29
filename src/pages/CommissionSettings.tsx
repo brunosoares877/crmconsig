@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { CommissionRate, CommissionTier } from "@/types/models";
 import { Switch } from "@/components/ui/switch";
 import { Percent } from "lucide-react";
+
 const productOptions = [{
   id: "portabilidade",
   label: "Portabilidade"
@@ -29,6 +30,7 @@ const productOptions = [{
   id: "fgts",
   label: "FGTS"
 }];
+
 const CommissionSettings = () => {
   const [commissionRates, setCommissionRates] = useState<CommissionRate[]>([]);
   const [commissionTiers, setCommissionTiers] = useState<CommissionTier[]>([]);
@@ -42,10 +44,12 @@ const CommissionSettings = () => {
     percentage: "",
     name: ""
   });
+
   useEffect(() => {
     fetchCommissionRates();
     fetchCommissionTiers();
   }, []);
+
   const fetchCommissionRates = async () => {
     setIsLoading(true);
     try {
@@ -82,6 +86,7 @@ const CommissionSettings = () => {
       setIsLoading(false);
     }
   };
+
   const fetchCommissionTiers = async () => {
     setIsLoading(true);
     try {
@@ -111,6 +116,7 @@ const CommissionSettings = () => {
       setIsLoading(false);
     }
   };
+
   const handleRateChange = (index: number, field: string, value: any) => {
     const updatedRates = [...commissionRates];
     updatedRates[index] = {
@@ -119,11 +125,13 @@ const CommissionSettings = () => {
     };
     setCommissionRates(updatedRates);
   };
+
   const handleToggleActive = (index: number) => {
     const updatedRates = [...commissionRates];
     updatedRates[index].active = !updatedRates[index].active;
     setCommissionRates(updatedRates);
   };
+
   const handleTierChange = (id: string, field: string, value: any) => {
     const updatedTiers = commissionTiers.map(tier => {
       if (tier.id === id) {
@@ -136,6 +144,7 @@ const CommissionSettings = () => {
     });
     setCommissionTiers(updatedTiers);
   };
+
   const handleToggleTierActive = (id: string) => {
     const updatedTiers = commissionTiers.map(tier => {
       if (tier.id === id) {
@@ -148,6 +157,7 @@ const CommissionSettings = () => {
     });
     setCommissionTiers(updatedTiers);
   };
+
   const saveCommissionRates = async () => {
     try {
       for (const rate of commissionRates) {
@@ -170,6 +180,7 @@ const CommissionSettings = () => {
       toast.error(`Erro ao salvar taxas: ${error.message}`);
     }
   };
+
   const saveCommissionTiers = async () => {
     try {
       for (const tier of commissionTiers) {
@@ -194,6 +205,7 @@ const CommissionSettings = () => {
       toast.error(`Erro ao salvar faixas de comissão: ${error.message}`);
     }
   };
+
   const addNewTier = async () => {
     try {
       if (!newTier.percentage) {
@@ -203,10 +215,20 @@ const CommissionSettings = () => {
       const minAmount = newTier.min_amount ? parseFloat(newTier.min_amount) : 0;
       const maxAmount = newTier.max_amount ? parseFloat(newTier.max_amount) : null;
       const percentage = parseFloat(newTier.percentage);
+      
       if (percentage < 0 || minAmount < 0 || maxAmount !== null && maxAmount <= minAmount) {
         toast.error("Valores inválidos. Verifique se o valor máximo é maior que o mínimo");
         return;
       }
+      
+      console.log("Adding new tier with data:", {
+        product: selectedProduct,
+        min_amount: minAmount,
+        max_amount: maxAmount,
+        percentage: percentage,
+        active: true
+      });
+      
       const {
         data,
         error
@@ -215,10 +237,14 @@ const CommissionSettings = () => {
         min_amount: minAmount,
         max_amount: maxAmount,
         percentage: percentage,
-        name: newTier.name || null,
         active: true
       }).select();
-      if (error) throw error;
+      
+      if (error) {
+        console.error("Supabase error:", error);
+        throw error;
+      }
+      
       if (data) {
         setCommissionTiers([...commissionTiers, data[0] as CommissionTier]);
         setNewTier({
@@ -231,9 +257,11 @@ const CommissionSettings = () => {
         toast.success("Nova faixa de comissão adicionada");
       }
     } catch (error: any) {
+      console.error("Error adding tier:", error);
       toast.error(`Erro ao adicionar faixa: ${error.message}`);
     }
   };
+
   const deleteTier = async (id: string) => {
     try {
       const {
@@ -246,8 +274,10 @@ const CommissionSettings = () => {
       toast.error(`Erro ao remover faixa: ${error.message}`);
     }
   };
+
   const filteredTiers = commissionTiers.filter(tier => tier.product === selectedProduct);
   const sortedTiers = [...filteredTiers].sort((a, b) => a.min_amount - b.min_amount);
+
   return <div className="min-h-screen bg-background">
       <Sidebar />
       <div className="md:ml-64">
@@ -448,4 +478,5 @@ const CommissionSettings = () => {
       </div>
     </div>;
 };
+
 export default CommissionSettings;

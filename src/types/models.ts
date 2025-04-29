@@ -1,5 +1,4 @@
 
-
 export interface Lead {
   id: string;
   name: string;
@@ -105,4 +104,3 @@ export interface CommissionTier {
   user_id?: string | null;
   name?: string | null;
 }
-
