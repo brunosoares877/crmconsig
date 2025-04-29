@@ -48,6 +48,11 @@ export interface Commission {
   amount: number;
   date: string;
   status: "pending" | "paid";
+  product: string;
+  paymentPeriod: "weekly" | "biweekly" | "monthly";
+  percentage?: number;
+  createdAt?: string;
+  paidAt?: string;
 }
 
 export interface Appointment {
@@ -61,4 +66,13 @@ export interface Appointment {
   created_at: string;
   updated_at: string;
   user_id: string;
+}
+
+export interface CommissionRate {
+  id: string;
+  product: "portabilidade" | "refinanciamento" | "crefaz" | "novo" | "clt" | "fgts";
+  percentage: number;
+  active: boolean;
+  created_at?: string;
+  updated_at?: string;
 }

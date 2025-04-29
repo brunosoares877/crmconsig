@@ -16,6 +16,8 @@ import Sales from "@/pages/Sales";
 import Portability from "@/pages/Portability";
 import Reminders from "@/pages/Reminders";
 import RemindersCalendar from "@/pages/RemindersCalendar";
+import Commission from "@/pages/Commission";
+import CommissionSettings from "@/pages/CommissionSettings";
 
 function App() {
   return (
@@ -37,6 +39,8 @@ function App() {
             <Route path="/portability" element={<Portability />} />
             <Route path="/reminders" element={<Reminders />} />
             <Route path="/reminders/calendar" element={<RemindersCalendar />} />
+            <Route path="/commission" element={<Commission />} />
+            <Route path="/commission/settings" element={<CommissionSettings />} />
           </Routes>
         </AuthProvider>
       </Router>

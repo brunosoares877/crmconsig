@@ -1,8 +1,9 @@
+
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Calendar as CalendarIcon, Search } from "lucide-react";
+import { Calendar as CalendarIcon, Plus, Settings, Filter, BarChart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -25,10 +26,14 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import Header from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { Link } from "react-router-dom";
 
 interface Employee {
   id: string;
@@ -41,8 +46,11 @@ interface Commission {
   amount: number;
   created_at: string;
   status: string;
+  product: string;
+  paymentPeriod: string;
   lead: {
     name: string;
+    product: string;
   };
 }
 
@@ -51,6 +59,23 @@ const statusOptions = [
   { value: "aprovado", label: "Aprovado" },
   { value: "em_andamento", label: "Em andamento" },
   { value: "cancelado", label: "Cancelado" },
+];
+
+const periodOptions = [
+  { value: "all", label: "Todos os Períodos" },
+  { value: "weekly", label: "Semanal" },
+  { value: "biweekly", label: "Quinzenal" },
+  { value: "monthly", label: "Mensal" },
+];
+
+const productOptions = [
+  { value: "all", label: "Todos os Produtos" },
+  { value: "portabilidade", label: "Portabilidade" },
+  { value: "refinanciamento", label: "Refinanciamento" },
+  { value: "crefaz", label: "Crefaz" },
+  { value: "novo", label: "Novo" },
+  { value: "clt", label: "CLT" },
+  { value: "fgts", label: "FGTS" },
 ];
 
 const formatCurrency = (value: number) => {
@@ -73,15 +98,28 @@ const getStatusColor = (status: string) => {
   }
 };
 
+const getProductLabel = (productValue: string) => {
+  const product = productOptions.find(p => p.value === productValue);
+  return product ? product.label : productValue;
+};
+
+const getPeriodLabel = (periodValue: string) => {
+  const period = periodOptions.find(p => p.value === periodValue);
+  return period ? period.label : periodValue;
+};
+
 const Commission = () => {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [commissions, setCommissions] = useState<Commission[]>([]);
   const [filteredCommissions, setFilteredCommissions] = useState<Commission[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("all");
   
   // Filters
   const [selectedEmployee, setSelectedEmployee] = useState("all");
   const [selectedStatus, setSelectedStatus] = useState("all");
+  const [selectedProduct, setSelectedProduct] = useState("all");
+  const [selectedPeriod, setSelectedPeriod] = useState("all");
   const [dateRange, setDateRange] = useState<{
     from: Date | undefined;
     to: Date | undefined;
@@ -106,7 +144,7 @@ const Commission = () => {
         .from("commissions")
         .select(`
           *,
-          lead:leads(name)
+          lead:leads(name, product)
         `)
         .order("created_at", { ascending: false });
         
@@ -128,10 +166,19 @@ const Commission = () => {
   
   useEffect(() => {
     applyFilters();
-  }, [selectedEmployee, selectedStatus, dateRange, commissions]);
+  }, [selectedEmployee, selectedStatus, selectedProduct, selectedPeriod, dateRange, commissions, activeTab]);
 
   const applyFilters = () => {
     let filtered = [...commissions];
+    
+    // Filter by tab first
+    if (activeTab === "weekly") {
+      filtered = filtered.filter(commission => commission.paymentPeriod === "weekly");
+    } else if (activeTab === "biweekly") {
+      filtered = filtered.filter(commission => commission.paymentPeriod === "biweekly");
+    } else if (activeTab === "monthly") {
+      filtered = filtered.filter(commission => commission.paymentPeriod === "monthly");
+    }
     
     // Filter by employee
     if (selectedEmployee !== "all") {
@@ -141,6 +188,16 @@ const Commission = () => {
     // Filter by status
     if (selectedStatus !== "all") {
       filtered = filtered.filter(commission => commission.status === selectedStatus);
+    }
+    
+    // Filter by product
+    if (selectedProduct !== "all") {
+      filtered = filtered.filter(commission => commission.product === selectedProduct);
+    }
+    
+    // Filter by payment period
+    if (selectedPeriod !== "all") {
+      filtered = filtered.filter(commission => commission.paymentPeriod === selectedPeriod);
     }
     
     // Filter by date range
@@ -167,8 +224,33 @@ const Commission = () => {
   const resetFilters = () => {
     setSelectedEmployee("all");
     setSelectedStatus("all");
+    setSelectedProduct("all");
+    setSelectedPeriod("all");
     setDateRange({ from: undefined, to: undefined });
   };
+
+  // Calculate summary statistics
+  const calculateSummary = (commissions: Commission[]) => {
+    const total = commissions.reduce((sum, commission) => sum + commission.amount, 0);
+    
+    const byProduct = commissions.reduce((acc, commission) => {
+      const product = commission.product || "não_especificado";
+      if (!acc[product]) acc[product] = 0;
+      acc[product] += commission.amount;
+      return acc;
+    }, {} as Record<string, number>);
+    
+    const byStatus = commissions.reduce((acc, commission) => {
+      const status = commission.status || "não_especificado";
+      if (!acc[status]) acc[status] = 0;
+      acc[status] += commission.amount;
+      return acc;
+    }, {} as Record<string, number>);
+    
+    return { total, byProduct, byStatus };
+  };
+  
+  const summary = calculateSummary(filteredCommissions);
 
   return (
     <div className="min-h-screen bg-background">
@@ -176,12 +258,87 @@ const Commission = () => {
       <div className="md:ml-64">
         <Header />
         <main className="container mx-auto p-4 py-8">
-          <h1 className="text-2xl font-bold mb-6">Comissões</h1>
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-2xl font-bold">Comissões</h1>
+            <div className="flex space-x-2">
+              <Button asChild variant="outline">
+                <Link to="/commission/settings">
+                  <Settings className="mr-2 h-4 w-4" />
+                  Configurações
+                </Link>
+              </Button>
+              <Button>
+                <Plus className="mr-2 h-4 w-4" />
+                Nova Comissão
+              </Button>
+            </div>
+          </div>
+          
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
+            <TabsList className="grid w-full grid-cols-4 md:w-auto md:inline-grid">
+              <TabsTrigger value="all">Todas</TabsTrigger>
+              <TabsTrigger value="weekly">Semanal</TabsTrigger>
+              <TabsTrigger value="biweekly">Quinzenal</TabsTrigger>
+              <TabsTrigger value="monthly">Mensal</TabsTrigger>
+            </TabsList>
+          </Tabs>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">Total de Comissões</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{formatCurrency(summary.total)}</div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">Por Status</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {Object.entries(summary.byStatus).map(([status, amount]) => (
+                    <div key={status} className="flex justify-between items-center">
+                      <span className="text-sm">
+                        <Badge className={getStatusColor(status)}>
+                          {status === "aprovado" ? "Aprovado" : 
+                           status === "em_andamento" ? "Em andamento" : 
+                           status === "cancelado" ? "Cancelado" : status}
+                        </Badge>
+                      </span>
+                      <span className="font-medium">{formatCurrency(amount)}</span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">Por Produto</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {Object.entries(summary.byProduct).map(([product, amount]) => (
+                    <div key={product} className="flex justify-between items-center">
+                      <span className="text-sm">{getProductLabel(product)}</span>
+                      <span className="font-medium">{formatCurrency(amount)}</span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
           
           {/* Filters */}
           <div className="bg-white p-4 rounded-md border mb-6">
-            <h2 className="font-medium mb-4">Filtros</h2>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="flex items-center gap-2 mb-4">
+              <Filter className="h-5 w-5" />
+              <h2 className="font-medium">Filtros</h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
               <div>
                 <label className="text-sm text-gray-500 mb-1 block">Funcionário</label>
                 <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
@@ -208,6 +365,22 @@ const Commission = () => {
                     {statusOptions.map(status => (
                       <SelectItem key={status.value} value={status.value}>
                         {status.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="text-sm text-gray-500 mb-1 block">Produto</label>
+                <Select value={selectedProduct} onValueChange={setSelectedProduct}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o produto" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {productOptions.map(product => (
+                      <SelectItem key={product.value} value={product.value}>
+                        {product.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -292,7 +465,9 @@ const Commission = () => {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Cliente</TableHead>
+                      <TableHead>Produto</TableHead>
                       <TableHead>Data</TableHead>
+                      <TableHead>Período</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead className="text-right">Valor</TableHead>
                     </TableRow>
@@ -304,7 +479,13 @@ const Commission = () => {
                           {commission.lead?.name || "Cliente não encontrado"}
                         </TableCell>
                         <TableCell>
+                          {getProductLabel(commission.product || commission.lead?.product || "não_especificado")}
+                        </TableCell>
+                        <TableCell>
                           {format(new Date(commission.created_at), "dd/MM/yyyy")}
+                        </TableCell>
+                        <TableCell>
+                          {getPeriodLabel(commission.paymentPeriod || "não_especificado")}
                         </TableCell>
                         <TableCell>
                           <span className={`px-2 py-1 rounded-full text-xs ${getStatusColor(commission.status)}`}>
