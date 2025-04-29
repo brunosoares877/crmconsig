@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
@@ -129,12 +128,12 @@ const CommissionPage = () => {
       
       const { data: leadsData, error: leadsError } = await supabase
         .from("leads")
-        .select("id, name, product");
+        .select("id, name, product, amount, status, employee");
       
       if (leadsError) throw leadsError;
       
       if (leadsData) {
-        setLeads(leadsData as Partial<Lead>[]);
+        setLeads(leadsData);
       }
       
       const { data, error } = await supabase
@@ -498,10 +497,11 @@ const CommissionPage = () => {
                     <TableRow>
                       <TableHead>Cliente</TableHead>
                       <TableHead>Produto</TableHead>
+                      <TableHead>Valor do Lead</TableHead>
                       <TableHead>Data</TableHead>
                       <TableHead>Período</TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Valor</TableHead>
+                      <TableHead className="text-right">Valor da Comissão</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -512,6 +512,9 @@ const CommissionPage = () => {
                         </TableCell>
                         <TableCell>
                           {getProductLabel(commission.product || commission.lead?.product || "não_especificado")}
+                        </TableCell>
+                        <TableCell>
+                          {commission.lead?.amount || "N/A"}
                         </TableCell>
                         <TableCell>
                           {commission.created_at ? format(new Date(commission.created_at), "dd/MM/yyyy") : "N/A"}
