@@ -42,6 +42,9 @@ export interface Lead {
   createdAt: string;
   updatedAt?: string;
   scheduledAt?: string;
+  product?: string;
+  employee?: string;
+  created_at?: string; // Add alias for compatibility
 }
 
 // Add Appointment interface
@@ -67,8 +70,10 @@ export interface Commission {
   percentage: number;
   commission_value: number;
   product: string;
+  payment_period?: string; // Add this property
   status: 'pending' | 'approved' | 'paid' | 'cancelled';
   payment_date?: string;
   created_at: string;
   updated_at: string;
+  lead?: Partial<Lead>; // Add lead relationship
 }

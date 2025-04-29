@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import LeadCard from "./LeadCard";
 import EmptyState from "./EmptyState";
@@ -114,7 +113,7 @@ const LeadList: React.FC<LeadListProps> = ({ searchQuery = "", status }) => {
         const thirtyDaysAgo = new Date();
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
         result = result.filter(lead => {
-          const leadDate = new Date(lead.created_at || '');
+          const leadDate = new Date(lead.createdAt || lead.created_at || '');
           return leadDate >= thirtyDaysAgo;
         });
       }

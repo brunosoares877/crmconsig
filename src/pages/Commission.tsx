@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
@@ -141,7 +142,10 @@ const CommissionPage = () => {
       if (leadsError) throw leadsError;
       
       if (leadsData) {
-        setLeads(leadsData);
+        setLeads(leadsData.map(lead => ({
+          ...lead,
+          status: lead.status as Lead['status'] || 'novo'
+        })));
       }
       
       const { data, error } = await supabase
@@ -154,14 +158,16 @@ const CommissionPage = () => {
       if (data) {
         const mappedData: Commission[] = data.map(item => ({
           id: item.id,
-          lead_id: item.lead_id,
+          lead_id: item.lead_id || '',
           amount: item.amount,
-          status: item.status,
-          product: item.product,
-          payment_period: item.payment_period,
+          percentage: item.percentage || 0,
+          commission_value: item.commission_value || item.amount,
+          status: mapCommissionStatus(item.status),
+          product: item.product || '',
           user_id: item.user_id,
-          created_at: item.created_at,
-          updated_at: item.updated_at,
+          payment_period: item.payment_period,
+          created_at: item.created_at || '',
+          updated_at: item.updated_at || '',
           lead: leadsData?.find(lead => lead.id === item.lead_id)
         }));
         
@@ -173,6 +179,28 @@ const CommissionPage = () => {
       toast.error(`Erro ao carregar dados: ${error.message}`);
     } finally {
       setIsLoading(false);
+    }
+  };
+  
+  // Map status from database to our Commission type
+  const mapCommissionStatus = (status: string): Commission['status'] => {
+    switch(status) {
+      case 'aprovado': return 'approved';
+      case 'em_andamento': return 'pending';
+      case 'cancelado': return 'cancelled';
+      case 'pago': return 'paid';
+      default: return 'pending';
+    }
+  };
+  
+  // Map status back for display
+  const getDisplayStatus = (status: Commission['status']): string => {
+    switch(status) {
+      case 'approved': return 'Aprovado';
+      case 'pending': return 'Em andamento';
+      case 'cancelled': return 'Cancelado';
+      case 'paid': return 'Pago';
+      default: return 'Em andamento';
     }
   };
   
@@ -196,7 +224,12 @@ const CommissionPage = () => {
     }
     
     if (selectedStatus !== "all") {
-      filtered = filtered.filter(commission => commission.status === selectedStatus);
+      filtered = filtered.filter(commission => {
+        if (selectedStatus === "aprovado") return commission.status === "approved";
+        if (selectedStatus === "em_andamento") return commission.status === "pending";
+        if (selectedStatus === "cancelado") return commission.status === "cancelled";
+        return true;
+      });
     }
     
     if (selectedProduct !== "all") {
@@ -537,10 +570,7 @@ const CommissionPage = () => {
                         </TableCell>
                         <TableCell>
                           <span className={`px-2 py-1 rounded-full text-xs ${getStatusColor(commission.status)}`}>
-                            {commission.status === "aprovado" && "Aprovado"}
-                            {commission.status === "em_andamento" && "Em andamento"}
-                            {commission.status === "cancelado" && "Cancelado"}
-                            {!["aprovado", "em_andamento", "cancelado"].includes(commission.status) && commission.status}
+                            {getDisplayStatus(commission.status)}
                           </span>
                         </TableCell>
                         <TableCell className="text-right">

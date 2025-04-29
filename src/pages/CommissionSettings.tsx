@@ -65,21 +65,24 @@ const CommissionSettings = () => {
       if (data && data.length > 0) {
         const typedData: CommissionRate[] = data.map(rate => ({
           id: rate.id,
-          product: rate.product as CommissionRate["product"],
+          product: rate.product,
           percentage: rate.percentage,
           active: rate.active,
-          created_at: rate.created_at,
-          updated_at: rate.updated_at,
-          user_id: rate.user_id,
+          created_at: rate.created_at || '',
+          updated_at: rate.updated_at || '',
+          user_id: rate.user_id || '',
           name: rate.name || null
         }));
         setCommissionRates(typedData);
       } else {
         const defaultRates = productOptions.map(product => ({
           id: product.id,
-          product: product.id as CommissionRate["product"],
+          product: product.id,
           percentage: 0,
           active: true,
+          created_at: '',
+          updated_at: '',
+          user_id: '',
           name: null
         }));
         setCommissionRates(defaultRates);
@@ -105,14 +108,14 @@ const CommissionSettings = () => {
       if (data && data.length > 0) {
         const typedData: CommissionTier[] = data.map(tier => ({
           id: tier.id,
-          product: tier.product as CommissionTier["product"],
+          product: tier.product,
           min_amount: tier.min_amount,
           max_amount: tier.max_amount,
           percentage: tier.percentage,
           active: tier.active,
-          created_at: tier.created_at,
-          updated_at: tier.updated_at,
-          user_id: tier.user_id,
+          created_at: tier.created_at || '',
+          updated_at: tier.updated_at || '',
+          user_id: tier.user_id || '',
           name: tier.name || null
         }));
         setCommissionTiers(typedData);

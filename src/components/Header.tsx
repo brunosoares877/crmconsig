@@ -19,7 +19,7 @@ const Header = () => {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => sidebar?.setIsOpen?.(prev => !prev)}
+            onClick={() => sidebar?.setOpen?.(prev => !prev)}
           >
             <Menu />
           </Button>
