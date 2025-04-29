@@ -72,12 +72,16 @@ const LeadList = () => {
   useEffect(() => {
     let result = [...leads];
     
-    // Apply search filter
+    // Apply search filter - agora busca por nome, telefone ou CPF
     if (searchQuery) {
+      const searchLower = searchQuery.toLowerCase();
       result = result.filter(lead => 
-        lead.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        lead.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        lead.phone?.includes(searchQuery)
+        (lead.name && lead.name.toLowerCase().includes(searchLower)) ||
+        (lead.phone && lead.phone.includes(searchQuery)) ||
+        (lead.phone2 && lead.phone2.includes(searchQuery)) ||
+        (lead.phone3 && lead.phone3.includes(searchQuery)) ||
+        (lead.cpf && lead.cpf.includes(searchQuery)) ||
+        (lead.email && lead.email.toLowerCase().includes(searchLower))
       );
     }
     
@@ -94,7 +98,7 @@ const LeadList = () => {
         const thirtyDaysAgo = new Date();
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
         result = result.filter(lead => {
-          const leadDate = new Date(lead.created_at);
+          const leadDate = new Date(lead.created_at || '');
           return leadDate >= thirtyDaysAgo;
         });
       }
@@ -173,17 +177,17 @@ const LeadList = () => {
             </div>
             
             <div className="flex w-full items-center space-x-2 md:w-auto">
-              <div className="relative w-full md:w-[180px]">
-                <Search className="absolute left-2 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+              <div className="relative w-full md:w-[280px]">
+                <Search className="absolute left-3 top-2.5 h-4 w-4 text-blue-500" />
                 <Input 
-                  placeholder="Buscar leads" 
-                  className="pl-8" 
+                  placeholder="Buscar por nome, telefone ou CPF..." 
+                  className="pl-10 border-blue-100 bg-blue-50/50 hover:bg-blue-50 focus:border-blue-200 focus:ring-1 focus:ring-blue-200 transition-all rounded-full"
                   value={searchQuery} 
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="h-8 w-full md:w-[180px]">
+                <SelectTrigger className="h-10 w-full md:w-[180px]">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -199,7 +203,7 @@ const LeadList = () => {
               
               <Sheet open={isOpenSheet} onOpenChange={setIsOpenSheet}>
                 <SheetTrigger asChild>
-                  <Button className="h-8 gap-1">
+                  <Button className="h-10 gap-1 bg-blue-600 hover:bg-blue-700">
                     <Plus className="h-3.5 w-3.5" />
                     <span>Novo Lead</span>
                   </Button>

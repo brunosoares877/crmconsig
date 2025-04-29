@@ -26,9 +26,12 @@ const Header = () => {
         </div>
 
         <div className="hidden md:flex items-center">
-          <div className="relative w-64">
-            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Buscar leads..." className="pl-8 bg-gray-50 border-gray-100" />
+          <div className="relative w-80">
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-blue-500" />
+            <Input 
+              placeholder="Buscar por nome, telefone ou CPF..." 
+              className="pl-10 py-2 border-blue-100 bg-blue-50/50 hover:bg-blue-50 focus:border-blue-200 focus:ring-1 focus:ring-blue-200 transition-all rounded-full" 
+            />
           </div>
         </div>
 

@@ -8,6 +8,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { Input } from "@/components/ui/input";
+import { Search } from "lucide-react";
 
 const Leads = () => {
   const [activeTab, setActiveTab] = useState("all");
@@ -18,6 +20,7 @@ const Leads = () => {
     converted: 0
   });
   const [isLoading, setIsLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     const fetchLeadStats = async () => {
@@ -93,6 +96,15 @@ const Leads = () => {
             <div>
               <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100">Gestão de Leads</h1>
               <p className="text-muted-foreground mt-1">Gerencie e acompanhe todos os seus leads em um só lugar</p>
+            </div>
+            <div className="mt-4 md:mt-0 relative">
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-blue-500" />
+              <Input 
+                placeholder="Buscar por nome, telefone ou CPF..." 
+                className="pl-10 py-2 border-blue-100 bg-blue-50/50 hover:bg-blue-50 focus:border-blue-200 focus:ring-1 focus:ring-blue-200 transition-all rounded-full w-full md:w-[280px]"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
             </div>
           </div>
 
