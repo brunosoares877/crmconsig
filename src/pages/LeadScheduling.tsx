@@ -34,20 +34,7 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { Lead } from "@/types/models";
-
-interface Appointment {
-  id: string;
-  lead_id: string;
-  title: string;
-  date: string;
-  time: string;
-  notes: string | null;
-  status: "scheduled" | "completed" | "cancelled";
-  created_at: string;
-  updated_at: string;
-  user_id: string;
-}
+import { Lead, Appointment } from "@/types/models";
 
 const LeadScheduling = () => {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -68,14 +55,16 @@ const LeadScheduling = () => {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      // Fetch leads for the dropdown
+      // Fetch leads for the dropdown - only fetch id and name for efficiency
       const { data: leadsData, error: leadsError } = await supabase
         .from("leads")
         .select("id, name")
         .order("name");
       
       if (leadsError) throw leadsError;
-      setLeads(leadsData || []);
+      
+      // We need to type-assert here since we're only selecting certain fields
+      setLeads(leadsData as Lead[]);
       
       // Fetch appointments
       const { data: appointmentsData, error: appointmentsError } = await supabase
@@ -84,7 +73,7 @@ const LeadScheduling = () => {
         .order("date");
         
       if (appointmentsError) throw appointmentsError;
-      setAppointments(appointmentsData || []);
+      setAppointments(appointmentsData as Appointment[]);
     } catch (error: any) {
       console.error("Error fetching data:", error);
       toast.error(`Erro ao carregar dados: ${error.message}`);

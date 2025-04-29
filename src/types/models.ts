@@ -1,3 +1,4 @@
+
 export interface Lead {
   id: string;
   name: string;
@@ -46,4 +47,17 @@ export interface Commission {
   amount: number;
   date: string;
   status: "pending" | "paid";
+}
+
+export interface Appointment {
+  id: string;
+  lead_id: string;
+  title: string;
+  date: string;
+  time: string;
+  notes: string | null;
+  status: "scheduled" | "completed" | "cancelled";
+  created_at: string;
+  updated_at: string;
+  user_id: string;
 }
