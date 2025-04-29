@@ -27,9 +27,6 @@ function App() {
             <Route path="/leads" element={<Leads />} />
             <Route path="/leads/new" element={<LeadNew />} />
             <Route path="/leads/import" element={<LeadImport />} />
-            <Route path="/leads/qualified" element={<Leads />} />
-            <Route path="/leads/to-contact" element={<Leads />} />
-            <Route path="/leads/pending" element={<Leads />} />
             <Route path="/leads/scheduled" element={<Leads />} />
             <Route path="/login" element={<Login />} />
             <Route path="/sales" element={<Sales />} />

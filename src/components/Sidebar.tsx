@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { 
@@ -13,11 +12,8 @@ import {
   X,
   FileText,
   FolderPlus,
-  UserCheck,
-  Phone,
-  Calendar,
   Import,
-  ListCheck
+  Calendar
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -51,9 +47,6 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
     { icon: Users, label: "Todos os Leads", href: "/leads", description: "Visão completa de todos os seus leads" },
     { icon: FolderPlus, label: "Novo Lead", href: "/leads/new", description: "Cadastre um novo lead manualmente" },
     { icon: Import, label: "Importar Leads", href: "/leads/import", description: "Importe leads de um arquivo CSV" },
-    { icon: UserCheck, label: "Leads Qualificados", href: "/leads/qualified", description: "Leads prontos para conversão" },
-    { icon: Phone, label: "Para Contato", href: "/leads/to-contact", description: "Leads que precisam ser contatados" },
-    { icon: ListCheck, label: "Pendentes", href: "/leads/pending", description: "Leads com documentação pendente" },
     { icon: Calendar, label: "Agendamentos", href: "/leads/scheduled", description: "Leads com visitas agendadas" },
   ];
 
@@ -112,7 +105,6 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
               );
             })}
 
-            {/* Enhanced Leads Section with Submenu */}
             <li>
               <Collapsible 
                 open={leadsOpen} 
@@ -152,7 +144,6 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
                           <subItem.icon className="mr-2 h-4 w-4" />
                           {subItem.label}
                         </Link>
-                        {/* Tooltip */}
                         <div className="absolute left-full ml-2 top-0 z-50 w-48 rounded-md bg-[#1e4976] p-2 text-xs text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
                           {subItem.description}
                           <div className="absolute -left-1 top-3 h-2 w-2 rotate-45 bg-[#1e4976]"></div>
