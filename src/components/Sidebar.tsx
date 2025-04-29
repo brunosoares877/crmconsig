@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { 
@@ -11,10 +10,11 @@ import {
   BarChart3,
   Menu,
   X,
-  FileText,
   FolderPlus,
   Import,
-  Calendar
+  Calendar,
+  Clock,
+  CheckSquare
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -34,18 +34,28 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
   const isMobile = useIsMobile();
   const [isOpen, setIsOpen] = React.useState(!isMobile);
   const [leadsOpen, setLeadsOpen] = React.useState(true);
+  const [remindersOpen, setRemindersOpen] = React.useState(false);
 
-  // Reordered menu items to place Leads directly after Dashboard
+  // Dashboard menu item
+  const dashboardItem = { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" };
+  
+  // Reminders submenu items
+  const reminderMenuItems = [
+    { icon: Bell, label: "Todos", href: "/reminders", description: "Ver todos os lembretes" },
+    { icon: Calendar, label: "Calendário", href: "/reminders/calendar", description: "Visualizar lembretes em um calendário" },
+    { icon: Clock, label: "Agendamento", href: "/reminders/schedule", description: "Agendar novos lembretes" },
+    { icon: CheckSquare, label: "Tarefas", href: "/reminders/tasks", description: "Verificar tarefas pendentes" },
+  ];
+
+  // Other main menu items
   const mainMenuItems = [
-    { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
-    // Leads collapsible menu will be rendered separately between Dashboard and Reminders
-    { icon: Bell, label: "Lembretes", href: "/reminders" },
     { icon: ArrowRight, label: "Portabilidade", href: "/portability" },
     { icon: DollarSign, label: "Comissão", href: "/commission" },
     { icon: UserPlus, label: "Funcionários", href: "/employees" },
     { icon: BarChart3, label: "Relatórios", href: "/reports" },
   ];
 
+  // Leads submenu items
   const leadMenuItems = [
     { icon: Users, label: "Todos os Leads", href: "/leads", description: "Visão completa de todos os seus leads" },
     { icon: FolderPlus, label: "Novo Lead", href: "/leads/new", description: "Cadastre um novo lead manualmente" },
@@ -60,8 +70,7 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
     setIsOpen(!isMobile);
   }, [isMobile]);
 
-  // Get the dashboard item
-  const dashboardItem = mainMenuItems[0];
+  // Get the dashboard item for easier rendering
   const DashboardIcon = dashboardItem.icon;
 
   return (
@@ -106,7 +115,7 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
               </Link>
             </li>
             
-            {/* Leads collapsible (moved up to be after Dashboard) */}
+            {/* Leads collapsible */}
             <li>
               <Collapsible 
                 open={leadsOpen} 
@@ -158,8 +167,60 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
               </Collapsible>
             </li>
             
-            {/* Render the rest of the main menu items (skipping Dashboard which was already rendered) */}
-            {mainMenuItems.slice(1).map((item, index) => {
+            {/* Reminders collapsible - New expanded section */}
+            <li>
+              <Collapsible 
+                open={remindersOpen} 
+                onOpenChange={setRemindersOpen} 
+                className="w-full"
+              >
+                <CollapsibleTrigger className="w-full">
+                  <div 
+                    className={cn(
+                      "flex items-center justify-between rounded-md px-4 py-3 text-sm transition-colors w-full",
+                      location.pathname.includes("/reminders")
+                        ? "bg-[#133b66] text-white font-medium shadow-sm"
+                        : "text-gray-300 hover:bg-[#133b66]/70 hover:text-white"
+                    )}
+                  >
+                    <div className="flex items-center">
+                      <Bell className="mr-3 h-5 w-5" />
+                      <span>Lembretes</span>
+                    </div>
+                    <span className="text-xs">{remindersOpen ? '▲' : '▼'}</span>
+                  </div>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="ml-5 mt-1 space-y-1">
+                  {reminderMenuItems.map((subItem, idx) => {
+                    const isSubActive = location.pathname === subItem.href;
+                    const SubItemIcon = subItem.icon;
+                    return (
+                      <div key={idx} className="group relative">
+                        <Link
+                          to={subItem.href}
+                          className={cn(
+                            "flex items-center rounded-md px-4 py-2 text-sm transition-colors",
+                            isSubActive
+                              ? "bg-[#1e4976] text-white shadow-sm"
+                              : "text-gray-300 hover:bg-[#1e4976]/70 hover:text-white"
+                          )}
+                        >
+                          <SubItemIcon className="mr-2 h-4 w-4" />
+                          {subItem.label}
+                        </Link>
+                        <div className="absolute left-full ml-2 top-0 z-50 w-48 rounded-md bg-[#1e4976] p-2 text-xs text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
+                          {subItem.description}
+                          <div className="absolute -left-1 top-3 h-2 w-2 rotate-45 bg-[#1e4976]"></div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </CollapsibleContent>
+              </Collapsible>
+            </li>
+            
+            {/* Render the rest of the main menu items */}
+            {mainMenuItems.map((item, index) => {
               const isActive = location.pathname === item.href;
               const ItemIcon = item.icon;
               

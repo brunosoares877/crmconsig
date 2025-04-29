@@ -33,6 +33,10 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/sales" element={<Sales />} />
             <Route path="/portability" element={<Portability />} />
+            <Route path="/reminders" element={<Portability />} />
+            <Route path="/reminders/calendar" element={<Portability />} />
+            <Route path="/reminders/schedule" element={<Portability />} />
+            <Route path="/reminders/tasks" element={<Portability />} />
           </Routes>
         </AuthProvider>
       </Router>
