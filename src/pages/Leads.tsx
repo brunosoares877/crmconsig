@@ -44,11 +44,6 @@ const Leads = () => {
                     <CardTitle className="text-2xl">153</CardTitle>
                     <CardDescription>Total de Leads</CardDescription>
                   </CardHeader>
-                  <CardContent>
-                    <div className="text-xs text-muted-foreground">
-                      +12% em relação ao mês anterior
-                    </div>
-                  </CardContent>
                 </Card>
                 <Card>
                   <CardHeader className="pb-2">
