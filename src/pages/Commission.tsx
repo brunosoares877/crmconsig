@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
@@ -154,7 +155,7 @@ const CommissionPage = () => {
           user_id: item.user_id,
           created_at: item.created_at,
           updated_at: item.updated_at,
-          lead: leadsData?.find(lead => lead.id === item.lead_id) as Lead["lead"]
+          lead: leadsData?.find(lead => lead.id === item.lead_id)
         }));
         
         setCommissions(mappedData);
