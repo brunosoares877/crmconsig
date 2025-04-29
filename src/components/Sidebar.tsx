@@ -39,10 +39,11 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
   // Dashboard menu item
   const dashboardItem = { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" };
   
-  // Reminders submenu items - simplified as requested
+  // Reminders submenu items - updated with calendar
   const reminderMenuItems = [
     { icon: Bell, label: "Todos", href: "/reminders", description: "Ver todos os lembretes" },
     { icon: CheckSquare, label: "Gestão", href: "/reminders/management", description: "Filtrar por status dos lembretes" },
+    { icon: Calendar, label: "Calendário", href: "/reminders/calendar", description: "Visualizar lembretes no calendário" },
   ];
 
   // Other main menu items
@@ -165,7 +166,7 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
               </Collapsible>
             </li>
             
-            {/* Reminders collapsible - Simplified as requested */}
+            {/* Reminders collapsible - Updated with Calendar option */}
             <li>
               <Collapsible 
                 open={remindersOpen} 
