@@ -8,82 +8,82 @@
 @layer base {
   :root {
     --background: 0 0% 100%; /* White */
-    --foreground: 45 100% 20%; /* Dark yellow text */
+    --foreground: 225 25% 20%; /* Dark navy text */
 
     --card: 0 0% 100%; /* White card background */
-    --card-foreground: 45 100% 20%; /* Dark yellow text */
+    --card-foreground: 225 25% 20%; /* Dark navy text */
 
     --popover: 0 0% 100%; /* White popover */
-    --popover-foreground: 45 100% 20%; /* Dark yellow text */
+    --popover-foreground: 225 25% 20%; /* Dark navy text */
 
-    --primary: 45 100% 50%; /* Yellow */
-    --primary-foreground: 45 100% 10%; /* Dark text on primary */
+    --primary: 220 70% 25%; /* Navy blue */
+    --primary-foreground: 0 0% 100%; /* White text on primary */
 
-    --secondary: 45 100% 96%; /* Very light yellow */
-    --secondary-foreground: 45 100% 20%; /* Dark yellow text */
+    --secondary: 220 20% 96%; /* Very light navy */
+    --secondary-foreground: 225 25% 20%; /* Dark navy text */
 
-    --muted: 45 100% 96%; /* Very light yellow */
-    --muted-foreground: 45 25% 50%; /* Medium yellow */
+    --muted: 220 20% 96%; /* Very light navy */
+    --muted-foreground: 220 20% 50%; /* Medium navy */
 
-    --accent: 45 100% 50%; /* Yellow */
-    --accent-foreground: 45 100% 10%; /* Dark text on accent */
+    --accent: 220 70% 25%; /* Navy blue */
+    --accent-foreground: 0 0% 100%; /* White text on accent */
 
     --destructive: 0 84.2% 60.2%; /* Keep destructive red */
     --destructive-foreground: 0 0% 100%; /* White on destructive */
 
-    --border: 45 50% 90%; /* Light yellow border */
-    --input: 45 50% 90%; /* Light yellow input */
-    --ring: 45 100% 50%; /* Yellow ring */
+    --border: 220 20% 90%; /* Light navy border */
+    --input: 220 20% 90%; /* Light navy input */
+    --ring: 220 70% 25%; /* Navy blue ring */
 
     --radius: 0.5rem;
 
-    --sidebar-background: 45 100% 40%; /* Darker yellow sidebar */
-    --sidebar-foreground: 0 0% 10%; /* Almost black text */
-    --sidebar-primary: 45 100% 50%; /* Yellow primary */
-    --sidebar-primary-foreground: 45 100% 10%; /* Dark text */
-    --sidebar-accent: 45 70% 40%; /* Yellow accent */
-    --sidebar-accent-foreground: 45 100% 10%; /* Dark text */
-    --sidebar-border: 45 75% 30%; /* Yellow border */
-    --sidebar-ring: 45 100% 40%; /* Light yellow ring */
+    --sidebar-background: 220 70% 15%; /* Darker navy sidebar */
+    --sidebar-foreground: 0 0% 100%; /* White text */
+    --sidebar-primary: 220 70% 25%; /* Navy blue primary */
+    --sidebar-primary-foreground: 0 0% 100%; /* White text */
+    --sidebar-accent: 220 40% 25%; /* Navy blue accent */
+    --sidebar-accent-foreground: 0 0% 100%; /* White text */
+    --sidebar-border: 220 50% 30%; /* Navy blue border */
+    --sidebar-ring: 220 70% 40%; /* Light navy ring */
   }
 
   .dark {
-    --background: 45 25% 10%; /* Dark yellow background */
+    --background: 225 30% 10%; /* Dark navy background */
     --foreground: 0 0% 95%; /* Off-white text */
 
-    --card: 45 25% 12%; /* Slightly lighter yellow card */
+    --card: 225 30% 12%; /* Slightly lighter navy card */
     --card-foreground: 0 0% 95%; /* Off-white text */
 
-    --popover: 45 25% 12%; /* Yellow popover */
+    --popover: 225 30% 12%; /* Navy popover */
     --popover-foreground: 0 0% 95%; /* Off-white text */
 
-    --primary: 45 100% 50%; /* Bright yellow */
-    --primary-foreground: 45 100% 10%; /* Dark text */
+    --primary: 220 70% 50%; /* Brighter navy blue */
+    --primary-foreground: 0 0% 100%; /* White */
 
-    --secondary: 45 25% 20%; /* Medium yellow */
+    --secondary: 225 30% 20%; /* Medium navy */
     --secondary-foreground: 0 0% 95%; /* Off-white text */
 
-    --muted: 45 25% 20%; /* Medium yellow */
-    --muted-foreground: 45 20% 70%; /* Light yellow */
+    --muted: 225 30% 20%; /* Medium navy */
+    --muted-foreground: 220 20% 70%; /* Light navy */
 
-    --accent: 45 25% 20%; /* Medium yellow */
+    --accent: 225 30% 20%; /* Medium navy */
     --accent-foreground: 0 0% 95%; /* Off-white text */
 
     --destructive: 0 62.8% 30.6%; /* Dark red */
     --destructive-foreground: 0 0% 95%; /* Off-white text */
 
-    --border: 45 25% 25%; /* Yellow border */
-    --input: 45 25% 25%; /* Yellow input */
-    --ring: 45 75% 50%; /* Light yellow ring */
+    --border: 225 30% 25%; /* Navy border */
+    --input: 225 30% 25%; /* Navy input */
+    --ring: 220 70% 40%; /* Light navy ring */
     
-    --sidebar-background: 45 25% 8%; /* Very dark yellow sidebar */
+    --sidebar-background: 225 30% 8%; /* Very dark navy sidebar */
     --sidebar-foreground: 0 0% 95%; /* Off-white text */
-    --sidebar-primary: 45 100% 50%; /* Bright yellow */
-    --sidebar-primary-foreground: 45 100% 10%; /* Dark text */
-    --sidebar-accent: 45 25% 15%; /* Dark yellow accent */
+    --sidebar-primary: 220 70% 50%; /* Brighter navy blue */
+    --sidebar-primary-foreground: 0 0% 100%; /* White text */
+    --sidebar-accent: 225 30% 15%; /* Dark navy accent */
     --sidebar-accent-foreground: 0 0% 95%; /* Off-white text */
-    --sidebar-border: 45 25% 20%; /* Yellow border */
-    --sidebar-ring: 45 75% 40%; /* Light yellow ring */
+    --sidebar-border: 225 30% 20%; /* Navy border */
+    --sidebar-ring: 220 70% 40%; /* Light navy ring */
   }
 }
 
