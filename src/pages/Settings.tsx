@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { User, Settings as SettingsIcon, Lock } from "lucide-react";
+import { User, Settings as SettingsIcon, Lock, LogOut, Mail } from "lucide-react";
 
 // Define form schemas
 const profileFormSchema = z.object({
@@ -40,7 +40,7 @@ type ProfileFormValues = z.infer<typeof profileFormSchema>;
 type PasswordFormValues = z.infer<typeof passwordFormSchema>;
 
 const Settings = () => {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [profile, setProfile] = useState<any>(null);
@@ -177,6 +177,23 @@ const Settings = () => {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      toast({
+        title: "Logout realizado",
+        description: "Você foi desconectado com sucesso",
+      });
+    } catch (error: any) {
+      console.error("Error logging out:", error.message);
+      toast({
+        title: "Erro",
+        description: "Não foi possível realizar o logout",
+        variant: "destructive",
+      });
     }
   };
 
@@ -358,6 +375,37 @@ const Settings = () => {
               </Card>
             </TabsContent>
           </Tabs>
+          
+          {/* User Info and Logout Section */}
+          <div className="mt-8 border-t pt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Conta</CardTitle>
+                <CardDescription>
+                  Informações da sua conta e opções para sair
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <div className="flex items-center gap-3 py-2">
+                  <Mail className="h-5 w-5 text-muted-foreground" />
+                  <div>
+                    <p className="text-sm font-medium">Email cadastrado</p>
+                    <p className="text-sm text-muted-foreground">{user?.email || "Carregando..."}</p>
+                  </div>
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Button 
+                  variant="destructive" 
+                  onClick={handleLogout}
+                  className="flex items-center gap-2"
+                >
+                  <LogOut className="h-4 w-4" />
+                  Sair da conta
+                </Button>
+              </CardFooter>
+            </Card>
+          </div>
         </main>
       </div>
       <Toaster />
