@@ -68,7 +68,7 @@ const Commission = () => {
       setLeads(leadsData);
       
       // Mock data for commissions
-      const commissionsData: Commission[] = [
+      const commissionsData: CommissionType[] = [
         {
           id: "1",
           lead_id: "1",
