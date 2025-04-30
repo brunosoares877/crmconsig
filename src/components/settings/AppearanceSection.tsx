@@ -19,16 +19,20 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { useTheme } from "@/contexts/ThemeContext";
 
 export default function AppearanceSection() {
+  const { theme, setTheme } = useTheme();
+  
   const form = useForm({
     defaultValues: {
-      theme: "system",
+      theme: theme,
     },
   });
 
-  const onSubmit = async (data: { theme: string }) => {
+  const onSubmit = async (data: { theme: 'light' | 'dark' | 'classic-dark' | 'system' }) => {
     try {
+      setTheme(data.theme);
       toast.success("Tema atualizado com sucesso");
     } catch (error) {
       console.error("Error updating theme:", error);
@@ -64,6 +68,7 @@ export default function AppearanceSection() {
                   <SelectContent>
                     <SelectItem value="light">Claro</SelectItem>
                     <SelectItem value="dark">Escuro</SelectItem>
+                    <SelectItem value="classic-dark">Escuro clássico</SelectItem>
                     <SelectItem value="system">Sistema</SelectItem>
                   </SelectContent>
                 </Select>

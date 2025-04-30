@@ -7,6 +7,7 @@ import { useSidebar } from "@/components/ui/sidebar";
 import { useIsMobile } from "@/hooks/use-mobile";
 import SupportButton from "@/components/SupportButton";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "@/contexts/ThemeContext";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -25,7 +26,7 @@ const Header = () => {
   const sidebar = useSidebar();
   const isMobile = useIsMobile();
   const { user, signOut } = useAuth();
-  const [theme, setTheme] = React.useState("system");
+  const { theme, setTheme } = useTheme();
 
   const handleLogout = async () => {
     try {

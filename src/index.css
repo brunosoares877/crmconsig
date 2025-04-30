@@ -85,6 +85,45 @@
     --sidebar-border: 225 30% 20%; /* Navy border */
     --sidebar-ring: 220 70% 40%; /* Light navy ring */
   }
+
+  .classic-dark {
+    --background: 240 10% 3.9%; /* Very dark background */
+    --foreground: 0 0% 98%; /* Almost white text */
+
+    --card: 240 10% 5.9%; /* Very dark card */
+    --card-foreground: 0 0% 98%; /* Almost white text */
+
+    --popover: 240 10% 5.9%; /* Very dark popover */
+    --popover-foreground: 0 0% 98%; /* Almost white text */
+
+    --primary: 252 83.3% 57.8%; /* Vibrant purple */
+    --primary-foreground: 0 0% 100%; /* White */
+
+    --secondary: 240 5.9% 10%; /* Dark gray */
+    --secondary-foreground: 0 0% 98%; /* Almost white text */
+
+    --muted: 240 5.9% 10%; /* Dark gray */
+    --muted-foreground: 240 5% 64.9%; /* Medium gray */
+
+    --accent: 240 5.9% 10%; /* Dark gray */
+    --accent-foreground: 0 0% 98%; /* Almost white text */
+
+    --destructive: 0 72.8% 40.6%; /* Deep red */
+    --destructive-foreground: 0 0% 98%; /* Almost white text */
+
+    --border: 240 5.9% 15%; /* Dark border */
+    --input: 240 5.9% 15%; /* Dark input */
+    --ring: 252 83.3% 57.8%; /* Vibrant purple */
+    
+    --sidebar-background: 240 10% 2.9%; /* Very dark sidebar */
+    --sidebar-foreground: 0 0% 98%; /* Almost white text */
+    --sidebar-primary: 252 83.3% 57.8%; /* Vibrant purple */
+    --sidebar-primary-foreground: 0 0% 100%; /* White text */
+    --sidebar-accent: 240 5.9% 8%; /* Very dark accent */
+    --sidebar-accent-foreground: 0 0% 98%; /* Almost white text */
+    --sidebar-border: 240 5.9% 15%; /* Dark border */
+    --sidebar-ring: 252 83.3% 57.8%; /* Vibrant purple */
+  }
 }
 
 @layer base {
@@ -130,7 +169,7 @@
 }
 
 .card-gradient {
-  @apply bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900;
+  @apply bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 classic-dark:from-gray-900 classic-dark:to-gray-950;
 }
 
 .card-hover {
