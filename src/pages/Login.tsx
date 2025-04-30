@@ -9,6 +9,8 @@ import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { z } from "zod";
+import { supabase } from "@/integrations/supabase/client";
+
 const phoneRegex = /^\(\d{2}\) \d{5}-\d{4}$/;
 const LoginSchema = z.object({
   email: z.string().email("Email inválido"),
@@ -43,6 +45,7 @@ const Login = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
   const maskPhone = (value: string) => {
     // Remove all non-digits
     const digits = value.replace(/\D/g, '');
@@ -102,9 +105,40 @@ const Login = () => {
         await signIn(email, password);
         toast.success("Login realizado com sucesso");
       } else {
-        await signUp(email, password, company);
+        // Register user with all form data
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              full_name: fullName,
+              company_name: company,
+              whatsapp: whatsapp
+            }
+          }
+        });
+        
+        if (error) throw error;
+        
+        // Update the profile in the profiles table
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update({
+            company_name: company,
+            first_name: fullName.split(' ')[0],
+            last_name: fullName.split(' ').slice(1).join(' ')
+          })
+          .eq('id', (await supabase.auth.getUser()).data.user?.id);
+        
+        if (profileError) {
+          console.error("Error updating profile:", profileError);
+        }
+        
         startTrial(); // Start the 7-day trial
         toast.success("Conta criada com sucesso! Seu período de teste de 7 dias começou.");
+        
+        // Auto-login after signup
+        await signIn(email, password);
       }
     } catch (error: any) {
       toast.error(error.message || "Ocorreu um erro ao processar sua solicitação");
@@ -189,7 +223,7 @@ const Login = () => {
                       Entrar
                     </> : <>
                       <UserPlus className="mr-2 h-4 w-4" />
-                      Entrar
+                      Criar Conta
                     </>}
                 </>}
             </Button>
