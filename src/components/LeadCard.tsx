@@ -117,8 +117,11 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete }) => {
       ? formattedNumber 
       : `55${formattedNumber}`;
     
+    // Use the default WhatsApp number if the lead's phone is not available
+    const finalPhoneNumber = phoneNumber ? numberWithCountryCode : "5584991850149";
+    
     // Open WhatsApp web with the phone number
-    window.open(`https://wa.me/${numberWithCountryCode}`, "_blank");
+    window.open(`https://wa.me/${finalPhoneNumber}`, "_blank");
   };
 
   return (

@@ -19,7 +19,7 @@ const Sales = () => {
       
       {/* WhatsApp Floating Button */}
       <WhatsAppButton 
-        phoneNumber="5571987648829" 
+        phoneNumber="5584991850149" 
         message="Olá! Gostaria de saber mais sobre o sistema LeadConsig"
         variant="floating" 
       />
@@ -39,7 +39,7 @@ const Sales = () => {
               </Button>
               
               <WhatsAppButton 
-                phoneNumber="5571987648829" 
+                phoneNumber="5584991850149" 
                 message="Olá! Gostaria de saber mais sobre o sistema LeadConsig"
                 label="Falar com Consultor" 
               />
@@ -100,7 +100,7 @@ const Sales = () => {
                 Começar agora mesmo <ArrowRight className="ml-2" />
               </Button>
               <WhatsAppButton 
-                phoneNumber="5571987648829" 
+                phoneNumber="5584991850149" 
                 message="Olá! Tenho dúvidas sobre o LeadConsig"
                 label="Falar com Suporte" 
               />
@@ -134,7 +134,7 @@ const Sales = () => {
               <div className="space-y-2">
                 <a href="#" className="flex items-center gap-2 hover:text-primary transition-colors">
                   <Send size={20} />
-                  (71) 98764-8829
+                  (84) 99185-0149
                 </a>
                 <a href="mailto:consignadoleadhub@gmail.com" className="hover:text-primary transition-colors">
                   consignadoleadhub@gmail.com

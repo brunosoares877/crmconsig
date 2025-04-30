@@ -7,6 +7,7 @@ import TrialBanner from "@/components/TrialBanner";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import Sidebar from "@/components/Sidebar";
 import AddLeadButton from "@/components/leads/AddLeadButton";
+import WhatsAppButton from "@/components/WhatsAppButton";
 
 const Index = () => {
   const { status, isTrialActive } = useSubscription();
@@ -28,7 +29,14 @@ const Index = () => {
           <TrialBanner />
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100">Dashboard</h1>
-            <AddLeadButton />
+            <div className="flex items-center gap-3">
+              <WhatsAppButton 
+                phoneNumber="5584991850149"
+                message="Olá! Tenho dúvidas sobre o sistema LeadConsig"
+                label="Suporte"
+              />
+              <AddLeadButton />
+            </div>
           </div>
           <Dashboard />
         </main>

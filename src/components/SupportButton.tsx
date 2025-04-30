@@ -19,7 +19,7 @@ const SupportButton = () => {
   const supportOptions: SupportOption[] = [
     {
       label: "Suporte Técnico",
-      phoneNumber: "5571987648829",
+      phoneNumber: "5584991850149",
       message: "Olá, preciso de suporte técnico para o sistema LeadConsig",
       icon: () => (
         <svg viewBox="0 0 24 24" className="h-5 w-5 text-green-500" fill="currentColor">
@@ -29,7 +29,7 @@ const SupportButton = () => {
     },
     {
       label: "Dúvidas Comerciais",
-      phoneNumber: "5571987648829",
+      phoneNumber: "5584991850149",
       message: "Olá, tenho dúvidas comerciais sobre o LeadConsig",
       icon: () => (
         <svg viewBox="0 0 24 24" className="h-5 w-5 text-green-500" fill="currentColor">
