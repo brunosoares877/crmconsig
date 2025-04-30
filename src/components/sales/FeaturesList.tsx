@@ -82,7 +82,7 @@ const FeaturesList = () => {
           </div>
           <div className="p-4">
             <div className="text-4xl font-bold mb-2">100%</div>
-            <p className="text-gray-100">Acertividade </p>
+            <p className="text-gray-100">Assertividade</p>
           </div>
         </div>
       </div>
