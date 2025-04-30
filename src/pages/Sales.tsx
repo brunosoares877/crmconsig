@@ -1,3 +1,4 @@
+
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -7,6 +8,7 @@ import SubscriptionPlans from "@/components/sales/SubscriptionPlans";
 import FeaturesList from "@/components/sales/FeaturesList";
 import Testimonials from "@/components/sales/Testimonials";
 import WhatsAppButton from "@/components/WhatsAppButton";
+
 const Sales = () => {
   const navigate = useNavigate();
   const handleStartTrial = () => {
@@ -45,12 +47,9 @@ const Sales = () => {
           </div>
         </section>
 
-        {/* Features Section */}
-        <section className="bg-white py-16">
+        {/* Features Section - Now with enhanced visualization */}
+        <section className="py-16 bg-gradient-to-b from-white via-blue-50/30 to-white">
           <div className="container mx-auto px-4">
-            <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
-              Funcionalidades poderosas para seu negócio
-            </h2>
             <FeaturesList />
           </div>
         </section>
@@ -77,16 +76,16 @@ const Sales = () => {
         </section>
 
         {/* CTA Section */}
-        <section className="text-white py-16 bg-slate-300">
+        <section className="text-white py-16 bg-gradient-to-r from-primary to-blue-700">
           <div className="container mx-auto px-4 text-center">
-            <h2 className="text-3xl md:text-4xl font-bold mb-6 text-slate-950">
+            <h2 className="text-3xl md:text-4xl font-bold mb-6 text-white">
               Pronto para aumentar suas vendas?
             </h2>
-            <p className="text-xl mb-8 max-w-2xl mx-auto text-slate-950">
+            <p className="text-xl mb-8 max-w-2xl mx-auto text-blue-100">
               Experimente nosso CRM por 7 dias gratuitamente e veja como podemos ajudar sua empresa a crescer.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Button onClick={handleStartTrial} size="lg" className="text-lg px-8 py-6 bg-blue-600 hover:bg-blue-700">
+              <Button onClick={handleStartTrial} size="lg" className="text-lg px-8 py-6 bg-white text-primary hover:bg-blue-50">
                 Começar agora mesmo <ArrowRight className="ml-2" />
               </Button>
               <WhatsAppButton phoneNumber="5584991850149" message="Olá! Tenho dúvidas sobre o LeadConsig" label="Falar com Suporte" />
@@ -118,7 +117,7 @@ const Sales = () => {
             <div>
               <h3 className="text-xl font-semibold mb-4">Nossos Contatos</h3>
               <div className="space-y-2">
-                <a href="#" className="flex items-center gap-2 hover:text-primary transition-colors">
+                <a href="https://wa.me/5584991850149?text=Olá!%20Gostaria%20de%20saber%20mais%20sobre%20o%20sistema%20Leadconsig" className="flex items-center gap-2 hover:text-primary transition-colors">
                   <Send size={20} />
                   (84) 99185-0149
                 </a>
