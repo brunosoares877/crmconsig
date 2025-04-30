@@ -70,10 +70,10 @@ export interface Commission {
   percentage: number;
   commission_value: number;
   product: string;
-  payment_period?: string; // Add this property
+  payment_period?: string;
   status: 'pending' | 'approved' | 'paid' | 'cancelled';
   payment_date?: string;
   created_at: string;
   updated_at: string;
-  lead?: Partial<Lead>; // Add lead relationship
+  lead?: Partial<Lead>; // Add lead relationship with correct type
 }
