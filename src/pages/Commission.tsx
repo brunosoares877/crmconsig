@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,13 +15,13 @@ import {
 } from "@/components/ui/table";
 import {
   Lead,
-  Commission
+  type Commission as CommissionType
 } from "@/types/models";
 
 const Commission = () => {
   const [loading, setLoading] = useState(false);
   const [leads, setLeads] = useState<Partial<Lead>[]>([]);
-  const [commissions, setCommissions] = useState<Commission[]>([]);
+  const [commissions, setCommissions] = useState<CommissionType[]>([]);
   const [search, setSearch] = useState("");
   const [totalCommissionsPending, setTotalCommissionsPending] = useState(0);
   const [totalCommissionsApproved, setTotalCommissionsApproved] = useState(0);
