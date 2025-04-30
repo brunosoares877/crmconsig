@@ -22,9 +22,9 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 
 function App() {
   return (
-    <SubscriptionProvider>
-      <Router>
-        <AuthProvider>
+    <Router>
+      <AuthProvider>
+        <SubscriptionProvider>
           <SidebarProvider>
             <Routes>
               <Route path="/" element={<Index />} />
@@ -45,9 +45,9 @@ function App() {
               <Route path="/commission/settings" element={<CommissionSettings />} />
             </Routes>
           </SidebarProvider>
-        </AuthProvider>
-      </Router>
-    </SubscriptionProvider>
+        </SubscriptionProvider>
+      </AuthProvider>
+    </Router>
   );
 }
 

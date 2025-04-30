@@ -29,21 +29,12 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const [subscriptionEndDate, setSubscriptionEndDate] = useState<string | null>(null);
   const [trialDaysLeft, setTrialDaysLeft] = useState(0);
 
-  // Auto-start trial for new users if no trial has been started before
-  useEffect(() => {
-    const storedTrialStartDate = localStorage.getItem('trialStartDate');
-    const storedSubscriptionEndDate = localStorage.getItem('subscriptionEndDate');
-
-    if (!storedTrialStartDate && !storedSubscriptionEndDate) {
-      startTrial();
-    }
-  }, []);
-
   // Load subscription data from localStorage on mount
   useEffect(() => {
     const storedTrialStartDate = localStorage.getItem('trialStartDate');
     const storedSubscriptionEndDate = localStorage.getItem('subscriptionEndDate');
 
+    // Check for active subscription
     if (storedSubscriptionEndDate) {
       const endDate = new Date(storedSubscriptionEndDate);
       if (endDate > new Date()) {
@@ -53,7 +44,9 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
         setStatus('expired');
         setSubscriptionEndDate(null);
       }
-    } else if (storedTrialStartDate) {
+    } 
+    // Check for active trial
+    else if (storedTrialStartDate) {
       const startDate = new Date(storedTrialStartDate);
       const now = new Date();
       const trialEndDate = new Date(startDate);
@@ -72,8 +65,9 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
         setTrialStartDate(null);
         setTrialDaysLeft(0);
       }
-    } else {
-      // No trial or subscription data found - auto-start trial
+    } 
+    // Auto-start trial if no trial or subscription exists yet
+    else {
       startTrial();
     }
   }, []);
