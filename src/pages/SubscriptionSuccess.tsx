@@ -50,7 +50,7 @@ const SubscriptionSuccess = () => {
             </div>
             
             <p className="text-xs text-muted-foreground text-center mt-6">
-              Em caso de dúvidas, entre em contato com nosso suporte pelo email: suporte@leadconsig.com
+              Em caso de dúvidas, entre em contato com nosso suporte pelo email: suporte@leadconsig.com.br
             </p>
           </CardContent>
         </Card>

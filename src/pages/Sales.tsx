@@ -122,8 +122,8 @@ const Sales = () => {
                   <Send size={20} />
                   (84) 99185-0149
                 </a>
-                <a href="mailto:consignadoleadhub@gmail.com" className="hover:text-primary transition-colors">
-                  consignadoleadhub@gmail.com
+                <a href="mailto:suporte@leadconsig.com.br" className="hover:text-primary transition-colors">
+                  suporte@leadconsig.com.br
                 </a>
               </div>
             </div>
