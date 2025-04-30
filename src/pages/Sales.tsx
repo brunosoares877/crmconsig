@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -8,7 +7,6 @@ import SubscriptionPlans from "@/components/sales/SubscriptionPlans";
 import FeaturesList from "@/components/sales/FeaturesList";
 import Testimonials from "@/components/sales/Testimonials";
 import WhatsAppButton from "@/components/WhatsAppButton";
-
 const Sales = () => {
   const navigate = useNavigate();
   const handleStartTrial = () => {
@@ -18,11 +16,7 @@ const Sales = () => {
       <SalesHeader />
       
       {/* WhatsApp Floating Button */}
-      <WhatsAppButton 
-        phoneNumber="5584991850149" 
-        message="Olá! Gostaria de saber mais sobre o sistema LeadConsig"
-        variant="floating" 
-      />
+      <WhatsAppButton phoneNumber="5584991850149" message="Olá! Gostaria de saber mais sobre o sistema LeadConsig" variant="floating" />
       
       <main className="flex-1">
         {/* Hero Section with 7-day free trial highlight */}
@@ -38,11 +32,7 @@ const Sales = () => {
                 Começar Teste Gratuito <ArrowRight className="ml-2" />
               </Button>
               
-              <WhatsAppButton 
-                phoneNumber="5584991850149" 
-                message="Olá! Gostaria de saber mais sobre o sistema LeadConsig"
-                label="Falar com Consultor" 
-              />
+              <WhatsAppButton phoneNumber="5584991850149" message="Olá! Gostaria de saber mais sobre o sistema LeadConsig" label="Falar com Consultor" />
             </div>
           </div>
           <div className="md:w-1/2">
@@ -99,11 +89,7 @@ const Sales = () => {
               <Button onClick={handleStartTrial} size="lg" className="text-lg px-8 py-6 bg-blue-600 hover:bg-blue-700">
                 Começar agora mesmo <ArrowRight className="ml-2" />
               </Button>
-              <WhatsAppButton 
-                phoneNumber="5584991850149" 
-                message="Olá! Tenho dúvidas sobre o LeadConsig"
-                label="Falar com Suporte" 
-              />
+              <WhatsAppButton phoneNumber="5584991850149" message="Olá! Tenho dúvidas sobre o LeadConsig" label="Falar com Suporte" />
             </div>
           </div>
         </section>
@@ -152,7 +138,7 @@ const Sales = () => {
             </div>
           </div>
           <div className="mt-8 pt-8 border-t border-gray-700 text-center">
-            <p>© 2025 ConsignadoLeadHub - Todos os direitos reservados</p>
+            <p>© 2025 LeadConsig - Todos os direitos reservados</p>
           </div>
         </div>
       </footer>
