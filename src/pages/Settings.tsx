@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -187,6 +188,8 @@ const Settings = () => {
         title: "Logout realizado",
         description: "Você foi desconectado com sucesso",
       });
+      // Ensure we navigate to login page after logout
+      navigate("/login");
     } catch (error: any) {
       console.error("Error logging out:", error.message);
       toast({
