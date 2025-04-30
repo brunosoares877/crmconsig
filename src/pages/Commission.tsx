@@ -1,612 +1,262 @@
-
 import React, { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { Calendar as CalendarIcon, Plus, Settings, Filter, BarChart, Search } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
+  TableCaption,
   TableCell,
+  TableFooter,
   TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Calendar } from "@/components/ui/calendar";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import Header from "@/components/Header";
-import Sidebar from "@/components/Sidebar";
-import { toast } from "sonner";
-import { cn } from "@/lib/utils";
-import { Link } from "react-router-dom";
-import NewCommissionForm from "@/components/commission/NewCommissionForm";
-import type { Commission, Lead } from "@/types/models";
+  Lead,
+  Commission
+} from "@/types/models";
 
-interface Employee {
-  id: string;
-  name: string;
-}
-
-const statusOptions = [
-  { value: "all", label: "Todos os Status" },
-  { value: "aprovado", label: "Aprovado" },
-  { value: "em_andamento", label: "Em andamento" },
-  { value: "cancelado", label: "Cancelado" },
-];
-
-const periodOptions = [
-  { value: "all", label: "Todos os Períodos" },
-  { value: "weekly", label: "Semanal" },
-  { value: "biweekly", label: "Quinzenal" },
-  { value: "monthly", label: "Mensal" },
-];
-
-const productOptions = [
-  { value: "all", label: "Todos os Produtos" },
-  { value: "portabilidade", label: "Portabilidade" },
-  { value: "refinanciamento", label: "Refinanciamento" },
-  { value: "crefaz", label: "Crefaz" },
-  { value: "novo", label: "Novo" },
-  { value: "clt", label: "CLT" },
-  { value: "fgts", label: "FGTS" },
-];
-
-const formatCurrency = (value: number) => {
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL'
-  }).format(value);
-};
-
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case "aprovado":
-      return "bg-green-100 text-green-800";
-    case "em_andamento":
-      return "bg-amber-100 text-amber-800";
-    case "cancelado":
-      return "bg-red-100 text-red-800";
-    default:
-      return "bg-gray-100 text-gray-800";
-  }
-};
-
-const getProductLabel = (productValue: string) => {
-  const product = productOptions.find(p => p.value === productValue);
-  return product ? product.label : productValue;
-};
-
-const getPeriodLabel = (periodValue: string) => {
-  const period = periodOptions.find(p => p.value === periodValue);
-  return period ? period.label : periodValue;
-};
-
-const CommissionPage = () => {
-  const [employees, setEmployees] = useState<Employee[]>([]);
-  const [commissions, setCommissions] = useState<Commission[]>([]);
-  const [filteredCommissions, setFilteredCommissions] = useState<Commission[]>([]);
+const Commission = () => {
+  const [loading, setLoading] = useState(false);
   const [leads, setLeads] = useState<Partial<Lead>[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("all");
-  const [newCommissionDialogOpen, setNewCommissionDialogOpen] = useState(false);
-  
-  const [selectedEmployee, setSelectedEmployee] = useState("all");
-  const [selectedStatus, setSelectedStatus] = useState("all");
-  const [selectedProduct, setSelectedProduct] = useState("all");
-  const [selectedPeriod, setSelectedPeriod] = useState("all");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [dateRange, setDateRange] = useState<{
-    from: Date | undefined;
-    to: Date | undefined;
-  }>({
-    from: undefined,
-    to: undefined,
+  const [commissions, setCommissions] = useState<Commission[]>([]);
+  const [search, setSearch] = useState("");
+  const [totalCommissionsPending, setTotalCommissionsPending] = useState(0);
+  const [totalCommissionsApproved, setTotalCommissionsApproved] = useState(0);
+  const [totalCommissionsPaid, setTotalCommissionsPaid] = useState(0);
+
+  useEffect(() => {
+    fetchCommissions();
+  }, []);
+
+  const fetchCommissions = async () => {
+    try {
+      setLoading(true);
+      // Simulating API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Mock data for leads
+      const leadsData: Partial<Lead>[] = [
+        {
+          id: "1",
+          name: "João Silva",
+          product: "Empréstimo Consignado",
+          amount: "5000",
+          status: "convertido",
+          employee: "Maria Santos"
+        },
+        {
+          id: "2",
+          name: "Ana Oliveira",
+          product: "Cartão de Crédito",
+          amount: "1000",
+          status: "convertido", 
+          employee: "Carlos Mendes"
+        },
+        {
+          id: "3",
+          name: "Pedro Costa",
+          product: "Empréstimo Pessoal",
+          amount: "3000",
+          status: "convertido",
+          employee: "Fernanda Lima"
+        }
+      ];
+      
+      setLeads(leadsData);
+      
+      // Mock data for commissions
+      const commissionsData: Commission[] = [
+        {
+          id: "1",
+          lead_id: "1",
+          user_id: "user1",
+          amount: 5000,
+          percentage: 2.5,
+          commission_value: 125,
+          product: "Empréstimo Consignado",
+          payment_period: "Abril 2025",
+          status: "pending",
+          created_at: "2025-04-15T10:00:00Z",
+          updated_at: "2025-04-15T10:00:00Z",
+          lead: {
+            id: "1",
+            name: "João Silva",
+            product: "Empréstimo Consignado",
+            amount: "5000",
+            status: "convertido",
+            employee: "Maria Santos"
+          }
+        },
+        {
+          id: "2",
+          lead_id: "2",
+          user_id: "user1",
+          amount: 1000,
+          percentage: 3,
+          commission_value: 30,
+          product: "Cartão de Crédito",
+          payment_period: "Março 2025",
+          status: "approved",
+          created_at: "2025-03-20T14:30:00Z",
+          updated_at: "2025-03-22T09:15:00Z",
+          lead: {
+            id: "2",
+            name: "Ana Oliveira",
+            product: "Cartão de Crédito",
+            amount: "1000",
+            status: "convertido",
+            employee: "Carlos Mendes"
+          }
+        },
+        {
+          id: "3",
+          lead_id: "3",
+          user_id: "user1",
+          amount: 3000,
+          percentage: 2,
+          commission_value: 60,
+          product: "Empréstimo Pessoal",
+          payment_period: "Fevereiro 2025",
+          status: "paid",
+          payment_date: "2025-02-28T00:00:00Z",
+          created_at: "2025-02-10T11:20:00Z",
+          updated_at: "2025-02-28T16:45:00Z",
+          lead: {
+            id: "3",
+            name: "Pedro Costa",
+            product: "Empréstimo Pessoal",
+            amount: "3000",
+            status: "convertido",
+            employee: "Fernanda Lima"
+          }
+        }
+      ];
+      
+      setCommissions(commissionsData);
+      
+      // Calculate totals
+      const pendingTotal = commissionsData
+        .filter(c => c.status === "pending")
+        .reduce((acc, curr) => acc + curr.commission_value, 0);
+        
+      const approvedTotal = commissionsData
+        .filter(c => c.status === "approved")
+        .reduce((acc, curr) => acc + curr.commission_value, 0);
+        
+      const paidTotal = commissionsData
+        .filter(c => c.status === "paid")
+        .reduce((acc, curr) => acc + curr.commission_value, 0);
+      
+      setTotalCommissionsPending(pendingTotal);
+      setTotalCommissionsApproved(approvedTotal);
+      setTotalCommissionsPaid(paidTotal);
+      
+    } catch (error) {
+      console.error("Error fetching commissions:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearch(e.target.value);
+  };
+
+  const filteredCommissions = commissions.filter((commission) => {
+    const searchTerm = search.toLowerCase();
+    return (
+      commission.lead?.name?.toLowerCase().includes(searchTerm) ||
+      commission.product?.toLowerCase().includes(searchTerm) ||
+      commission.status?.toLowerCase().includes(searchTerm) ||
+      commission.payment_period?.toLowerCase().includes(searchTerm) ||
+      commission.lead?.employee?.toLowerCase().includes(searchTerm) ||
+      String(commission.amount).toLowerCase().includes(searchTerm) ||
+      String(commission.commission_value).toLowerCase().includes(searchTerm)
+    );
   });
 
-  const fetchData = async () => {
-    setIsLoading(true);
-    try {
-      setEmployees([
-        { id: "all", name: "Todos os Funcionários" },
-        { id: "jose", name: "José Silva" },
-        { id: "maria", name: "Maria Oliveira" },
-        { id: "joao", name: "João Santos" }
-      ]);
-      
-      const { data: leadsData, error: leadsError } = await supabase
-        .from("leads")
-        .select("id, name, product, amount, status, employee");
-      
-      if (leadsError) throw leadsError;
-      
-      if (leadsData) {
-        setLeads(leadsData.map(lead => ({
-          ...lead,
-          status: lead.status as Lead['status'] || 'novo'
-        })));
-      }
-      
-      const { data, error } = await supabase
-        .from("commissions")
-        .select("*")
-        .order("created_at", { ascending: false });
-        
-      if (error) throw error;
-      
-      if (data) {
-        const mappedData: Commission[] = data.map(item => ({
-          id: item.id,
-          lead_id: item.lead_id || '',
-          amount: item.amount,
-          percentage: item.percentage || 0,
-          commission_value: item.commission_value || item.amount,
-          status: mapCommissionStatus(item.status),
-          product: item.product || '',
-          user_id: item.user_id,
-          payment_period: item.payment_period,
-          created_at: item.created_at || '',
-          updated_at: item.updated_at || '',
-          lead: leadsData?.find(lead => lead.id === item.lead_id)
-        }));
-        
-        setCommissions(mappedData);
-        setFilteredCommissions(mappedData);
-      }
-    } catch (error: any) {
-      console.error("Error fetching data:", error);
-      toast.error(`Erro ao carregar dados: ${error.message}`);
-    } finally {
-      setIsLoading(false);
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "pending":
+        return <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-300">Pendente</Badge>;
+      case "approved":
+        return <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300">Aprovado</Badge>;
+      case "paid":
+        return <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-300">Pago</Badge>;
+      case "cancelled":
+        return <Badge variant="outline" className="bg-red-100 text-red-800 border-red-300">Cancelado</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
     }
-  };
-  
-  // Map status from database to our Commission type
-  const mapCommissionStatus = (status: string): Commission['status'] => {
-    switch(status) {
-      case 'aprovado': return 'approved';
-      case 'em_andamento': return 'pending';
-      case 'cancelado': return 'cancelled';
-      case 'pago': return 'paid';
-      default: return 'pending';
-    }
-  };
-  
-  // Map status back for display
-  const getDisplayStatus = (status: Commission['status']): string => {
-    switch(status) {
-      case 'approved': return 'Aprovado';
-      case 'pending': return 'Em andamento';
-      case 'cancelled': return 'Cancelado';
-      case 'paid': return 'Pago';
-      default: return 'Em andamento';
-    }
-  };
-  
-  useEffect(() => {
-    fetchData();
-  }, []);
-  
-  const applyFilters = () => {
-    let filtered = [...commissions];
-    
-    if (activeTab === "weekly") {
-      filtered = filtered.filter(commission => commission.payment_period === "weekly");
-    } else if (activeTab === "biweekly") {
-      filtered = filtered.filter(commission => commission.payment_period === "biweekly");
-    } else if (activeTab === "monthly") {
-      filtered = filtered.filter(commission => commission.payment_period === "monthly");
-    }
-    
-    if (selectedEmployee !== "all") {
-      filtered = filtered.filter(commission => commission.id === selectedEmployee);
-    }
-    
-    if (selectedStatus !== "all") {
-      filtered = filtered.filter(commission => {
-        if (selectedStatus === "aprovado") return commission.status === "approved";
-        if (selectedStatus === "em_andamento") return commission.status === "pending";
-        if (selectedStatus === "cancelado") return commission.status === "cancelled";
-        return true;
-      });
-    }
-    
-    if (selectedProduct !== "all") {
-      filtered = filtered.filter(commission => 
-        commission.product === selectedProduct || 
-        (commission.lead?.product === selectedProduct && !commission.product)
-      );
-    }
-    
-    if (selectedPeriod !== "all") {
-      filtered = filtered.filter(commission => commission.payment_period === selectedPeriod);
-    }
-    
-    if (searchTerm.trim() !== "") {
-      filtered = filtered.filter(commission => {
-        const clientName = commission.lead?.name?.toLowerCase() || '';
-        return clientName.includes(searchTerm.toLowerCase());
-      });
-    }
-    
-    if (dateRange.from) {
-      filtered = filtered.filter(commission => {
-        const commissionDate = new Date(commission.created_at || "");
-        return commissionDate >= dateRange.from!;
-      });
-    }
-    
-    if (dateRange.to) {
-      filtered = filtered.filter(commission => {
-        const commissionDate = new Date(commission.created_at || "");
-        const endDate = new Date(dateRange.to!);
-        endDate.setDate(endDate.getDate() + 1);
-        return commissionDate <= endDate;
-      });
-    }
-    
-    setFilteredCommissions(filtered);
-  };
-  
-  const handleSearch = () => {
-    applyFilters();
-  };
-  
-  useEffect(() => {
-    if (commissions.length > 0) {
-      applyFilters();
-    }
-  }, [activeTab, selectedEmployee, selectedStatus, selectedProduct, selectedPeriod, dateRange, commissions]);
-  
-  const resetFilters = () => {
-    setSelectedEmployee("all");
-    setSelectedStatus("all");
-    setSelectedProduct("all");
-    setSelectedPeriod("all");
-    setSearchTerm("");
-    setDateRange({ from: undefined, to: undefined });
   };
 
-  const calculateSummary = (commissions: Commission[]) => {
-    const total = commissions.reduce((sum, commission) => sum + commission.amount, 0);
-    
-    const byProduct = commissions.reduce((acc, commission) => {
-      const product = commission.product || "não_especificado";
-      if (!acc[product]) acc[product] = 0;
-      acc[product] += commission.amount;
-      return acc;
-    }, {} as Record<string, number>);
-    
-    const byStatus = commissions.reduce((acc, commission) => {
-      const status = commission.status || "não_especificado";
-      if (!acc[status]) acc[status] = 0;
-      acc[status] += commission.amount;
-      return acc;
-    }, {} as Record<string, number>);
-    
-    return { total, byProduct, byStatus };
-  };
-  
-  const summary = calculateSummary(filteredCommissions);
+  const renderCommissionTable = () => {
+    if (loading) {
+      return <div>Carregando comissões...</div>;
+    }
 
-  const handleNewCommissionSuccess = () => {
-    setNewCommissionDialogOpen(false);
-    fetchData();
+    if (commissions.length === 0) {
+      return <div>Nenhuma comissão encontrada.</div>;
+    }
+
+    return (
+      <Table>
+        <TableCaption>Suas comissões e informações detalhadas.</TableCaption>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Lead</TableHead>
+            <TableHead>Produto</TableHead>
+            <TableHead>Valor da Venda</TableHead>
+            <TableHead>Comissão</TableHead>
+            <TableHead>Período de Pagamento</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead>Vendedor</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {filteredCommissions.map((commission) => (
+            <TableRow key={commission.id}>
+              <TableCell>{commission.lead?.name}</TableCell>
+              <TableCell>{commission.product}</TableCell>
+              <TableCell>R$ {commission.amount}</TableCell>
+              <TableCell>R$ {commission.commission_value}</TableCell>
+              <TableCell>{commission.payment_period}</TableCell>
+              <TableCell>{getStatusBadge(commission.status!)}</TableCell>
+              <TableCell>{commission.lead?.employee}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+        <TableFooter>
+          <TableRow>
+            <TableCell colSpan={4}>
+              <div className="font-bold">Total Pendente: R$ {totalCommissionsPending}</div>
+              <div className="font-bold">Total Aprovado: R$ {totalCommissionsApproved}</div>
+              <div className="font-bold">Total Pago: R$ {totalCommissionsPaid}</div>
+            </TableCell>
+          </TableRow>
+        </TableFooter>
+      </Table>
+    );
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <Sidebar />
-      <div className="md:ml-64">
-        <Header />
-        <main className="container mx-auto p-4 py-8">
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-bold">Comissões</h1>
-            <div className="flex space-x-2">
-              <Button asChild variant="outline">
-                <Link to="/commission/settings">
-                  <Settings className="mr-2 h-4 w-4" />
-                  Configurações
-                </Link>
-              </Button>
-              <Button onClick={() => setNewCommissionDialogOpen(true)}>
-                <Plus className="mr-2 h-4 w-4" />
-                Nova Comissão
-              </Button>
-            </div>
-          </div>
-          
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
-            <TabsList className="grid w-full grid-cols-4 md:w-auto md:inline-grid">
-              <TabsTrigger value="all">Todas</TabsTrigger>
-              <TabsTrigger value="weekly">Semanal</TabsTrigger>
-              <TabsTrigger value="biweekly">Quinzenal</TabsTrigger>
-              <TabsTrigger value="monthly">Mensal</TabsTrigger>
-            </TabsList>
-          </Tabs>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Total de Comissões</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{formatCurrency(summary.total)}</div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Por Status</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {Object.entries(summary.byStatus).map(([status, amount]) => (
-                    <div key={status} className="flex justify-between items-center">
-                      <span className="text-sm">
-                        <Badge className={getStatusColor(status)}>
-                          {status === "aprovado" ? "Aprovado" : 
-                           status === "em_andamento" ? "Em andamento" : 
-                           status === "cancelado" ? "Cancelado" : status}
-                        </Badge>
-                      </span>
-                      <span className="font-medium">{formatCurrency(amount)}</span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Por Produto</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {Object.entries(summary.byProduct).map(([product, amount]) => (
-                    <div key={product} className="flex justify-between items-center">
-                      <span className="text-sm">{getProductLabel(product)}</span>
-                      <span className="font-medium">{formatCurrency(amount)}</span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-          
-          <div className="bg-white p-4 rounded-md border mb-6">
-            <div className="flex items-center gap-2 mb-4">
-              <Filter className="h-5 w-5" />
-              <h2 className="font-medium">Filtros</h2>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
-              <div>
-                <label className="text-sm text-gray-500 mb-1 block">Funcionário</label>
-                <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione um funcionário" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {employees.map(employee => (
-                      <SelectItem key={employee.id} value={employee.id}>
-                        {employee.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div>
-                <label className="text-sm text-gray-500 mb-1 block">Status</label>
-                <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {statusOptions.map(status => (
-                      <SelectItem key={status.value} value={status.value}>
-                        {status.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+    <div className="container mx-auto py-8">
+      <h1 className="text-2xl font-bold mb-4">Comissões</h1>
 
-              <div>
-                <label className="text-sm text-gray-500 mb-1 block">Produto</label>
-                <Select value={selectedProduct} onValueChange={setSelectedProduct}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o produto" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {productOptions.map(product => (
-                      <SelectItem key={product.value} value={product.value}>
-                        {product.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div>
-                <label className="text-sm text-gray-500 mb-1 block">Período</label>
-                <div className="grid gap-2">
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        id="date"
-                        variant={"outline"}
-                        className={cn(
-                          "justify-start text-left font-normal",
-                          !dateRange.from && !dateRange.to && "text-muted-foreground"
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {dateRange.from ? (
-                          dateRange.to ? (
-                            <>
-                              {format(dateRange.from, "P", { locale: ptBR })} -{" "}
-                              {format(dateRange.to, "P", { locale: ptBR })}
-                            </>
-                          ) : (
-                            format(dateRange.from, "P", { locale: ptBR })
-                          )
-                        ) : (
-                          "Selecione um período"
-                        )}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        initialFocus
-                        mode="range"
-                        defaultMonth={dateRange.from}
-                        selected={{
-                          from: dateRange.from,
-                          to: dateRange.to
-                        }}
-                        onSelect={(range) => {
-                          if (range) {
-                            setDateRange({
-                              from: range.from,
-                              to: range.to
-                            });
-                          }
-                        }}
-                        numberOfMonths={2}
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-              </div>
-              
-              <div>
-                <label className="text-sm text-gray-500 mb-1 block">Nome do Cliente</label>
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Buscar por nome"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="flex-1"
-                  />
-                </div>
-              </div>
-            </div>
-            
-            <div className="flex justify-between mt-4">
-              <Button variant="outline" onClick={resetFilters}>
-                Limpar Filtros
-              </Button>
-              <Button onClick={handleSearch}>
-                <Search className="mr-2 h-4 w-4" />
-                Buscar
-              </Button>
-            </div>
-          </div>
-          
-          {isLoading ? (
-            <div className="space-y-4">
-              <div className="h-12 animate-pulse rounded-md bg-gray-100" />
-              <div className="h-64 animate-pulse rounded-md bg-gray-100" />
-            </div>
-          ) : filteredCommissions.length > 0 ? (
-            <>
-              <div className="mb-4">
-                <p className="text-sm text-gray-500">
-                  Mostrando {filteredCommissions.length} de {commissions.length} comissões
-                </p>
-              </div>
-              <div className="rounded-md border overflow-hidden">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Cliente</TableHead>
-                      <TableHead>Produto</TableHead>
-                      <TableHead>Valor do Lead</TableHead>
-                      <TableHead>Data</TableHead>
-                      <TableHead>Período</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Valor da Comissão</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredCommissions.map((commission) => (
-                      <TableRow key={commission.id}>
-                        <TableCell className="font-medium">
-                          {commission.lead?.name || "Cliente não encontrado"}
-                        </TableCell>
-                        <TableCell>
-                          {getProductLabel(commission.product || commission.lead?.product || "não_especificado")}
-                        </TableCell>
-                        <TableCell>
-                          {commission.lead?.amount || "N/A"}
-                        </TableCell>
-                        <TableCell>
-                          {commission.created_at ? format(new Date(commission.created_at), "dd/MM/yyyy") : "N/A"}
-                        </TableCell>
-                        <TableCell>
-                          {getPeriodLabel(commission.payment_period || "não_especificado")}
-                        </TableCell>
-                        <TableCell>
-                          <span className={`px-2 py-1 rounded-full text-xs ${getStatusColor(commission.status)}`}>
-                            {getDisplayStatus(commission.status)}
-                          </span>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {formatCurrency(commission.amount)}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </>
-          ) : (
-            <div className="text-center py-10 border rounded-md">
-              <h3 className="text-lg font-medium text-gray-900">Nenhuma comissão encontrada</h3>
-              <p className="mt-1 text-sm text-gray-500">
-                Tente ajustar seus filtros ou adicione novas comissões.
-              </p>
-            </div>
-          )}
-        </main>
+      <div className="mb-4">
+        <Input
+          type="text"
+          placeholder="Pesquisar comissões..."
+          value={search}
+          onChange={handleSearch}
+        />
       </div>
-      
-      <Dialog open={newCommissionDialogOpen} onOpenChange={setNewCommissionDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>Nova Comissão</DialogTitle>
-          </DialogHeader>
-          <NewCommissionForm 
-            leads={leads.map(lead => ({ id: lead.id || '', name: lead.name || '' }))} 
-            onSuccess={handleNewCommissionSuccess} 
-            onCancel={() => setNewCommissionDialogOpen(false)}
-          />
-        </DialogContent>
-      </Dialog>
+
+      {renderCommissionTable()}
     </div>
   );
 };
 
-export default CommissionPage;
+export default Commission;

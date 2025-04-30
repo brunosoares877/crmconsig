@@ -5,7 +5,7 @@ export interface CommissionRate {
   id: string;
   user_id: string;
   product: string;
-  name: string | null; // Added missing property
+  name: string | null; // Ensure this property exists
   percentage: number;
   active: boolean;
   created_at: string;
@@ -16,7 +16,7 @@ export interface CommissionTier {
   id: string;
   user_id: string;
   product: string;
-  name: string | null; // Added missing property
+  name: string | null; // Ensure this property exists
   min_amount: number;
   max_amount: number;
   percentage: number;
@@ -25,7 +25,7 @@ export interface CommissionTier {
   updated_at: string;
 }
 
-// Add Lead interface
+// Update Lead interface to ensure status is properly typed
 export interface Lead {
   id: string;
   user_id?: string;
@@ -61,7 +61,7 @@ export interface Appointment {
   updated_at: string;
 }
 
-// Add Commission interface
+// Update Commission interface
 export interface Commission {
   id: string;
   user_id: string;
@@ -75,5 +75,5 @@ export interface Commission {
   payment_date?: string;
   created_at: string;
   updated_at: string;
-  lead?: Partial<Lead>; // Add lead relationship with correct type
+  lead?: Partial<Lead>; // Lead relationship with correct type
 }

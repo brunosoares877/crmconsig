@@ -18,30 +18,33 @@ import Reminders from "@/pages/Reminders";
 import RemindersCalendar from "@/pages/RemindersCalendar";
 import Commission from "@/pages/Commission";
 import CommissionSettings from "@/pages/CommissionSettings";
+import { SidebarProvider } from "@/components/ui/sidebar";
 
 function App() {
   return (
     <SubscriptionProvider>
       <Router>
         <AuthProvider>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/dashboard" element={<Index />} />
-            <Route path="/plans" element={<Plans />} />
-            <Route path="/subscription-success" element={<SubscriptionSuccess />} />
-            <Route path="/subscription-cancelled" element={<SubscriptionCancelled />} />
-            <Route path="/leads" element={<Leads />} />
-            <Route path="/leads/new" element={<LeadNew />} />
-            <Route path="/leads/import" element={<LeadImport />} />
-            <Route path="/leads/scheduled" element={<LeadScheduling />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/sales" element={<Sales />} />
-            <Route path="/portability" element={<Portability />} />
-            <Route path="/reminders" element={<Reminders />} />
-            <Route path="/reminders/calendar" element={<RemindersCalendar />} />
-            <Route path="/commission" element={<Commission />} />
-            <Route path="/commission/settings" element={<CommissionSettings />} />
-          </Routes>
+          <SidebarProvider>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/dashboard" element={<Index />} />
+              <Route path="/plans" element={<Plans />} />
+              <Route path="/subscription-success" element={<SubscriptionSuccess />} />
+              <Route path="/subscription-cancelled" element={<SubscriptionCancelled />} />
+              <Route path="/leads" element={<Leads />} />
+              <Route path="/leads/new" element={<LeadNew />} />
+              <Route path="/leads/import" element={<LeadImport />} />
+              <Route path="/leads/scheduled" element={<LeadScheduling />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/sales" element={<Sales />} />
+              <Route path="/portability" element={<Portability />} />
+              <Route path="/reminders" element={<Reminders />} />
+              <Route path="/reminders/calendar" element={<RemindersCalendar />} />
+              <Route path="/commission" element={<Commission />} />
+              <Route path="/commission/settings" element={<CommissionSettings />} />
+            </Routes>
+          </SidebarProvider>
         </AuthProvider>
       </Router>
     </SubscriptionProvider>
