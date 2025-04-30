@@ -18,6 +18,7 @@ import Reminders from "@/pages/Reminders";
 import RemindersCalendar from "@/pages/RemindersCalendar";
 import Commission from "@/pages/Commission";
 import CommissionSettings from "@/pages/CommissionSettings";
+import Settings from "@/pages/Settings";
 import { SidebarProvider } from "@/components/ui/sidebar";
 
 function App() {
@@ -43,6 +44,7 @@ function App() {
               <Route path="/reminders/calendar" element={<RemindersCalendar />} />
               <Route path="/commission" element={<Commission />} />
               <Route path="/commission/settings" element={<CommissionSettings />} />
+              <Route path="/settings" element={<Settings />} />
             </Routes>
           </SidebarProvider>
         </SubscriptionProvider>

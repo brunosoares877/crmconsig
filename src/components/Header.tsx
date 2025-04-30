@@ -35,6 +35,8 @@ const Header = () => {
           variant="ghost"
           size="icon"
           onClick={() => navigate('/settings')}
+          title="Configurações"
+          aria-label="Configurações"
         >
           <Settings />
         </Button>
