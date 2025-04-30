@@ -1,64 +1,42 @@
-
 import React from "react";
-import { 
-  Users, 
-  BarChart3, 
-  CalendarClock, 
-  CircleDollarSign, 
-  BellRing, 
-  FileBarChart, 
-  ShieldCheck,
-  Sparkles
-} from "lucide-react";
+import { Users, BarChart3, CalendarClock, CircleDollarSign, BellRing, FileBarChart, ShieldCheck, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
-
-const features = [
-  {
-    icon: <Users className="h-10 w-10" />,
-    title: "Gerenciamento de Leads",
-    description: "Acompanhe todos os seus leads em um só lugar, desde o primeiro contato até a conversão.",
-  },
-  {
-    icon: <BarChart3 className="h-10 w-10" />,
-    title: "Dashboard Analítico",
-    description: "Visualize métricas importantes e tome decisões baseadas em dados reais em tempo real.",
-  },
-  {
-    icon: <CalendarClock className="h-10 w-10" />,
-    title: "Lembretes e Agendamentos",
-    description: "Nunca mais perca um compromisso ou prazo importante com nosso sistema de lembretes.",
-  },
-  {
-    icon: <CircleDollarSign className="h-10 w-10" />,
-    title: "Controle de Comissões",
-    description: "Gerencie comissões de vendedores automaticamente com facilidade e transparência.",
-  },
-  {
-    icon: <BellRing className="h-10 w-10" />,
-    title: "Notificações Automáticas",
-    description: "Receba alertas sobre atividades importantes e mantenha-se informado em tempo real.",
-  },
-  {
-    icon: <FileBarChart className="h-10 w-10" />,
-    title: "Relatórios Detalhados",
-    description: "Gere relatórios personalizados para análise de desempenho e resultados com facilidade.",
-  },
-  {
-    icon: <ShieldCheck className="h-10 w-10" />,
-    title: "Segurança de Dados",
-    description: "Seus dados estão protegidos com as mais modernas práticas de segurança e criptografia.",
-  },
-  {
-    icon: <Sparkles className="h-10 w-10" />,
-    title: "Fácil de Usar",
-    description: "Interface intuitiva projetada para todos os níveis de experiência, sem complicações.",
-  }
-];
-
+const features = [{
+  icon: <Users className="h-10 w-10" />,
+  title: "Gerenciamento de Leads",
+  description: "Acompanhe todos os seus leads em um só lugar, desde o primeiro contato até a conversão."
+}, {
+  icon: <BarChart3 className="h-10 w-10" />,
+  title: "Dashboard Analítico",
+  description: "Visualize métricas importantes e tome decisões baseadas em dados reais em tempo real."
+}, {
+  icon: <CalendarClock className="h-10 w-10" />,
+  title: "Lembretes e Agendamentos",
+  description: "Nunca mais perca um compromisso ou prazo importante com nosso sistema de lembretes."
+}, {
+  icon: <CircleDollarSign className="h-10 w-10" />,
+  title: "Controle de Comissões",
+  description: "Gerencie comissões de vendedores automaticamente com facilidade e transparência."
+}, {
+  icon: <BellRing className="h-10 w-10" />,
+  title: "Notificações Automáticas",
+  description: "Receba alertas sobre atividades importantes e mantenha-se informado em tempo real."
+}, {
+  icon: <FileBarChart className="h-10 w-10" />,
+  title: "Relatórios Detalhados",
+  description: "Gere relatórios personalizados para análise de desempenho e resultados com facilidade."
+}, {
+  icon: <ShieldCheck className="h-10 w-10" />,
+  title: "Segurança de Dados",
+  description: "Seus dados estão protegidos com as mais modernas práticas de segurança e criptografia."
+}, {
+  icon: <Sparkles className="h-10 w-10" />,
+  title: "Fácil de Usar",
+  description: "Interface intuitiva projetada para todos os níveis de experiência, sem complicações."
+}];
 const FeaturesList = () => {
-  return (
-    <div className="py-6">
+  return <div className="py-6">
       {/* Título principal com estilo sofisticado */}
       <div className="text-center mb-12">
         <h2 className="text-4xl md:text-5xl font-bold text-gray-900 pb-2">
@@ -70,16 +48,12 @@ const FeaturesList = () => {
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {features.map((feature, index) => (
-          <Card 
-            key={index}
-            className="transition-all duration-300 transform hover:-translate-y-1 hover:shadow-lg border border-gray-200/60"
-          >
+        {features.map((feature, index) => <Card key={index} className="transition-all duration-300 transform hover:-translate-y-1 hover:shadow-lg border border-gray-200/60">
             <CardContent className="p-6">
               <div className="bg-gray-100 rounded-full p-4 inline-flex mb-4">
                 {React.cloneElement(feature.icon as React.ReactElement, {
-                  className: "h-8 w-8 text-primary"
-                })}
+              className: "h-8 w-8 text-primary"
+            })}
               </div>
               
               <h3 className="text-xl font-bold mb-3">{feature.title}</h3>
@@ -92,8 +66,7 @@ const FeaturesList = () => {
                 </svg>
               </div>
             </CardContent>
-          </Card>
-        ))}
+          </Card>)}
       </div>
       
       {/* Mantendo a barra de progresso com estatísticas */}
@@ -104,17 +77,15 @@ const FeaturesList = () => {
             <p className="text-gray-100">Aumento na taxa de conversão</p>
           </div>
           <div className="p-4 border-l border-r border-white/20">
-            <div className="text-4xl font-bold mb-2">98%</div>
+            <div className="text-4xl font-bold mb-2">99%</div>
             <p className="text-gray-100">De satisfação dos clientes</p>
           </div>
           <div className="p-4">
-            <div className="text-4xl font-bold mb-2">-65%</div>
-            <p className="text-gray-100">Redução no tempo de atendimento</p>
+            <div className="text-4xl font-bold mb-2">100%</div>
+            <p className="text-gray-100">Acertividade </p>
           </div>
         </div>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default FeaturesList;
