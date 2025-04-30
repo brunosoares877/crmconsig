@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -7,6 +6,7 @@ import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
+import { Toaster } from "@/components/ui/toaster";
 
 import Sidebar from "@/components/Sidebar";
 import Header from "@/components/Header";
@@ -360,6 +360,7 @@ const Settings = () => {
           </Tabs>
         </main>
       </div>
+      <Toaster />
     </div>
   );
 };
