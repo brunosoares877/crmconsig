@@ -19,7 +19,7 @@ export default function LogoutButton() {
       });
       navigate("/login");
     } catch (error: any) {
-      console.error("Error logging out:", error.message);
+      console.error("Erro ao fazer logout:", error.message);
       toast({
         title: "Erro",
         description: "Ocorreu um erro ao tentar desconectar",

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
@@ -103,7 +104,7 @@ const Portability = () => {
       if (remindersError) throw remindersError;
       setReminders(remindersData || []);
     } catch (error: any) {
-      console.error("Error fetching data:", error);
+      console.error("Erro ao carregar dados:", error);
       toast.error(`Erro ao carregar dados: ${error.message}`);
     } finally {
       setIsLoading(false);
@@ -152,7 +153,7 @@ const Portability = () => {
       resetForm();
       await fetchData();
     } catch (error: any) {
-      console.error("Error creating reminder:", error);
+      console.error("Erro ao criar lembrete:", error);
       toast.error(`Erro ao criar lembrete: ${error.message}`);
     } finally {
       setIsSubmitting(false);
@@ -174,7 +175,7 @@ const Portability = () => {
       
       toast.success(`Lembrete marcado como ${!reminder.is_completed ? "concluído" : "pendente"}`);
     } catch (error: any) {
-      console.error("Error updating reminder:", error);
+      console.error("Erro ao atualizar lembrete:", error);
       toast.error(`Erro ao atualizar lembrete: ${error.message}`);
     }
   };
@@ -194,7 +195,7 @@ const Portability = () => {
       
       toast.success(`Status do lembrete atualizado para ${getStatusLabel(newStatus)}`);
     } catch (error: any) {
-      console.error("Error updating reminder status:", error);
+      console.error("Erro ao atualizar status do lembrete:", error);
       toast.error(`Erro ao atualizar status do lembrete: ${error.message}`);
     }
   };
@@ -211,7 +212,7 @@ const Portability = () => {
       setReminders(reminders.filter(r => r.id !== id));
       toast.success("Lembrete excluído com sucesso!");
     } catch (error: any) {
-      console.error("Error deleting reminder:", error);
+      console.error("Erro ao excluir lembrete:", error);
       toast.error(`Erro ao excluir lembrete: ${error.message}`);
     }
   };

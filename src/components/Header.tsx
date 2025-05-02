@@ -33,7 +33,7 @@ const Header = () => {
       await signOut();
       navigate("/login");
     } catch (error: any) {
-      console.error("Error logging out:", error.message);
+      console.error("Erro ao fazer logout:", error.message);
     }
   };
 
@@ -93,28 +93,28 @@ const Header = () => {
             <DropdownMenuGroup>
               <DropdownMenuItem onClick={() => navigate("/settings")}>
                 <User className="mr-2 h-4 w-4" />
-                <span>Account preferences</span>
+                <span>Preferências da conta</span>
               </DropdownMenuItem>
               <DropdownMenuItem>
                 <Settings className="mr-2 h-4 w-4" />
-                <span>Feature previews</span>
+                <span>Recursos em preview</span>
               </DropdownMenuItem>
               <DropdownMenuItem>
                 <Bell className="mr-2 h-4 w-4" />
-                <span>Command menu</span>
+                <span>Menu de comandos</span>
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuLabel>Theme</DropdownMenuLabel>
+            <DropdownMenuLabel>Tema</DropdownMenuLabel>
             <DropdownMenuRadioGroup value={theme} onValueChange={setTheme}>
-              <DropdownMenuRadioItem value="dark">Dark</DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="light">Light</DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="classic-dark">Classic Dark</DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="system">System</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="dark">Escuro</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="light">Claro</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="classic-dark">Escuro Clássico</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="system">Sistema</DropdownMenuRadioItem>
             </DropdownMenuRadioGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout}>
-              Log out
+              Sair
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
