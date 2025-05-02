@@ -93,5 +93,11 @@ export default {
 			}
 		}
 	},
-	plugins: [require("tailwindcss-animate")],
+	plugins: [
+		require("tailwindcss-animate"),
+		// Add a plugin to enable the classic-dark variant
+		function({ addVariant }) {
+			addVariant('classic-dark', '.classic-dark &')
+		}
+	],
 } satisfies Config;
