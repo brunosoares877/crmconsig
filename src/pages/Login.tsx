@@ -146,19 +146,21 @@ const Login = () => {
       setIsLoading(false);
     }
   };
-  return <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md animate-fade-in">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-center">
-            {isLogin ? "CRM Lead Hub" : "Criar Conta"}
-          </CardTitle>
-          <CardDescription className="text-center">
-            {isLogin ? "Entre com suas credenciais para acessar o sistema" : "Crie sua conta para começar o período de teste gratuito de 7 dias"}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {!isLogin && <>
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <div className="w-full max-w-md mx-auto">
+        <Card className="w-full animate-fade-in">
+          <CardHeader className="space-y-1">
+            <CardTitle className="text-2xl font-bold text-center">
+              {isLogin ? "CRM Lead Hub" : "Criar Conta"}
+            </CardTitle>
+            <CardDescription className="text-center">
+              {isLogin ? "Entre com suas credenciais para acessar o sistema" : "Crie sua conta para começar o período de teste gratuito de 7 dias"}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {!isLogin && <>
                 <div className="space-y-2">
                   <Label htmlFor="fullName">Nome Completo</Label>
                   <div className="relative">
@@ -243,6 +245,8 @@ const Login = () => {
             </p>}
         </CardFooter>
       </Card>
-    </div>;
+    </div>
+  );
 };
+
 export default Login;
