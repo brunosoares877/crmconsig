@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -27,6 +28,7 @@ const SignupSchema = z.object({
   message: "As senhas não coincidem",
   path: ["confirmPassword"]
 });
+
 const Login = () => {
   const navigate = useNavigate();
   const {
@@ -59,9 +61,11 @@ const Login = () => {
     }
     return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7, 11)}`;
   };
+  
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setWhatsapp(maskPhone(e.target.value));
   };
+  
   const validateForm = () => {
     try {
       if (isLogin) {
@@ -149,15 +153,17 @@ const Login = () => {
   };
   
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <div className="w-full max-w-md mx-auto">
+    <div className="flex min-h-screen items-center justify-center bg-background">
+      <div className="mx-auto w-full max-w-md px-4">
         <Card className="w-full animate-fade-in">
           <CardHeader className="space-y-1">
             <CardTitle className="text-2xl font-bold text-center">
-              {isLogin ? "CRM Lead Hub" : "Criar Conta"}
+              CRM Lead Hub
             </CardTitle>
             <CardDescription className="text-center">
-              {isLogin ? "Entre com suas credenciais para acessar o sistema" : "Crie sua conta para começar o período de teste gratuito de 7 dias"}
+              {isLogin 
+                ? "Entre com suas credenciais para acessar o sistema" 
+                : "Crie sua conta para começar o período de teste gratuito de 7 dias"}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -167,7 +173,16 @@ const Login = () => {
                   <div className="space-y-2">
                     <Label htmlFor="fullName">Nome Completo</Label>
                     <div className="relative">
-                      <Input id="fullName" placeholder="Seu nome completo" type="text" required className={errors.fullName ? "border-destructive" : ""} value={fullName} onChange={e => setFullName(e.target.value)} disabled={isLoading} />
+                      <Input 
+                        id="fullName" 
+                        placeholder="Seu nome completo" 
+                        type="text" 
+                        required 
+                        className={errors.fullName ? "border-destructive" : ""} 
+                        value={fullName} 
+                        onChange={e => setFullName(e.target.value)} 
+                        disabled={isLoading} 
+                      />
                     </div>
                     {errors.fullName && <p className="text-xs text-destructive">{errors.fullName}</p>}
                   </div>
@@ -176,7 +191,16 @@ const Login = () => {
                     <Label htmlFor="company">Nome da Empresa</Label>
                     <div className="relative">
                       <Building className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                      <Input id="company" type="text" required placeholder="Sua empresa" className={`pl-10 ${errors.company ? "border-destructive" : ""}`} value={company} onChange={e => setCompany(e.target.value)} disabled={isLoading} />
+                      <Input 
+                        id="company" 
+                        type="text" 
+                        required 
+                        placeholder="Sua empresa" 
+                        className={`pl-10 ${errors.company ? "border-destructive" : ""}`} 
+                        value={company} 
+                        onChange={e => setCompany(e.target.value)} 
+                        disabled={isLoading} 
+                      />
                     </div>
                     {errors.company && <p className="text-xs text-destructive">{errors.company}</p>}
                   </div>
@@ -185,7 +209,17 @@ const Login = () => {
                     <Label htmlFor="whatsapp">WhatsApp</Label>
                     <div className="relative">
                       <Phone className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                      <Input id="whatsapp" type="text" required placeholder="(99) 99999-9999" className={`pl-10 ${errors.whatsapp ? "border-destructive" : ""}`} value={whatsapp} onChange={handlePhoneChange} maxLength={15} disabled={isLoading} />
+                      <Input 
+                        id="whatsapp" 
+                        type="text" 
+                        required 
+                        placeholder="(99) 99999-9999" 
+                        className={`pl-10 ${errors.whatsapp ? "border-destructive" : ""}`} 
+                        value={whatsapp} 
+                        onChange={handlePhoneChange} 
+                        maxLength={15} 
+                        disabled={isLoading} 
+                      />
                     </div>
                     {errors.whatsapp && <p className="text-xs text-destructive">{errors.whatsapp}</p>}
                   </div>
@@ -196,7 +230,17 @@ const Login = () => {
                 <Label htmlFor="email">Email</Label>
                 <div className="relative">
                   <LogIn className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input id="email" placeholder="seu@email.com" type="email" required autoComplete="email" className={`pl-10 ${errors.email ? "border-destructive" : ""}`} value={email} onChange={e => setEmail(e.target.value)} disabled={isLoading} />
+                  <Input 
+                    id="email" 
+                    placeholder="seu@email.com" 
+                    type="email" 
+                    required 
+                    autoComplete="email" 
+                    className={`pl-10 ${errors.email ? "border-destructive" : ""}`} 
+                    value={email} 
+                    onChange={e => setEmail(e.target.value)} 
+                    disabled={isLoading} 
+                  />
                 </div>
                 {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
               </div>
@@ -205,7 +249,16 @@ const Login = () => {
                 <Label htmlFor="password">Senha</Label>
                 <div className="relative">
                   <Key className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input id="password" type="password" required autoComplete={isLogin ? "current-password" : "new-password"} className={`pl-10 ${errors.password ? "border-destructive" : ""}`} value={password} onChange={e => setPassword(e.target.value)} disabled={isLoading} />
+                  <Input 
+                    id="password" 
+                    type="password" 
+                    required 
+                    autoComplete={isLogin ? "current-password" : "new-password"} 
+                    className={`pl-10 ${errors.password ? "border-destructive" : ""}`} 
+                    value={password} 
+                    onChange={e => setPassword(e.target.value)} 
+                    disabled={isLoading} 
+                  />
                 </div>
                 {errors.password && <p className="text-xs text-destructive">{errors.password}</p>}
               </div>
@@ -215,7 +268,16 @@ const Login = () => {
                   <Label htmlFor="confirmPassword">Confirmar Senha</Label>
                   <div className="relative">
                     <Key className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input id="confirmPassword" type="password" required autoComplete="new-password" className={`pl-10 ${errors.confirmPassword ? "border-destructive" : ""}`} value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} disabled={isLoading} />
+                    <Input 
+                      id="confirmPassword" 
+                      type="password" 
+                      required 
+                      autoComplete="new-password" 
+                      className={`pl-10 ${errors.confirmPassword ? "border-destructive" : ""}`} 
+                      value={confirmPassword} 
+                      onChange={e => setConfirmPassword(e.target.value)} 
+                      disabled={isLoading} 
+                    />
                   </div>
                   {errors.confirmPassword && <p className="text-xs text-destructive">{errors.confirmPassword}</p>}
                 </div>
