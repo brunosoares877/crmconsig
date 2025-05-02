@@ -65,7 +65,7 @@ const Testimonials = () => {
                     <CardContent className="p-6">
                       <div className="flex gap-0.5 mb-3">
                         {Array(testimonial.stars).fill(null).map((_, i) => (
-                          <Star key={i} className="h-5 w-5 fill-primary text-primary" />
+                          <Star key={i} className="h-5 w-5 fill-yellow-400 text-yellow-400" />
                         ))}
                       </div>
                       <p className="text-sm text-gray-600 mb-4">{testimonial.date}</p>
