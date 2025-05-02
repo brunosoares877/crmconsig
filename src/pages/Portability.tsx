@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
@@ -58,7 +57,7 @@ interface Reminder {
   is_completed: boolean;
   created_at: string;
   bank?: string | null;
-  status?: string; // Added status field
+  status?: string;
 }
 
 interface Lead {
@@ -80,8 +79,8 @@ const Portability = () => {
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [notes, setNotes] = useState("");
   const [bankFilter, setBankFilter] = useState("");
-  const [status, setStatus] = useState<string>("pendente"); // New status state
-  const [activeTab, setActiveTab] = useState("all"); // For tab management
+  const [status, setStatus] = useState<string>("pendente");
+  const [activeTab, setActiveTab] = useState("all");
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -143,7 +142,7 @@ const Portability = () => {
         is_completed: false,
         user_id: userData.user.id,
         bank,
-        status: status // Add status to the reminder
+        status: status
       });
       
       if (error) throw error;
@@ -311,7 +310,7 @@ const Portability = () => {
                   Novo Lembrete
                 </Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="sm:max-w-md">
                 <DialogHeader>
                   <DialogTitle>Criar Novo Lembrete</DialogTitle>
                   <DialogDescription>
@@ -342,7 +341,7 @@ const Portability = () => {
                         }
                       }
                     }}>
-                      <SelectTrigger>
+                      <SelectTrigger className="w-full">
                         <SelectValue placeholder="Selecione um cliente (opcional)" />
                       </SelectTrigger>
                       <SelectContent>
@@ -359,7 +358,7 @@ const Portability = () => {
                     <div className="space-y-2">
                       <Label htmlFor="bank">Banco</Label>
                       <Select value={bankFilter} onValueChange={setBankFilter}>
-                        <SelectTrigger>
+                        <SelectTrigger className="w-full">
                           <SelectValue placeholder="Selecione um banco (opcional)" />
                         </SelectTrigger>
                         <SelectContent>
@@ -395,7 +394,7 @@ const Portability = () => {
                   <div className="space-y-2">
                     <Label htmlFor="status">Status</Label>
                     <Select value={status} onValueChange={setStatus}>
-                      <SelectTrigger>
+                      <SelectTrigger className="w-full">
                         <SelectValue placeholder="Selecione um status" />
                       </SelectTrigger>
                       <SelectContent>
@@ -419,7 +418,7 @@ const Portability = () => {
                           {date ? format(date, "PPP", { locale: ptBR }) : "Selecione uma data"}
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0">
+                      <PopoverContent className="w-auto p-0" align="start">
                         <Calendar
                           mode="single"
                           selected={date}
@@ -441,7 +440,7 @@ const Portability = () => {
                   </div>
                 </div>
                 
-                <DialogFooter>
+                <DialogFooter className="sm:justify-end">
                   <Button
                     variant="outline"
                     onClick={() => setIsDialogOpen(false)}
@@ -469,7 +468,7 @@ const Portability = () => {
 
           {/* Status filtering tabs */}
           <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab} className="mb-6">
-            <TabsList className="grid grid-cols-4 w-full md:w-auto">
+            <TabsList className="grid grid-cols-4 sm:grid-cols-4 w-full md:w-auto">
               <TabsTrigger value="all">Todos</TabsTrigger>
               <TabsTrigger value="integrado">Integrados</TabsTrigger>
               <TabsTrigger value="cancelado">Cancelados</TabsTrigger>
@@ -489,13 +488,13 @@ const Portability = () => {
                 <div
                   key={reminder.id}
                   className={cn(
-                    "flex items-center justify-between p-4 rounded-md border",
+                    "flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-md border",
                     reminder.is_completed ? "bg-gray-50 opacity-70" : "bg-white",
                     isPastDue(reminder.due_date, reminder.is_completed) ? "border-red-300" : "border-gray-200"
                   )}
                 >
-                  <div className="flex-1">
-                    <div className="flex items-center flex-wrap gap-2">
+                  <div className="flex-1 mb-3 sm:mb-0">
+                    <div className="flex items-center flex-wrap gap-2 mb-2">
                       <h3 className={cn(
                         "font-medium",
                         reminder.is_completed && "line-through text-gray-500"
@@ -529,7 +528,7 @@ const Portability = () => {
                     )}
                   </div>
                   
-                  <div className="flex space-x-2">
+                  <div className="flex flex-wrap gap-2 justify-end">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button
