@@ -172,9 +172,38 @@ const Login = () => {
   };
   
   return (
-    <div className="flex items-center justify-center min-h-screen bg-background">
-      <div className="w-full max-w-md px-4 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-        <Card className="w-full animate-fade-in">
+    <div className="flex h-screen">
+      {/* Left side - Brand/Image */}
+      <div className="hidden md:flex md:w-1/2 bg-gradient-to-b from-blue-600 to-blue-800 items-center justify-center text-white p-8">
+        <div className="max-w-lg">
+          <h1 className="text-4xl font-bold mb-6">CRM Lead Hub</h1>
+          <p className="text-xl mb-8">Transforme seus leads em clientes com nossa solução completa de gestão de vendas.</p>
+          <div className="space-y-4">
+            <div className="flex items-start space-x-3">
+              <svg className="w-6 h-6 text-blue-300 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+              </svg>
+              <p>Acompanhamento completo do ciclo de vendas</p>
+            </div>
+            <div className="flex items-start space-x-3">
+              <svg className="w-6 h-6 text-blue-300 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+              </svg>
+              <p>Relatórios e análises detalhadas</p>
+            </div>
+            <div className="flex items-start space-x-3">
+              <svg className="w-6 h-6 text-blue-300 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+              </svg>
+              <p>Integração com ferramentas de comunicação</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      {/* Right side - Login form */}
+      <div className="w-full md:w-1/2 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md animate-fade-in">
           <CardHeader className="space-y-1">
             <CardTitle className="text-2xl font-bold text-center">
               CRM Lead Hub
