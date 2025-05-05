@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -154,7 +153,7 @@ const Login = () => {
   
   return (
     <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="mx-auto w-full max-w-md px-4">
+      <div className="w-full max-w-md px-4">
         <Card className="w-full animate-fade-in">
           <CardHeader className="space-y-1">
             <CardTitle className="text-2xl font-bold text-center">
