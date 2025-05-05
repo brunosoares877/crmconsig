@@ -7,7 +7,6 @@ import { useSidebar } from "@/components/ui/sidebar";
 import { useIsMobile } from "@/hooks/use-mobile";
 import SupportButton from "@/components/SupportButton";
 import { useAuth } from "@/contexts/AuthContext";
-import { useTheme } from "@/contexts/ThemeContext";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -15,8 +14,6 @@ import {
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -26,7 +23,6 @@ const Header = () => {
   const sidebar = useSidebar();
   const isMobile = useIsMobile();
   const { user, signOut } = useAuth();
-  const { theme, setTheme } = useTheme();
 
   const handleLogout = async () => {
     try {
@@ -104,14 +100,6 @@ const Header = () => {
                 <span>Menu de comandos</span>
               </DropdownMenuItem>
             </DropdownMenuGroup>
-            <DropdownMenuSeparator />
-            <DropdownMenuLabel>Tema</DropdownMenuLabel>
-            <DropdownMenuRadioGroup value={theme} onValueChange={setTheme}>
-              <DropdownMenuRadioItem value="dark">Escuro</DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="light">Claro</DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="classic-dark">Escuro Clássico</DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="system">Sistema</DropdownMenuRadioItem>
-            </DropdownMenuRadioGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout}>
               Sair

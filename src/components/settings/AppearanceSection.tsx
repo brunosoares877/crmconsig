@@ -4,25 +4,16 @@ import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import {
   Form,
-  FormControl,
   FormDescription,
   FormField,
   FormItem,
   FormLabel,
-  FormMessage,
 } from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { toast } from "sonner";
 import { useTheme } from "@/contexts/ThemeContext";
 
 export default function AppearanceSection() {
-  const { theme, setTheme } = useTheme();
+  const { theme } = useTheme();
   
   const form = useForm({
     defaultValues: {
@@ -30,13 +21,12 @@ export default function AppearanceSection() {
     },
   });
 
-  const onSubmit = async (data: { theme: 'light' | 'dark' | 'classic-dark' | 'system' }) => {
+  const onSubmit = async () => {
     try {
-      setTheme(data.theme);
-      toast.success("Tema atualizado com sucesso");
+      toast.success("Aparência está configurada para o tema padrão");
     } catch (error) {
       console.error("Error updating theme:", error);
-      toast.error("Erro ao atualizar o tema");
+      toast.error("Erro na configuração de aparência");
     }
   };
 
@@ -45,7 +35,7 @@ export default function AppearanceSection() {
       <div>
         <h3 className="text-lg font-medium">Aparência</h3>
         <p className="text-sm text-gray-500 dark:text-gray-400">
-          Personalize a aparência da aplicação
+          A aparência da aplicação está definida com o tema padrão (claro)
         </p>
       </div>
       <Form {...form}>
@@ -53,29 +43,15 @@ export default function AppearanceSection() {
           <FormField
             control={form.control}
             name="theme"
-            render={({ field }) => (
+            render={() => (
               <FormItem>
                 <FormLabel>Tema</FormLabel>
-                <Select
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione um tema" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="light">Claro</SelectItem>
-                    <SelectItem value="dark">Escuro</SelectItem>
-                    <SelectItem value="classic-dark">Escuro clássico</SelectItem>
-                    <SelectItem value="system">Sistema</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="p-2 border rounded-md bg-gray-50">
+                  Tema Claro (padrão)
+                </div>
                 <FormDescription>
-                  Selecione o tema para a interface do usuário
+                  O sistema utiliza o tema claro por padrão
                 </FormDescription>
-                <FormMessage />
               </FormItem>
             )}
           />
