@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -215,11 +214,6 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete }) => {
         </div>
         
         <div className="flex space-x-2">
-          <Button variant="secondary" size="sm">
-            <Phone className="mr-1 h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Ligar</span>
-          </Button>
-
           <Dialog>
             <DialogTrigger asChild>
               <Button variant="outline" size="icon" className="h-8 w-8">
