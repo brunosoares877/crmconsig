@@ -25,6 +25,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
+        
+        // Redirect to dashboard on successful login
+        if (event === 'SIGNED_IN' && window.location.pathname === '/login') {
+          navigate('/dashboard');
+        }
       }
     );
 
@@ -35,7 +40,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [navigate]);
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
