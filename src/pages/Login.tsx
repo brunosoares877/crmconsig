@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -154,8 +153,8 @@ const Login = () => {
   
   return (
     <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="mx-auto w-full max-w-md px-4">
-        <Card className="w-full animate-fade-in">
+      <div className="grid grid-cols-1 lg:grid-cols-2 w-full max-w-6xl px-4 gap-8">
+        <Card className="w-full animate-fade-in max-w-md mx-auto">
           <CardHeader className="space-y-1">
             <CardTitle className="text-2xl font-bold text-center">
               CRM Lead Hub
@@ -321,6 +320,11 @@ const Login = () => {
             )}
           </CardFooter>
         </Card>
+        
+        {/* Área à direita que ocupará o espaço do quadrante vermelho */}
+        <div className="hidden lg:flex items-center justify-center bg-red-50 rounded-xl">
+          {/* Esta div ficará vazia por enquanto, mas ocupará o espaço indicado no quadrante vermelho */}
+        </div>
       </div>
     </div>
   );
