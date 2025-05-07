@@ -2,12 +2,23 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { useLocation } from "react-router-dom";
-import { Calendar, CalendarDays, CalendarPlus, DollarSign, List, ListCheck, Settings } from "lucide-react";
+import { 
+  Calendar, 
+  CalendarDays, 
+  CalendarPlus, 
+  DollarSign, 
+  List, 
+  ListCheck, 
+  Settings
+} from "lucide-react";
+
 const Sidebar = () => {
   const location = useLocation();
+  
   const isActive = (path: string) => {
     return location.pathname === path || location.pathname.startsWith(path + "/");
   };
+  
   return <div className="fixed left-0 top-0 h-full w-16 md:w-64 z-10 bg-sidebar shadow-lg">
       <div className="h-16 flex items-center justify-center md:justify-start border-b border-sidebar-border">
         <Link to="/" className="px-4">
@@ -67,4 +78,5 @@ const Sidebar = () => {
       </nav>
     </div>;
 };
+
 export default Sidebar;
