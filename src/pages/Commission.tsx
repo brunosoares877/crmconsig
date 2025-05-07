@@ -54,7 +54,7 @@ const Commission = () => {
       if (error) throw error;
 
       if (data) {
-        // Get unique employee names
+        // Get unique employee names and filter out any null or empty values
         const uniqueEmployees = [...new Set(data.map(item => item.employee).filter(Boolean))];
         setEmployees(uniqueEmployees);
       }
@@ -92,15 +92,15 @@ const Commission = () => {
         // Calculate totals
         const pendingTotal = data
           .filter(c => c.status === "pending")
-          .reduce((acc, curr) => acc + (curr.commission_value || 0), 0);
+          .reduce((acc, curr) => acc + (Number(curr.commission_value) || 0), 0);
           
         const approvedTotal = data
           .filter(c => c.status === "approved")
-          .reduce((acc, curr) => acc + (curr.commission_value || 0), 0);
+          .reduce((acc, curr) => acc + (Number(curr.commission_value) || 0), 0);
           
         const paidTotal = data
           .filter(c => c.status === "paid")
-          .reduce((acc, curr) => acc + (curr.commission_value || 0), 0);
+          .reduce((acc, curr) => acc + (Number(curr.commission_value) || 0), 0);
         
         setTotalCommissionsPending(pendingTotal);
         setTotalCommissionsApproved(approvedTotal);
@@ -161,15 +161,15 @@ const Commission = () => {
       
       const pending = filteredByEmployee
         .filter(c => c.status === "pending")
-        .reduce((acc, curr) => acc + (curr.commission_value || 0), 0);
+        .reduce((acc, curr) => acc + (Number(curr.commission_value) || 0), 0);
         
       const approved = filteredByEmployee
         .filter(c => c.status === "approved")
-        .reduce((acc, curr) => acc + (curr.commission_value || 0), 0);
+        .reduce((acc, curr) => acc + (Number(curr.commission_value) || 0), 0);
         
       const paid = filteredByEmployee
         .filter(c => c.status === "paid")
-        .reduce((acc, curr) => acc + (curr.commission_value || 0), 0);
+        .reduce((acc, curr) => acc + (Number(curr.commission_value) || 0), 0);
       
       return { pending, approved, paid };
     }
@@ -261,7 +261,7 @@ const Commission = () => {
             <SelectContent>
               <SelectItem value="">Todos os funcionários</SelectItem>
               {employees.map(employee => (
-                <SelectItem key={employee} value={employee}>
+                <SelectItem key={employee} value={employee || "unknown"}>
                   {employee}
                 </SelectItem>
               ))}
