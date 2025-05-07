@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Link } from "react-router-dom";
 import { useLocation } from "react-router-dom";
@@ -52,10 +53,14 @@ const Sidebar = () => {
               <span className="hidden md:inline">Portabilidade</span>
             </Link>
           </li>
-          <li>
-            <Link to="/commission" className={`flex items-center ${isActive("/commission") ? "bg-sidebar-accent text-white font-medium" : "text-gray-300 hover:bg-sidebar-accent/50"} p-2 rounded-md transition-colors`}>
+          <li className="space-y-1">
+            <Link to="/commission" className={`flex items-center ${isActive("/commission") && !isActive("/commission/settings") ? "bg-sidebar-accent text-white font-medium" : "text-gray-300 hover:bg-sidebar-accent/50"} p-2 rounded-md transition-colors`}>
               <DollarSign className="h-5 w-5 mr-3" />
               <span className="hidden md:inline">Comissões</span>
+            </Link>
+            <Link to="/commission/settings" className={`flex items-center ${isActive("/commission/settings") ? "bg-sidebar-accent text-white font-medium" : "text-gray-300 hover:bg-sidebar-accent/50"} p-2 pl-10 rounded-md transition-colors ml-2`}>
+              <Settings className="h-4 w-4 mr-3" />
+              <span className="hidden md:inline text-sm">Configurações</span>
             </Link>
           </li>
         </ul>

@@ -82,6 +82,7 @@ export type Database = {
           active: boolean
           created_at: string | null
           id: string
+          name: string | null
           percentage: number
           product: string
           updated_at: string | null
@@ -91,6 +92,7 @@ export type Database = {
           active?: boolean
           created_at?: string | null
           id?: string
+          name?: string | null
           percentage?: number
           product: string
           updated_at?: string | null
@@ -100,6 +102,7 @@ export type Database = {
           active?: boolean
           created_at?: string | null
           id?: string
+          name?: string | null
           percentage?: number
           product?: string
           updated_at?: string | null
@@ -114,6 +117,7 @@ export type Database = {
           id: string
           max_amount: number | null
           min_amount: number
+          name: string | null
           percentage: number
           product: string
           updated_at: string | null
@@ -125,6 +129,7 @@ export type Database = {
           id?: string
           max_amount?: number | null
           min_amount: number
+          name?: string | null
           percentage?: number
           product: string
           updated_at?: string | null
@@ -136,6 +141,7 @@ export type Database = {
           id?: string
           max_amount?: number | null
           min_amount?: number
+          name?: string | null
           percentage?: number
           product?: string
           updated_at?: string | null
