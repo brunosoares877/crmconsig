@@ -31,6 +31,7 @@ const formSchema = z.object({
   status: z.string().min(1, { message: "Status é obrigatório" }),
   product: z.string().min(1, { message: "Produto é obrigatório" }),
   payment_period: z.string().min(1, { message: "Período de pagamento é obrigatório" }),
+  employee: z.string().min(1, { message: "Funcionário é obrigatório" }),
 });
 
 interface NewCommissionFormProps {
@@ -69,6 +70,7 @@ export default function NewCommissionForm({ leads, onSuccess, onCancel }: NewCom
       status: "em_andamento",
       product: "",
       payment_period: "monthly",
+      employee: "",
     },
   });
 
@@ -76,6 +78,7 @@ export default function NewCommissionForm({ leads, onSuccess, onCancel }: NewCom
   const [commissionTiers, setCommissionTiers] = useState<CommissionTier[]>([]);
   const [calculatedCommission, setCalculatedCommission] = useState<number | null>(null);
   const [flatRates, setFlatRates] = useState<Record<string, number>>({});
+  const [employees, setEmployees] = useState<string[]>([]);
 
   const watchAmount = form.watch("amount");
   const watchProduct = form.watch("product");
@@ -121,8 +124,30 @@ export default function NewCommissionForm({ leads, onSuccess, onCancel }: NewCom
       }
     }
 
+    // Fetch unique employees from leads
+    async function fetchEmployees() {
+      try {
+        const { data, error } = await supabase
+          .from("leads")
+          .select("employee")
+          .not("employee", "is", null)
+          .order("employee");
+
+        if (error) throw error;
+
+        if (data) {
+          // Get unique employee names
+          const uniqueEmployees = [...new Set(data.map(item => item.employee).filter(Boolean))];
+          setEmployees(uniqueEmployees);
+        }
+      } catch (error: any) {
+        console.error("Error fetching employees:", error);
+      }
+    }
+
     fetchCommissionTiers();
     fetchCommissionRates();
+    fetchEmployees();
   }, []);
 
   // Calculate commission based on amount and product whenever they change
@@ -183,10 +208,12 @@ export default function NewCommissionForm({ leads, onSuccess, onCancel }: NewCom
 
       const { data, error } = await supabase.from("commissions").insert({
         lead_id: values.lead_id,
-        amount: commissionAmount, 
+        amount: amount,
+        commission_value: commissionAmount,
         status: values.status,
         product: values.product,
         payment_period: values.payment_period,
+        employee: values.employee,
         user_id: userData.user.id
       });
 
@@ -311,6 +338,32 @@ export default function NewCommissionForm({ leads, onSuccess, onCancel }: NewCom
             </p>
           </div>
         )}
+
+        <FormField
+          control={form.control}
+          name="employee"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Funcionário</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o funcionário" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {employees.map(employee => (
+                    <SelectItem key={employee} value={employee}>
+                      {employee}
+                    </SelectItem>
+                  ))}
+                  <SelectItem value="new">+ Adicionar novo funcionário</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         <FormField
           control={form.control}

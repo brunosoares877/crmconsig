@@ -67,7 +67,7 @@ export interface Commission {
   user_id: string;
   lead_id: string;
   amount: number;
-  percentage: number;
+  percentage?: number;
   commission_value: number;
   product: string;
   payment_period?: string;
@@ -75,5 +75,6 @@ export interface Commission {
   payment_date?: string;
   created_at: string;
   updated_at: string;
+  employee?: string; // Add employee field
   lead?: Partial<Lead>; // Lead relationship with correct type
 }

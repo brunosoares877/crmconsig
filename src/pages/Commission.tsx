@@ -14,148 +14,101 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Lead,
   type Commission as CommissionType
 } from "@/types/models";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const Commission = () => {
   const [loading, setLoading] = useState(false);
   const [leads, setLeads] = useState<Partial<Lead>[]>([]);
   const [commissions, setCommissions] = useState<CommissionType[]>([]);
   const [search, setSearch] = useState("");
+  const [employeeFilter, setEmployeeFilter] = useState<string>("");
+  const [employees, setEmployees] = useState<string[]>([]);
   const [totalCommissionsPending, setTotalCommissionsPending] = useState(0);
   const [totalCommissionsApproved, setTotalCommissionsApproved] = useState(0);
   const [totalCommissionsPaid, setTotalCommissionsPaid] = useState(0);
 
   useEffect(() => {
     fetchCommissions();
+    fetchEmployees();
   }, []);
+
+  const fetchEmployees = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("leads")
+        .select("employee")
+        .not("employee", "is", null)
+        .order("employee");
+
+      if (error) throw error;
+
+      if (data) {
+        // Get unique employee names
+        const uniqueEmployees = [...new Set(data.map(item => item.employee).filter(Boolean))];
+        setEmployees(uniqueEmployees);
+      }
+    } catch (error: any) {
+      console.error("Error fetching employees:", error);
+    }
+  };
 
   const fetchCommissions = async () => {
     try {
       setLoading(true);
-      // Simulating API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Mock data for leads
-      const leadsData: Partial<Lead>[] = [
-        {
-          id: "1",
-          name: "João Silva",
-          product: "Empréstimo Consignado",
-          amount: "5000",
-          status: "convertido",
-          employee: "Maria Santos"
-        },
-        {
-          id: "2",
-          name: "Ana Oliveira",
-          product: "Cartão de Crédito",
-          amount: "1000",
-          status: "convertido", 
-          employee: "Carlos Mendes"
-        },
-        {
-          id: "3",
-          name: "Pedro Costa",
-          product: "Empréstimo Pessoal",
-          amount: "3000",
-          status: "convertido",
-          employee: "Fernanda Lima"
-        }
-      ];
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) {
+        toast.error("Usuário não autenticado");
+        return;
+      }
       
-      setLeads(leadsData);
+      const { data, error } = await supabase
+        .from("commissions")
+        .select(`
+          *,
+          lead:lead_id (
+            id, name, product, amount, status, employee
+          )
+        `)
+        .eq("user_id", userData.user.id)
+        .order("created_at", { ascending: false });
       
-      // Mock data for commissions
-      const commissionsData: CommissionType[] = [
-        {
-          id: "1",
-          lead_id: "1",
-          user_id: "user1",
-          amount: 5000,
-          percentage: 2.5,
-          commission_value: 125,
-          product: "Empréstimo Consignado",
-          payment_period: "Abril 2025",
-          status: "pending",
-          created_at: "2025-04-15T10:00:00Z",
-          updated_at: "2025-04-15T10:00:00Z",
-          lead: {
-            id: "1",
-            name: "João Silva",
-            product: "Empréstimo Consignado",
-            amount: "5000",
-            status: "convertido",
-            employee: "Maria Santos"
-          }
-        },
-        {
-          id: "2",
-          lead_id: "2",
-          user_id: "user1",
-          amount: 1000,
-          percentage: 3,
-          commission_value: 30,
-          product: "Cartão de Crédito",
-          payment_period: "Março 2025",
-          status: "approved",
-          created_at: "2025-03-20T14:30:00Z",
-          updated_at: "2025-03-22T09:15:00Z",
-          lead: {
-            id: "2",
-            name: "Ana Oliveira",
-            product: "Cartão de Crédito",
-            amount: "1000",
-            status: "convertido",
-            employee: "Carlos Mendes"
-          }
-        },
-        {
-          id: "3",
-          lead_id: "3",
-          user_id: "user1",
-          amount: 3000,
-          percentage: 2,
-          commission_value: 60,
-          product: "Empréstimo Pessoal",
-          payment_period: "Fevereiro 2025",
-          status: "paid",
-          payment_date: "2025-02-28T00:00:00Z",
-          created_at: "2025-02-10T11:20:00Z",
-          updated_at: "2025-02-28T16:45:00Z",
-          lead: {
-            id: "3",
-            name: "Pedro Costa",
-            product: "Empréstimo Pessoal",
-            amount: "3000",
-            status: "convertido",
-            employee: "Fernanda Lima"
-          }
-        }
-      ];
+      if (error) throw error;
       
-      setCommissions(commissionsData);
-      
-      // Calculate totals
-      const pendingTotal = commissionsData
-        .filter(c => c.status === "pending")
-        .reduce((acc, curr) => acc + curr.commission_value, 0);
+      if (data) {
+        setCommissions(data as CommissionType[]);
         
-      const approvedTotal = commissionsData
-        .filter(c => c.status === "approved")
-        .reduce((acc, curr) => acc + curr.commission_value, 0);
+        // Calculate totals
+        const pendingTotal = data
+          .filter(c => c.status === "pending")
+          .reduce((acc, curr) => acc + (curr.commission_value || 0), 0);
+          
+        const approvedTotal = data
+          .filter(c => c.status === "approved")
+          .reduce((acc, curr) => acc + (curr.commission_value || 0), 0);
+          
+        const paidTotal = data
+          .filter(c => c.status === "paid")
+          .reduce((acc, curr) => acc + (curr.commission_value || 0), 0);
         
-      const paidTotal = commissionsData
-        .filter(c => c.status === "paid")
-        .reduce((acc, curr) => acc + curr.commission_value, 0);
-      
-      setTotalCommissionsPending(pendingTotal);
-      setTotalCommissionsApproved(approvedTotal);
-      setTotalCommissionsPaid(paidTotal);
-      
-    } catch (error) {
+        setTotalCommissionsPending(pendingTotal);
+        setTotalCommissionsApproved(approvedTotal);
+        setTotalCommissionsPaid(paidTotal);
+      }
+    } catch (error: any) {
       console.error("Error fetching commissions:", error);
+      toast.error(`Erro ao carregar comissões: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -167,15 +120,22 @@ const Commission = () => {
 
   const filteredCommissions = commissions.filter((commission) => {
     const searchTerm = search.toLowerCase();
-    return (
+    const matchesSearch = 
       commission.lead?.name?.toLowerCase().includes(searchTerm) ||
       commission.product?.toLowerCase().includes(searchTerm) ||
       commission.status?.toLowerCase().includes(searchTerm) ||
       commission.payment_period?.toLowerCase().includes(searchTerm) ||
+      commission.employee?.toLowerCase().includes(searchTerm) ||
       commission.lead?.employee?.toLowerCase().includes(searchTerm) ||
       String(commission.amount).toLowerCase().includes(searchTerm) ||
-      String(commission.commission_value).toLowerCase().includes(searchTerm)
-    );
+      String(commission.commission_value).toLowerCase().includes(searchTerm);
+    
+    // Filter by employee if an employee filter is selected
+    const matchesEmployee = employeeFilter === "" || 
+      commission.employee === employeeFilter || 
+      commission.lead?.employee === employeeFilter;
+    
+    return matchesSearch && matchesEmployee;
   });
 
   const getStatusBadge = (status: string) => {
@@ -193,13 +153,43 @@ const Commission = () => {
     }
   };
 
+  const calculateEmployeeTotals = () => {
+    if (employeeFilter) {
+      const filteredByEmployee = commissions.filter(
+        commission => commission.employee === employeeFilter || commission.lead?.employee === employeeFilter
+      );
+      
+      const pending = filteredByEmployee
+        .filter(c => c.status === "pending")
+        .reduce((acc, curr) => acc + (curr.commission_value || 0), 0);
+        
+      const approved = filteredByEmployee
+        .filter(c => c.status === "approved")
+        .reduce((acc, curr) => acc + (curr.commission_value || 0), 0);
+        
+      const paid = filteredByEmployee
+        .filter(c => c.status === "paid")
+        .reduce((acc, curr) => acc + (curr.commission_value || 0), 0);
+      
+      return { pending, approved, paid };
+    }
+    
+    return { 
+      pending: totalCommissionsPending,
+      approved: totalCommissionsApproved,
+      paid: totalCommissionsPaid
+    };
+  };
+
+  const employeeTotals = calculateEmployeeTotals();
+
   const renderCommissionTable = () => {
     if (loading) {
-      return <div>Carregando comissões...</div>;
+      return <div className="text-center py-8">Carregando comissões...</div>;
     }
 
     if (commissions.length === 0) {
-      return <div>Nenhuma comissão encontrada.</div>;
+      return <div className="text-center py-8">Nenhuma comissão encontrada.</div>;
     }
 
     return (
@@ -213,28 +203,36 @@ const Commission = () => {
             <TableHead>Comissão</TableHead>
             <TableHead>Período de Pagamento</TableHead>
             <TableHead>Status</TableHead>
-            <TableHead>Vendedor</TableHead>
+            <TableHead>Funcionário</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {filteredCommissions.map((commission) => (
-            <TableRow key={commission.id}>
-              <TableCell>{commission.lead?.name}</TableCell>
-              <TableCell>{commission.product}</TableCell>
-              <TableCell>R$ {commission.amount}</TableCell>
-              <TableCell>R$ {commission.commission_value}</TableCell>
-              <TableCell>{commission.payment_period}</TableCell>
-              <TableCell>{getStatusBadge(commission.status!)}</TableCell>
-              <TableCell>{commission.lead?.employee}</TableCell>
+          {filteredCommissions.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={7} className="text-center py-8">
+                Nenhuma comissão encontrada com os filtros aplicados.
+              </TableCell>
             </TableRow>
-          ))}
+          ) : (
+            filteredCommissions.map((commission) => (
+              <TableRow key={commission.id}>
+                <TableCell>{commission.lead?.name}</TableCell>
+                <TableCell>{commission.product}</TableCell>
+                <TableCell>R$ {commission.amount?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</TableCell>
+                <TableCell>R$ {commission.commission_value?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</TableCell>
+                <TableCell>{commission.payment_period}</TableCell>
+                <TableCell>{getStatusBadge(commission.status!)}</TableCell>
+                <TableCell>{commission.employee || commission.lead?.employee || "-"}</TableCell>
+              </TableRow>
+            ))
+          )}
         </TableBody>
         <TableFooter>
           <TableRow>
-            <TableCell colSpan={4}>
-              <div className="font-bold">Total Pendente: R$ {totalCommissionsPending}</div>
-              <div className="font-bold">Total Aprovado: R$ {totalCommissionsApproved}</div>
-              <div className="font-bold">Total Pago: R$ {totalCommissionsPaid}</div>
+            <TableCell colSpan={7}>
+              <div className="font-bold">Total Pendente: R$ {employeeTotals.pending.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+              <div className="font-bold">Total Aprovado: R$ {employeeTotals.approved.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+              <div className="font-bold">Total Pago: R$ {employeeTotals.paid.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
             </TableCell>
           </TableRow>
         </TableFooter>
@@ -246,13 +244,30 @@ const Commission = () => {
     <div className="container mx-auto py-8">
       <h1 className="text-2xl font-bold mb-4">Comissões</h1>
 
-      <div className="mb-4">
-        <Input
-          type="text"
-          placeholder="Pesquisar comissões..."
-          value={search}
-          onChange={handleSearch}
-        />
+      <div className="mb-4 grid gap-4 md:grid-cols-2">
+        <div>
+          <Input
+            type="text"
+            placeholder="Pesquisar comissões..."
+            value={search}
+            onChange={handleSearch}
+          />
+        </div>
+        <div>
+          <Select value={employeeFilter} onValueChange={setEmployeeFilter}>
+            <SelectTrigger>
+              <SelectValue placeholder="Filtrar por funcionário" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">Todos os funcionários</SelectItem>
+              {employees.map(employee => (
+                <SelectItem key={employee} value={employee}>
+                  {employee}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {renderCommissionTable()}
