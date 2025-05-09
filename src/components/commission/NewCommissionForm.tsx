@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -41,9 +40,10 @@ interface NewCommissionFormProps {
 }
 
 const statusOptions = [
-  { value: "aprovado", label: "Aprovado" },
-  { value: "em_andamento", label: "Em andamento" },
-  { value: "cancelado", label: "Cancelado" },
+  { value: "pending", label: "Pendente" },
+  { value: "approved", label: "Aprovado" },
+  { value: "paid", label: "Pago" },
+  { value: "cancelled", label: "Cancelado" },
 ];
 
 const periodOptions = [
@@ -67,7 +67,7 @@ export default function NewCommissionForm({ leads, onSuccess, onCancel }: NewCom
     defaultValues: {
       lead_id: "",
       amount: "",
-      status: "em_andamento",
+      status: "pending",
       product: "",
       payment_period: "monthly",
       employee: "",
@@ -209,7 +209,8 @@ export default function NewCommissionForm({ leads, onSuccess, onCancel }: NewCom
       const { data, error } = await supabase.from("commissions").insert({
         lead_id: values.lead_id,
         amount: amount,
-        commission_value: commissionAmount,
+        commission_value: commissionAmount,  // Make sure to include the commission_value
+        percentage: flatRates[values.product] || 0,  // Add percentage information
         status: values.status,
         product: values.product,
         payment_period: values.payment_period,
@@ -357,7 +358,6 @@ export default function NewCommissionForm({ leads, onSuccess, onCancel }: NewCom
                       {employee}
                     </SelectItem>
                   ))}
-                  <SelectItem value="new">+ Adicionar novo funcionário</SelectItem>
                 </SelectContent>
               </Select>
               <FormMessage />
