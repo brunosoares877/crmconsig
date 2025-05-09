@@ -259,7 +259,7 @@ const Commission = () => {
               <SelectValue placeholder="Filtrar por funcionário" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Todos os funcionários</SelectItem>
+              <SelectItem value="all">Todos os funcionários</SelectItem>
               {employees.map(employee => (
                 <SelectItem key={employee} value={employee || "unknown"}>
                   {employee}
