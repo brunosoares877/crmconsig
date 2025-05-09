@@ -9,7 +9,8 @@ import {
   DollarSign, 
   List, 
   ListCheck, 
-  Settings
+  Settings,
+  Users
 } from "lucide-react";
 
 const Sidebar = () => {
@@ -56,6 +57,12 @@ const Sidebar = () => {
             <Link to="/leads/scheduled" className={`flex items-center ${isActive("/leads/scheduled") ? "bg-sidebar-accent text-white font-medium" : "text-gray-300 hover:bg-sidebar-accent/50"} p-2 rounded-md transition-colors`}>
               <CalendarPlus className="h-5 w-5 mr-3" />
               <span className="hidden md:inline">Agendamentos</span>
+            </Link>
+          </li>
+          <li>
+            <Link to="/employees" className={`flex items-center ${isActive("/employees") ? "bg-sidebar-accent text-white font-medium" : "text-gray-300 hover:bg-sidebar-accent/50"} p-2 rounded-md transition-colors`}>
+              <Users className="h-5 w-5 mr-3" />
+              <span className="hidden md:inline">Funcionários</span>
             </Link>
           </li>
           <li>

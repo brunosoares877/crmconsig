@@ -87,18 +87,24 @@ const Commission = () => {
       if (error) throw error;
       
       if (data) {
-        setCommissions(data as CommissionType[]);
+        // Ensure commission_value exists in all commissions
+        const processedCommissions = data.map(commission => ({
+          ...commission,
+          commission_value: commission.commission_value || (commission.amount * (commission.percentage || 0) / 100)
+        })) as CommissionType[];
+        
+        setCommissions(processedCommissions);
         
         // Calculate totals
-        const pendingTotal = data
+        const pendingTotal = processedCommissions
           .filter(c => c.status === "pending")
           .reduce((acc, curr) => acc + (Number(curr.commission_value) || 0), 0);
           
-        const approvedTotal = data
+        const approvedTotal = processedCommissions
           .filter(c => c.status === "approved")
           .reduce((acc, curr) => acc + (Number(curr.commission_value) || 0), 0);
           
-        const paidTotal = data
+        const paidTotal = processedCommissions
           .filter(c => c.status === "paid")
           .reduce((acc, curr) => acc + (Number(curr.commission_value) || 0), 0);
         
@@ -131,7 +137,7 @@ const Commission = () => {
       String(commission.commission_value).toLowerCase().includes(searchTerm);
     
     // Filter by employee if an employee filter is selected
-    const matchesEmployee = employeeFilter === "" || 
+    const matchesEmployee = employeeFilter === "" || employeeFilter === "all" || 
       commission.employee === employeeFilter || 
       commission.lead?.employee === employeeFilter;
     
@@ -154,7 +160,7 @@ const Commission = () => {
   };
 
   const calculateEmployeeTotals = () => {
-    if (employeeFilter) {
+    if (employeeFilter && employeeFilter !== "all") {
       const filteredByEmployee = commissions.filter(
         commission => commission.employee === employeeFilter || commission.lead?.employee === employeeFilter
       );
