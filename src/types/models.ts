@@ -61,20 +61,20 @@ export interface Appointment {
   updated_at: string;
 }
 
-// Update Commission interface to explicitly include commission_value and percentage
+// Update Commission interface to include all required fields
 export interface Commission {
   id: string;
   user_id: string;
   lead_id: string;
   amount: number;
   percentage?: number;
-  commission_value: number;  // Add the missing commission_value field
+  commission_value: number;
   product: string;
   payment_period?: string;
   status: 'pending' | 'approved' | 'paid' | 'cancelled';
   payment_date?: string;
   created_at: string;
   updated_at: string;
-  employee?: string; // Add employee field
-  lead?: Partial<Lead>; // Lead relationship with correct type
+  employee?: string;
+  lead?: Partial<Lead>;
 }

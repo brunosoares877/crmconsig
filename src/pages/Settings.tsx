@@ -7,9 +7,17 @@ import NotificationSection from "@/components/settings/NotificationSection";
 import SecuritySection from "@/components/settings/SecuritySection";
 import LogoutButton from "@/components/settings/LogoutButton";
 import SettingsSidebar from "@/components/settings/SettingsSidebar";
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Settings as SettingsIcon } from "lucide-react";
 
 export default function Settings() {
   const [activeTab, setActiveTab] = useState("account");
+  const navigate = useNavigate();
+
+  const handleCommissionSettings = () => {
+    navigate("/commission/settings");
+  };
 
   return (
     <div className="container mx-auto py-10">
@@ -30,6 +38,21 @@ export default function Settings() {
           {activeTab === "appearance" && <AppearanceSection />}
           {activeTab === "notifications" && <NotificationSection />}
           {activeTab === "security" && <SecuritySection />}
+          {activeTab === "commissions" && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">Configurações de Comissões</h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Configure suas taxas de comissão, níveis e outras configurações relacionadas.
+              </p>
+              <Button 
+                onClick={handleCommissionSettings}
+                className="flex items-center gap-2"
+              >
+                <SettingsIcon size={16} />
+                Gerenciar Configurações de Comissões
+              </Button>
+            </div>
+          )}
           
           <Separator />
           

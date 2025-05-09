@@ -23,6 +23,7 @@ import Settings from "@/pages/Settings";
 import Employees from "@/pages/Employees";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { Toaster } from "@/components/ui/toaster";
+import { sonnerToast } from "sonner";
 
 function App() {
   return (

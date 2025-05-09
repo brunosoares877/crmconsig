@@ -16,6 +16,7 @@ export default function SettingsSidebar({
     { id: "appearance", label: "Aparência" },
     { id: "notifications", label: "Notificações" },
     { id: "security", label: "Segurança" },
+    { id: "commissions", label: "Comissões" },
   ];
 
   return (

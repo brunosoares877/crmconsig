@@ -89,7 +89,8 @@ const Commission = () => {
         // Ensure commission_value exists in all commissions
         const processedCommissions = data.map(commission => ({
           ...commission,
-          commission_value: commission.commission_value || (commission.amount * (commission.percentage || 0) / 100)
+          commission_value: commission.commission_value ?? (commission.amount * (commission.percentage ?? 0) / 100),
+          percentage: commission.percentage ?? 0
         })) as CommissionType[];
         
         setCommissions(processedCommissions);
@@ -266,7 +267,7 @@ const Commission = () => {
             <SelectContent>
               <SelectItem value="all">Todos os funcionários</SelectItem>
               {employees.map(employee => (
-                <SelectItem key={employee} value={employee || "unknown"}>
+                <SelectItem key={employee} value={employee || ""}>
                   {employee}
                 </SelectItem>
               ))}
