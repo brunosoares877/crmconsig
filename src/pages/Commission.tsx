@@ -25,6 +25,7 @@ import {
 } from "@/types/models";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Commission = () => {
   const [loading, setLoading] = useState(false);
@@ -36,11 +37,20 @@ const Commission = () => {
   const [totalCommissionsPending, setTotalCommissionsPending] = useState(0);
   const [totalCommissionsApproved, setTotalCommissionsApproved] = useState(0);
   const [totalCommissionsPaid, setTotalCommissionsPaid] = useState(0);
+  const { isPrivilegedUser } = useAuth();
 
   useEffect(() => {
     fetchCommissions();
     fetchEmployees();
   }, []);
+
+  useEffect(() => {
+    if (isPrivilegedUser) {
+      toast.success("Bem-vindo! Você tem acesso completo e vitalício ao sistema.", {
+        duration: 5000,
+      });
+    }
+  }, [isPrivilegedUser]);
 
   const fetchEmployees = async () => {
     try {
@@ -86,17 +96,41 @@ const Commission = () => {
       if (error) throw error;
       
       if (data) {
-        // Process the commissions from the database to ensure they match our interface
-        const processedCommissions = data.map(commission => {
-          // Create a properly typed commission object with all required fields from our interface
-          const typedCommission: CommissionType = {
-            ...commission,
-            // Add missing fields or use defaults
-            commission_value: commission.commission_value || commission.amount * ((commission as any).percentage || 0) / 100,
-            percentage: (commission as any).percentage || 0,
-            lead: commission.lead || undefined
-          };
-          return typedCommission;
+        // Transform the data to add missing properties
+        const processedCommissions = data.map(item => {
+          // Access amount safely with fallbacks
+          const amount = typeof item.amount === 'number' ? item.amount : 0;
+          
+          // Calculate commission value or use default
+          let commissionValue = 0;
+          let percentageValue = 0;
+          
+          if ('commission_value' in item) {
+            commissionValue = Number(item.commission_value) || 0;
+          } else {
+            // Use amount and percentage if available to calculate
+            if ('percentage' in item) {
+              percentageValue = Number(item.percentage) || 0;
+              commissionValue = amount * (percentageValue / 100);
+            }
+          }
+          
+          // Transform status to match expected format for lead
+          let leadData = item.lead;
+          if (leadData && typeof leadData.status === 'string') {
+            leadData = {
+              ...leadData,
+              status: leadData.status as any
+            };
+          }
+          
+          // Return properly typed commission object
+          return {
+            ...item,
+            commission_value: commissionValue,
+            percentage: percentageValue,
+            lead: leadData
+          } as CommissionType;
         });
         
         setCommissions(processedCommissions);
@@ -255,6 +289,12 @@ const Commission = () => {
   return (
     <div className="container mx-auto py-8">
       <h1 className="text-2xl font-bold mb-4">Comissões</h1>
+      
+      {isPrivilegedUser && (
+        <div className="mb-4 p-4 bg-green-100 border border-green-300 rounded-md">
+          <p className="text-green-800 font-semibold">Você tem acesso completo e vitalício a todas as funcionalidades do sistema.</p>
+        </div>
+      )}
 
       <div className="mb-4 grid gap-4 md:grid-cols-2">
         <div>

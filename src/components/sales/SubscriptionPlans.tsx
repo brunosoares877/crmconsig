@@ -4,8 +4,11 @@ import { Button } from "@/components/ui/button";
 import { CircleCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
 
 const SubscriptionPlans = () => {
+  const { isPrivilegedUser } = useAuth();
+
   const handlePayment = async (priceId: string, url: string) => {
     try {
       window.location.href = url;
@@ -14,6 +17,27 @@ const SubscriptionPlans = () => {
       toast.error("Erro ao processar pagamento. Tente novamente.");
     }
   };
+
+  if (isPrivilegedUser) {
+    return (
+      <div className="max-w-4xl mx-auto text-center p-8 bg-green-50 rounded-xl border-2 border-green-200">
+        <h2 className="text-3xl font-bold mb-6">Acesso Vitalício Ativado</h2>
+        <div className="inline-block px-6 py-3 bg-green-100 text-green-800 rounded-full text-lg font-medium mb-6">
+          Usuário Premium
+        </div>
+        <p className="text-xl mb-8">
+          Seu email foi identificado como um usuário com acesso vitalício a todas as funcionalidades do sistema.
+          Você tem acesso completo sem necessidade de assinatura.
+        </p>
+        <div className="flex justify-center">
+          <CircleCheck className="h-16 w-16 text-green-500 mb-4" />
+        </div>
+        <p className="text-lg text-green-700">
+          Aproveite todos os recursos sem limitações!
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">

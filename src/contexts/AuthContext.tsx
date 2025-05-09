@@ -10,13 +10,18 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, company: string) => Promise<void>;
   signOut: () => Promise<void>;
+  isPrivilegedUser: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// List of privileged emails that have full lifetime access
+const PRIVILEGED_EMAILS = ['brunosoares877@gmail.com'];
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
+  const [isPrivilegedUser, setIsPrivilegedUser] = useState<boolean>(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -25,6 +30,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
+        
+        // Check if the user is privileged
+        if (session?.user?.email) {
+          setIsPrivilegedUser(PRIVILEGED_EMAILS.includes(session.user.email));
+        } else {
+          setIsPrivilegedUser(false);
+        }
         
         // Redirect to dashboard on successful login
         if (event === 'SIGNED_IN' && window.location.pathname === '/login') {
@@ -37,6 +49,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
+      
+      // Check if the user is privileged
+      if (session?.user?.email) {
+        setIsPrivilegedUser(PRIVILEGED_EMAILS.includes(session.user.email));
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -68,7 +85,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ user, session, signIn, signUp, signOut, isPrivilegedUser }}>
       {children}
     </AuthContext.Provider>
   );
