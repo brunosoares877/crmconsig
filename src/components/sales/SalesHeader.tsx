@@ -12,13 +12,19 @@ const SalesHeader = () => {
         <div className="flex items-center">
           <h1 className="text-xl font-bold text-primary">LeadConsig</h1>
         </div>
-        <div>
+        <div className="flex items-center gap-3">
           <Button 
             variant="outline" 
             onClick={() => navigate("/login")}
             className="border-primary text-primary hover:bg-primary hover:text-white"
           >
             Entrar
+          </Button>
+          <Button 
+            variant="blue"
+            onClick={() => navigate("/login")}
+          >
+            Criar Grátis
           </Button>
         </div>
       </div>

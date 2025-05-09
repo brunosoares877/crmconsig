@@ -26,11 +26,11 @@ const Sales = () => {
           <div className="md:w-1/2 mb-10 md:mb-0 md:pr-8">
             
             <h1 className="text-4xl md:text-5xl font-bold text-gray-800 mb-4">
-              Use o CRM completo por <span className="text-primary">7 dias grátis!</span>
+              Use o CRM completo por <span className="text-blue-600">7 dias grátis!</span>
             </h1>
             <p className="text-xl md:text-2xl text-gray-600 mb-8">Feito de corban para corban.</p>
             <div className="flex flex-col sm:flex-row items-center gap-4">
-              <Button onClick={handleStartTrial} size="lg" className="text-lg px-8 py-6 bg-blue-600 hover:bg-blue-700 w-full sm:w-auto">
+              <Button onClick={handleStartTrial} size="lg" variant="blue" className="text-lg px-8 py-6 w-full sm:w-auto">
                 Começar Teste Gratuito <ArrowRight className="ml-2" />
               </Button>
               
@@ -47,7 +47,7 @@ const Sales = () => {
           </div>
         </section>
 
-        {/* Features Section - Now with enhanced visualization */}
+        {/* Features Section */}
         <section className="py-16 bg-gradient-to-b from-white via-blue-50/30 to-white">
           <div className="container mx-auto px-4">
             <FeaturesList />
@@ -76,7 +76,7 @@ const Sales = () => {
         </section>
 
         {/* CTA Section */}
-        <section className="text-white py-16 bg-gradient-to-r from-primary to-blue-700">
+        <section className="text-white py-16 bg-gradient-to-r from-blue-600 to-blue-700">
           <div className="container mx-auto px-4 text-center">
             <h2 className="text-3xl md:text-4xl font-bold mb-6 text-white">
               Pronto para aumentar suas vendas?
@@ -85,7 +85,7 @@ const Sales = () => {
               Experimente nosso CRM por 7 dias gratuitamente e veja como podemos ajudar sua empresa a crescer.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Button onClick={handleStartTrial} size="lg" className="text-lg px-8 py-6 bg-white text-primary hover:bg-blue-50">
+              <Button onClick={handleStartTrial} size="lg" className="text-lg px-8 py-6 bg-white text-blue-600 hover:bg-blue-50">
                 Começar agora mesmo <ArrowRight className="ml-2" />
               </Button>
               <WhatsAppButton phoneNumber="5584991850149" message="Olá! Tenho dúvidas sobre o LeadConsig" label="Falar com Suporte" />
