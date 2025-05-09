@@ -98,25 +98,27 @@ const Commission = () => {
       if (data) {
         // Transform the data to add missing properties
         const processedCommissions = data.map(item => {
+          const commission = item as any; // Use 'any' temporarily to access potentially missing fields
+          
           // Access amount safely with fallbacks
-          const amount = typeof item.amount === 'number' ? item.amount : 0;
+          const amount = typeof commission.amount === 'number' ? commission.amount : 0;
           
           // Calculate commission value or use default
           let commissionValue = 0;
           let percentageValue = 0;
           
-          if ('commission_value' in item) {
-            commissionValue = Number(item.commission_value) || 0;
+          if ('commission_value' in commission) {
+            commissionValue = Number(commission.commission_value) || 0;
           } else {
             // Use amount and percentage if available to calculate
-            if ('percentage' in item) {
-              percentageValue = Number(item.percentage) || 0;
+            if ('percentage' in commission) {
+              percentageValue = Number(commission.percentage) || 0;
               commissionValue = amount * (percentageValue / 100);
             }
           }
           
           // Transform status to match expected format for lead
-          let leadData = item.lead;
+          let leadData = commission.lead;
           if (leadData && typeof leadData.status === 'string') {
             leadData = {
               ...leadData,
@@ -124,9 +126,9 @@ const Commission = () => {
             };
           }
           
-          // Return properly typed commission object
+          // Return properly typed commission object with added fields
           return {
-            ...item,
+            ...commission,
             commission_value: commissionValue,
             percentage: percentageValue,
             lead: leadData

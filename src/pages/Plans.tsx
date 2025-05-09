@@ -1,11 +1,45 @@
 import React from "react";
-import { toast } from "@/components/ui/sonner";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { CircleCheck } from "lucide-react";
 import Header from "@/components/Header";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 const PaymentPlans = () => {
+  const { isPrivilegedUser } = useAuth();
+  const navigate = useNavigate();
+  
+  // If user is privileged, show special message and redirect to dashboard
+  React.useEffect(() => {
+    if (isPrivilegedUser) {
+      toast.success("Você tem acesso vitalício ao sistema!", { duration: 5000 });
+      setTimeout(() => navigate("/dashboard"), 1500);
+    }
+  }, [isPrivilegedUser, navigate]);
+
+  // If privileged, show special message while redirecting
+  if (isPrivilegedUser) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <main className="container mx-auto p-4 py-8 space-y-8">
+          <div className="max-w-3xl mx-auto text-center space-y-4">
+            <h1 className="text-3xl font-bold">Acesso Vitalício Ativado</h1>
+            <div className="flex justify-center mb-6">
+              <CircleCheck className="h-16 w-16 text-green-500" />
+            </div>
+            <p className="text-xl">
+              Seu email <strong>brunosoares877@gmail.com</strong> possui acesso completo e vitalício ao sistema.
+            </p>
+            <p className="text-muted-foreground mt-4">Redirecionando para o dashboard...</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   const openPaymentLink = (planName: string, url: string) => {
     toast.info(`Redirecionando para pagamento do plano ${planName}`);
     window.open(url, "_blank");

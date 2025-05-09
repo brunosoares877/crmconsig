@@ -33,7 +33,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         // Check if the user is privileged
         if (session?.user?.email) {
-          setIsPrivilegedUser(PRIVILEGED_EMAILS.includes(session.user.email));
+          const isPrUser = PRIVILEGED_EMAILS.includes(session.user.email.toLowerCase());
+          console.log("User email:", session.user.email, "Is privileged:", isPrUser);
+          setIsPrivilegedUser(isPrUser);
         } else {
           setIsPrivilegedUser(false);
         }
@@ -52,7 +54,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       // Check if the user is privileged
       if (session?.user?.email) {
-        setIsPrivilegedUser(PRIVILEGED_EMAILS.includes(session.user.email));
+        const isPrUser = PRIVILEGED_EMAILS.includes(session.user.email.toLowerCase());
+        console.log("Initial check - User email:", session.user.email, "Is privileged:", isPrUser);
+        setIsPrivilegedUser(isPrUser);
       }
     });
 

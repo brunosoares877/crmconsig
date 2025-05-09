@@ -8,17 +8,19 @@ import { useSubscription } from "@/contexts/SubscriptionContext";
 import Sidebar from "@/components/Sidebar";
 import AddLeadButton from "@/components/leads/AddLeadButton";
 import WhatsAppButton from "@/components/WhatsAppButton";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Index = () => {
   const { status, isTrialActive } = useSubscription();
+  const { isPrivilegedUser } = useAuth();
   const navigate = useNavigate();
 
-  // Redirect to payment plans ONLY if trial is expired (not during active trial)
+  // Redirect to payment plans ONLY if trial is expired AND not privileged
   useEffect(() => {
-    if (status === 'expired' && !isTrialActive) {
+    if (status === 'expired' && !isTrialActive && !isPrivilegedUser) {
       navigate("/plans");
     }
-  }, [status, isTrialActive, navigate]);
+  }, [status, isTrialActive, isPrivilegedUser, navigate]);
 
   return (
     <div className="min-h-screen bg-background">

@@ -1,5 +1,6 @@
 
 import React, { createContext, useState, useContext, useEffect } from 'react';
+import { useAuth } from './AuthContext';
 
 type SubscriptionStatus = 'trial' | 'expired' | 'active';
 
@@ -28,9 +29,17 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const [trialStartDate, setTrialStartDate] = useState<string | null>(null);
   const [subscriptionEndDate, setSubscriptionEndDate] = useState<string | null>(null);
   const [trialDaysLeft, setTrialDaysLeft] = useState(0);
+  const { isPrivilegedUser } = useAuth();
 
   // Load subscription data from localStorage on mount
   useEffect(() => {
+    // For privileged users, always consider them as having an active subscription
+    if (isPrivilegedUser) {
+      setStatus('active');
+      setSubscriptionEndDate('9999-12-31'); // Far future date
+      return;
+    }
+    
     const storedTrialStartDate = localStorage.getItem('trialStartDate');
     const storedSubscriptionEndDate = localStorage.getItem('subscriptionEndDate');
 
@@ -70,7 +79,7 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
     else {
       startTrial();
     }
-  }, []);
+  }, [isPrivilegedUser]);
 
   // Update trial days left every day
   useEffect(() => {
@@ -101,6 +110,9 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
   }, [status, trialStartDate]);
 
   const startTrial = () => {
+    // Don't start trial for privileged users
+    if (isPrivilegedUser) return;
+    
     const now = new Date().toISOString();
     localStorage.setItem('trialStartDate', now);
     setTrialStartDate(now);
