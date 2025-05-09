@@ -86,12 +86,18 @@ const Commission = () => {
       if (error) throw error;
       
       if (data) {
-        // Ensure commission_value exists in all commissions
-        const processedCommissions = data.map(commission => ({
-          ...commission,
-          commission_value: commission.commission_value ?? (commission.amount * (commission.percentage ?? 0) / 100),
-          percentage: commission.percentage ?? 0
-        })) as CommissionType[];
+        // Process the commissions from the database to ensure they match our interface
+        const processedCommissions = data.map(commission => {
+          // Create a properly typed commission object with all required fields from our interface
+          const typedCommission: CommissionType = {
+            ...commission,
+            // Add missing fields or use defaults
+            commission_value: commission.commission_value || commission.amount * ((commission as any).percentage || 0) / 100,
+            percentage: (commission as any).percentage || 0,
+            lead: commission.lead || undefined
+          };
+          return typedCommission;
+        });
         
         setCommissions(processedCommissions);
         
