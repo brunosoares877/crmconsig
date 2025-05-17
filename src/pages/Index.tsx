@@ -18,7 +18,7 @@ const Index = () => {
   // Redirect to payment plans ONLY if trial is expired AND not privileged
   useEffect(() => {
     if (status === 'expired' && !isTrialActive && !isPrivilegedUser) {
-      navigate("/plans");
+      navigate("/settings");
     }
   }, [status, isTrialActive, isPrivilegedUser, navigate]);
 
@@ -45,6 +45,6 @@ const Index = () => {
       </div>
     </div>
   );
-};
+}
 
 export default Index;

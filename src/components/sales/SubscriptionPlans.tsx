@@ -5,9 +5,11 @@ import { CircleCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 const SubscriptionPlans = () => {
   const { isPrivilegedUser } = useAuth();
+  const navigate = useNavigate();
 
   const handlePayment = async (priceId: string, url: string) => {
     try {
