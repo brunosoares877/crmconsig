@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,6 +20,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { cn } from "@/lib/utils";
+import {
   Lead,
   type Commission as CommissionType
 } from "@/types/models";
@@ -36,6 +45,9 @@ const Commission = () => {
   const [commissions, setCommissions] = useState<CommissionType[]>([]);
   const [search, setSearch] = useState("");
   const [employeeFilter, setEmployeeFilter] = useState<string>("");
+  const [statusFilter, setStatusFilter] = useState<string>("");
+  const [dateFrom, setDateFrom] = useState<Date>();
+  const [dateTo, setDateTo] = useState<Date>();
   const [employees, setEmployees] = useState<string[]>([]);
   const [totalCommissionsPending, setTotalCommissionsPending] = useState(0);
   const [totalCommissionsApproved, setTotalCommissionsApproved] = useState(0);
@@ -66,7 +78,6 @@ const Commission = () => {
       if (error) throw error;
 
       if (data) {
-        // Get unique employee names and filter out any null or empty values
         const uniqueEmployees = [...new Set(data.map(item => item.employee).filter(Boolean))];
         setEmployees(uniqueEmployees);
       }
@@ -85,7 +96,7 @@ const Commission = () => {
         return;
       }
       
-      const { data, error } = await supabase
+      let query = supabase
         .from("commissions")
         .select(`
           *,
@@ -93,34 +104,45 @@ const Commission = () => {
             id, name, product, amount, status, employee
           )
         `)
-        .eq("user_id", userData.user.id)
-        .order("created_at", { ascending: false });
+        .eq("user_id", userData.user.id);
+
+      if (dateFrom) {
+        query = query.gte("created_at", dateFrom.toISOString());
+      }
+      if (dateTo) {
+        const endDate = new Date(dateTo);
+        endDate.setHours(23, 59, 59, 999);
+        query = query.lte("created_at", endDate.toISOString());
+      }
+
+      if (statusFilter && statusFilter !== "all") {
+        query = query.eq("status", statusFilter);
+      }
+
+      query = query.order("created_at", { ascending: false });
+      
+      const { data, error } = await query;
       
       if (error) throw error;
       
       if (data) {
-        // Transform the data to add missing properties
         const processedCommissions = data.map(item => {
-          const commission = item as any; // Use 'any' temporarily to access potentially missing fields
+          const commission = item as any;
           
-          // Access amount safely with fallbacks
           const amount = typeof commission.amount === 'number' ? commission.amount : 0;
           
-          // Calculate commission value or use default
           let commissionValue = 0;
           let percentageValue = 0;
           
           if ('commission_value' in commission) {
             commissionValue = Number(commission.commission_value) || 0;
           } else {
-            // Use amount and percentage if available to calculate
             if ('percentage' in commission) {
               percentageValue = Number(commission.percentage) || 0;
               commissionValue = amount * (percentageValue / 100);
             }
           }
           
-          // Transform status to match expected format for lead
           let leadData = commission.lead;
           if (leadData && typeof leadData.status === 'string') {
             leadData = {
@@ -129,7 +151,6 @@ const Commission = () => {
             };
           }
           
-          // Return properly typed commission object with added fields
           return {
             ...commission,
             commission_value: commissionValue,
@@ -140,7 +161,6 @@ const Commission = () => {
         
         setCommissions(processedCommissions);
         
-        // Calculate totals
         const pendingTotal = processedCommissions
           .filter(c => c.status === "pending")
           .reduce((acc, curr) => acc + (Number(curr.commission_value) || 0), 0);
@@ -169,6 +189,14 @@ const Commission = () => {
     setSearch(e.target.value);
   };
 
+  const clearFilters = () => {
+    setDateFrom(undefined);
+    setDateTo(undefined);
+    setEmployeeFilter("");
+    setStatusFilter("");
+    setSearch("");
+  };
+
   const filteredCommissions = commissions.filter((commission) => {
     const searchTerm = search.toLowerCase();
     const matchesSearch = 
@@ -181,7 +209,6 @@ const Commission = () => {
       String(commission.amount).toLowerCase().includes(searchTerm) ||
       String(commission.commission_value).toLowerCase().includes(searchTerm);
     
-    // Filter by employee if an employee filter is selected
     const matchesEmployee = employeeFilter === "" || employeeFilter === "all" || 
       commission.employee === employeeFilter || 
       commission.lead?.employee === employeeFilter;
@@ -305,29 +332,106 @@ const Commission = () => {
             </div>
           )}
 
-          <div className="mb-4 grid gap-4 md:grid-cols-2">
-            <div>
-              <Input
-                type="text"
-                placeholder="Pesquisar comissões..."
-                value={search}
-                onChange={handleSearch}
-              />
+          <div className="mb-4 space-y-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              <div>
+                <Input
+                  type="text"
+                  placeholder="Pesquisar comissões..."
+                  value={search}
+                  onChange={handleSearch}
+                />
+              </div>
+              <div>
+                <Select value={employeeFilter} onValueChange={setEmployeeFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Filtrar por funcionário" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos os funcionários</SelectItem>
+                    {employees.map(employee => (
+                      <SelectItem key={employee} value={employee || ""}>
+                        {employee}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Filtrar por status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos os status</SelectItem>
+                    <SelectItem value="pending">Pendente</SelectItem>
+                    <SelectItem value="approved">Aprovado</SelectItem>
+                    <SelectItem value="paid">Pago</SelectItem>
+                    <SelectItem value="cancelled">Cancelado</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Button onClick={clearFilters} variant="outline" className="w-full">
+                  Limpar Filtros
+                </Button>
+              </div>
             </div>
-            <div>
-              <Select value={employeeFilter} onValueChange={setEmployeeFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Filtrar por funcionário" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos os funcionários</SelectItem>
-                  {employees.map(employee => (
-                    <SelectItem key={employee} value={employee || ""}>
-                      {employee}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <label className="block text-sm font-medium mb-2">Data Inicial</label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !dateFrom && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {dateFrom ? format(dateFrom, "dd/MM/yyyy", { locale: ptBR }) : "Selecionar data inicial"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={dateFrom}
+                      onSelect={setDateFrom}
+                      initialFocus
+                      className={cn("p-3 pointer-events-auto")}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium mb-2">Data Final</label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !dateTo && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {dateTo ? format(dateTo, "dd/MM/yyyy", { locale: ptBR }) : "Selecionar data final"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={dateTo}
+                      onSelect={setDateTo}
+                      initialFocus
+                      className={cn("p-3 pointer-events-auto")}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
             </div>
           </div>
 
