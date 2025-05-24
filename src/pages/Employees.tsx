@@ -23,6 +23,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import Sidebar from "@/components/Sidebar";
+import Header from "@/components/Header";
 
 const Employees = () => {
   const [employees, setEmployees] = useState<string[]>([]);
@@ -129,87 +131,93 @@ const Employees = () => {
   };
 
   return (
-    <div className="container mx-auto py-8">
-      <h1 className="text-2xl font-bold mb-6">Gerenciamento de Funcionários</h1>
+    <div className="min-h-screen bg-background">
+      <Sidebar />
+      <div className="md:ml-64 transition-all duration-300">
+        <Header />
+        <main className="container mx-auto space-y-8 p-4 py-8">
+          <h1 className="text-2xl font-bold mb-6">Gerenciamento de Funcionários</h1>
 
-      <div className="flex flex-col md:flex-row gap-4 mb-8">
-        <div className="flex-1">
-          <Input
-            type="text"
-            placeholder="Nome do novo funcionário"
-            value={newEmployeeName}
-            onChange={(e) => setNewEmployeeName(e.target.value)}
-            disabled={loading}
-          />
-        </div>
-        <Button 
-          onClick={handleAddEmployee} 
-          disabled={loading || !newEmployeeName.trim()}
-        >
-          Adicionar Funcionário
-        </Button>
-      </div>
-
-      {loading && <div className="text-center py-4">Carregando...</div>}
-
-      {!loading && employees.length === 0 ? (
-        <div className="bg-muted/50 p-8 text-center rounded-md">
-          <h3 className="font-medium text-lg mb-2">Nenhum funcionário cadastrado</h3>
-          <p className="text-muted-foreground">
-            Adicione funcionários para atribuí-los a leads e comissões
-          </p>
-        </div>
-      ) : (
-        <Table>
-          <TableCaption>Lista de funcionários cadastrados</TableCaption>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Nome do Funcionário</TableHead>
-              <TableHead className="w-[150px] text-right">Ações</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {employees.map((employee) => (
-              <TableRow key={employee}>
-                <TableCell>{employee}</TableCell>
-                <TableCell className="text-right">
-                  <Button 
-                    variant="destructive" 
-                    size="sm" 
-                    onClick={() => confirmDeleteEmployee(employee)}
-                    disabled={loading}
-                  >
-                    Remover
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      )}
-
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirmar exclusão</DialogTitle>
-            <DialogDescription>
-              Tem certeza que deseja remover o funcionário "{employeeToDelete}"? Esta ação não pode ser desfeita.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="flex flex-col sm:flex-row sm:justify-end gap-2">
-            <DialogClose asChild>
-              <Button variant="outline">Cancelar</Button>
-            </DialogClose>
+          <div className="flex flex-col md:flex-row gap-4 mb-8">
+            <div className="flex-1">
+              <Input
+                type="text"
+                placeholder="Nome do novo funcionário"
+                value={newEmployeeName}
+                onChange={(e) => setNewEmployeeName(e.target.value)}
+                disabled={loading}
+              />
+            </div>
             <Button 
-              variant="destructive" 
-              onClick={handleDeleteEmployee}
-              disabled={loading}
+              onClick={handleAddEmployee} 
+              disabled={loading || !newEmployeeName.trim()}
             >
-              Confirmar exclusão
+              Adicionar Funcionário
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </div>
+
+          {loading && <div className="text-center py-4">Carregando...</div>}
+
+          {!loading && employees.length === 0 ? (
+            <div className="bg-muted/50 p-8 text-center rounded-md">
+              <h3 className="font-medium text-lg mb-2">Nenhum funcionário cadastrado</h3>
+              <p className="text-muted-foreground">
+                Adicione funcionários para atribuí-los a leads e comissões
+              </p>
+            </div>
+          ) : (
+            <Table>
+              <TableCaption>Lista de funcionários cadastrados</TableCaption>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nome do Funcionário</TableHead>
+                  <TableHead className="w-[150px] text-right">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {employees.map((employee) => (
+                  <TableRow key={employee}>
+                    <TableCell>{employee}</TableCell>
+                    <TableCell className="text-right">
+                      <Button 
+                        variant="destructive" 
+                        size="sm" 
+                        onClick={() => confirmDeleteEmployee(employee)}
+                        disabled={loading}
+                      >
+                        Remover
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Confirmar exclusão</DialogTitle>
+                <DialogDescription>
+                  Tem certeza que deseja remover o funcionário "{employeeToDelete}"? Esta ação não pode ser desfeita.
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter className="flex flex-col sm:flex-row sm:justify-end gap-2">
+                <DialogClose asChild>
+                  <Button variant="outline">Cancelar</Button>
+                </DialogClose>
+                <Button 
+                  variant="destructive" 
+                  onClick={handleDeleteEmployee}
+                  disabled={loading}
+                >
+                  Confirmar exclusão
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </main>
+      </div>
     </div>
   );
 };
