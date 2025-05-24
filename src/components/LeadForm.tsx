@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -23,6 +22,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { getEmployees, Employee } from "@/utils/employees";
 
 const formSchema = z.object({
   name: z.string().min(3, { message: "O nome deve ter pelo menos 3 caracteres." }),
@@ -55,6 +55,7 @@ const LeadForm: React.FC<LeadFormProps> = ({
   isLoading = false 
 }) => {
   const [benefitTypes, setBenefitTypes] = useState<{code: string, description: string}[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
 
   useEffect(() => {
     const fetchBenefitTypes = async () => {
@@ -71,7 +72,13 @@ const LeadForm: React.FC<LeadFormProps> = ({
       setBenefitTypes(data || []);
     };
 
+    const fetchEmployees = async () => {
+      const employeeList = await getEmployees();
+      setEmployees(employeeList);
+    };
+
     fetchBenefitTypes();
+    fetchEmployees();
   }, []);
 
   const form = useForm<FormValues>({
@@ -262,7 +269,6 @@ const LeadForm: React.FC<LeadFormProps> = ({
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {/* Bancos principais */}
                     <SelectItem value="caixa">Caixa Econômica Federal</SelectItem>
                     <SelectItem value="bb">Banco do Brasil</SelectItem>
                     <SelectItem value="itau">Itaú</SelectItem>
@@ -270,8 +276,6 @@ const LeadForm: React.FC<LeadFormProps> = ({
                     <SelectItem value="santander">Santander</SelectItem>
                     <SelectItem value="c6">C6 Bank</SelectItem>
                     <SelectItem value="brb">BRB - Banco de Brasília</SelectItem>
-                    
-                    {/* Todos os bancos da Rede */}
                     <SelectItem value="bmg">BMG</SelectItem>
                     <SelectItem value="pan">Banco Pan</SelectItem>
                     <SelectItem value="ole">Banco Olé</SelectItem>
@@ -306,9 +310,11 @@ const LeadForm: React.FC<LeadFormProps> = ({
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="jose">José Silva</SelectItem>
-                    <SelectItem value="maria">Maria Oliveira</SelectItem>
-                    <SelectItem value="joao">João Santos</SelectItem>
+                    {employees.map(employee => (
+                      <SelectItem key={employee.id} value={employee.name}>
+                        {employee.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -331,6 +337,11 @@ const LeadForm: React.FC<LeadFormProps> = ({
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
+                    <SelectItem value="CREDITO FGTS">CRÉDITO FGTS</SelectItem>
+                    <SelectItem value="CREDITO CLT">CRÉDITO CLT</SelectItem>
+                    <SelectItem value="CREDITO PIX/CARTAO">CRÉDITO PIX/CARTÃO</SelectItem>
+                    <SelectItem value="CREDITO INSS">CRÉDITO INSS</SelectItem>
+                    <SelectItem value="PORTABILIDADE INSS">PORTABILIDADE INSS</SelectItem>
                     <SelectItem value="novo">Novo</SelectItem>
                     <SelectItem value="portabilidade">Portabilidade</SelectItem>
                     <SelectItem value="refinanciamento">Refinanciamento</SelectItem>

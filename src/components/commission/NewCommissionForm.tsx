@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -23,6 +24,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CommissionTier } from "@/types/models";
+import { getEmployees, Employee } from "@/utils/employees";
 
 const formSchema = z.object({
   lead_id: z.string().min(1, { message: "Cliente é obrigatório" }),
@@ -53,6 +55,11 @@ const periodOptions = [
 ];
 
 const productOptions = [
+  { value: "CREDITO FGTS", label: "CRÉDITO FGTS" },
+  { value: "CREDITO CLT", label: "CRÉDITO CLT" },
+  { value: "CREDITO PIX/CARTAO", label: "CRÉDITO PIX/CARTÃO" },
+  { value: "CREDITO INSS", label: "CRÉDITO INSS" },
+  { value: "PORTABILIDADE INSS", label: "PORTABILIDADE INSS" },
   { value: "portabilidade", label: "Portabilidade" },
   { value: "refinanciamento", label: "Refinanciamento" },
   { value: "crefaz", label: "Crefaz" },
@@ -78,7 +85,7 @@ export default function NewCommissionForm({ leads, onSuccess, onCancel }: NewCom
   const [commissionTiers, setCommissionTiers] = useState<CommissionTier[]>([]);
   const [calculatedCommission, setCalculatedCommission] = useState<number | null>(null);
   const [flatRates, setFlatRates] = useState<Record<string, number>>({});
-  const [employees, setEmployees] = useState<string[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
 
   const watchAmount = form.watch("amount");
   const watchProduct = form.watch("product");
@@ -124,25 +131,10 @@ export default function NewCommissionForm({ leads, onSuccess, onCancel }: NewCom
       }
     }
 
-    // Fetch unique employees from leads
+    // Fetch employees
     async function fetchEmployees() {
-      try {
-        const { data, error } = await supabase
-          .from("leads")
-          .select("employee")
-          .not("employee", "is", null)
-          .order("employee");
-
-        if (error) throw error;
-
-        if (data) {
-          // Get unique employee names
-          const uniqueEmployees = [...new Set(data.map(item => item.employee).filter(Boolean))];
-          setEmployees(uniqueEmployees);
-        }
-      } catch (error: any) {
-        console.error("Error fetching employees:", error);
-      }
+      const employeeList = await getEmployees();
+      setEmployees(employeeList);
     }
 
     fetchCommissionTiers();
@@ -209,8 +201,8 @@ export default function NewCommissionForm({ leads, onSuccess, onCancel }: NewCom
       const { data, error } = await supabase.from("commissions").insert({
         lead_id: values.lead_id,
         amount: amount,
-        commission_value: commissionAmount,  // Make sure to include the commission_value
-        percentage: flatRates[values.product] || 0,  // Add percentage information
+        commission_value: commissionAmount,
+        percentage: flatRates[values.product] || 0,
         status: values.status,
         product: values.product,
         payment_period: values.payment_period,
@@ -354,8 +346,8 @@ export default function NewCommissionForm({ leads, onSuccess, onCancel }: NewCom
                 </FormControl>
                 <SelectContent>
                   {employees.map(employee => (
-                    <SelectItem key={employee} value={employee}>
-                      {employee}
+                    <SelectItem key={employee.id} value={employee.name}>
+                      {employee.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
