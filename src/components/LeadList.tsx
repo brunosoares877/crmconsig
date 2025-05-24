@@ -5,56 +5,46 @@ import { Lead } from "@/types/models";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Search, Plus, Filter, X } from "lucide-react";
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import LeadForm from "./LeadForm";
-
 interface LeadListProps {
   searchQuery?: string;
   status?: string;
 }
-
-const LeadList: React.FC<LeadListProps> = ({ searchQuery = "", status }) => {
+const LeadList: React.FC<LeadListProps> = ({
+  searchQuery = "",
+  status
+}) => {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [filteredLeads, setFilteredLeads] = useState<Lead[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isOpenSheet, setIsOpenSheet] = useState(false);
   const [internalSearchQuery, setInternalSearchQuery] = useState(searchQuery);
   const [statusFilter, setStatusFilter] = useState(status || "todos");
-  const [activeFilters, setActiveFilters] = useState<Array<{id: string, label: string}>>([]);
-  
+  const [activeFilters, setActiveFilters] = useState<Array<{
+    id: string;
+    label: string;
+  }>>([]);
   const fetchLeads = async () => {
     setIsLoading(true);
     try {
-      let query = supabase
-        .from("leads")
-        .select("*");
-        
+      let query = supabase.from("leads").select("*");
+
       // Apply status filter from props if provided
       if (status) {
         query = query.eq("status", status);
       }
-      
-      const { data, error } = await query.order("created_at", { ascending: false });
-
+      const {
+        data,
+        error
+      } = await query.order("created_at", {
+        ascending: false
+      });
       if (error) throw error;
-
       const formattedLeads = data.map(lead => ({
         ...lead,
         createdAt: new Date(lead.created_at).toLocaleDateString('pt-BR', {
@@ -64,7 +54,6 @@ const LeadList: React.FC<LeadListProps> = ({ searchQuery = "", status }) => {
         }),
         status: lead.status || "novo" // Ensure status has a default value
       })) as Lead[];
-
       setLeads(formattedLeads);
       setFilteredLeads(formattedLeads);
     } catch (error: any) {
@@ -74,37 +63,27 @@ const LeadList: React.FC<LeadListProps> = ({ searchQuery = "", status }) => {
       setIsLoading(false);
     }
   };
-
   useEffect(() => {
     fetchLeads();
   }, [status]);
-  
   useEffect(() => {
     setInternalSearchQuery(searchQuery);
   }, [searchQuery]);
-  
   useEffect(() => {
     let result = [...leads];
-    
+
     // Apply search filter - busca por nome, telefone, CPF ou email
     const searchTerms = internalSearchQuery || searchQuery;
     if (searchTerms) {
       const searchLower = searchTerms.toLowerCase();
-      result = result.filter(lead => 
-        (lead.name && lead.name.toLowerCase().includes(searchLower)) ||
-        (lead.phone && lead.phone.includes(searchTerms)) ||
-        (lead.phone2 && lead.phone2.includes(searchTerms)) ||
-        (lead.phone3 && lead.phone3.includes(searchTerms)) ||
-        (lead.cpf && lead.cpf.includes(searchTerms)) ||
-        (lead.email && lead.email?.toLowerCase().includes(searchLower))
-      );
+      result = result.filter(lead => lead.name && lead.name.toLowerCase().includes(searchLower) || lead.phone && lead.phone.includes(searchTerms) || lead.phone2 && lead.phone2.includes(searchTerms) || lead.phone3 && lead.phone3.includes(searchTerms) || lead.cpf && lead.cpf.includes(searchTerms) || lead.email && lead.email?.toLowerCase().includes(searchLower));
     }
-    
+
     // Apply status filter from internal state if not coming from props
     if (!status && statusFilter && statusFilter !== "todos") {
       result = result.filter(lead => lead.status === statusFilter);
     }
-    
+
     // Apply active filters
     activeFilters.forEach(filter => {
       if (filter.id === "novos") {
@@ -118,36 +97,31 @@ const LeadList: React.FC<LeadListProps> = ({ searchQuery = "", status }) => {
         });
       }
     });
-    
     setFilteredLeads(result);
   }, [leads, searchQuery, internalSearchQuery, statusFilter, activeFilters, status]);
-
   const handleLeadSubmit = (values: any) => {
     console.log("New lead:", values);
     setIsOpenSheet(false);
     fetchLeads();
   };
-  
   const handleLeadUpdate = (updatedLead: Lead) => {
     setLeads(leads.map(lead => lead.id === updatedLead.id ? updatedLead : lead));
   };
-
   const handleLeadDelete = (id: string) => {
     setLeads(leads.filter(lead => lead.id !== id));
   };
-  
   const addFilter = (id: string, label: string) => {
     if (!activeFilters.some(filter => filter.id === id)) {
-      setActiveFilters([...activeFilters, { id, label }]);
+      setActiveFilters([...activeFilters, {
+        id,
+        label
+      }]);
     }
   };
-  
   const removeFilter = (id: string) => {
     setActiveFilters(activeFilters.filter(filter => filter.id !== id));
   };
-
-  return (
-    <div className="space-y-4">
+  return <div className="space-y-4">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-2xl font-bold">Leads</h2>
         <div className="flex items-center gap-2">
@@ -155,17 +129,12 @@ const LeadList: React.FC<LeadListProps> = ({ searchQuery = "", status }) => {
             Mostrando {filteredLeads.length} leads
           </span>
           <Button variant="outline" className="gap-1" onClick={() => {
-            window.location.href = "/leads/import";
-          }}>
+          window.location.href = "/leads/import";
+        }}>
             <Plus className="h-3.5 w-3.5" />
             <span>Importar</span>
           </Button>
-          <Button className="gap-1" onClick={() => {
-            window.location.href = "/leads/new";
-          }}>
-            <Plus className="h-3.5 w-3.5" />
-            <span>Novo Lead</span>
-          </Button>
+          
         </div>
       </div>
       
@@ -173,33 +142,24 @@ const LeadList: React.FC<LeadListProps> = ({ searchQuery = "", status }) => {
         <div className="flex flex-col space-y-4">
           <div className="flex flex-col space-y-2 md:flex-row md:items-center md:justify-between md:space-y-0">
             <div className="flex items-center space-x-2">
-              <Button variant="outline" className="h-8 gap-1" 
-                onClick={() => addFilter("novos", "Novos")}>
+              <Button variant="outline" className="h-8 gap-1" onClick={() => addFilter("novos", "Novos")}>
                 <Filter className="h-3.5 w-3.5" />
                 <span>Filtros</span>
               </Button>
               <div className="flex flex-wrap gap-2">
-                {activeFilters.map(filter => (
-                  <Badge key={filter.id} variant="outline" className="h-8 gap-1 pl-2 pr-1">
+                {activeFilters.map(filter => <Badge key={filter.id} variant="outline" className="h-8 gap-1 pl-2 pr-1">
                     {filter.label}
-                    <Button variant="ghost" className="h-5 w-5 p-0 hover:bg-transparent"
-                      onClick={() => removeFilter(filter.id)}>
+                    <Button variant="ghost" className="h-5 w-5 p-0 hover:bg-transparent" onClick={() => removeFilter(filter.id)}>
                       <X className="h-3.5 w-3.5" />
                     </Button>
-                  </Badge>
-                ))}
+                  </Badge>)}
               </div>
             </div>
             
             <div className="flex w-full items-center space-x-2 md:w-auto">
               <div className="relative w-full md:w-[280px]">
                 <Search className="absolute left-3 top-2.5 h-4 w-4 text-blue-500" />
-                <Input 
-                  placeholder="Buscar por nome, telefone ou CPF..." 
-                  className="pl-10 border-blue-100 bg-blue-50/50 hover:bg-blue-50 focus:border-blue-200 focus:ring-1 focus:ring-blue-200 transition-all rounded-full"
-                  value={internalSearchQuery} 
-                  onChange={(e) => setInternalSearchQuery(e.target.value)}
-                />
+                <Input placeholder="Buscar por nome, telefone ou CPF..." className="pl-10 border-blue-100 bg-blue-50/50 hover:bg-blue-50 focus:border-blue-200 focus:ring-1 focus:ring-blue-200 transition-all rounded-full" value={internalSearchQuery} onChange={e => setInternalSearchQuery(e.target.value)} />
               </div>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="h-10 w-full md:w-[180px]">
@@ -230,10 +190,7 @@ const LeadList: React.FC<LeadListProps> = ({ searchQuery = "", status }) => {
                       Preencha os dados do novo lead no formulário abaixo.
                     </SheetDescription>
                   </SheetHeader>
-                  <LeadForm 
-                    onSubmit={handleLeadSubmit}
-                    onCancel={() => setIsOpenSheet(false)} 
-                  />
+                  <LeadForm onSubmit={handleLeadSubmit} onCancel={() => setIsOpenSheet(false)} />
                 </SheetContent>
               </Sheet>
             </div>
@@ -241,28 +198,11 @@ const LeadList: React.FC<LeadListProps> = ({ searchQuery = "", status }) => {
         </div>
       </div>
       
-      {isLoading ? (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="h-56 animate-pulse rounded-md bg-gray-100"></div>
-          ))}
-        </div>
-      ) : filteredLeads.length > 0 ? (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {filteredLeads.map((lead) => (
-            <LeadCard 
-              key={lead.id} 
-              lead={lead} 
-              onUpdate={handleLeadUpdate}
-              onDelete={handleLeadDelete}
-            />
-          ))}
-        </div>
-      ) : (
-        <EmptyState />
-      )}
-    </div>
-  );
+      {isLoading ? <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {[1, 2, 3].map(i => <div key={i} className="h-56 animate-pulse rounded-md bg-gray-100"></div>)}
+        </div> : filteredLeads.length > 0 ? <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {filteredLeads.map(lead => <LeadCard key={lead.id} lead={lead} onUpdate={handleLeadUpdate} onDelete={handleLeadDelete} />)}
+        </div> : <EmptyState />}
+    </div>;
 };
-
 export default LeadList;
