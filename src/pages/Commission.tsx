@@ -325,12 +325,6 @@ const Commission = () => {
         <Header />
         <main className="container mx-auto space-y-8 p-4 py-8">
           <h1 className="text-2xl font-bold mb-4">Comissões</h1>
-          
-          {isPrivilegedUser && (
-            <div className="mb-4 p-4 bg-green-100 border border-green-300 rounded-md">
-              <p className="text-green-800 font-semibold">Você tem acesso completo e vitalício a todas as funcionalidades do sistema.</p>
-            </div>
-          )}
 
           <div className="mb-4 space-y-4">
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
