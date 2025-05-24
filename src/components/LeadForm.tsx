@@ -20,9 +20,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { supabase } from "@/integrations/supabase/client";
 import { getEmployees, Employee } from "@/utils/employees";
+import { toast } from "sonner";
 
 const formSchema = z.object({
   name: z.string().min(3, { message: "O nome deve ter pelo menos 3 caracteres." }),
@@ -56,6 +58,8 @@ const LeadForm: React.FC<LeadFormProps> = ({
 }) => {
   const [benefitTypes, setBenefitTypes] = useState<{code: string, description: string}[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [existingClient, setExistingClient] = useState<any>(null);
+  const [isCheckingClient, setIsCheckingClient] = useState(false);
 
   useEffect(() => {
     const fetchBenefitTypes = async () => {
@@ -99,6 +103,42 @@ const LeadForm: React.FC<LeadFormProps> = ({
     },
   });
 
+  // Check for existing client when CPF is entered
+  const checkExistingClient = async (cpf: string) => {
+    if (cpf.length < 14) return; // Wait for complete CPF
+
+    setIsCheckingClient(true);
+    try {
+      const { data, error } = await supabase
+        .from("leads")
+        .select("*")
+        .eq("cpf", cpf)
+        .order("created_at", { ascending: false })
+        .limit(1);
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        setExistingClient(data[0]);
+        // Pre-fill form with existing client data
+        const client = data[0];
+        form.setValue("name", client.name || "");
+        form.setValue("phone", client.phone || "");
+        form.setValue("phone2", client.phone2 || "");
+        form.setValue("phone3", client.phone3 || "");
+        form.setValue("bank", client.bank || "");
+        form.setValue("employee", client.employee || "");
+        toast.info("Cliente encontrado! Dados preenchidos automaticamente.");
+      } else {
+        setExistingClient(null);
+      }
+    } catch (error) {
+      console.error("Error checking existing client:", error);
+    } finally {
+      setIsCheckingClient(false);
+    }
+  };
+
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.toUpperCase();
     form.setValue("name", value);
@@ -117,6 +157,11 @@ const LeadForm: React.FC<LeadFormProps> = ({
     }
     
     form.setValue("cpf", value);
+    
+    // Check for existing client when CPF is complete
+    if (value.length === 14) {
+      checkExistingClient(value);
+    }
   };
 
   const handlePhoneChange = (
@@ -148,13 +193,41 @@ const LeadForm: React.FC<LeadFormProps> = ({
     form.setValue("amount", value);
   };
 
-  const handleSubmit = (values: FormValues) => {
-    onSubmit(values);
+  const handleSubmit = async (values: FormValues) => {
+    try {
+      console.log("Form submission started with values:", values);
+      
+      // Ensure all required fields are present
+      const formData = {
+        ...values,
+        name: values.name.trim(),
+        cpf: values.cpf.trim(),
+        phone: values.phone.trim(),
+      };
+
+      console.log("Calling onSubmit with data:", formData);
+      await onSubmit(formData);
+      
+    } catch (error) {
+      console.error("Error in form submission:", error);
+      toast.error("Erro ao salvar lead. Tente novamente.");
+    }
   };
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+        {existingClient && (
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              Cliente já cadastrado! Você está adicionando um novo produto para{" "}
+              <strong>{existingClient.name}</strong>. 
+              Os dados foram preenchidos automaticamente.
+            </AlertDescription>
+          </Alert>
+        )}
+
         <FormField
           control={form.control}
           name="name"
@@ -183,12 +256,17 @@ const LeadForm: React.FC<LeadFormProps> = ({
               <FormItem>
                 <FormLabel>CPF</FormLabel>
                 <FormControl>
-                  <Input 
-                    placeholder="000.000.000-00" 
-                    {...field} 
-                    onChange={handleCPFChange}
-                    disabled={isLoading}
-                  />
+                  <div className="relative">
+                    <Input 
+                      placeholder="000.000.000-00" 
+                      {...field} 
+                      onChange={handleCPFChange}
+                      disabled={isLoading}
+                    />
+                    {isCheckingClient && (
+                      <Loader2 className="absolute right-3 top-2.5 h-4 w-4 animate-spin" />
+                    )}
+                  </div>
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -459,6 +537,8 @@ const LeadForm: React.FC<LeadFormProps> = ({
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Salvando...
               </>
+            ) : existingClient ? (
+              "Adicionar Novo Produto"
             ) : (
               "Salvar Lead"
             )}

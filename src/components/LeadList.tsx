@@ -11,10 +11,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import LeadForm from "./LeadForm";
+
 interface LeadListProps {
   searchQuery?: string;
   status?: string;
 }
+
 const LeadList: React.FC<LeadListProps> = ({
   searchQuery = "",
   status
@@ -29,22 +31,20 @@ const LeadList: React.FC<LeadListProps> = ({
     id: string;
     label: string;
   }>>([]);
+
   const fetchLeads = async () => {
     setIsLoading(true);
     try {
       let query = supabase.from("leads").select("*");
 
-      // Apply status filter from props if provided
       if (status) {
         query = query.eq("status", status);
       }
-      const {
-        data,
-        error
-      } = await query.order("created_at", {
-        ascending: false
-      });
+
+      const { data, error } = await query.order("created_at", { ascending: false });
+      
       if (error) throw error;
+
       const formattedLeads = data.map(lead => ({
         ...lead,
         createdAt: new Date(lead.created_at).toLocaleDateString('pt-BR', {
@@ -52,8 +52,9 @@ const LeadList: React.FC<LeadListProps> = ({
           month: 'short',
           year: 'numeric'
         }),
-        status: lead.status || "novo" // Ensure status has a default value
+        status: lead.status || "novo"
       })) as Lead[];
+
       setLeads(formattedLeads);
       setFilteredLeads(formattedLeads);
     } catch (error: any) {
@@ -63,28 +64,28 @@ const LeadList: React.FC<LeadListProps> = ({
       setIsLoading(false);
     }
   };
+
   useEffect(() => {
     fetchLeads();
   }, [status]);
+
   useEffect(() => {
     setInternalSearchQuery(searchQuery);
   }, [searchQuery]);
+
   useEffect(() => {
     let result = [...leads];
 
-    // Apply search filter - busca por nome, telefone, CPF ou email
     const searchTerms = internalSearchQuery || searchQuery;
     if (searchTerms) {
       const searchLower = searchTerms.toLowerCase();
       result = result.filter(lead => lead.name && lead.name.toLowerCase().includes(searchLower) || lead.phone && lead.phone.includes(searchTerms) || lead.phone2 && lead.phone2.includes(searchTerms) || lead.phone3 && lead.phone3.includes(searchTerms) || lead.cpf && lead.cpf.includes(searchTerms) || lead.email && lead.email?.toLowerCase().includes(searchLower));
     }
 
-    // Apply status filter from internal state if not coming from props
     if (!status && statusFilter && statusFilter !== "todos") {
       result = result.filter(lead => lead.status === statusFilter);
     }
 
-    // Apply active filters
     activeFilters.forEach(filter => {
       if (filter.id === "novos") {
         result = result.filter(lead => lead.status === "novo");
@@ -97,19 +98,43 @@ const LeadList: React.FC<LeadListProps> = ({
         });
       }
     });
+
     setFilteredLeads(result);
   }, [leads, searchQuery, internalSearchQuery, statusFilter, activeFilters, status]);
-  const handleLeadSubmit = (values: any) => {
-    console.log("New lead:", values);
-    setIsOpenSheet(false);
-    fetchLeads();
+
+  const handleLeadSubmit = async (values: any) => {
+    console.log("New lead submission:", values);
+    
+    try {
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (userError) throw userError;
+
+      const { data, error } = await supabase.from("leads").insert({
+        ...values,
+        user_id: userData.user.id,
+      });
+
+      if (error) throw error;
+      
+      console.log("Lead saved successfully:", data);
+      toast.success("Lead cadastrado com sucesso!");
+      setIsOpenSheet(false);
+      fetchLeads(); // Refresh the leads list
+      
+    } catch (error: any) {
+      console.error("Error saving lead:", error);
+      toast.error(`Erro ao cadastrar lead: ${error.message}`);
+    }
   };
+
   const handleLeadUpdate = (updatedLead: Lead) => {
     setLeads(leads.map(lead => lead.id === updatedLead.id ? updatedLead : lead));
   };
+
   const handleLeadDelete = (id: string) => {
     setLeads(leads.filter(lead => lead.id !== id));
   };
+
   const addFilter = (id: string, label: string) => {
     if (!activeFilters.some(filter => filter.id === id)) {
       setActiveFilters([...activeFilters, {
@@ -118,10 +143,13 @@ const LeadList: React.FC<LeadListProps> = ({
       }]);
     }
   };
+
   const removeFilter = (id: string) => {
     setActiveFilters(activeFilters.filter(filter => filter.id !== id));
   };
-  return <div className="space-y-4">
+
+  return (
+    <div className="space-y-4">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-2xl font-bold">Leads</h2>
         <div className="flex items-center gap-2">
@@ -134,7 +162,6 @@ const LeadList: React.FC<LeadListProps> = ({
             <Plus className="h-3.5 w-3.5" />
             <span>Importar</span>
           </Button>
-          
         </div>
       </div>
       
@@ -198,11 +225,28 @@ const LeadList: React.FC<LeadListProps> = ({
         </div>
       </div>
       
-      {isLoading ? <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {[1, 2, 3].map(i => <div key={i} className="h-56 animate-pulse rounded-md bg-gray-100"></div>)}
-        </div> : filteredLeads.length > 0 ? <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {filteredLeads.map(lead => <LeadCard key={lead.id} lead={lead} onUpdate={handleLeadUpdate} onDelete={handleLeadDelete} />)}
-        </div> : <EmptyState />}
-    </div>;
+      {isLoading ? (
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {[1, 2, 3].map(i => (
+            <div key={i} className="h-56 animate-pulse rounded-md bg-gray-100"></div>
+          ))}
+        </div>
+      ) : filteredLeads.length > 0 ? (
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {filteredLeads.map(lead => (
+            <LeadCard 
+              key={lead.id} 
+              lead={lead} 
+              onUpdate={handleLeadUpdate} 
+              onDelete={handleLeadDelete} 
+            />
+          ))}
+        </div>
+      ) : (
+        <EmptyState />
+      )}
+    </div>
+  );
 };
+
 export default LeadList;

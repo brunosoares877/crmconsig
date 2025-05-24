@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -25,7 +26,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, Search } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -328,12 +329,14 @@ const Commission = () => {
 
           <div className="mb-4 space-y-4">
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-              <div>
+              <div className="relative">
+                <Search className="absolute left-3 top-2.5 h-4 w-4 text-blue-500" />
                 <Input
                   type="text"
-                  placeholder="Pesquisar comissões..."
+                  placeholder="Buscar comissões..."
                   value={search}
                   onChange={handleSearch}
+                  className="pl-10"
                 />
               </div>
               <div>
