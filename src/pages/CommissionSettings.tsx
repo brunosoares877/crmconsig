@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -35,6 +34,8 @@ import { PlusCircle, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import CommissionRateForm from "@/components/commission/CommissionRateForm";
 import CommissionTierForm from "@/components/commission/CommissionTierForm";
+import Sidebar from "@/components/Sidebar";
+import Header from "@/components/Header";
 
 const CommissionSettings = () => {
   const [rates, setRates] = useState<CommissionRate[]>([]);
@@ -361,21 +362,27 @@ const CommissionSettings = () => {
   );
 
   return (
-    <div className="container mx-auto p-4 py-8">
-      <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-6">Configurações de Comissões</h1>
+    <div className="min-h-screen bg-background">
+      <Sidebar />
+      <div className="md:ml-64 transition-all duration-300">
+        <Header />
+        <main className="container mx-auto p-4 py-8">
+          <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-6">Configurações de Comissões</h1>
 
-      <Tabs defaultValue="rates" className="w-full">
-        <TabsList className="mb-6">
-          <TabsTrigger value="rates">Taxas Fixas</TabsTrigger>
-          <TabsTrigger value="tiers">Taxas por Faixa de Valor</TabsTrigger>
-        </TabsList>
-        <TabsContent value="rates">
-          {renderRatesTable()}
-        </TabsContent>
-        <TabsContent value="tiers">
-          {renderTiersTable()}
-        </TabsContent>
-      </Tabs>
+          <Tabs defaultValue="rates" className="w-full">
+            <TabsList className="mb-6">
+              <TabsTrigger value="rates">Taxas Fixas</TabsTrigger>
+              <TabsTrigger value="tiers">Taxas por Faixa de Valor</TabsTrigger>
+            </TabsList>
+            <TabsContent value="rates">
+              {renderRatesTable()}
+            </TabsContent>
+            <TabsContent value="tiers">
+              {renderTiersTable()}
+            </TabsContent>
+          </Tabs>
+        </main>
+      </div>
     </div>
   );
 };
