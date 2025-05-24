@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -26,6 +27,8 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import Sidebar from "@/components/Sidebar";
+import Header from "@/components/Header";
 
 const Commission = () => {
   const [loading, setLoading] = useState(false);
@@ -289,42 +292,48 @@ const Commission = () => {
   };
 
   return (
-    <div className="container mx-auto py-8">
-      <h1 className="text-2xl font-bold mb-4">Comissões</h1>
-      
-      {isPrivilegedUser && (
-        <div className="mb-4 p-4 bg-green-100 border border-green-300 rounded-md">
-          <p className="text-green-800 font-semibold">Você tem acesso completo e vitalício a todas as funcionalidades do sistema.</p>
-        </div>
-      )}
+    <div className="min-h-screen bg-background">
+      <Sidebar />
+      <div className="md:ml-64 transition-all duration-300">
+        <Header />
+        <main className="container mx-auto space-y-8 p-4 py-8">
+          <h1 className="text-2xl font-bold mb-4">Comissões</h1>
+          
+          {isPrivilegedUser && (
+            <div className="mb-4 p-4 bg-green-100 border border-green-300 rounded-md">
+              <p className="text-green-800 font-semibold">Você tem acesso completo e vitalício a todas as funcionalidades do sistema.</p>
+            </div>
+          )}
 
-      <div className="mb-4 grid gap-4 md:grid-cols-2">
-        <div>
-          <Input
-            type="text"
-            placeholder="Pesquisar comissões..."
-            value={search}
-            onChange={handleSearch}
-          />
-        </div>
-        <div>
-          <Select value={employeeFilter} onValueChange={setEmployeeFilter}>
-            <SelectTrigger>
-              <SelectValue placeholder="Filtrar por funcionário" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos os funcionários</SelectItem>
-              {employees.map(employee => (
-                <SelectItem key={employee} value={employee || ""}>
-                  {employee}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+          <div className="mb-4 grid gap-4 md:grid-cols-2">
+            <div>
+              <Input
+                type="text"
+                placeholder="Pesquisar comissões..."
+                value={search}
+                onChange={handleSearch}
+              />
+            </div>
+            <div>
+              <Select value={employeeFilter} onValueChange={setEmployeeFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Filtrar por funcionário" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os funcionários</SelectItem>
+                  {employees.map(employee => (
+                    <SelectItem key={employee} value={employee || ""}>
+                      {employee}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {renderCommissionTable()}
+        </main>
       </div>
-
-      {renderCommissionTable()}
     </div>
   );
 };
