@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
@@ -9,10 +8,14 @@ import Sidebar from "@/components/Sidebar";
 import AddLeadButton from "@/components/leads/AddLeadButton";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import { useAuth } from "@/contexts/AuthContext";
-
 const Index = () => {
-  const { status, isTrialActive } = useSubscription();
-  const { isPrivilegedUser } = useAuth();
+  const {
+    status,
+    isTrialActive
+  } = useSubscription();
+  const {
+    isPrivilegedUser
+  } = useAuth();
   const navigate = useNavigate();
 
   // Redirect to payment plans ONLY if trial is expired AND not privileged
@@ -21,30 +24,22 @@ const Index = () => {
       navigate("/settings");
     }
   }, [status, isTrialActive, isPrivilegedUser, navigate]);
-
-  return (
-    <div className="min-h-screen bg-background">
+  return <div className="min-h-screen bg-background">
       <Sidebar />
       <div className="md:ml-64 transition-all duration-300">
         <Header />
         <main className="container mx-auto space-y-8 p-4 py-8">
           <TrialBanner />
           <div className="flex justify-between items-center mb-6">
-            <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100">Dashboard</h1>
+            <h1 className="text-3xl font-bold text-slate-900">Dashboard</h1>
             <div className="flex items-center gap-3">
-              <WhatsAppButton 
-                phoneNumber="5584991850149"
-                message="Olá! Tenho dúvidas sobre o sistema LeadConsig"
-                label="Suporte"
-              />
+              <WhatsAppButton phoneNumber="5584991850149" message="Olá! Tenho dúvidas sobre o sistema LeadConsig" label="Suporte" />
               <AddLeadButton />
             </div>
           </div>
           <Dashboard />
         </main>
       </div>
-    </div>
-  );
-}
-
+    </div>;
+};
 export default Index;
