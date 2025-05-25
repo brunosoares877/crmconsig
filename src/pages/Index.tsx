@@ -31,7 +31,7 @@ const Index = () => {
         <main className="container mx-auto space-y-8 p-4 py-8">
           <TrialBanner />
           <div className="flex justify-between items-center mb-6">
-            <h1 className="text-3xl font-bold text-slate-900">Dashboard</h1>
+            <h1 className="text-3xl font-bold text-slate-900 my-[8px] px-[3px] mx-[6px] py-0">Dashboard</h1>
             <div className="flex items-center gap-3">
               <WhatsAppButton phoneNumber="5584991850149" message="Olá! Tenho dúvidas sobre o sistema LeadConsig" label="Suporte" />
               <AddLeadButton />
