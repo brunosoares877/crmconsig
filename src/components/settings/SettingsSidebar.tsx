@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Cpu, User, PaintBucket, Bell, Shield, CreditCard, BarChartHorizontal } from "lucide-react";
+import { Cpu, User, PaintBucket, Bell, Shield, CreditCard } from "lucide-react";
 
 interface SettingsSidebarProps {
   activeTab: string;
@@ -37,11 +37,6 @@ export default function SettingsSidebar({
       id: "plans",
       label: "Planos",
       icon: <CreditCard className="h-4 w-4 mr-2" />,
-    },
-    {
-      id: "commissions",
-      label: "Comissões",
-      icon: <BarChartHorizontal className="h-4 w-4 mr-2" />,
     },
   ];
 
