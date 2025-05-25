@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -190,6 +189,10 @@ const Commission = () => {
     setSearch(e.target.value);
   };
 
+  const handleSearchClick = () => {
+    fetchCommissions();
+  };
+
   const clearFilters = () => {
     setDateFrom(undefined);
     setDateTo(undefined);
@@ -328,7 +331,7 @@ const Commission = () => {
           <h1 className="text-2xl font-bold mb-4">Comissões</h1>
 
           <div className="mb-4 space-y-4">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
               <div className="relative">
                 <Search className="absolute left-3 top-2.5 h-4 w-4 text-blue-500" />
                 <Input
@@ -367,6 +370,12 @@ const Commission = () => {
                     <SelectItem value="cancelled">Cancelado</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+              <div>
+                <Button onClick={handleSearchClick} variant="default" className="w-full">
+                  <Search className="h-4 w-4 mr-2" />
+                  Buscar
+                </Button>
               </div>
               <div>
                 <Button onClick={clearFilters} variant="outline" className="w-full">

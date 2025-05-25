@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Link } from "react-router-dom";
 import { useLocation } from "react-router-dom";
@@ -11,41 +10,18 @@ import {
   ListCheck, 
   Settings,
   Users,
-  LogOut,
   Camera
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
-import { useToast } from "@/components/ui/use-toast";
 
 const Sidebar = () => {
   const location = useLocation();
-  const { user, signOut } = useAuth();
-  const navigate = useNavigate();
-  const { toast } = useToast();
+  const { user } = useAuth();
   
   const isActive = (path: string) => {
     return location.pathname === path || location.pathname.startsWith(path + "/");
-  };
-
-  const handleLogout = async () => {
-    try {
-      await signOut();
-      toast({
-        title: "Logout realizado",
-        description: "Você foi desconectado com sucesso",
-      });
-      navigate("/login");
-    } catch (error: any) {
-      console.error("Erro ao fazer logout:", error.message);
-      toast({
-        title: "Erro",
-        description: "Ocorreu um erro ao tentar desconectar",
-        variant: "destructive",
-      });
-    }
   };
 
   const getInitials = (email: string) => {
@@ -57,7 +33,7 @@ const Sidebar = () => {
     <div className="fixed left-0 top-0 h-full w-16 md:w-64 z-10 bg-sidebar shadow-lg flex flex-col">
       <div className="h-16 flex items-center justify-center md:justify-start border-b border-sidebar-border">
         <Link to="/" className="px-4">
-          <h1 className="text-xl font-bold hidden md:block text-white">LeadConsig</h1>
+          <h1 className="text-xl font-bold hidden md:block text-white">Gestão de Leads</h1>
           <span className="md:hidden text-white">CRM</span>
         </Link>
       </div>
@@ -126,7 +102,7 @@ const Sidebar = () => {
       </nav>
 
       {/* Footer with user info */}
-      <div className="border-t border-sidebar-border p-4 space-y-3">
+      <div className="border-t border-sidebar-border p-4">
         {/* User Profile Section */}
         <div className="flex items-center space-x-3">
           <div className="relative">
@@ -150,16 +126,6 @@ const Sidebar = () => {
             </p>
           </div>
         </div>
-
-        {/* Logout Button */}
-        <Button
-          onClick={handleLogout}
-          variant="ghost"
-          className="w-full justify-start text-gray-300 hover:bg-sidebar-accent/50 hover:text-white"
-        >
-          <LogOut className="h-4 w-4 mr-3" />
-          <span className="hidden md:inline">Sair</span>
-        </Button>
       </div>
     </div>
   );
