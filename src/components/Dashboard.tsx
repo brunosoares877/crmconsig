@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { format, startOfToday, endOfToday, startOfMonth, endOfMonth, differenceInMinutes } from "date-fns";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
+
 const Dashboard = () => {
   const [metrics, setMetrics] = useState({
     leadsToday: 0,
@@ -186,23 +187,26 @@ const Dashboard = () => {
     title: "Leads Hoje",
     value: metrics.leadsToday.toString(),
     change: calculateChange(metrics.leadsToday, metrics.leadsToday - 2),
-    // Example previous value
     positive: true,
-    icon: <Users className="h-5 w-5 text-blue-500" />
+    icon: <Users className="h-6 w-6 text-emerald-600" />,
+    bgColor: "bg-emerald-50",
+    borderColor: "border-emerald-100"
   }, {
     title: "Leads do Mês",
     value: metrics.leadsThisMonth.toString(),
     change: calculateChange(metrics.leadsThisMonth, metrics.leadsThisMonth - 5),
-    // Example previous value
     positive: true,
-    icon: <PhoneCall className="h-5 w-5 text-green-500" />
+    icon: <PhoneCall className="h-6 w-6 text-blue-600" />,
+    bgColor: "bg-blue-50",
+    borderColor: "border-blue-100"
   }, {
     title: "Média por Dia",
     value: metrics.averageLeadsPerDay.toString(),
     change: calculateChange(metrics.averageLeadsPerDay, metrics.averageLeadsPerDay - 0.2),
-    // Example previous value
     positive: true,
-    icon: <CalendarCheck className="h-5 w-5 text-purple-500" />
+    icon: <CalendarCheck className="h-6 w-6 text-purple-600" />,
+    bgColor: "bg-purple-50",
+    borderColor: "border-purple-100"
   }, {
     title: "Intervalo entre Leads",
     value: metrics.averageTimeBetweenLeads,
@@ -211,7 +215,9 @@ const Dashboard = () => {
       positive: true
     },
     positive: true,
-    icon: <Clock className="h-5 w-5 text-amber-500" />
+    icon: <Clock className="h-6 w-6 text-amber-600" />,
+    bgColor: "bg-amber-50",
+    borderColor: "border-amber-100"
   }];
 
   // Function to calculate daily production total
@@ -221,167 +227,215 @@ const Dashboard = () => {
       return isNaN(amount) ? total : total + amount;
     }, 0).toFixed(2);
   };
-  return <div className="space-y-6">
+  return (
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
-        
-        <span className="text-sm text-muted-foreground bg-muted px-3 py-1 rounded-full">
+        <span className="text-sm text-slate-500 bg-slate-50 px-3 py-1.5 rounded-full border border-slate-200">
           Última atualização: {format(new Date(), "dd/MM/yyyy 'às' HH:mm")}
         </span>
       </div>
       
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
-        {metricsData.map((metric, index) => <Card key={index} className="dashboard-card animate-fade-in overflow-hidden" style={{
-        animationDelay: `${index * 0.1}s`
-      }}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 bg-gradient-to-r from-gray-50 to-transparent dark:from-gray-800 dark:to-transparent">
-              <CardTitle className="text-sm font-medium">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {metricsData.map((metric, index) => (
+          <Card 
+            key={index} 
+            className={`${metric.bgColor} ${metric.borderColor} border-2 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 overflow-hidden`}
+            style={{
+              animationDelay: `${index * 0.1}s`
+            }}
+          >
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+              <CardTitle className="text-sm font-medium text-slate-700">
                 {metric.title}
               </CardTitle>
-              <div className={`rounded-full p-2 ${metric.positive ? 'bg-green-100' : 'bg-red-100'}`}>
+              <div className="rounded-full p-2.5 bg-white shadow-sm">
                 {metric.icon}
               </div>
             </CardHeader>
-            <CardContent className="pt-4">
-              <div className="text-3xl font-bold">{metric.value}</div>
-              <p className={`mt-2 flex items-center text-xs ${metric.positive ? 'text-green-600' : 'text-red-600'}`}>
+            <CardContent className="pt-2">
+              <div className="text-3xl font-bold text-slate-800 mb-2">{metric.value}</div>
+              <p className={`flex items-center text-xs font-medium ${metric.positive ? 'text-emerald-600' : 'text-red-500'}`}>
                 {metric.change.value}
-                {metric.positive ? <TrendingUp className="ml-1 h-4 w-4" /> : <TrendingDown className="ml-1 h-4 w-4" />}
-                <span className="ml-1 text-muted-foreground">desde ontem</span>
+                {metric.positive ? <TrendingUp className="ml-1 h-3 w-3" /> : <TrendingDown className="ml-1 h-3 w-3" />}
+                <span className="ml-1 text-slate-500 font-normal">desde ontem</span>
               </p>
             </CardContent>
-          </Card>)}
+          </Card>
+        ))}
       </div>
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         {/* Daily Production Section */}
-        <Card className="dashboard-card">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-lg flex items-center">
-              <CalendarDays className="mr-2 h-5 w-5 text-blue-500" />
+        <Card className="bg-white border-slate-200 shadow-sm hover:shadow-md transition-shadow duration-300">
+          <CardHeader className="flex flex-row items-center justify-between bg-gradient-to-r from-slate-50 to-white border-b border-slate-100">
+            <CardTitle className="text-lg flex items-center text-slate-800">
+              <CalendarDays className="mr-2 h-5 w-5 text-emerald-600" />
               Produção Diária
             </CardTitle>
-            <div className="text-2xl font-bold text-green-600">
+            <div className="text-2xl font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-lg">
               R$ {calculateDailyTotal()}
             </div>
           </CardHeader>
-          <CardContent>
-            {isLoading ? <div className="flex items-center justify-center h-32 text-muted-foreground">
+          <CardContent className="p-6">
+            {isLoading ? (
+              <div className="flex items-center justify-center h-32 text-slate-500">
                 Carregando...
-              </div> : <div className="overflow-x-auto">
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
-                    <TableRow>
-                      <TableHead>Cliente</TableHead>
-                      <TableHead>Produto</TableHead>
-                      <TableHead className="text-right">Valor</TableHead>
+                    <TableRow className="border-slate-200">
+                      <TableHead className="text-slate-600">Cliente</TableHead>
+                      <TableHead className="text-slate-600">Produto</TableHead>
+                      <TableHead className="text-right text-slate-600">Valor</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {dailyProduction.length === 0 ? <TableRow>
-                        <TableCell colSpan={3} className="text-center py-4 text-muted-foreground">
+                    {dailyProduction.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={3} className="text-center py-8 text-slate-500">
                           Nenhuma venda registrada hoje
                         </TableCell>
-                      </TableRow> : dailyProduction.map(lead => <TableRow key={lead.id}>
-                          <TableCell className="font-medium">{lead.name}</TableCell>
-                          <TableCell>{lead.product || "—"}</TableCell>
-                          <TableCell className="text-right">
+                      </TableRow>
+                    ) : (
+                      dailyProduction.map(lead => (
+                        <TableRow key={lead.id} className="border-slate-100 hover:bg-slate-50">
+                          <TableCell className="font-medium text-slate-800">{lead.name}</TableCell>
+                          <TableCell className="text-slate-600">{lead.product || "—"}</TableCell>
+                          <TableCell className="text-right font-semibold text-slate-800">
                             {lead.amount ? `R$ ${lead.amount}` : "—"}
                           </TableCell>
-                        </TableRow>)}
+                        </TableRow>
+                      ))
+                    )}
                   </TableBody>
                 </Table>
-              </div>}
+              </div>
+            )}
           </CardContent>
         </Card>
         
         {/* Employee Sales Section */}
-        <Card className="dashboard-card">
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center">
-              <User className="mr-2 h-5 w-5 text-purple-500" />
+        <Card className="bg-white border-slate-200 shadow-sm hover:shadow-md transition-shadow duration-300">
+          <CardHeader className="bg-gradient-to-r from-slate-50 to-white border-b border-slate-100">
+            <CardTitle className="text-lg flex items-center text-slate-800">
+              <User className="mr-2 h-5 w-5 text-purple-600" />
               Vendas por Funcionário
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            {isLoading ? <div className="flex items-center justify-center h-32 text-muted-foreground">
+          <CardContent className="p-6">
+            {isLoading ? (
+              <div className="flex items-center justify-center h-32 text-slate-500">
                 Carregando...
-              </div> : <div className="overflow-x-auto">
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
-                    <TableRow>
-                      <TableHead>Funcionário</TableHead>
-                      <TableHead className="text-center">Vendas</TableHead>
-                      <TableHead className="text-right">Performance</TableHead>
+                    <TableRow className="border-slate-200">
+                      <TableHead className="text-slate-600">Funcionário</TableHead>
+                      <TableHead className="text-center text-slate-600">Vendas</TableHead>
+                      <TableHead className="text-right text-slate-600">Performance</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {employeeSales.length === 0 ? <TableRow>
-                        <TableCell colSpan={3} className="text-center py-4 text-muted-foreground">
+                    {employeeSales.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={3} className="text-center py-8 text-slate-500">
                           Nenhuma venda por funcionário registrada
                         </TableCell>
-                      </TableRow> : employeeSales.map(employee => <TableRow key={employee.employee}>
-                          <TableCell className="font-medium">{employee.employee}</TableCell>
-                          <TableCell className="text-center">{employee.count}</TableCell>
+                      </TableRow>
+                    ) : (
+                      employeeSales.map(employee => (
+                        <TableRow key={employee.employee} className="border-slate-100 hover:bg-slate-50">
+                          <TableCell className="font-medium text-slate-800">{employee.employee}</TableCell>
+                          <TableCell className="text-center text-slate-800">{employee.count}</TableCell>
                           <TableCell className="text-right">
                             <div className="flex items-center justify-end">
-                              <div className={`h-2 w-24 rounded-full bg-gray-200 mr-2 overflow-hidden`}>
-                                <div className="h-full bg-green-500" style={{
-                          width: `${Math.min(employee.count * 10, 100)}%`
-                        }} />
+                              <div className="h-2 w-24 rounded-full bg-slate-200 mr-2 overflow-hidden">
+                                <div 
+                                  className="h-full bg-gradient-to-r from-purple-500 to-purple-600 rounded-full" 
+                                  style={{
+                                    width: `${Math.min(employee.count * 10, 100)}%`
+                                  }} 
+                                />
                               </div>
-                              {Math.min(employee.count * 10, 100)}%
+                              <span className="text-slate-600 text-sm">
+                                {Math.min(employee.count * 10, 100)}%
+                              </span>
                             </div>
                           </TableCell>
-                        </TableRow>)}
+                        </TableRow>
+                      ))
+                    )}
                   </TableBody>
                 </Table>
-              </div>}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
       
       {/* Latest Leads Section */}
-      <Card className="dashboard-card">
-        <CardHeader>
-          <CardTitle className="text-lg flex items-center">
-            <Users className="mr-2 h-5 w-5 text-amber-500" />
+      <Card className="bg-white border-slate-200 shadow-sm hover:shadow-md transition-shadow duration-300">
+        <CardHeader className="bg-gradient-to-r from-slate-50 to-white border-b border-slate-100">
+          <CardTitle className="text-lg flex items-center text-slate-800">
+            <Users className="mr-2 h-5 w-5 text-blue-600" />
             Últimos Leads Cadastrados
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          {isLoading ? <div className="flex items-center justify-center h-32 text-muted-foreground">
+        <CardContent className="p-6">
+          {isLoading ? (
+            <div className="flex items-center justify-center h-32 text-slate-500">
               Carregando...
-            </div> : <div className="overflow-x-auto">
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead>Nome</TableHead>
-                    <TableHead>Telefone</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Data de Cadastro</TableHead>
+                  <TableRow className="border-slate-200">
+                    <TableHead className="text-slate-600">Nome</TableHead>
+                    <TableHead className="text-slate-600">Telefone</TableHead>
+                    <TableHead className="text-slate-600">Status</TableHead>
+                    <TableHead className="text-right text-slate-600">Data de Cadastro</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {latestLeads.length === 0 ? <TableRow>
-                      <TableCell colSpan={4} className="text-center py-4 text-muted-foreground">
+                  {latestLeads.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center py-8 text-slate-500">
                         Nenhum lead cadastrado recentemente
                       </TableCell>
-                    </TableRow> : latestLeads.map(lead => <TableRow key={lead.id}>
-                        <TableCell className="font-medium">{lead.name}</TableCell>
-                        <TableCell>{lead.phone || "—"}</TableCell>
+                    </TableRow>
+                  ) : (
+                    latestLeads.map(lead => (
+                      <TableRow key={lead.id} className="border-slate-100 hover:bg-slate-50">
+                        <TableCell className="font-medium text-slate-800">{lead.name}</TableCell>
+                        <TableCell className="text-slate-600">{lead.phone || "—"}</TableCell>
                         <TableCell>
                           <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium
-                            ${lead.status === 'novo' ? 'bg-blue-100 text-blue-800' : lead.status === 'contatado' ? 'bg-purple-100 text-purple-800' : lead.status === 'qualificado' ? 'bg-amber-100 text-amber-800' : lead.status === 'negociando' ? 'bg-emerald-100 text-emerald-800' : lead.status === 'convertido' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                            ${lead.status === 'novo' ? 'bg-blue-50 text-blue-700 border border-blue-200' : 
+                              lead.status === 'contatado' ? 'bg-purple-50 text-purple-700 border border-purple-200' : 
+                              lead.status === 'qualificado' ? 'bg-amber-50 text-amber-700 border border-amber-200' : 
+                              lead.status === 'negociando' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 
+                              lead.status === 'convertido' ? 'bg-green-50 text-green-700 border border-green-200' : 
+                              'bg-slate-50 text-slate-700 border border-slate-200'}`}>
                             {lead.status.charAt(0).toUpperCase() + lead.status.slice(1)}
                           </span>
                         </TableCell>
-                        <TableCell className="text-right text-muted-foreground">{lead.createdAt}</TableCell>
-                      </TableRow>)}
+                        <TableCell className="text-right text-slate-500">{lead.createdAt}</TableCell>
+                      </TableRow>
+                    ))
+                  )}
                 </TableBody>
               </Table>
-            </div>}
+            </div>
+          )}
         </CardContent>
       </Card>
-    </div>;
+    </div>
+  );
 };
+
 export default Dashboard;
