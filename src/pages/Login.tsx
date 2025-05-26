@@ -11,6 +11,7 @@ import { useSubscription } from "@/contexts/SubscriptionContext";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import TypewriterText from "@/components/TypewriterText";
+
 const phoneRegex = /^\(\d{2}\) \d{5}-\d{4}$/;
 const LoginSchema = z.object({
   email: z.string().email("Email inválido"),
@@ -27,6 +28,7 @@ const SignupSchema = z.object({
   message: "As senhas não coincidem",
   path: ["confirmPassword"]
 });
+
 const Login = () => {
   const navigate = useNavigate();
   const {
@@ -161,41 +163,14 @@ const Login = () => {
       setIsLoading(false);
     }
   };
-  return <div className="flex h-screen">
-      {/* Left side - Brand/Image */}
-      <div className="hidden md:flex md:w-1/2 bg-gradient-to-b from-blue-600 to-blue-800 items-center justify-center text-white p-8">
-        <div className="max-w-lg">
-          <h1 className="text-4xl font-bold mb-6">LeadConsig</h1>
-          <p className="text-xl mb-8">Transforme seus leads em clientes com nossa solução completa de gestão de vendas.</p>
-          <div className="space-y-4">
-            <div className="flex items-start space-x-3">
-              <svg className="w-6 h-6 text-blue-300 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-              </svg>
-              <p>Acompanhamento completo do ciclo de vendas</p>
-            </div>
-            <div className="flex items-start space-x-3">
-              <svg className="w-6 h-6 text-blue-300 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-              </svg>
-              <p>Relatórios e análises detalhadas</p>
-            </div>
-            <div className="flex items-start space-x-3">
-              <svg className="w-6 h-6 text-blue-300 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-              </svg>
-              <p>Integração com ferramentas de comunicação</p>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      {/* Right side - Login form */}
-      <div className="w-full md:w-1/2 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md animate-fade-in">
+  return (
+    <div className="flex h-screen">
+      {/* Left side - Login form with white background */}
+      <div className="w-full md:w-1/2 flex items-center justify-center p-4 bg-white">
+        <Card className="w-full max-w-md animate-fade-in shadow-lg border-0">
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-bold text-center">LeadConsig</CardTitle>
-            <CardDescription className="text-center font-medium">
+            <CardTitle className="text-2xl font-bold text-center text-blue-600">LeadConsig</CardTitle>
+            <CardDescription className="text-center font-medium text-gray-600">
               O CRM feito para{" "}
               <span className="text-blue-600 font-semibold">
                 <TypewriterText text="alavancar suas vendas" speed={80} />
@@ -204,7 +179,7 @@ const Login = () => {
           </CardHeader>
           <CardContent>
             <div className="grid gap-4">
-              <Button variant="outline" className="w-full bg-white" onClick={handleGoogleSignIn} disabled={isLoading}>
+              <Button variant="outline" className="w-full bg-white border-gray-200 hover:bg-gray-50" onClick={handleGoogleSignIn} disabled={isLoading}>
                 <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
                   <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
                   <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
@@ -216,10 +191,10 @@ const Login = () => {
               
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t" />
+                  <span className="w-full border-t border-gray-200" />
                 </div>
                 <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-card px-2 text-muted-foreground">
+                  <span className="bg-white px-2 text-gray-500">
                     ou continue com email
                   </span>
                 </div>
@@ -300,17 +275,49 @@ const Login = () => {
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">
             <div className="flex gap-4 w-full">
-              <Button variant="outline" className="w-full" onClick={() => setIsLogin(!isLogin)} disabled={isLoading}>
+              <Button variant="outline" className="w-full border-gray-200 hover:bg-gray-50" onClick={() => setIsLogin(!isLogin)} disabled={isLoading}>
                 {isLogin ? "Criar conta" : "Já tem uma conta? Faça login"}
               </Button>
             </div>
             
-            {isLogin && <p className="text-sm text-muted-foreground text-center">
+            {isLogin && (
+              <p className="text-sm text-gray-500 text-center">
                 Esqueceu a senha? Entre em contato com o administrador
-              </p>}
+              </p>
+            )}
           </CardFooter>
         </Card>
       </div>
-    </div>;
+      
+      {/* Right side - Brand/Image with blue background */}
+      <div className="hidden md:flex md:w-1/2 bg-gradient-to-b from-blue-600 to-blue-800 items-center justify-center text-white p-8">
+        <div className="max-w-lg">
+          <h1 className="text-4xl font-bold mb-6">LeadConsig</h1>
+          <p className="text-xl mb-8">Transforme seus leads em clientes com nossa solução completa de gestão de vendas.</p>
+          <div className="space-y-4">
+            <div className="flex items-start space-x-3">
+              <svg className="w-6 h-6 text-blue-300 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+              </svg>
+              <p>Acompanhamento completo do ciclo de vendas</p>
+            </div>
+            <div className="flex items-start space-x-3">
+              <svg className="w-6 h-6 text-blue-300 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+              </svg>
+              <p>Relatórios e análises detalhadas</p>
+            </div>
+            <div className="flex items-start space-x-3">
+              <svg className="w-6 h-6 text-blue-300 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+              </svg>
+              <p>Integração com ferramentas de comunicação</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 };
+
 export default Login;
