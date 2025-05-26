@@ -7,45 +7,47 @@
 
 @layer base {
   :root {
-    --background: 248 250 252; /* Light slate background */
-    --foreground: 30 41 59; /* Slate 700 text */
+    --background: 0 0% 100%; /* White */
+    --foreground: 225 25% 20%; /* Dark navy text */
 
-    --card: 255 255 255; /* Pure white card background */
-    --card-foreground: 30 41 59; /* Slate 700 text */
+    --card: 0 0% 100%; /* White card background */
+    --card-foreground: 225 25% 20%; /* Dark navy text */
 
-    --popover: 255 255 255; /* White popover */
-    --popover-foreground: 30 41 59; /* Slate 700 text */
+    --popover: 0 0% 100%; /* White popover */
+    --popover-foreground: 225 25% 20%; /* Dark navy text */
 
-    --primary: 59 130 246; /* Blue 500 */
-    --primary-foreground: 255 255 255; /* White text on primary */
+    --primary: 220 70% 25%; /* Navy blue */
+    --primary-foreground: 0 0% 100%; /* White text on primary */
 
-    --secondary: 241 245 249; /* Slate 100 */
-    --secondary-foreground: 51 65 85; /* Slate 600 text */
+    --secondary: 220 20% 96%; /* Very light navy */
+    --secondary-foreground: 225 25% 20%; /* Dark navy text */
 
-    --muted: 248 250 252; /* Slate 50 */
-    --muted-foreground: 100 116 139; /* Slate 500 */
+    --muted: 220 20% 96%; /* Very light navy */
+    --muted-foreground: 220 20% 50%; /* Medium navy */
 
-    --accent: 59 130 246; /* Blue 500 */
-    --accent-foreground: 255 255 255; /* White text on accent */
+    --accent: 220 70% 25%; /* Navy blue */
+    --accent-foreground: 0 0% 100%; /* White text on accent */
 
-    --destructive: 239 68 68; /* Red 500 */
-    --destructive-foreground: 255 255 255; /* White on destructive */
+    --destructive: 0 84.2% 60.2%; /* Keep destructive red */
+    --destructive-foreground: 0 0% 100%; /* White on destructive */
 
-    --border: 226 232 240; /* Slate 200 border */
-    --input: 241 245 249; /* Slate 100 input */
-    --ring: 59 130 246; /* Blue 500 ring */
+    --border: 220 20% 90%; /* Light navy border */
+    --input: 220 20% 90%; /* Light navy input */
+    --ring: 220 70% 25%; /* Navy blue ring */
 
-    --radius: 0.75rem;
+    --radius: 0.5rem;
 
-    --sidebar-background: 255 255 255; /* White sidebar */
-    --sidebar-foreground: 30 41 59; /* Slate 700 text */
-    --sidebar-primary: 59 130 246; /* Blue 500 primary */
-    --sidebar-primary-foreground: 255 255 255; /* White text */
-    --sidebar-accent: 239 246 255; /* Blue 50 accent */
-    --sidebar-accent-foreground: 30 41 59; /* Slate 700 text */
-    --sidebar-border: 226 232 240; /* Slate 200 border */
-    --sidebar-ring: 59 130 246; /* Blue 500 ring */
+    --sidebar-background: 220 70% 15%; /* Darker navy sidebar */
+    --sidebar-foreground: 0 0% 100%; /* White text */
+    --sidebar-primary: 220 70% 25%; /* Navy blue primary */
+    --sidebar-primary-foreground: 0 0% 100%; /* White text */
+    --sidebar-accent: 220 40% 25%; /* Navy blue accent */
+    --sidebar-accent-foreground: 0 0% 100%; /* White text */
+    --sidebar-border: 220 50% 30%; /* Navy blue border */
+    --sidebar-ring: 220 70% 40%; /* Light navy ring */
   }
+
+  /* Remove dark and classic-dark theme definitions, as we're only using light theme */
 
   * {
     @apply border-border;
@@ -75,55 +77,29 @@
 
 @layer components {
   .card-gradient {
-    @apply bg-gradient-to-br from-white via-slate-50 to-blue-50;
+    @apply bg-gradient-to-br from-white to-gray-50;
   }
   
   .card-hover {
-    @apply transition-all duration-300 hover:shadow-xl hover:-translate-y-1;
+    @apply transition-all duration-200 hover:shadow-lg;
   }
   
   .dashboard-card {
-    @apply card-gradient card-hover rounded-2xl border border-slate-200 shadow-sm backdrop-blur-sm;
-  }
-  
-  .metric-card {
-    @apply bg-gradient-to-br from-white to-slate-50 rounded-xl border border-slate-200 shadow-sm hover:shadow-lg transition-all duration-300;
-  }
-  
-  .glass-effect {
-    @apply bg-white/80 backdrop-blur-lg border border-white/20 shadow-lg;
+    @apply card-gradient card-hover rounded-xl border border-border shadow-sm;
   }
 }
 
 .animate-fade-in {
-  animation: fadeIn 0.6s ease-out;
+  animation: fadeIn 0.5s ease-in-out;
 }
 
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(10px);
   }
   to {
     opacity: 1;
     transform: translateY(0);
   }
-}
-
-/* Modern scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: #f1f5f9;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
 }
