@@ -11,7 +11,6 @@ import { useSubscription } from "@/contexts/SubscriptionContext";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import TypewriterText from "@/components/TypewriterText";
-
 const phoneRegex = /^\(\d{2}\) \d{5}-\d{4}$/;
 const LoginSchema = z.object({
   email: z.string().email("Email inválido"),
@@ -28,7 +27,6 @@ const SignupSchema = z.object({
   message: "As senhas não coincidem",
   path: ["confirmPassword"]
 });
-
 const Login = () => {
   const navigate = useNavigate();
   const {
@@ -163,13 +161,12 @@ const Login = () => {
       setIsLoading(false);
     }
   };
-  return (
-    <div className="flex h-screen">
+  return <div className="flex h-screen">
       {/* Left side - Login form with white background */}
       <div className="w-full md:w-1/2 flex items-center justify-center p-4 bg-white">
         <Card className="w-full max-w-md animate-fade-in shadow-lg border-0">
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-bold text-center text-blue-600">LeadConsig</CardTitle>
+            <CardTitle className="text-2xl font-bold text-center text-slate-900">LeadConsig</CardTitle>
             <CardDescription className="text-center font-medium text-gray-600">
               O CRM feito para{" "}
               <span className="text-blue-600 font-semibold">
@@ -280,11 +277,9 @@ const Login = () => {
               </Button>
             </div>
             
-            {isLogin && (
-              <p className="text-sm text-gray-500 text-center">
+            {isLogin && <p className="text-sm text-gray-500 text-center">
                 Esqueceu a senha? Entre em contato com o administrador
-              </p>
-            )}
+              </p>}
           </CardFooter>
         </Card>
       </div>
@@ -316,8 +311,6 @@ const Login = () => {
           </div>
         </div>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default Login;
