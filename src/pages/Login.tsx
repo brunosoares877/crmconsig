@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -191,9 +190,9 @@ const Login = () => {
   };
 
   return (
-    <div className="flex h-screen">
-      {/* Left side - Login form with white background */}
-      <div className="w-full md:w-1/2 flex items-center justify-center p-4 bg-white">
+    <div className="flex h-screen bg-gradient-to-b from-blue-600 to-blue-800">
+      {/* Left side - Login form with white card */}
+      <div className="w-full md:w-1/2 flex items-center justify-center p-4">
         <Card className="w-full max-w-md animate-fade-in shadow-lg border-0">
           <CardHeader className="space-y-1">
             <CardTitle className="text-2xl font-bold text-center text-slate-900">LeadConsig</CardTitle>
@@ -395,7 +394,7 @@ const Login = () => {
       </div>
       
       {/* Right side - Brand/Image with blue background */}
-      <div className="hidden md:flex md:w-1/2 bg-gradient-to-b from-blue-600 to-blue-800 items-center justify-center text-white p-8">
+      <div className="hidden md:flex md:w-1/2 items-center justify-center text-white p-8">
         <div className="max-w-lg">
           <h1 className="text-4xl font-bold mb-6">LeadConsig</h1>
           <p className="text-xl mb-8">Transforme seus leads em clientes com nossa solução completa de gestão de vendas.</p>
