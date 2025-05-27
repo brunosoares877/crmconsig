@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { useLocation } from "react-router-dom";
@@ -8,56 +9,104 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+
 const Sidebar = () => {
   const location = useLocation();
-  const {
-    user
-  } = useAuth();
+  const { user } = useAuth();
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+
   const isActive = (path: string) => {
     return location.pathname === path || location.pathname.startsWith(path + "/");
   };
+
   const getInitials = (email: string) => {
     if (!email) return "U";
     return email.charAt(0).toUpperCase();
   };
+
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     try {
       setUploading(true);
       const file = event.target.files?.[0];
-      if (!file) return;
+      
+      if (!file) {
+        toast.error("Nenhum arquivo selecionado");
+        return;
+      }
+
       if (!user) {
         toast.error("Usuário não autenticado");
         return;
       }
-      const fileExt = file.name.split('.').pop();
+
+      // Validar tipo de arquivo
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+      if (!allowedTypes.includes(file.type)) {
+        toast.error("Tipo de arquivo não suportado. Use JPG, PNG, GIF ou WebP");
+        return;
+      }
+
+      // Validar tamanho do arquivo (máximo 5MB)
+      const maxSize = 5 * 1024 * 1024; // 5MB
+      if (file.size > maxSize) {
+        toast.error("Arquivo muito grande. Máximo 5MB");
+        return;
+      }
+
+      const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
       const fileName = `${user.id}_profile.${fileExt}`;
       const filePath = `profiles/${fileName}`;
-      const {
-        error: uploadError
-      } = await supabase.storage.from('avatars').upload(filePath, file, {
-        upsert: true
-      });
+
+      console.log('Uploading file:', { fileName, fileType: file.type, fileSize: file.size });
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file, {
+          upsert: true,
+          contentType: file.type
+        });
+
       if (uploadError) {
+        console.error('Upload error:', uploadError);
         throw uploadError;
       }
-      const {
-        data
-      } = supabase.storage.from('avatars').getPublicUrl(filePath);
-      setProfileImage(data.publicUrl);
-      toast.success("Foto de perfil atualizada com sucesso!");
+
+      const { data } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+
+      if (data?.publicUrl) {
+        setProfileImage(data.publicUrl);
+        toast.success("Foto de perfil atualizada com sucesso!");
+      } else {
+        throw new Error("Erro ao obter URL da imagem");
+      }
+
     } catch (error: any) {
       console.error('Error uploading file:', error);
-      toast.error("Erro ao fazer upload da foto");
+      
+      if (error.message?.includes('The resource was not found')) {
+        toast.error("Bucket de storage não encontrado. Entre em contato com o suporte.");
+      } else if (error.message?.includes('new row violates row-level security')) {
+        toast.error("Permissão negada para upload. Verifique as configurações de segurança.");
+      } else {
+        toast.error(`Erro ao fazer upload da foto: ${error.message || 'Erro desconhecido'}`);
+      }
     } finally {
       setUploading(false);
+      // Limpar o input para permitir o mesmo arquivo novamente
+      if (event.target) {
+        event.target.value = '';
+      }
     }
   };
 
   // Verificar se está na página de comissões ou suas subpáginas
   const isCommissionPage = location.pathname.startsWith('/commission');
-  return <div className="fixed left-0 top-0 h-full w-16 md:w-64 z-10 bg-sidebar shadow-lg flex flex-col">
+
+  return (
+    <div className="fixed left-0 top-0 h-full w-16 md:w-64 z-10 bg-sidebar shadow-lg flex flex-col">
       <div className="h-16 flex items-center justify-center md:justify-start border-b border-sidebar-border">
         <Link to="/" className="px-4">
           <h1 className="text-xl font-bold hidden md:block text-white px-[2px]">LeadConsig</h1>
@@ -134,12 +183,28 @@ const Sidebar = () => {
         <div className="flex items-center space-x-3">
           <div className="relative">
             <Avatar className="h-10 w-10">
-              {profileImage ? <AvatarImage src={profileImage} alt="Profile" /> : <AvatarFallback className="bg-sidebar-accent text-white">
+              {profileImage ? (
+                <AvatarImage src={profileImage} alt="Profile" />
+              ) : (
+                <AvatarFallback className="bg-sidebar-accent text-white">
                   {user ? getInitials(user.email || "") : "U"}
-                </AvatarFallback>}
+                </AvatarFallback>
+              )}
             </Avatar>
-            <Input type="file" accept="image/*" onChange={handleFileUpload} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" disabled={uploading} title="Clique para alterar foto" />
-            <Button size="icon" variant="ghost" className="absolute -bottom-1 -right-1 h-6 w-6 bg-sidebar-accent hover:bg-sidebar-accent/80 text-white rounded-full pointer-events-none" title="Alterar foto">
+            <Input
+              type="file"
+              accept="image/*"
+              onChange={handleFileUpload}
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              disabled={uploading}
+              title={uploading ? "Uploading..." : "Clique para alterar foto"}
+            />
+            <Button
+              size="icon"
+              variant="ghost"
+              className="absolute -bottom-1 -right-1 h-6 w-6 bg-sidebar-accent hover:bg-sidebar-accent/80 text-white rounded-full pointer-events-none"
+              title="Alterar foto"
+            >
               <Camera className="h-3 w-3" />
             </Button>
           </div>
@@ -147,9 +212,14 @@ const Sidebar = () => {
             <p className="text-sm font-medium text-white truncate">
               {user?.email || "Usuário"}
             </p>
+            {uploading && (
+              <p className="text-xs text-blue-300">Uploading...</p>
+            )}
           </div>
         </div>
       </div>
-    </div>;
+    </div>
+  );
 };
+
 export default Sidebar;
