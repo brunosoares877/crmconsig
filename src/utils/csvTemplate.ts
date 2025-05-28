@@ -3,11 +3,11 @@
  * Creates and triggers download of a CSV template file for lead import
  */
 export const downloadCsvTemplate = () => {
-  // CSV header and example rows
+  // CSV header and example rows with all required fields
   const csvContent = 
-    "Nome,Telefone,Banco,Produto,Valor\n" +
-    "João Silva,(11)99999-9999,Banco do Brasil,Portabilidade,50000\n" +
-    "Maria Souza,(21)88888-8888,Caixa,Novo,30000";
+    "Nome,CPF,Telefone,Banco,Produto,Data,Valor,Funcionario\n" +
+    "João Silva,123.456.789-00,(11)99999-9999,Banco do Brasil,Portabilidade,2024-01-15,50000,Maria Santos\n" +
+    "Maria Souza,987.654.321-00,(21)88888-8888,Caixa,Novo,2024-01-16,30000,João Costa";
   
   // Create a Blob with the CSV content
   const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8" });

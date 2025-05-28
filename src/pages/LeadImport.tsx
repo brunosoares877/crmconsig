@@ -33,13 +33,13 @@ const LeadImport = () => {
             <CardHeader>
               <CardTitle>Importação de Leads</CardTitle>
               <CardDescription>
-                Faça o upload de um arquivo CSV contendo seus leads. O arquivo deve conter as colunas: Nome, Telefone, Banco, Produto, e Valor.
+                Faça o upload de um arquivo CSV contendo seus leads. O arquivo deve conter as colunas: Nome, CPF, Telefone, Banco, Produto, Data, Valor e Funcionário.
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 <p className="text-sm text-muted-foreground">
-                  Para importar leads, escolha um arquivo CSV formatado corretamente com as informações dos seus leads.
+                  Para importar leads, escolha um arquivo CSV formatado corretamente com as informações dos seus leads, incluindo o funcionário responsável.
                 </p>
                 
                 <div className="p-6 border border-dashed rounded-lg bg-muted/30 flex flex-col items-center justify-center">
@@ -54,7 +54,12 @@ const LeadImport = () => {
                 <div className="mt-6">
                   <h3 className="text-sm font-medium mb-2">Modelo do arquivo CSV:</h3>
                   <div className="bg-muted/50 p-4 rounded-md flex items-center justify-between">
-                    <p className="text-xs">Baixe o modelo de planilha para importação de leads</p>
+                    <div>
+                      <p className="text-xs">Baixe o modelo de planilha para importação de leads</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Inclui campos: Nome, CPF, Telefone, Banco, Produto, Data, Valor, Funcionário
+                      </p>
+                    </div>
                     <Button variant="outline" size="sm" onClick={downloadCsvTemplate}>
                       <Download className="h-4 w-4 mr-2" />
                       Baixar Modelo CSV
