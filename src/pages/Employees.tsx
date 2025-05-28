@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Table,
   TableBody,
@@ -11,7 +12,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -25,13 +25,15 @@ import {
 } from "@/components/ui/dialog";
 import Sidebar from "@/components/Sidebar";
 import Header from "@/components/Header";
+import { getEmployees, createEmployee, deleteEmployee, Employee } from "@/utils/employees";
 
 const Employees = () => {
-  const [employees, setEmployees] = useState<string[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(false);
   const [newEmployeeName, setNewEmployeeName] = useState("");
+  const [newEmployeeEmail, setNewEmployeeEmail] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [employeeToDelete, setEmployeeToDelete] = useState<string | null>(null);
+  const [employeeToDelete, setEmployeeToDelete] = useState<Employee | null>(null);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -43,21 +45,8 @@ const Employees = () => {
   const fetchEmployees = async () => {
     try {
       setLoading(true);
-      
-      const { data, error } = await supabase
-        .from("leads")
-        .select("employee")
-        .eq("user_id", user?.id)
-        .not("employee", "is", null)
-        .order("employee");
-
-      if (error) throw error;
-
-      if (data) {
-        // Get unique employee names and filter out any null or empty values
-        const uniqueEmployees = [...new Set(data.map(item => item.employee).filter(Boolean))];
-        setEmployees(uniqueEmployees);
-      }
+      const data = await getEmployees();
+      setEmployees(data);
     } catch (error: any) {
       console.error("Error fetching employees:", error);
       toast.error(`Erro ao carregar funcionários: ${error.message}`);
@@ -75,22 +64,16 @@ const Employees = () => {
     try {
       setLoading(true);
 
-      // Create a placeholder lead with the employee name
-      // This is a workaround since we're storing employees as values in leads
-      const { error } = await supabase
-        .from("leads")
-        .insert({
-          name: `Placeholder for ${newEmployeeName}`,
-          employee: newEmployeeName,
-          user_id: user?.id,
-          status: "novo"
-        });
+      const success = await createEmployee(newEmployeeName, newEmployeeEmail);
 
-      if (error) throw error;
-
-      toast.success(`Funcionário ${newEmployeeName} adicionado com sucesso`);
-      setNewEmployeeName("");
-      fetchEmployees();
+      if (success) {
+        toast.success(`Funcionário ${newEmployeeName} adicionado com sucesso`);
+        setNewEmployeeName("");
+        setNewEmployeeEmail("");
+        fetchEmployees();
+      } else {
+        toast.error("Erro ao adicionar funcionário");
+      }
     } catch (error: any) {
       console.error("Error adding employee:", error);
       toast.error(`Erro ao adicionar funcionário: ${error.message}`);
@@ -99,7 +82,7 @@ const Employees = () => {
     }
   };
 
-  const confirmDeleteEmployee = (employee: string) => {
+  const confirmDeleteEmployee = (employee: Employee) => {
     setEmployeeToDelete(employee);
     setDialogOpen(true);
   };
@@ -110,18 +93,16 @@ const Employees = () => {
     try {
       setLoading(true);
 
-      // Update all leads with this employee to have employee=null
-      const { error } = await supabase
-        .from("leads")
-        .update({ employee: null })
-        .eq("employee", employeeToDelete)
-        .eq("user_id", user?.id);
+      const success = await deleteEmployee(employeeToDelete.id);
 
-      if (error) throw error;
-
-      toast.success(`Funcionário ${employeeToDelete} removido com sucesso`);
-      setDialogOpen(false);
-      fetchEmployees();
+      if (success) {
+        toast.success(`Funcionário ${employeeToDelete.name} removido com sucesso`);
+        setDialogOpen(false);
+        setEmployeeToDelete(null);
+        fetchEmployees();
+      } else {
+        toast.error("Erro ao remover funcionário");
+      }
     } catch (error: any) {
       console.error("Error removing employee:", error);
       toast.error(`Erro ao remover funcionário: ${error.message}`);
@@ -138,22 +119,41 @@ const Employees = () => {
         <main className="container mx-auto space-y-8 p-4 py-8">
           <h1 className="text-2xl font-bold mb-6">Gerenciamento de Funcionários</h1>
 
-          <div className="flex flex-col md:flex-row gap-4 mb-8">
-            <div className="flex-1">
-              <Input
-                type="text"
-                placeholder="Nome do novo funcionário"
-                value={newEmployeeName}
-                onChange={(e) => setNewEmployeeName(e.target.value)}
-                disabled={loading}
-              />
+          <div className="bg-card p-6 rounded-lg border shadow-sm">
+            <h2 className="text-lg font-semibold mb-4">Adicionar Novo Funcionário</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <Label htmlFor="name">Nome *</Label>
+                <Input
+                  id="name"
+                  type="text"
+                  placeholder="Nome do funcionário"
+                  value={newEmployeeName}
+                  onChange={(e) => setNewEmployeeName(e.target.value)}
+                  disabled={loading}
+                />
+              </div>
+              <div>
+                <Label htmlFor="email">Email (opcional)</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="email@exemplo.com"
+                  value={newEmployeeEmail}
+                  onChange={(e) => setNewEmployeeEmail(e.target.value)}
+                  disabled={loading}
+                />
+              </div>
+              <div className="flex items-end">
+                <Button 
+                  onClick={handleAddEmployee} 
+                  disabled={loading || !newEmployeeName.trim()}
+                  className="w-full"
+                >
+                  {loading ? "Adicionando..." : "Adicionar Funcionário"}
+                </Button>
+              </div>
             </div>
-            <Button 
-              onClick={handleAddEmployee} 
-              disabled={loading || !newEmployeeName.trim()}
-            >
-              Adicionar Funcionário
-            </Button>
           </div>
 
           {loading && <div className="text-center py-4">Carregando...</div>}
@@ -171,13 +171,17 @@ const Employees = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead>Nome do Funcionário</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Data de Criação</TableHead>
                   <TableHead className="w-[150px] text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {employees.map((employee) => (
-                  <TableRow key={employee}>
-                    <TableCell>{employee}</TableCell>
+                  <TableRow key={employee.id}>
+                    <TableCell className="font-medium">{employee.name}</TableCell>
+                    <TableCell>{employee.email || "-"}</TableCell>
+                    <TableCell>{new Date(employee.created_at).toLocaleDateString()}</TableCell>
                     <TableCell className="text-right">
                       <Button 
                         variant="destructive" 
@@ -199,7 +203,7 @@ const Employees = () => {
               <DialogHeader>
                 <DialogTitle>Confirmar exclusão</DialogTitle>
                 <DialogDescription>
-                  Tem certeza que deseja remover o funcionário "{employeeToDelete}"? Esta ação não pode ser desfeita.
+                  Tem certeza que deseja remover o funcionário "{employeeToDelete?.name}"? Esta ação não pode ser desfeita.
                 </DialogDescription>
               </DialogHeader>
               <DialogFooter className="flex flex-col sm:flex-row sm:justify-end gap-2">
@@ -211,7 +215,7 @@ const Employees = () => {
                   onClick={handleDeleteEmployee}
                   disabled={loading}
                 >
-                  Confirmar exclusão
+                  {loading ? "Removendo..." : "Confirmar exclusão"}
                 </Button>
               </DialogFooter>
             </DialogContent>
