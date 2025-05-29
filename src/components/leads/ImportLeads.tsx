@@ -170,23 +170,6 @@ const ImportLeads = ({
             else if (productValue.includes("cart")) productValue = "cartao";
             else productValue = "outro";
 
-            // Parse date if provided
-            let parsedDate = null;
-            if (dateIndex !== -1 && values[dateIndex]) {
-              const dateStr = values[dateIndex];
-              // Try to parse different date formats
-              const dateParts = dateStr.split(/[-/]/);
-              if (dateParts.length === 3) {
-                // Assume DD/MM/YYYY or DD-MM-YYYY format
-                const day = parseInt(dateParts[0]);
-                const month = parseInt(dateParts[1]) - 1; // JavaScript months are 0-indexed
-                const year = parseInt(dateParts[2]);
-                if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
-                  parsedDate = new Date(year, month, day).toISOString().split('T')[0];
-                }
-              }
-            }
-
             const leadData: any = {
               name: values[nameIndex],
               cpf: cpfIndex !== -1 ? values[cpfIndex] : "",
@@ -200,11 +183,6 @@ const ImportLeads = ({
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString()
             };
-
-            // Add date_field if date was provided
-            if (parsedDate) {
-              leadData.date_field = parsedDate;
-            }
 
             leads.push(leadData);
           }
