@@ -77,6 +77,47 @@ export type Database = {
         }
         Relationships: []
       }
+      client_visits: {
+        Row: {
+          created_at: string
+          id: string
+          lead_id: string
+          observations: string | null
+          updated_at: string
+          user_id: string
+          visit_date: string
+          visit_type: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          lead_id: string
+          observations?: string | null
+          updated_at?: string
+          user_id: string
+          visit_date: string
+          visit_type: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          lead_id?: string
+          observations?: string | null
+          updated_at?: string
+          user_id?: string
+          visit_date?: string
+          visit_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_visits_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       commission_rates: {
         Row: {
           active: boolean
