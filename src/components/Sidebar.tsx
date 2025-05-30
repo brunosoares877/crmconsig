@@ -43,14 +43,14 @@ const Sidebar = () => {
       // Validar tipo de arquivo
       const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
       if (!allowedTypes.includes(file.type)) {
-        toast.error("Tipo de arquivo não suportado. Use JPG, PNG, GIF ou WebP");
+        toast.error("Formato não suportado. Use: JPG, PNG, GIF ou WebP (máximo 5MB)");
         return;
       }
 
       // Validar tamanho do arquivo (máximo 5MB)
       const maxSize = 5 * 1024 * 1024; // 5MB
       if (file.size > maxSize) {
-        toast.error("Arquivo muito grande. Máximo 5MB");
+        toast.error("Arquivo muito grande. Tamanho máximo: 5MB");
         return;
       }
 
@@ -59,6 +59,15 @@ const Sidebar = () => {
       const filePath = `profiles/${fileName}`;
 
       console.log('Uploading file:', { fileName, fileType: file.type, fileSize: file.size });
+
+      // Verificar se o bucket existe, se não existir, criar
+      const { data: buckets } = await supabase.storage.listBuckets();
+      const avatarsBucket = buckets?.find(bucket => bucket.name === 'avatars');
+      
+      if (!avatarsBucket) {
+        toast.error("Bucket de armazenamento não configurado. Entre em contato com o suporte.");
+        return;
+      }
 
       const { error: uploadError } = await supabase.storage
         .from('avatars')
@@ -86,8 +95,8 @@ const Sidebar = () => {
     } catch (error: any) {
       console.error('Error uploading file:', error);
       
-      if (error.message?.includes('The resource was not found')) {
-        toast.error("Bucket de storage não encontrado. Entre em contato com o suporte.");
+      if (error.message?.includes('Bucket not found')) {
+        toast.error("Bucket de armazenamento não encontrado. O administrador precisa configurar o storage.");
       } else if (error.message?.includes('new row violates row-level security')) {
         toast.error("Permissão negada para upload. Verifique as configurações de segurança.");
       } else {
@@ -193,11 +202,11 @@ const Sidebar = () => {
             </Avatar>
             <Input
               type="file"
-              accept="image/*"
+              accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
               onChange={handleFileUpload}
               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
               disabled={uploading}
-              title={uploading ? "Uploading..." : "Clique para alterar foto"}
+              title={uploading ? "Uploading..." : "Clique para alterar foto (JPG, PNG, GIF, WebP - máx 5MB)"}
             />
             <Button
               size="icon"

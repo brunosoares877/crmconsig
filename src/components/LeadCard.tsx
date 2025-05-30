@@ -192,11 +192,11 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete }) => {
               </div>
             )}
             
-            {lead.bank && (
+            {(lead as any).bank && (
               <div className="flex items-center gap-2">
                 <Building className="h-4 w-4 text-purple-500" />
                 <span className="font-medium">Banco:</span>
-                <span>{bankLabels[lead.bank as keyof typeof bankLabels] || lead.bank}</span>
+                <span>{bankLabels[(lead as any).bank as keyof typeof bankLabels] || (lead as any).bank}</span>
               </div>
             )}
             
