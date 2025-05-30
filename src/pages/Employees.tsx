@@ -31,7 +31,9 @@ const Employees = () => {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(false);
   const [newEmployeeName, setNewEmployeeName] = useState("");
-  const [newEmployeeEmail, setNewEmployeeEmail] = useState("");
+  const [newEmployeePixKey1, setNewEmployeePixKey1] = useState("");
+  const [newEmployeePixKey2, setNewEmployeePixKey2] = useState("");
+  const [newEmployeePixKey3, setNewEmployeePixKey3] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [employeeToDelete, setEmployeeToDelete] = useState<Employee | null>(null);
   const { user } = useAuth();
@@ -64,12 +66,19 @@ const Employees = () => {
     try {
       setLoading(true);
 
-      const success = await createEmployee(newEmployeeName, newEmployeeEmail);
+      const success = await createEmployee(
+        newEmployeeName, 
+        newEmployeePixKey1, 
+        newEmployeePixKey2, 
+        newEmployeePixKey3
+      );
 
       if (success) {
         toast.success(`Funcionário ${newEmployeeName} adicionado com sucesso`);
         setNewEmployeeName("");
-        setNewEmployeeEmail("");
+        setNewEmployeePixKey1("");
+        setNewEmployeePixKey2("");
+        setNewEmployeePixKey3("");
         fetchEmployees();
       } else {
         toast.error("Erro ao adicionar funcionário");
@@ -121,8 +130,8 @@ const Employees = () => {
 
           <div className="bg-card p-6 rounded-lg border shadow-sm">
             <h2 className="text-lg font-semibold mb-4">Adicionar Novo Funcionário</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="md:col-span-2">
                 <Label htmlFor="name">Nome *</Label>
                 <Input
                   id="name"
@@ -134,17 +143,39 @@ const Employees = () => {
                 />
               </div>
               <div>
-                <Label htmlFor="email">Email (opcional)</Label>
+                <Label htmlFor="pix1">Chave PIX 1 (opcional)</Label>
                 <Input
-                  id="email"
-                  type="email"
-                  placeholder="email@exemplo.com"
-                  value={newEmployeeEmail}
-                  onChange={(e) => setNewEmployeeEmail(e.target.value)}
+                  id="pix1"
+                  type="text"
+                  placeholder="CPF, e-mail, telefone ou chave aleatória"
+                  value={newEmployeePixKey1}
+                  onChange={(e) => setNewEmployeePixKey1(e.target.value)}
                   disabled={loading}
                 />
               </div>
-              <div className="flex items-end">
+              <div>
+                <Label htmlFor="pix2">Chave PIX 2 (opcional)</Label>
+                <Input
+                  id="pix2"
+                  type="text"
+                  placeholder="CPF, e-mail, telefone ou chave aleatória"
+                  value={newEmployeePixKey2}
+                  onChange={(e) => setNewEmployeePixKey2(e.target.value)}
+                  disabled={loading}
+                />
+              </div>
+              <div>
+                <Label htmlFor="pix3">Chave PIX 3 (opcional)</Label>
+                <Input
+                  id="pix3"
+                  type="text"
+                  placeholder="CPF, e-mail, telefone ou chave aleatória"
+                  value={newEmployeePixKey3}
+                  onChange={(e) => setNewEmployeePixKey3(e.target.value)}
+                  disabled={loading}
+                />
+              </div>
+              <div className="md:col-span-2">
                 <Button 
                   onClick={handleAddEmployee} 
                   disabled={loading || !newEmployeeName.trim()}
@@ -171,7 +202,9 @@ const Employees = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead>Nome do Funcionário</TableHead>
-                  <TableHead>Email</TableHead>
+                  <TableHead>Chave PIX 1</TableHead>
+                  <TableHead>Chave PIX 2</TableHead>
+                  <TableHead>Chave PIX 3</TableHead>
                   <TableHead>Data de Criação</TableHead>
                   <TableHead className="w-[150px] text-right">Ações</TableHead>
                 </TableRow>
@@ -180,7 +213,9 @@ const Employees = () => {
                 {employees.map((employee) => (
                   <TableRow key={employee.id}>
                     <TableCell className="font-medium">{employee.name}</TableCell>
-                    <TableCell>{employee.email || "-"}</TableCell>
+                    <TableCell>{employee.pix_key_1 || "-"}</TableCell>
+                    <TableCell>{employee.pix_key_2 || "-"}</TableCell>
+                    <TableCell>{employee.pix_key_3 || "-"}</TableCell>
                     <TableCell>{new Date(employee.created_at).toLocaleDateString()}</TableCell>
                     <TableCell className="text-right">
                       <Button 
