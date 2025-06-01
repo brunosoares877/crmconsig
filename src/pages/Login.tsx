@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -192,9 +193,9 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      {/* Left side - Login form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8">
+    <div className="flex h-screen">
+      {/* Left side - Login form (50% width) */}
+      <div className="w-1/2 flex items-center justify-center p-8">
         <div className="w-full max-w-md">
           {/* Logo */}
           <div className="flex items-center mb-8">
@@ -439,8 +440,8 @@ const Login = () => {
         </div>
       </div>
       
-      {/* Right side - Promotional content */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-600 to-blue-800 items-center justify-center p-12 relative overflow-hidden">
+      {/* Right side - Promotional content (50% width) */}
+      <div className="w-1/2 bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center p-12 relative overflow-hidden">
         {/* Background decoration */}
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-20 left-20 w-32 h-32 rounded-full bg-white/20"></div>
