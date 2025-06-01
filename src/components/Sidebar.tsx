@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { useLocation } from "react-router-dom";
@@ -115,87 +114,159 @@ const Sidebar = () => {
   const isCommissionPage = location.pathname.startsWith('/commission');
 
   return (
-    <div className="fixed left-0 top-0 h-full w-16 md:w-64 z-10 bg-sidebar shadow-lg flex flex-col">
-      <div className="h-16 flex items-center justify-center md:justify-start border-b border-sidebar-border">
-        <Link to="/" className="px-4">
-          <h1 className="text-xl font-bold hidden md:block text-white px-[2px]">LeadConsig</h1>
-          <span className="md:hidden text-white">CRM</span>
+    <div className="fixed left-0 top-0 h-full w-16 md:w-64 z-20 bg-sidebar shadow-lg flex flex-col">
+      <div className="h-12 md:h-16 flex items-center justify-center md:justify-start border-b border-sidebar-border px-2 md:px-4">
+        <Link to="/" className="truncate">
+          <h1 className="text-lg md:text-xl font-bold hidden md:block text-white truncate">LeadConsig</h1>
+          <span className="md:hidden text-white text-sm">CRM</span>
         </Link>
       </div>
       
-      <nav className="p-4 flex-1">
-        <ul className="space-y-2">
+      <nav className="p-2 md:p-4 flex-1 overflow-y-auto">
+        <ul className="space-y-1 md:space-y-2">
           <li>
-            <Link to="/dashboard" className={`flex items-center ${isActive("/") || isActive("/dashboard") ? "bg-sidebar-accent text-white font-medium" : "text-gray-300 hover:bg-sidebar-accent/50"} p-2 rounded-md transition-colors`}>
-              <ListCheck className="h-5 w-5 mr-3" />
-              <span className="hidden md:inline">Dashboard</span>
+            <Link 
+              to="/dashboard" 
+              className={`flex items-center ${
+                isActive("/") || isActive("/dashboard") 
+                  ? "bg-sidebar-accent text-white font-medium" 
+                  : "text-gray-300 hover:bg-sidebar-accent/50"
+              } p-2 rounded-md transition-colors text-sm`}
+            >
+              <ListCheck className="h-4 w-4 md:h-5 md:w-5 mr-2 md:mr-3 flex-shrink-0" />
+              <span className="hidden md:inline truncate">Dashboard</span>
             </Link>
           </li>
           <li>
-            <Link to="/leads" className={`flex items-center ${isActive("/leads") ? "bg-sidebar-accent text-white font-medium" : "text-gray-300 hover:bg-sidebar-accent/50"} p-2 rounded-md transition-colors`}>
-              <List className="h-5 w-5 mr-3" />
-              <span className="hidden md:inline">Leads</span>
+            <Link 
+              to="/leads" 
+              className={`flex items-center ${
+                isActive("/leads") 
+                  ? "bg-sidebar-accent text-white font-medium" 
+                  : "text-gray-300 hover:bg-sidebar-accent/50"
+              } p-2 rounded-md transition-colors text-sm`}
+            >
+              <List className="h-4 w-4 md:h-5 md:w-5 mr-2 md:mr-3 flex-shrink-0" />
+              <span className="hidden md:inline truncate">Leads</span>
             </Link>
           </li>
           <li>
-            <Link to="/reminders" className={`flex items-center ${isActive("/reminders") ? "bg-sidebar-accent text-white font-medium" : "text-gray-300 hover:bg-sidebar-accent/50"} p-2 rounded-md transition-colors`}>
-              <Calendar className="h-5 w-5 mr-3" />
-              <span className="hidden md:inline">Lembretes</span>
+            <Link 
+              to="/reminders" 
+              className={`flex items-center ${
+                isActive("/reminders") 
+                  ? "bg-sidebar-accent text-white font-medium" 
+                  : "text-gray-300 hover:bg-sidebar-accent/50"
+              } p-2 rounded-md transition-colors text-sm`}
+            >
+              <Calendar className="h-4 w-4 md:h-5 md:w-5 mr-2 md:mr-3 flex-shrink-0" />
+              <span className="hidden md:inline truncate">Lembretes</span>
             </Link>
           </li>
           <li>
-            <Link to="/reminders/calendar" className={`flex items-center ${isActive("/reminders/calendar") ? "bg-sidebar-accent text-white font-medium" : "text-gray-300 hover:bg-sidebar-accent/50"} p-2 rounded-md transition-colors`}>
-              <CalendarDays className="h-5 w-5 mr-3" />
-              <span className="hidden md:inline">Calendário</span>
+            <Link 
+              to="/reminders/calendar" 
+              className={`flex items-center ${
+                isActive("/reminders/calendar") 
+                  ? "bg-sidebar-accent text-white font-medium" 
+                  : "text-gray-300 hover:bg-sidebar-accent/50"
+              } p-2 rounded-md transition-colors text-sm`}
+            >
+              <CalendarDays className="h-4 w-4 md:h-5 md:w-5 mr-2 md:mr-3 flex-shrink-0" />
+              <span className="hidden md:inline truncate">Calendário</span>
             </Link>
           </li>
           <li>
-            <Link to="/leads/scheduled" className={`flex items-center ${isActive("/leads/scheduled") ? "bg-sidebar-accent text-white font-medium" : "text-gray-300 hover:bg-sidebar-accent/50"} p-2 rounded-md transition-colors`}>
-              <CalendarPlus className="h-5 w-5 mr-3" />
-              <span className="hidden md:inline">Agendamentos</span>
+            <Link 
+              to="/leads/scheduled" 
+              className={`flex items-center ${
+                isActive("/leads/scheduled") 
+                  ? "bg-sidebar-accent text-white font-medium" 
+                  : "text-gray-300 hover:bg-sidebar-accent/50"
+              } p-2 rounded-md transition-colors text-sm`}
+            >
+              <CalendarPlus className="h-4 w-4 md:h-5 md:w-5 mr-2 md:mr-3 flex-shrink-0" />
+              <span className="hidden md:inline truncate">Agendamentos</span>
             </Link>
           </li>
           <li>
-            <Link to="/employees" className={`flex items-center ${isActive("/employees") ? "bg-sidebar-accent text-white font-medium" : "text-gray-300 hover:bg-sidebar-accent/50"} p-2 rounded-md transition-colors`}>
-              <Users className="h-5 w-5 mr-3" />
-              <span className="hidden md:inline">Funcionários</span>
+            <Link 
+              to="/employees" 
+              className={`flex items-center ${
+                isActive("/employees") 
+                  ? "bg-sidebar-accent text-white font-medium" 
+                  : "text-gray-300 hover:bg-sidebar-accent/50"
+              } p-2 rounded-md transition-colors text-sm`}
+            >
+              <Users className="h-4 w-4 md:h-5 md:w-5 mr-2 md:mr-3 flex-shrink-0" />
+              <span className="hidden md:inline truncate">Funcionários</span>
             </Link>
           </li>
           <li>
-            <Link to="/portability" className={`flex items-center ${isActive("/portability") ? "bg-sidebar-accent text-white font-medium" : "text-gray-300 hover:bg-sidebar-accent/50"} p-2 rounded-md transition-colors`}>
-              <ListCheck className="h-5 w-5 mr-3" />
-              <span className="hidden md:inline">Portabilidade</span>
+            <Link 
+              to="/portability" 
+              className={`flex items-center ${
+                isActive("/portability") 
+                  ? "bg-sidebar-accent text-white font-medium" 
+                  : "text-gray-300 hover:bg-sidebar-accent/50"
+              } p-2 rounded-md transition-colors text-sm`}
+            >
+              <ListCheck className="h-4 w-4 md:h-5 md:w-5 mr-2 md:mr-3 flex-shrink-0" />
+              <span className="hidden md:inline truncate">Portabilidade</span>
             </Link>
           </li>
           <li className="space-y-1">
-            <Link to="/commission" className={`flex items-center ${isActive("/commission") && !isActive("/commission/settings") ? "bg-sidebar-accent text-white font-medium" : "text-gray-300 hover:bg-sidebar-accent/50"} p-2 rounded-md transition-colors`}>
-              <DollarSign className="h-5 w-5 mr-3" />
-              <span className="hidden md:inline">Comissões</span>
+            <Link 
+              to="/commission" 
+              className={`flex items-center ${
+                isActive("/commission") && !isActive("/commission/settings") 
+                  ? "bg-sidebar-accent text-white font-medium" 
+                  : "text-gray-300 hover:bg-sidebar-accent/50"
+              } p-2 rounded-md transition-colors text-sm`}
+            >
+              <DollarSign className="h-4 w-4 md:h-5 md:w-5 mr-2 md:mr-3 flex-shrink-0" />
+              <span className="hidden md:inline truncate">Comissões</span>
             </Link>
             {/* Mostrar configurações apenas se estiver na página de comissões */}
-            {isCommissionPage && <Link to="/commission/settings" className={`flex items-center ${isActive("/commission/settings") ? "bg-sidebar-accent text-white font-medium" : "text-gray-300 hover:bg-sidebar-accent/50"} p-2 pl-10 rounded-md transition-colors ml-2`}>
-                <Settings className="h-4 w-4 mr-3" />
-                <span className="hidden md:inline text-sm">Configurações</span>
-              </Link>}
+            {isCommissionPage && (
+              <Link 
+                to="/commission/settings" 
+                className={`flex items-center ${
+                  isActive("/commission/settings") 
+                    ? "bg-sidebar-accent text-white font-medium" 
+                    : "text-gray-300 hover:bg-sidebar-accent/50"
+                } p-2 pl-6 md:pl-10 rounded-md transition-colors ml-2 text-xs md:text-sm`}
+              >
+                <Settings className="h-3 w-3 md:h-4 md:w-4 mr-2 md:mr-3 flex-shrink-0" />
+                <span className="hidden md:inline truncate">Configurações</span>
+              </Link>
+            )}
           </li>
           <li>
-            <Link to="/settings" className={`flex items-center ${isActive("/settings") ? "bg-sidebar-accent text-white font-medium" : "text-gray-300 hover:bg-sidebar-accent/50"} p-2 rounded-md transition-colors`}>
-              <Settings className="h-5 w-5 mr-3" />
-              <span className="hidden md:inline">Configurações</span>
+            <Link 
+              to="/settings" 
+              className={`flex items-center ${
+                isActive("/settings") 
+                  ? "bg-sidebar-accent text-white font-medium" 
+                  : "text-gray-300 hover:bg-sidebar-accent/50"
+              } p-2 rounded-md transition-colors text-sm`}
+            >
+              <Settings className="h-4 w-4 md:h-5 md:w-5 mr-2 md:mr-3 flex-shrink-0" />
+              <span className="hidden md:inline truncate">Configurações</span>
             </Link>
           </li>
         </ul>
       </nav>
 
       {/* Footer com informações do usuário */}
-      <div className="border-t border-sidebar-border p-4">
-        <div className="flex items-center space-x-3">
-          <div className="relative">
-            <Avatar className="h-10 w-10">
+      <div className="border-t border-sidebar-border p-2 md:p-4">
+        <div className="flex items-center space-x-2 md:space-x-3">
+          <div className="relative flex-shrink-0">
+            <Avatar className="h-8 w-8 md:h-10 md:w-10">
               {profileImage ? (
                 <AvatarImage src={profileImage} alt="Profile" />
               ) : (
-                <AvatarFallback className="bg-sidebar-accent text-white">
+                <AvatarFallback className="bg-sidebar-accent text-white text-xs md:text-sm">
                   {user ? getInitials(user.email || "") : "U"}
                 </AvatarFallback>
               )}
@@ -211,14 +282,14 @@ const Sidebar = () => {
             <Button
               size="icon"
               variant="ghost"
-              className="absolute -bottom-1 -right-1 h-6 w-6 bg-sidebar-accent hover:bg-sidebar-accent/80 text-white rounded-full pointer-events-none"
+              className="absolute -bottom-1 -right-1 h-5 w-5 md:h-6 md:w-6 bg-sidebar-accent hover:bg-sidebar-accent/80 text-white rounded-full pointer-events-none"
               title="Alterar foto"
             >
-              <Camera className="h-3 w-3" />
+              <Camera className="h-2 w-2 md:h-3 md:w-3" />
             </Button>
           </div>
           <div className="hidden md:block flex-1 min-w-0">
-            <p className="text-sm font-medium text-white truncate">
+            <p className="text-xs md:text-sm font-medium text-white truncate">
               {user?.email || "Usuário"}
             </p>
             {uploading && (

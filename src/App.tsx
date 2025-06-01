@@ -27,38 +27,40 @@ import { Toaster as SonnerToaster } from "sonner";
 
 function App() {
   return (
-    <Router>
-      <AuthProvider>
-        <ThemeProvider>
-          <SubscriptionProvider>
-            <SidebarProvider>
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/dashboard" element={<Index />} />
-                <Route path="/plans" element={<Plans />} />
-                <Route path="/subscription-success" element={<SubscriptionSuccess />} />
-                <Route path="/subscription-cancelled" element={<SubscriptionCancelled />} />
-                <Route path="/leads" element={<Leads />} />
-                <Route path="/leads/new" element={<LeadNew />} />
-                <Route path="/leads/import" element={<LeadImport />} />
-                <Route path="/leads/scheduled" element={<LeadScheduling />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/sales" element={<Sales />} />
-                <Route path="/portability" element={<Portability />} />
-                <Route path="/reminders" element={<Reminders />} />
-                <Route path="/reminders/calendar" element={<RemindersCalendar />} />
-                <Route path="/commission" element={<Commission />} />
-                <Route path="/commission/settings" element={<CommissionSettings />} />
-                <Route path="/settings" element={<Settings />} />
-                <Route path="/employees" element={<Employees />} />
-              </Routes>
-              <Toaster />
-              <SonnerToaster />
-            </SidebarProvider>
-          </SubscriptionProvider>
-        </ThemeProvider>
-      </AuthProvider>
-    </Router>
+    <div className="w-full min-h-screen">
+      <Router>
+        <AuthProvider>
+          <ThemeProvider>
+            <SubscriptionProvider>
+              <SidebarProvider>
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/dashboard" element={<Index />} />
+                  <Route path="/plans" element={<Plans />} />
+                  <Route path="/subscription-success" element={<SubscriptionSuccess />} />
+                  <Route path="/subscription-cancelled" element={<SubscriptionCancelled />} />
+                  <Route path="/leads" element={<Leads />} />
+                  <Route path="/leads/new" element={<LeadNew />} />
+                  <Route path="/leads/import" element={<LeadImport />} />
+                  <Route path="/leads/scheduled" element={<LeadScheduling />} />
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/sales" element={<Sales />} />
+                  <Route path="/portability" element={<Portability />} />
+                  <Route path="/reminders" element={<Reminders />} />
+                  <Route path="/reminders/calendar" element={<RemindersCalendar />} />
+                  <Route path="/commission" element={<Commission />} />
+                  <Route path="/commission/settings" element={<CommissionSettings />} />
+                  <Route path="/settings" element={<Settings />} />
+                  <Route path="/employees" element={<Employees />} />
+                </Routes>
+                <Toaster />
+                <SonnerToaster />
+              </SidebarProvider>
+            </SubscriptionProvider>
+          </ThemeProvider>
+        </AuthProvider>
+      </Router>
+    </div>
   );
 }
 
