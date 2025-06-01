@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { LogIn, Key, UserPlus, Building, Phone } from "lucide-react";
+import { LogIn, Key, UserPlus, Building, Phone, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
@@ -43,6 +43,8 @@ const Login = () => {
   const [whatsapp, setWhatsapp] = useState("");
   const [isLogin, setIsLogin] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const maskPhone = (value: string) => {
@@ -190,29 +192,214 @@ const Login = () => {
   };
 
   return (
-    <div className="flex h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800">
-      {/* Left side - Login form with white card */}
-      <div className="w-full md:w-1/2 flex items-center justify-center p-4 relative">
-        {/* Background overlay for better contrast */}
-        <div className="absolute inset-0 bg-black/10"></div>
-        
-        <Card className="w-full max-w-md animate-fade-in shadow-2xl border-0 backdrop-blur-sm bg-white/95 relative z-10">
-          <CardHeader className="space-y-1 text-center">
-            <CardTitle className="text-3xl font-bold text-slate-900 mb-2">LeadConsig</CardTitle>
-            <CardDescription className="text-center font-medium text-gray-600 text-base">
-              O CRM feito para{" "}
-              <span className="text-blue-700 font-bold">
-                <TypewriterText text="alavancar suas vendas" speed={80} />
-              </span>
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-4">
+    <div className="min-h-screen bg-gray-50 flex">
+      {/* Left side - Login form */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-8">
+        <div className="w-full max-w-md">
+          {/* Logo */}
+          <div className="flex items-center mb-8">
+            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center mr-3">
+              <div className="w-4 h-4 bg-white rounded-sm"></div>
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900">LeadConsig</h1>
+          </div>
+
+          {/* Welcome text */}
+          <div className="mb-8">
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">
+              {isLogin ? "Bem-vindo de volta" : "Criar conta"}
+            </h2>
+            <p className="text-gray-600">
+              {isLogin 
+                ? "Digite seu email e senha para acessar sua conta." 
+                : "Preencha os dados abaixo para criar sua conta."}
+            </p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {!isLogin && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="fullName" className="text-sm font-medium text-gray-900">
+                    Nome Completo
+                  </Label>
+                  <Input 
+                    id="fullName" 
+                    placeholder="Seu nome completo" 
+                    type="text" 
+                    required 
+                    className={`h-12 border-gray-300 ${errors.fullName ? "border-red-500" : ""}`}
+                    value={fullName} 
+                    onChange={(e) => setFullName(e.target.value)} 
+                    disabled={isLoading} 
+                  />
+                  {errors.fullName && <p className="text-sm text-red-500">{errors.fullName}</p>}
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="company" className="text-sm font-medium text-gray-900">
+                    Nome da Empresa
+                  </Label>
+                  <Input 
+                    id="company" 
+                    type="text" 
+                    required 
+                    placeholder="Sua empresa" 
+                    className={`h-12 border-gray-300 ${errors.company ? "border-red-500" : ""}`}
+                    value={company} 
+                    onChange={(e) => setCompany(e.target.value)} 
+                    disabled={isLoading} 
+                  />
+                  {errors.company && <p className="text-sm text-red-500">{errors.company}</p>}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="whatsapp" className="text-sm font-medium text-gray-900">
+                    WhatsApp
+                  </Label>
+                  <Input 
+                    id="whatsapp" 
+                    type="text" 
+                    required 
+                    placeholder="(99) 99999-9999" 
+                    className={`h-12 border-gray-300 ${errors.whatsapp ? "border-red-500" : ""}`}
+                    value={whatsapp} 
+                    onChange={handlePhoneChange} 
+                    maxLength={15} 
+                    disabled={isLoading} 
+                  />
+                  {errors.whatsapp && <p className="text-sm text-red-500">{errors.whatsapp}</p>}
+                </div>
+              </>
+            )}
+          
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-sm font-medium text-gray-900">
+                Email
+              </Label>
+              <Input 
+                id="email" 
+                placeholder="seuemail@empresa.com" 
+                type="email" 
+                required 
+                autoComplete="email" 
+                className={`h-12 border-gray-300 ${errors.email ? "border-red-500" : ""}`}
+                value={email} 
+                onChange={(e) => setEmail(e.target.value)} 
+                disabled={isLoading} 
+              />
+              {errors.email && <p className="text-sm text-red-500">{errors.email}</p>}
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="password" className="text-sm font-medium text-gray-900">
+                Senha
+              </Label>
+              <div className="relative">
+                <Input 
+                  id="password" 
+                  type={showPassword ? "text" : "password"}
+                  required 
+                  placeholder="••••••••"
+                  autoComplete={isLogin ? "current-password" : "new-password"} 
+                  className={`h-12 border-gray-300 pr-12 ${errors.password ? "border-red-500" : ""}`}
+                  value={password} 
+                  onChange={(e) => setPassword(e.target.value)} 
+                  disabled={isLoading} 
+                />
+                <button
+                  type="button"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-5 w-5 text-gray-400" />
+                  ) : (
+                    <Eye className="h-5 w-5 text-gray-400" />
+                  )}
+                </button>
+              </div>
+              {errors.password && <p className="text-sm text-red-500">{errors.password}</p>}
+            </div>
+
+            {!isLogin && (
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword" className="text-sm font-medium text-gray-900">
+                  Confirmar Senha
+                </Label>
+                <div className="relative">
+                  <Input 
+                    id="confirmPassword" 
+                    type={showPassword ? "text" : "password"}
+                    required 
+                    placeholder="••••••••"
+                    autoComplete="new-password" 
+                    className={`h-12 border-gray-300 pr-12 ${errors.confirmPassword ? "border-red-500" : ""}`}
+                    value={confirmPassword} 
+                    onChange={(e) => setConfirmPassword(e.target.value)} 
+                    disabled={isLoading} 
+                  />
+                </div>
+                {errors.confirmPassword && <p className="text-sm text-red-500">{errors.confirmPassword}</p>}
+              </div>
+            )}
+
+            {isLogin && (
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <input
+                    id="remember-me"
+                    name="remember-me"
+                    type="checkbox"
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                  />
+                  <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700">
+                    Lembrar de mim
+                  </label>
+                </div>
+                <div className="text-sm">
+                  <a href="#" className="font-medium text-blue-600 hover:text-blue-500">
+                    Esqueceu sua senha?
+                  </a>
+                </div>
+              </div>
+            )}
+
+            <Button 
+              type="submit" 
+              className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-medium"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <div className="h-4 w-4 mr-2 animate-spin rounded-full border-2 border-t-transparent"></div>
+                  {isLogin ? "Entrando..." : "Criando conta..."}
+                </>
+              ) : (
+                isLogin ? "Entrar" : "Criar conta"
+              )}
+            </Button>
+
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-gray-300" />
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="bg-gray-50 px-3 text-gray-500">
+                  Ou entre com
+                </span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
               <Button 
                 variant="outline" 
-                className="w-full bg-white border-gray-300 hover:bg-gray-50 shadow-sm font-medium py-3" 
+                className="w-full h-12 border-gray-300" 
                 onClick={handleGoogleSignIn} 
                 disabled={isLoading}
+                type="button"
               >
                 <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24">
                   <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
@@ -220,220 +407,75 @@ const Login = () => {
                   <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
                   <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
                 </svg>
-                Entrar com Google
+                Google
               </Button>
               
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t border-gray-300" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-white px-3 text-gray-500 font-medium">
-                    ou continue com email
-                  </span>
-                </div>
-              </div>
-            </div>
-            
-            <form onSubmit={handleSubmit} className="space-y-4 mt-6">
-              {!isLogin && (
-                <>
-                  <div className="space-y-2">
-                    <Label htmlFor="fullName" className="text-sm font-semibold text-gray-700">Nome Completo</Label>
-                    <div className="relative">
-                      <Input 
-                        id="fullName" 
-                        placeholder="Seu nome completo" 
-                        type="text" 
-                        required 
-                        className={`h-11 ${errors.fullName ? "border-destructive" : "border-gray-300"} focus:border-blue-500 focus:ring-blue-500`} 
-                        value={fullName} 
-                        onChange={(e) => setFullName(e.target.value)} 
-                        disabled={isLoading} 
-                      />
-                    </div>
-                    {errors.fullName && <p className="text-xs text-destructive font-medium">{errors.fullName}</p>}
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="company" className="text-sm font-semibold text-gray-700">Nome da Empresa</Label>
-                    <div className="relative">
-                      <Building className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-                      <Input 
-                        id="company" 
-                        type="text" 
-                        required 
-                        placeholder="Sua empresa" 
-                        className={`pl-11 h-11 ${errors.company ? "border-destructive" : "border-gray-300"} focus:border-blue-500 focus:ring-blue-500`} 
-                        value={company} 
-                        onChange={(e) => setCompany(e.target.value)} 
-                        disabled={isLoading} 
-                      />
-                    </div>
-                    {errors.company && <p className="text-xs text-destructive font-medium">{errors.company}</p>}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="whatsapp" className="text-sm font-semibold text-gray-700">WhatsApp</Label>
-                    <div className="relative">
-                      <Phone className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-                      <Input 
-                        id="whatsapp" 
-                        type="text" 
-                        required 
-                        placeholder="(99) 99999-9999" 
-                        className={`pl-11 h-11 ${errors.whatsapp ? "border-destructive" : "border-gray-300"} focus:border-blue-500 focus:ring-blue-500`} 
-                        value={whatsapp} 
-                        onChange={handlePhoneChange} 
-                        maxLength={15} 
-                        disabled={isLoading} 
-                      />
-                    </div>
-                    {errors.whatsapp && <p className="text-xs text-destructive font-medium">{errors.whatsapp}</p>}
-                  </div>
-                </>
-              )}
-            
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-sm font-semibold text-gray-700">Email</Label>
-                <div className="relative">
-                  <LogIn className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-                  <Input 
-                    id="email" 
-                    placeholder="seu@email.com" 
-                    type="email" 
-                    required 
-                    autoComplete="email" 
-                    className={`pl-11 h-11 ${errors.email ? "border-destructive" : "border-gray-300"} focus:border-blue-500 focus:ring-blue-500`} 
-                    value={email} 
-                    onChange={(e) => setEmail(e.target.value)} 
-                    disabled={isLoading} 
-                  />
-                </div>
-                {errors.email && <p className="text-xs text-destructive font-medium">{errors.email}</p>}
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="password" className="text-sm font-semibold text-gray-700">Senha</Label>
-                <div className="relative">
-                  <Key className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-                  <Input 
-                    id="password" 
-                    type="password" 
-                    required 
-                    autoComplete={isLogin ? "current-password" : "new-password"} 
-                    className={`pl-11 h-11 ${errors.password ? "border-destructive" : "border-gray-300"} focus:border-blue-500 focus:ring-blue-500`} 
-                    value={password} 
-                    onChange={(e) => setPassword(e.target.value)} 
-                    disabled={isLoading} 
-                  />
-                </div>
-                {errors.password && <p className="text-xs text-destructive font-medium">{errors.password}</p>}
-              </div>
-
-              {!isLogin && (
-                <div className="space-y-2">
-                  <Label htmlFor="confirmPassword" className="text-sm font-semibold text-gray-700">Confirmar Senha</Label>
-                  <div className="relative">
-                    <Key className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-                    <Input 
-                      id="confirmPassword" 
-                      type="password" 
-                      required 
-                      autoComplete="new-password" 
-                      className={`pl-11 h-11 ${errors.confirmPassword ? "border-destructive" : "border-gray-300"} focus:border-blue-500 focus:ring-blue-500`} 
-                      value={confirmPassword} 
-                      onChange={(e) => setConfirmPassword(e.target.value)} 
-                      disabled={isLoading} 
-                    />
-                  </div>
-                  {errors.confirmPassword && <p className="text-xs text-destructive font-medium">{errors.confirmPassword}</p>}
-                </div>
-              )}
-
-              <Button type="submit" className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 h-12 text-base font-semibold shadow-lg" disabled={isLoading}>
-                {isLoading ? (
-                  <>
-                    <div className="h-4 w-4 mr-2 animate-spin rounded-full border-2 border-t-transparent"></div>
-                    {isLogin ? "Entrando..." : "Criando conta..."}
-                  </>
-                ) : (
-                  <>
-                    {isLogin ? (
-                      <>
-                        <LogIn className="mr-2 h-5 w-5" />
-                        Entrar
-                      </>
-                    ) : (
-                      <>
-                        <UserPlus className="mr-2 h-5 w-5" />
-                        Criar Conta
-                      </>
-                    )}
-                  </>
-                )}
-              </Button>
-            </form>
-          </CardContent>
-          <CardFooter className="flex flex-col space-y-4">
-            <div className="flex gap-4 w-full">
               <Button 
                 variant="outline" 
-                className="w-full border-gray-300 hover:bg-gray-50 h-11 font-medium" 
-                onClick={() => setIsLogin(!isLogin)} 
+                className="w-full h-12 border-gray-300"
                 disabled={isLoading}
+                type="button"
               >
-                {isLogin ? "Criar conta" : "Já tem uma conta? Faça login"}
+                <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+                </svg>
+                Apple
               </Button>
             </div>
-            
-            {isLogin && (
-              <p className="text-sm text-gray-500 text-center">
-                Esqueceu a senha? Entre em contato com o administrador
-              </p>
-            )}
-          </CardFooter>
-        </Card>
+          </form>
+
+          <div className="mt-8 text-center">
+            <p className="text-sm text-gray-600">
+              {isLogin ? "Não tem uma conta? " : "Já tem uma conta? "}
+              <button
+                onClick={() => setIsLogin(!isLogin)}
+                className="font-medium text-blue-600 hover:text-blue-500"
+                disabled={isLoading}
+              >
+                {isLogin ? "Cadastre-se agora" : "Faça login"}
+              </button>
+            </p>
+          </div>
+        </div>
       </div>
       
-      {/* Right side - Brand/Image with enhanced design */}
-      <div className="hidden md:flex md:w-1/2 items-center justify-center text-white p-12 relative">
-        {/* Enhanced background patterns */}
+      {/* Right side - Promotional content */}
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-600 to-blue-800 items-center justify-center p-12 relative overflow-hidden">
+        {/* Background decoration */}
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-20 left-20 w-32 h-32 rounded-full bg-white/20"></div>
           <div className="absolute bottom-40 right-32 w-24 h-24 rounded-full bg-white/15"></div>
           <div className="absolute top-1/2 right-20 w-16 h-16 rounded-full bg-white/10"></div>
         </div>
         
-        <div className="max-w-lg relative z-10">
-          <h1 className="text-5xl font-bold mb-8 leading-tight">LeadConsig</h1>
-          <p className="text-xl mb-10 leading-relaxed opacity-90">
-            Transforme seus leads em clientes com nossa solução completa de gestão de vendas.
+        <div className="max-w-lg relative z-10 text-white">
+          <h1 className="text-4xl font-bold mb-6 leading-tight">
+            Gerencie eficientemente sua equipe e operações
+          </h1>
+          <p className="text-xl mb-8 opacity-90 leading-relaxed">
+            Faça login para acessar seu dashboard CRM e gerenciar sua equipe.
           </p>
-          <div className="space-y-6">
-            <div className="flex items-start space-x-4">
-              <div className="w-8 h-8 rounded-full bg-emerald-400 flex items-center justify-center mt-1">
-                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                </svg>
+          
+          {/* Dashboard preview mockup */}
+          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div className="bg-white/20 rounded-lg p-4">
+                <div className="text-2xl font-bold">R$ 189.374</div>
+                <div className="text-sm opacity-75">Receita Total</div>
               </div>
-              <p className="text-lg">Acompanhamento completo do ciclo de vendas</p>
+              <div className="bg-white/20 rounded-lg p-4">
+                <div className="text-2xl font-bold">6.248</div>
+                <div className="text-sm opacity-75">Leads</div>
+              </div>
             </div>
-            <div className="flex items-start space-x-4">
-              <div className="w-8 h-8 rounded-full bg-emerald-400 flex items-center justify-center mt-1">
-                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                </svg>
+            <div className="bg-white/20 rounded-lg p-4">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-sm opacity-75">Performance da Equipe</span>
+                <span className="text-sm">85%</span>
               </div>
-              <p className="text-lg">Relatórios e análises detalhadas</p>
-            </div>
-            <div className="flex items-start space-x-4">
-              <div className="w-8 h-8 rounded-full bg-emerald-400 flex items-center justify-center mt-1">
-                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                </svg>
+              <div className="w-full bg-white/20 rounded-full h-2">
+                <div className="bg-white h-2 rounded-full w-4/5"></div>
               </div>
-              <p className="text-lg">Integração com ferramentas de comunicação</p>
             </div>
           </div>
         </div>
