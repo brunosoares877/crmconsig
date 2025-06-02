@@ -23,15 +23,20 @@ const Index = () => {
   }, [status, isTrialActive, isPrivilegedUser, navigate]);
 
   return (
-    <div className="min-h-screen bg-background w-full">
+    <div className="min-h-screen bg-slate-50/30 w-full">
       <Sidebar />
       <div className="w-full md:ml-64 transition-all duration-300">
         <Header />
         <main className="w-full p-3 md:p-4 lg:p-6 xl:p-8">
           <div className="max-w-7xl mx-auto space-y-6 md:space-y-8">
             <TrialBanner />
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 md:mb-6">
-              <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Dashboard</h1>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+              <div>
+                <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Dashboard</h1>
+                <p className="text-slate-600 text-sm mt-1">
+                  Visão geral dos seus leads e vendas
+                </p>
+              </div>
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 md:gap-3 w-full sm:w-auto">
                 <WhatsAppButton 
                   phoneNumber="5584991850149" 
