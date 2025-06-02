@@ -31,7 +31,9 @@ const Employees = () => {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(false);
   const [newEmployeeName, setNewEmployeeName] = useState("");
-  const [newEmployeePixKey1, setNewEmployeePixKey1] = useState("");
+  const [newEmployeeFullName, setNewEmployeeFullName] = useState("");
+  const [newEmployeeBank, setNewEmployeeBank] = useState("");
+  const [newEmployeePixKeyMain, setNewEmployeePixKeyMain] = useState("");
   const [newEmployeePixKey2, setNewEmployeePixKey2] = useState("");
   const [newEmployeePixKey3, setNewEmployeePixKey3] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -63,20 +65,39 @@ const Employees = () => {
       return;
     }
 
+    if (!newEmployeeFullName.trim()) {
+      toast.error("O nome completo não pode estar vazio");
+      return;
+    }
+
+    if (!newEmployeeBank.trim()) {
+      toast.error("O banco não pode estar vazio");
+      return;
+    }
+
+    if (!newEmployeePixKeyMain.trim()) {
+      toast.error("A chave PIX principal é obrigatória");
+      return;
+    }
+
     try {
       setLoading(true);
 
       const success = await createEmployee(
-        newEmployeeName, 
-        newEmployeePixKey1, 
-        newEmployeePixKey2, 
+        newEmployeeName,
+        newEmployeeFullName,
+        newEmployeeBank,
+        newEmployeePixKeyMain,
+        newEmployeePixKey2,
         newEmployeePixKey3
       );
 
       if (success) {
         toast.success(`Funcionário ${newEmployeeName} adicionado com sucesso`);
         setNewEmployeeName("");
-        setNewEmployeePixKey1("");
+        setNewEmployeeFullName("");
+        setNewEmployeeBank("");
+        setNewEmployeePixKeyMain("");
         setNewEmployeePixKey2("");
         setNewEmployeePixKey3("");
         fetchEmployees();
@@ -131,7 +152,7 @@ const Employees = () => {
           <div className="bg-card p-6 rounded-lg border shadow-sm">
             <h2 className="text-lg font-semibold mb-4">Adicionar Novo Funcionário</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="md:col-span-2">
+              <div>
                 <Label htmlFor="name">Nome *</Label>
                 <Input
                   id="name"
@@ -143,13 +164,35 @@ const Employees = () => {
                 />
               </div>
               <div>
-                <Label htmlFor="pix1">Chave PIX 1 (opcional)</Label>
+                <Label htmlFor="fullName">Nome Completo *</Label>
                 <Input
-                  id="pix1"
+                  id="fullName"
+                  type="text"
+                  placeholder="Nome completo do funcionário"
+                  value={newEmployeeFullName}
+                  onChange={(e) => setNewEmployeeFullName(e.target.value)}
+                  disabled={loading}
+                />
+              </div>
+              <div>
+                <Label htmlFor="bank">Banco *</Label>
+                <Input
+                  id="bank"
+                  type="text"
+                  placeholder="Nome do banco"
+                  value={newEmployeeBank}
+                  onChange={(e) => setNewEmployeeBank(e.target.value)}
+                  disabled={loading}
+                />
+              </div>
+              <div>
+                <Label htmlFor="pixMain">Chave PIX Principal *</Label>
+                <Input
+                  id="pixMain"
                   type="text"
                   placeholder="CPF, e-mail, telefone ou chave aleatória"
-                  value={newEmployeePixKey1}
-                  onChange={(e) => setNewEmployeePixKey1(e.target.value)}
+                  value={newEmployeePixKeyMain}
+                  onChange={(e) => setNewEmployeePixKeyMain(e.target.value)}
                   disabled={loading}
                 />
               </div>
@@ -178,7 +221,7 @@ const Employees = () => {
               <div className="md:col-span-2">
                 <Button 
                   onClick={handleAddEmployee} 
-                  disabled={loading || !newEmployeeName.trim()}
+                  disabled={loading || !newEmployeeName.trim() || !newEmployeeFullName.trim() || !newEmployeeBank.trim() || !newEmployeePixKeyMain.trim()}
                   className="w-full"
                 >
                   {loading ? "Adicionando..." : "Adicionar Funcionário"}
@@ -201,8 +244,10 @@ const Employees = () => {
               <TableCaption>Lista de funcionários cadastrados</TableCaption>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Nome do Funcionário</TableHead>
-                  <TableHead>Chave PIX 1</TableHead>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>Nome Completo</TableHead>
+                  <TableHead>Banco</TableHead>
+                  <TableHead>Chave PIX Principal</TableHead>
                   <TableHead>Chave PIX 2</TableHead>
                   <TableHead>Chave PIX 3</TableHead>
                   <TableHead>Data de Criação</TableHead>
@@ -213,7 +258,9 @@ const Employees = () => {
                 {employees.map((employee) => (
                   <TableRow key={employee.id}>
                     <TableCell className="font-medium">{employee.name}</TableCell>
-                    <TableCell>{employee.pix_key_1 || "-"}</TableCell>
+                    <TableCell>{employee.full_name || "-"}</TableCell>
+                    <TableCell>{employee.bank || "-"}</TableCell>
+                    <TableCell>{employee.pix_key_main || "-"}</TableCell>
                     <TableCell>{employee.pix_key_2 || "-"}</TableCell>
                     <TableCell>{employee.pix_key_3 || "-"}</TableCell>
                     <TableCell>{new Date(employee.created_at).toLocaleDateString()}</TableCell>

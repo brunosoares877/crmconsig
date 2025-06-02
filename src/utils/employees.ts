@@ -4,7 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 export interface Employee {
   id: string;
   name: string;
-  pix_key_1?: string;
+  full_name: string;
+  bank: string;
+  pix_key_main: string;
   pix_key_2?: string;
   pix_key_3?: string;
   active: boolean;
@@ -30,9 +32,11 @@ export const getEmployees = async (): Promise<Employee[]> => {
 };
 
 export const createEmployee = async (
-  name: string, 
-  pixKey1?: string, 
-  pixKey2?: string, 
+  name: string,
+  fullName: string,
+  bank: string,
+  pixKeyMain: string,
+  pixKey2?: string,
   pixKey3?: string
 ): Promise<boolean> => {
   try {
@@ -43,7 +47,9 @@ export const createEmployee = async (
       .from("employees")
       .insert({
         name: name.trim(),
-        pix_key_1: pixKey1?.trim() || null,
+        full_name: fullName.trim(),
+        bank: bank.trim(),
+        pix_key_main: pixKeyMain.trim(),
         pix_key_2: pixKey2?.trim() || null,
         pix_key_3: pixKey3?.trim() || null,
         user_id: userData.user.id
