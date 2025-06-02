@@ -278,34 +278,40 @@ export type Database = {
       employees: {
         Row: {
           active: boolean
+          bank: string | null
           created_at: string
+          full_name: string | null
           id: string
           name: string
-          pix_key_1: string | null
           pix_key_2: string | null
           pix_key_3: string | null
+          pix_key_main: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
           active?: boolean
+          bank?: string | null
           created_at?: string
+          full_name?: string | null
           id?: string
           name: string
-          pix_key_1?: string | null
           pix_key_2?: string | null
           pix_key_3?: string | null
+          pix_key_main?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
           active?: boolean
+          bank?: string | null
           created_at?: string
+          full_name?: string | null
           id?: string
           name?: string
-          pix_key_1?: string | null
           pix_key_2?: string | null
           pix_key_3?: string | null
+          pix_key_main?: string | null
           updated_at?: string
           user_id?: string
         }
