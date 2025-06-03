@@ -27,10 +27,10 @@ const Index = () => {
       <Sidebar />
       <div className="w-full md:ml-64 transition-all duration-300">
         <Header />
-        <main className="w-full p-3 md:p-4 lg:p-6 xl:p-8">
-          <div className="max-w-7xl mx-auto space-y-6 md:space-y-8">
+        <main className="w-full p-3 md:p-4 lg:p-5 xl:p-6">
+          <div className="max-w-7xl mx-auto space-y-4 md:space-y-5">
             <TrialBanner />
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
               <div>
                 <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Dashboard</h1>
                 <p className="text-slate-600 text-sm mt-1">

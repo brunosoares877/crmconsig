@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Calendar as CalendarIcon, Loader2, Plus, Trash2, Edit, Check, X } from "lucide-react";
+import { Calendar as CalendarIcon, Loader2, Plus, Trash2, Edit, Check, X, Clock, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -32,6 +31,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Lead, Appointment } from "@/types/models";
@@ -248,44 +249,45 @@ const LeadScheduling = () => {
       <Sidebar />
       <div className="md:ml-64">
         <Header />
-        <main className="container mx-auto p-4 py-8">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h1 className="text-2xl font-bold">Agendamentos</h1>
-              <p className="text-muted-foreground">Gerencie os agendamentos com seus clientes</p>
+        <main className="container mx-auto p-6 py-8 space-y-8">
+          <div className="flex items-center justify-between">
+            <div className="space-y-2">
+              <h1 className="text-3xl font-bold">Agendamentos</h1>
+              <p className="text-muted-foreground text-lg">Gerencie os agendamentos com seus clientes</p>
             </div>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
-                <Button className="bg-blue-600 hover:bg-blue-700" onClick={openNewAppointmentDialog}>
-                  <Plus className="mr-2 h-4 w-4" />
+                <Button size="lg" className="bg-blue-600 hover:bg-blue-700" onClick={openNewAppointmentDialog}>
+                  <Plus className="mr-2 h-5 w-5" />
                   Novo Agendamento
                 </Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-lg">
-                <DialogHeader>
-                  <DialogTitle>{editingAppointment ? "Editar Agendamento" : "Criar Novo Agendamento"}</DialogTitle>
-                  <DialogDescription>
+                <DialogHeader className="space-y-3">
+                  <DialogTitle className="text-xl">{editingAppointment ? "Editar Agendamento" : "Criar Novo Agendamento"}</DialogTitle>
+                  <DialogDescription className="text-base">
                     {editingAppointment 
                       ? "Atualize os detalhes do agendamento." 
                       : "Agende uma visita ou reunião com o cliente."}
                   </DialogDescription>
                 </DialogHeader>
                 
-                <div className="space-y-4 py-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="title">Título*</Label>
+                <div className="space-y-6 py-6">
+                  <div className="space-y-3">
+                    <Label htmlFor="title" className="text-sm font-medium">Título*</Label>
                     <Input
                       id="title"
                       value={title}
                       onChange={(e) => setTitle(e.target.value)}
                       placeholder="Título do agendamento"
+                      className="h-11"
                     />
                   </div>
                   
-                  <div className="space-y-2">
-                    <Label htmlFor="lead">Cliente*</Label>
+                  <div className="space-y-3">
+                    <Label htmlFor="lead" className="text-sm font-medium">Cliente*</Label>
                     <Select value={leadId} onValueChange={setLeadId}>
-                      <SelectTrigger>
+                      <SelectTrigger className="h-11">
                         <SelectValue placeholder="Selecione um cliente" />
                       </SelectTrigger>
                       <SelectContent>
@@ -299,13 +301,13 @@ const LeadScheduling = () => {
                   </div>
                   
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="date">Data*</Label>
+                    <div className="space-y-3">
+                      <Label htmlFor="date" className="text-sm font-medium">Data*</Label>
                       <Popover>
                         <PopoverTrigger asChild>
                           <Button
                             variant="outline"
-                            className="w-full justify-start text-left font-normal"
+                            className="w-full justify-start text-left font-normal h-11"
                           >
                             <CalendarIcon className="mr-2 h-4 w-4" />
                             {date ? format(date, "PPP", { locale: ptBR }) : "Selecione uma data"}
@@ -323,22 +325,23 @@ const LeadScheduling = () => {
                       </Popover>
                     </div>
                     
-                    <div className="space-y-2">
-                      <Label htmlFor="time">Horário*</Label>
+                    <div className="space-y-3">
+                      <Label htmlFor="time" className="text-sm font-medium">Horário*</Label>
                       <Input
                         id="time"
                         type="time"
                         value={time}
                         onChange={(e) => setTime(e.target.value)}
+                        className="h-11"
                       />
                     </div>
                   </div>
                   
                   {editingAppointment && (
-                    <div className="space-y-2">
-                      <Label htmlFor="status">Status</Label>
+                    <div className="space-y-3">
+                      <Label htmlFor="status" className="text-sm font-medium">Status</Label>
                       <Select value={status} onValueChange={(value: "scheduled" | "completed" | "cancelled") => setStatus(value)}>
-                        <SelectTrigger>
+                        <SelectTrigger className="h-11">
                           <SelectValue placeholder="Selecione o status" />
                         </SelectTrigger>
                         <SelectContent>
@@ -350,19 +353,20 @@ const LeadScheduling = () => {
                     </div>
                   )}
                   
-                  <div className="space-y-2">
-                    <Label htmlFor="notes">Observações</Label>
+                  <div className="space-y-3">
+                    <Label htmlFor="notes" className="text-sm font-medium">Observações</Label>
                     <Textarea
                       id="notes"
                       value={notes}
                       onChange={(e) => setNotes(e.target.value)}
                       placeholder="Detalhes adicionais sobre o agendamento..."
                       rows={4}
+                      className="resize-none"
                     />
                   </div>
                 </div>
                 
-                <DialogFooter>
+                <DialogFooter className="gap-3">
                   <Button
                     variant="outline"
                     onClick={closeDialog}
@@ -373,6 +377,7 @@ const LeadScheduling = () => {
                   <Button
                     onClick={handleSubmit}
                     disabled={isSubmitting}
+                    className="bg-blue-600 hover:bg-blue-700"
                   >
                     {isSubmitting ? (
                       <>
@@ -389,94 +394,109 @@ const LeadScheduling = () => {
           </div>
 
           {isLoading ? (
-            <div className="space-y-4">
+            <div className="space-y-6">
               {[1, 2, 3].map(i => (
-                <div key={i} className="h-24 animate-pulse rounded-md bg-gray-100" />
+                <Card key={i} className="animate-pulse">
+                  <div className="h-32 bg-gray-100 rounded-md" />
+                </Card>
               ))}
             </div>
           ) : appointments.length > 0 ? (
-            <div className="space-y-4">
+            <div className="space-y-6">
               {appointments.map((appointment) => (
-                <div
+                <Card
                   key={appointment.id}
                   className={cn(
-                    "p-4 rounded-md border border-gray-200",
+                    "transition-all hover:shadow-md",
                     appointment.status === "cancelled" ? "bg-gray-50 opacity-80" : "bg-white"
                   )}
                 >
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <div className="flex items-center">
-                        <h3 className="font-medium text-lg">{appointment.title}</h3>
-                        <span className={cn("ml-2 text-xs px-2 py-1 rounded", getStatusColor(appointment.status))}>
-                          {getStatusText(appointment.status)}
-                        </span>
-                      </div>
-                      <p className="text-sm text-gray-500 mt-1">
-                        Cliente: <span className="font-medium">{getLeadName(appointment.lead_id)}</span>
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        Data: {formatDate(appointment.date)} às {appointment.time}
-                      </p>
-                      {appointment.notes && (
-                        <div className="mt-2 bg-gray-50 p-2 rounded-md text-sm">
-                          <span className="font-medium">Observações:</span>
-                          <p className="text-gray-600">{appointment.notes}</p>
+                  <CardHeader className="pb-4">
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1 space-y-3">
+                        <div className="flex items-center gap-3">
+                          <CardTitle className="text-xl">{appointment.title}</CardTitle>
+                          <Badge className={cn("text-sm px-3 py-1", getStatusColor(appointment.status))}>
+                            {getStatusText(appointment.status)}
+                          </Badge>
                         </div>
-                      )}
+                        
+                        <div className="space-y-2">
+                          <CardDescription className="flex items-center gap-2 text-base">
+                            <MapPin className="h-4 w-4" />
+                            Cliente: <span className="font-medium text-foreground">{getLeadName(appointment.lead_id)}</span>
+                          </CardDescription>
+                          <CardDescription className="flex items-center gap-2 text-base">
+                            <Clock className="h-4 w-4" />
+                            {formatDate(appointment.date)} às {appointment.time}
+                          </CardDescription>
+                        </div>
+                      </div>
+                      
+                      <div className="flex space-x-2">
+                        {appointment.status === "scheduled" && (
+                          <>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-10 w-10 text-green-600 hover:bg-green-50"
+                              title="Marcar como concluído"
+                              onClick={() => handleStatusChange(appointment, "completed")}
+                            >
+                              <Check className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-10 w-10 text-red-600 hover:bg-red-50"
+                              title="Cancelar agendamento"
+                              onClick={() => handleStatusChange(appointment, "cancelled")}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </>
+                        )}
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-10 w-10"
+                          onClick={() => handleEditAppointment(appointment)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-10 w-10 text-red-600 hover:bg-red-50"
+                          onClick={() => handleDeleteAppointment(appointment.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
-                    
-                    <div className="flex space-x-2">
-                      {appointment.status === "scheduled" && (
-                        <>
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-8 w-8 text-green-600"
-                            title="Marcar como concluído"
-                            onClick={() => handleStatusChange(appointment, "completed")}
-                          >
-                            <Check className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-8 w-8 text-red-600"
-                            title="Cancelar agendamento"
-                            onClick={() => handleStatusChange(appointment, "cancelled")}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </>
-                      )}
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={() => handleEditAppointment(appointment)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="h-8 w-8 text-red-600"
-                        onClick={() => handleDeleteAppointment(appointment.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
+                  </CardHeader>
+                  
+                  {appointment.notes && (
+                    <CardContent className="pt-0">
+                      <div className="bg-gray-50 p-4 rounded-md">
+                        <span className="font-medium text-sm text-gray-700">Observações:</span>
+                        <p className="text-gray-600 mt-1">{appointment.notes}</p>
+                      </div>
+                    </CardContent>
+                  )}
+                </Card>
               ))}
             </div>
           ) : (
-            <div className="text-center py-10 border rounded-md">
-              <h3 className="text-lg font-medium text-gray-900">Nenhum agendamento</h3>
-              <p className="mt-1 text-sm text-gray-500">
-                Crie o seu primeiro agendamento com um cliente.
-              </p>
-            </div>
+            <Card className="text-center py-16">
+              <CardContent>
+                <CalendarIcon className="h-16 w-16 mx-auto text-gray-400 mb-4" />
+                <h3 className="text-xl font-medium text-gray-900 mb-2">Nenhum agendamento</h3>
+                <p className="text-gray-500 text-lg">
+                  Crie o seu primeiro agendamento com um cliente.
+                </p>
+              </CardContent>
+            </Card>
           )}
         </main>
       </div>
