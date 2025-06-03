@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Calendar as CalendarIcon, Loader2, Plus, Trash2, Check, Filter } from "lucide-react";
+import { Calendar as CalendarIcon, Loader2, Plus, Trash2, Check, Filter, Clock, User, Building2, FileText, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -44,6 +43,8 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import Header from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
 import { toast } from "sonner";
@@ -271,11 +272,11 @@ const Portability = () => {
 
   const getStatusColor = (statusCode: string | undefined) => {
     switch (statusCode) {
-      case "integrado": return "bg-green-100 text-green-800";
-      case "cancelado": return "bg-red-100 text-red-800";
-      case "redigitado": return "bg-orange-100 text-orange-800";
-      case "pendente": return "bg-blue-100 text-blue-800";
-      default: return "bg-gray-100 text-gray-800";
+      case "integrado": return "bg-green-100 text-green-800 hover:bg-green-200";
+      case "cancelado": return "bg-red-100 text-red-800 hover:bg-red-200";
+      case "redigitado": return "bg-orange-100 text-orange-800 hover:bg-orange-200";
+      case "pendente": return "bg-blue-100 text-blue-800 hover:bg-blue-200";
+      default: return "bg-gray-100 text-gray-800 hover:bg-gray-200";
     }
   };
 
@@ -301,37 +302,41 @@ const Portability = () => {
       <Sidebar />
       <div className="md:ml-64">
         <Header />
-        <main className="container mx-auto p-4 py-8">
-          <div className="flex items-center justify-between mb-6">
-            <h1 className="text-2xl font-bold">Portabilidade - Lembretes</h1>
+        <main className="container mx-auto p-6 py-8 space-y-8">
+          <div className="flex items-center justify-between">
+            <div className="space-y-2">
+              <h1 className="text-3xl font-bold">Portabilidade - Lembretes</h1>
+              <p className="text-muted-foreground text-lg">Gerencie os lembretes de portabilidade bancária</p>
+            </div>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
-                <Button className="bg-blue-600 hover:bg-blue-700">
-                  <Plus className="mr-2 h-4 w-4" />
+                <Button size="lg" className="bg-blue-600 hover:bg-blue-700">
+                  <Plus className="mr-2 h-5 w-5" />
                   Novo Lembrete
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-md">
-                <DialogHeader>
-                  <DialogTitle>Criar Novo Lembrete</DialogTitle>
-                  <DialogDescription>
+              <DialogContent className="sm:max-w-lg">
+                <DialogHeader className="space-y-3">
+                  <DialogTitle className="text-xl">Criar Novo Lembrete</DialogTitle>
+                  <DialogDescription className="text-base">
                     Adicione um novo lembrete para acompanhamento de portabilidade.
                   </DialogDescription>
                 </DialogHeader>
                 
-                <div className="space-y-4 py-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="title">Título*</Label>
+                <div className="space-y-6 py-6">
+                  <div className="space-y-3">
+                    <Label htmlFor="title" className="text-sm font-medium">Título*</Label>
                     <Input
                       id="title"
                       value={title}
                       onChange={(e) => setTitle(e.target.value)}
                       placeholder="Título do lembrete"
+                      className="h-11"
                     />
                   </div>
                   
-                  <div className="space-y-2">
-                    <Label htmlFor="lead">Cliente</Label>
+                  <div className="space-y-3">
+                    <Label htmlFor="lead" className="text-sm font-medium">Cliente</Label>
                     <Select value={leadId} onValueChange={(value) => {
                       setLeadId(value);
                       // Clear bank filter when selecting a client that already has a bank
@@ -342,7 +347,7 @@ const Portability = () => {
                         }
                       }
                     }}>
-                      <SelectTrigger className="w-full">
+                      <SelectTrigger className="h-11">
                         <SelectValue placeholder="Selecione um cliente (opcional)" />
                       </SelectTrigger>
                       <SelectContent>
@@ -356,14 +361,13 @@ const Portability = () => {
                   </div>
                   
                   {!leadId && (
-                    <div className="space-y-2">
-                      <Label htmlFor="bank">Banco</Label>
+                    <div className="space-y-3">
+                      <Label htmlFor="bank" className="text-sm font-medium">Banco</Label>
                       <Select value={bankFilter} onValueChange={setBankFilter}>
-                        <SelectTrigger className="w-full">
+                        <SelectTrigger className="h-11">
                           <SelectValue placeholder="Selecione um banco (opcional)" />
                         </SelectTrigger>
                         <SelectContent>
-                          {/* Bancos principais */}
                           <SelectItem value="caixa">Caixa Econômica Federal</SelectItem>
                           <SelectItem value="bb">Banco do Brasil</SelectItem>
                           <SelectItem value="itau">Itaú</SelectItem>
@@ -371,8 +375,6 @@ const Portability = () => {
                           <SelectItem value="santander">Santander</SelectItem>
                           <SelectItem value="c6">C6 Bank</SelectItem>
                           <SelectItem value="brb">BRB - Banco de Brasília</SelectItem>
-                          
-                          {/* Todos os bancos da Rede */}
                           <SelectItem value="bmg">BMG</SelectItem>
                           <SelectItem value="pan">Banco Pan</SelectItem>
                           <SelectItem value="ole">Banco Olé</SelectItem>
@@ -392,10 +394,10 @@ const Portability = () => {
                     </div>
                   )}
 
-                  <div className="space-y-2">
-                    <Label htmlFor="status">Status</Label>
+                  <div className="space-y-3">
+                    <Label htmlFor="status" className="text-sm font-medium">Status</Label>
                     <Select value={status} onValueChange={setStatus}>
-                      <SelectTrigger className="w-full">
+                      <SelectTrigger className="h-11">
                         <SelectValue placeholder="Selecione um status" />
                       </SelectTrigger>
                       <SelectContent>
@@ -407,13 +409,13 @@ const Portability = () => {
                     </Select>
                   </div>
                   
-                  <div className="space-y-2">
-                    <Label htmlFor="date">Data*</Label>
+                  <div className="space-y-3">
+                    <Label htmlFor="date" className="text-sm font-medium">Data*</Label>
                     <Popover>
                       <PopoverTrigger asChild>
                         <Button
                           variant="outline"
-                          className="w-full justify-start text-left font-normal"
+                          className="w-full justify-start text-left font-normal h-11"
                         >
                           <CalendarIcon className="mr-2 h-4 w-4" />
                           {date ? format(date, "PPP", { locale: ptBR }) : "Selecione uma data"}
@@ -430,18 +432,20 @@ const Portability = () => {
                     </Popover>
                   </div>
                   
-                  <div className="space-y-2">
-                    <Label htmlFor="notes">Observações</Label>
+                  <div className="space-y-3">
+                    <Label htmlFor="notes" className="text-sm font-medium">Observações</Label>
                     <Textarea
                       id="notes"
                       value={notes}
                       onChange={(e) => setNotes(e.target.value)}
                       placeholder="Detalhes adicionais..."
+                      rows={4}
+                      className="resize-none"
                     />
                   </div>
                 </div>
                 
-                <DialogFooter className="sm:justify-end">
+                <DialogFooter className="gap-3">
                   <Button
                     variant="outline"
                     onClick={() => setIsDialogOpen(false)}
@@ -452,6 +456,7 @@ const Portability = () => {
                   <Button
                     onClick={handleCreateReminder}
                     disabled={isSubmitting}
+                    className="bg-blue-600 hover:bg-blue-700"
                   >
                     {isSubmitting ? (
                       <>
@@ -478,117 +483,136 @@ const Portability = () => {
           </Tabs>
 
           {isLoading ? (
-            <div className="space-y-4">
+            <div className="space-y-6">
               {[1, 2, 3].map(i => (
-                <div key={i} className="h-24 animate-pulse rounded-md bg-gray-100" />
+                <Card key={i} className="animate-pulse">
+                  <div className="h-32 bg-gray-100 rounded-md" />
+                </Card>
               ))}
             </div>
           ) : filteredReminders.length > 0 ? (
-            <div className="space-y-4">
+            <div className="space-y-6">
               {filteredReminders.map((reminder) => (
-                <div
+                <Card
                   key={reminder.id}
                   className={cn(
-                    "flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-md border",
-                    reminder.is_completed ? "bg-gray-50 opacity-70" : "bg-white",
+                    "transition-all hover:shadow-md",
+                    reminder.is_completed ? "bg-gray-50 opacity-80" : "bg-white",
                     isPastDue(reminder.due_date, reminder.is_completed) ? "border-red-300" : "border-gray-200"
                   )}
                 >
-                  <div className="flex-1 mb-3 sm:mb-0">
-                    <div className="flex items-center flex-wrap gap-2 mb-2">
-                      <h3 className={cn(
-                        "font-medium",
-                        reminder.is_completed && "line-through text-gray-500"
-                      )}>
-                        {reminder.title}
-                      </h3>
-                      {isPastDue(reminder.due_date, reminder.is_completed) && (
-                        <span className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded">
-                          Atrasado
-                        </span>
-                      )}
-                      {reminder.status && (
-                        <span className={`text-xs px-2 py-1 rounded ${getStatusColor(reminder.status)}`}>
-                          {getStatusLabel(reminder.status)}
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-sm text-gray-500 mt-1">
-                      Cliente: {getLeadName(reminder.lead_id)}
-                    </p>
-                    {reminder.bank && (
-                      <p className="text-sm text-gray-500">
-                        Banco: {getBankName(reminder.bank)}
-                      </p>
-                    )}
-                    <p className="text-sm text-gray-500">
-                      Data: {formatDate(reminder.due_date)}
-                    </p>
-                    {reminder.notes && (
-                      <p className="text-sm text-gray-600 mt-2">{reminder.notes}</p>
-                    )}
-                  </div>
-                  
-                  <div className="flex flex-wrap gap-2 justify-end">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
+                  <CardHeader className="pb-4">
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1 space-y-3">
+                        <div className="flex items-center gap-3 flex-wrap">
+                          <CardTitle className="text-xl">{reminder.title}</CardTitle>
+                          {isPastDue(reminder.due_date, reminder.is_completed) && (
+                            <Badge className="bg-red-100 text-red-800 hover:bg-red-200 px-3 py-1 text-sm">
+                              Atrasado
+                            </Badge>
+                          )}
+                          {reminder.status && (
+                            <Badge className={`px-3 py-1 text-sm ${getStatusColor(reminder.status)}`}>
+                              {getStatusLabel(reminder.status)}
+                            </Badge>
+                          )}
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <CardDescription className="flex items-center gap-2 text-base">
+                            <User className="h-4 w-4" />
+                            Cliente: <span className="font-medium text-foreground">{getLeadName(reminder.lead_id)}</span>
+                          </CardDescription>
+                          {reminder.bank && (
+                            <CardDescription className="flex items-center gap-2 text-base">
+                              <Building2 className="h-4 w-4" />
+                              Banco: <span className="font-medium text-foreground">{getBankName(reminder.bank)}</span>
+                            </CardDescription>
+                          )}
+                          <CardDescription className="flex items-center gap-2 text-base">
+                            <Clock className="h-4 w-4" />
+                            Data: <span className="font-medium text-foreground">{formatDate(reminder.due_date)}</span>
+                          </CardDescription>
+                        </div>
+                      </div>
+                      
+                      <div className="flex flex-wrap gap-2 justify-end">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-10 px-3"
+                            >
+                              Status <Filter className="ml-2 h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Alterar Status</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => handleUpdateReminderStatus(reminder, "pendente")}>
+                              Pendente
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleUpdateReminderStatus(reminder, "integrado")}>
+                              Integrado
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleUpdateReminderStatus(reminder, "cancelado")}>
+                              Cancelado
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleUpdateReminderStatus(reminder, "redigitado")}>
+                              Redigitado
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                         <Button
                           variant="outline"
-                          size="sm"
-                          className="h-8"
+                          size="icon"
+                          className={cn(
+                            "h-10 w-10",
+                            reminder.is_completed ? "text-green-600 bg-green-50" : "hover:bg-green-50"
+                          )}
+                          onClick={() => handleToggleComplete(reminder)}
                         >
-                          Status <Filter className="ml-2 h-4 w-4" />
+                          <Check className="h-4 w-4" />
                         </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Alterar Status</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => handleUpdateReminderStatus(reminder, "pendente")}>
-                          Pendente
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleUpdateReminderStatus(reminder, "integrado")}>
-                          Integrado
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleUpdateReminderStatus(reminder, "cancelado")}>
-                          Cancelado
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleUpdateReminderStatus(reminder, "redigitado")}>
-                          Redigitado
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className={cn(
-                        "h-8 w-8",
-                        reminder.is_completed ? "text-green-600" : ""
-                      )}
-                      onClick={() => handleToggleComplete(reminder)}
-                    >
-                      <Check className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-8 w-8 text-red-600"
-                      onClick={() => handleDeleteReminder(reminder.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-10 w-10 text-red-600 hover:bg-red-50"
+                          onClick={() => handleDeleteReminder(reminder.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  
+                  {reminder.notes && (
+                    <CardContent className="pt-0">
+                      <div className="bg-gray-50 p-4 rounded-md">
+                        <div className="flex items-center gap-2 mb-2">
+                          <FileText className="h-4 w-4 text-gray-600" />
+                          <span className="font-medium text-sm text-gray-700">Observações:</span>
+                        </div>
+                        <p className="text-gray-600">{reminder.notes}</p>
+                      </div>
+                    </CardContent>
+                  )}
+                </Card>
               ))}
             </div>
           ) : (
-            <div className="text-center py-10 border rounded-md">
-              <h3 className="text-lg font-medium text-gray-900">Nenhum lembrete</h3>
-              <p className="mt-1 text-sm text-gray-500">
-                {activeTab === "all" 
-                  ? "Crie o seu primeiro lembrete para acompanhamento de portabilidade."
-                  : `Não há lembretes com status "${getStatusLabel(activeTab)}".`}
-              </p>
-            </div>
+            <Card className="text-center py-16">
+              <CardContent>
+                <AlertCircle className="h-16 w-16 mx-auto text-gray-400 mb-4" />
+                <h3 className="text-xl font-medium text-gray-900 mb-2">Nenhum lembrete</h3>
+                <p className="text-gray-500 text-lg">
+                  {activeTab === "all" 
+                    ? "Crie o seu primeiro lembrete para acompanhamento de portabilidade."
+                    : `Não há lembretes com status "${getStatusLabel(activeTab)}".`}
+                </p>
+              </CardContent>
+            </Card>
           )}
         </main>
       </div>

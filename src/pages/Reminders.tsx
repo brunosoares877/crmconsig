@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Calendar as CalendarIcon, Loader2, Plus, Trash2, Check, Clock, X } from "lucide-react";
+import { Calendar as CalendarIcon, Loader2, Plus, Trash2, Check, Clock, User, FileText, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -35,6 +34,7 @@ import Sidebar from "@/components/Sidebar";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Tabs,
   TabsContent,
@@ -235,11 +235,11 @@ const Reminders = () => {
 
   const getReminderStatusBadge = (reminder: Reminder) => {
     if (reminder.is_completed) {
-      return <Badge className="bg-green-500 hover:bg-green-600">Finalizado</Badge>;
+      return <Badge className="bg-green-100 text-green-800 hover:bg-green-200 px-3 py-1 text-sm">Finalizado</Badge>;
     } else if (isPastDue(reminder.due_date, reminder.is_completed)) {
-      return <Badge className="bg-red-500 hover:bg-red-600">Atrasado</Badge>;
+      return <Badge className="bg-red-100 text-red-800 hover:bg-red-200 px-3 py-1 text-sm">Atrasado</Badge>;
     } else {
-      return <Badge className="bg-blue-500 hover:bg-blue-600">Pendente</Badge>;
+      return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-200 px-3 py-1 text-sm">Pendente</Badge>;
     }
   };
 
@@ -248,39 +248,43 @@ const Reminders = () => {
       <Sidebar />
       <div className="md:ml-64">
         <Header />
-        <main className="container mx-auto p-4 py-8">
-          <div className="flex items-center justify-between mb-6">
-            <h1 className="text-2xl font-bold">Lembretes</h1>
+        <main className="container mx-auto p-6 py-8 space-y-8">
+          <div className="flex items-center justify-between">
+            <div className="space-y-2">
+              <h1 className="text-3xl font-bold">Lembretes</h1>
+              <p className="text-muted-foreground text-lg">Gerencie seus lembretes e acompanhamentos</p>
+            </div>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
-                <Button className="bg-blue-600 hover:bg-blue-700">
-                  <Plus className="mr-2 h-4 w-4" />
+                <Button size="lg" className="bg-blue-600 hover:bg-blue-700">
+                  <Plus className="mr-2 h-5 w-5" />
                   Novo Lembrete
                 </Button>
               </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Criar Novo Lembrete</DialogTitle>
-                  <DialogDescription>
+              <DialogContent className="sm:max-w-lg">
+                <DialogHeader className="space-y-3">
+                  <DialogTitle className="text-xl">Criar Novo Lembrete</DialogTitle>
+                  <DialogDescription className="text-base">
                     Adicione um novo lembrete para acompanhamento.
                   </DialogDescription>
                 </DialogHeader>
                 
-                <div className="space-y-4 py-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="title">Título*</Label>
+                <div className="space-y-6 py-6">
+                  <div className="space-y-3">
+                    <Label htmlFor="title" className="text-sm font-medium">Título*</Label>
                     <Input
                       id="title"
                       value={title}
                       onChange={(e) => setTitle(e.target.value)}
                       placeholder="Título do lembrete"
+                      className="h-11"
                     />
                   </div>
                   
-                  <div className="space-y-2">
-                    <Label htmlFor="lead">Cliente</Label>
+                  <div className="space-y-3">
+                    <Label htmlFor="lead" className="text-sm font-medium">Cliente</Label>
                     <Select value={leadId} onValueChange={setLeadId}>
-                      <SelectTrigger>
+                      <SelectTrigger className="h-11">
                         <SelectValue placeholder="Selecione um cliente (opcional)" />
                       </SelectTrigger>
                       <SelectContent>
@@ -293,13 +297,13 @@ const Reminders = () => {
                     </Select>
                   </div>
                   
-                  <div className="space-y-2">
-                    <Label htmlFor="date">Data*</Label>
+                  <div className="space-y-3">
+                    <Label htmlFor="date" className="text-sm font-medium">Data*</Label>
                     <Popover>
                       <PopoverTrigger asChild>
                         <Button
                           variant="outline"
-                          className="w-full justify-start text-left font-normal"
+                          className="w-full justify-start text-left font-normal h-11"
                         >
                           <CalendarIcon className="mr-2 h-4 w-4" />
                           {date ? format(date, "PPP", { locale: ptBR }) : "Selecione uma data"}
@@ -316,18 +320,20 @@ const Reminders = () => {
                     </Popover>
                   </div>
                   
-                  <div className="space-y-2">
-                    <Label htmlFor="notes">Observações</Label>
+                  <div className="space-y-3">
+                    <Label htmlFor="notes" className="text-sm font-medium">Observações</Label>
                     <Textarea
                       id="notes"
                       value={notes}
                       onChange={(e) => setNotes(e.target.value)}
                       placeholder="Detalhes adicionais..."
+                      rows={4}
+                      className="resize-none"
                     />
                   </div>
                 </div>
                 
-                <DialogFooter>
+                <DialogFooter className="gap-3">
                   <Button
                     variant="outline"
                     onClick={() => setIsDialogOpen(false)}
@@ -338,6 +344,7 @@ const Reminders = () => {
                   <Button
                     onClick={handleCreateReminder}
                     disabled={isSubmitting}
+                    className="bg-blue-600 hover:bg-blue-700"
                   >
                     {isSubmitting ? (
                       <>
@@ -363,74 +370,91 @@ const Reminders = () => {
           </Tabs>
 
           {isLoading ? (
-            <div className="space-y-4">
+            <div className="space-y-6">
               {[1, 2, 3].map(i => (
-                <div key={i} className="h-24 animate-pulse rounded-md bg-gray-100" />
+                <Card key={i} className="animate-pulse">
+                  <div className="h-32 bg-gray-100 rounded-md" />
+                </Card>
               ))}
             </div>
           ) : filteredReminders.length > 0 ? (
-            <div className="space-y-4">
+            <div className="space-y-6">
               {filteredReminders.map((reminder) => (
-                <div
+                <Card
                   key={reminder.id}
                   className={cn(
-                    "flex items-center justify-between p-4 rounded-md border",
-                    reminder.is_completed ? "bg-gray-50 opacity-70" : "bg-white",
-                    isPastDue(reminder.due_date, reminder.is_completed) ? "border-red-300" : "border-gray-200"
+                    "transition-all hover:shadow-md",
+                    reminder.is_completed ? "bg-gray-50 opacity-80" : "bg-white"
                   )}
                 >
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <h3 className={cn(
-                        "font-medium",
-                        reminder.is_completed && "line-through text-gray-500"
-                      )}>
-                        {reminder.title}
-                      </h3>
-                      {getReminderStatusBadge(reminder)}
+                  <CardHeader className="pb-4">
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1 space-y-3">
+                        <div className="flex items-center gap-3">
+                          <CardTitle className="text-xl">{reminder.title}</CardTitle>
+                          {getReminderStatusBadge(reminder)}
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <CardDescription className="flex items-center gap-2 text-base">
+                            <User className="h-4 w-4" />
+                            Cliente: <span className="font-medium text-foreground">{getLeadName(reminder.lead_id)}</span>
+                          </CardDescription>
+                          <CardDescription className="flex items-center gap-2 text-base">
+                            <Clock className="h-4 w-4" />
+                            Data: <span className="font-medium text-foreground">{formatDate(reminder.due_date)}</span>
+                          </CardDescription>
+                        </div>
+                      </div>
+                      
+                      <div className="flex space-x-2">
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className={cn(
+                            "h-10 w-10",
+                            reminder.is_completed ? "text-green-600 bg-green-50" : "hover:bg-green-50"
+                          )}
+                          onClick={() => handleToggleComplete(reminder)}
+                        >
+                          <Check className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-10 w-10 text-red-600 hover:bg-red-50"
+                          onClick={() => handleDeleteReminder(reminder.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
-                    <p className="text-sm text-gray-500 mt-1">
-                      Cliente: {getLeadName(reminder.lead_id)}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      Data: {formatDate(reminder.due_date)}
-                    </p>
-                    {reminder.notes && (
-                      <p className="text-sm text-gray-600 mt-2">{reminder.notes}</p>
-                    )}
-                  </div>
+                  </CardHeader>
                   
-                  <div className="flex space-x-2">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className={cn(
-                        "h-8 w-8",
-                        reminder.is_completed ? "text-green-600" : ""
-                      )}
-                      onClick={() => handleToggleComplete(reminder)}
-                    >
-                      <Check className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-8 w-8 text-red-600"
-                      onClick={() => handleDeleteReminder(reminder.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
+                  {reminder.notes && (
+                    <CardContent className="pt-0">
+                      <div className="bg-gray-50 p-4 rounded-md">
+                        <div className="flex items-center gap-2 mb-2">
+                          <FileText className="h-4 w-4 text-gray-600" />
+                          <span className="font-medium text-sm text-gray-700">Observações:</span>
+                        </div>
+                        <p className="text-gray-600">{reminder.notes}</p>
+                      </div>
+                    </CardContent>
+                  )}
+                </Card>
               ))}
             </div>
           ) : (
-            <div className="text-center py-10 border rounded-md">
-              <h3 className="text-lg font-medium text-gray-900">Nenhum lembrete</h3>
-              <p className="mt-1 text-sm text-gray-500">
-                Crie o seu primeiro lembrete para acompanhamento.
-              </p>
-            </div>
+            <Card className="text-center py-16">
+              <CardContent>
+                <AlertCircle className="h-16 w-16 mx-auto text-gray-400 mb-4" />
+                <h3 className="text-xl font-medium text-gray-900 mb-2">Nenhum lembrete</h3>
+                <p className="text-gray-500 text-lg">
+                  Crie o seu primeiro lembrete para acompanhamento.
+                </p>
+              </CardContent>
+            </Card>
           )}
         </main>
       </div>
