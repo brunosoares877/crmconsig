@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { CircleCheck } from "lucide-react";
@@ -9,7 +8,6 @@ const SubscriptionPlans = () => {
       window.location.href = url;
     } catch (error) {
       console.error("Payment error:", error);
-      toast.error("Erro ao processar pagamento. Tente novamente.");
     }
   };
 
