@@ -6,12 +6,14 @@ import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { MoreHorizontal, Phone, Mail, DollarSign, Building, User, Edit, Trash2, Calendar } from "lucide-react";
+import { MoreHorizontal, Phone, Mail, DollarSign, Building, User, Edit, Trash2, Calendar, FileText } from "lucide-react";
 import { Lead } from "@/types/models";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import LeadForm from "./LeadForm";
 import ClientVisits from "./leads/ClientVisits";
+import DocumentUpload from "./leads/DocumentUpload";
+import WhatsAppButton from "./WhatsAppButton";
 
 interface LeadCardProps {
   lead: Lead;
@@ -177,10 +179,19 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete }) => {
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 gap-3 text-sm">
             {lead.phone && (
-              <div className="flex items-center gap-2">
-                <Phone className="h-4 w-4 text-blue-500" />
-                <span className="font-medium">Telefone:</span>
-                <span>{formatPhone(lead.phone)}</span>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Phone className="h-4 w-4 text-blue-500" />
+                  <span className="font-medium">Telefone:</span>
+                  <span>{formatPhone(lead.phone)}</span>
+                </div>
+                <WhatsAppButton 
+                  phoneNumber={lead.phone}
+                  message={`Olá ${lead.name}, sou da equipe LeadConsig. Como posso ajudá-lo?`}
+                  variant="regular"
+                  label="WhatsApp"
+                  className="h-8 text-xs px-2"
+                />
               </div>
             )}
             
@@ -225,6 +236,14 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete }) => {
               <span className="font-medium text-sm">Histórico de Visitas:</span>
             </div>
             <ClientVisits leadId={lead.id} leadName={lead.name} />
+          </div>
+
+          <div className="border-t pt-3">
+            <div className="flex items-center gap-2 mb-2">
+              <FileText className="h-4 w-4 text-gray-500" />
+              <span className="font-medium text-sm">Documentos:</span>
+            </div>
+            <DocumentUpload leadId={lead.id} />
           </div>
         </CardContent>
       </Card>

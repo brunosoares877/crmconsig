@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, PhoneCall, CalendarCheck, TrendingUp, TrendingDown, User, Search, BarChart3 } from "lucide-react";
+import { Users, PhoneCall, CalendarCheck, TrendingUp, TrendingDown, User, Search, BarChart3, DollarSign } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { format, startOfToday, endOfToday, startOfMonth, endOfMonth, differenceInMinutes } from "date-fns";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -18,7 +18,8 @@ const Dashboard = () => {
     leadsToday: 0,
     leadsThisMonth: 0,
     averageLeadsPerDay: 0,
-    averageTimeBetweenLeads: "0min"
+    averageTimeBetweenLeads: "0min",
+    monthlyProduction: 0
   });
   const [isLoading, setIsLoading] = useState(true);
   const [dailyProduction, setDailyProduction] = useState([]);
@@ -89,6 +90,22 @@ const Dashboard = () => {
         // Calculate average leads per day in this month
         const daysPassed = Math.max(1, new Date().getDate());
         const averageLeadsPerDay = leadsThisMonth ? parseFloat((leadsThisMonth / daysPassed).toFixed(1)) : 0;
+
+        // Get monthly production (all converted leads this month)
+        const {
+          data: monthlyConvertedLeads,
+          error: monthlyError
+        } = await supabase.from('leads').select('amount').eq('status', 'convertido').gte('updated_at', monthStart).lte('updated_at', monthEnd);
+        
+        if (monthlyError) {
+          console.error('Error fetching monthly production:', monthlyError);
+        }
+
+        // Calculate total monthly production
+        const monthlyProduction = monthlyConvertedLeads ? monthlyConvertedLeads.reduce((total, lead) => {
+          const amount = parseFloat(lead.amount?.replace(/[^\d,]/g, '').replace(',', '.') || "0");
+          return isNaN(amount) ? total : total + amount;
+        }, 0) : 0;
 
         // Fetch daily production data
         const {
@@ -166,7 +183,8 @@ const Dashboard = () => {
           leadsToday: leadsToday || 0,
           leadsThisMonth: leadsThisMonth || 0,
           averageLeadsPerDay: averageLeadsPerDay,
-          averageTimeBetweenLeads: averageTimeBetweenLeads
+          averageTimeBetweenLeads: averageTimeBetweenLeads,
+          monthlyProduction: monthlyProduction
         });
       } catch (error) {
         console.error('Error fetching metrics:', error);
@@ -212,14 +230,14 @@ const Dashboard = () => {
     iconBg: "bg-green-50",
     iconColor: "text-green-600"
   }, {
-    title: "Média por Dia",
-    value: metrics.averageLeadsPerDay.toString(),
-    change: calculateChange(metrics.averageLeadsPerDay, metrics.averageLeadsPerDay - 0.2),
-    subtitle: `Média diária do mês`,
+    title: "Produção Mensal",
+    value: `R$ ${metrics.monthlyProduction.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+    change: calculateChange(metrics.monthlyProduction, metrics.monthlyProduction - 5000),
+    subtitle: `Total vendido no mês`,
     positive: true,
-    icon: <CalendarCheck className="h-4 w-4 lg:h-5 lg:w-5" />,
-    iconBg: "bg-purple-50",
-    iconColor: "text-purple-600"
+    icon: <DollarSign className="h-4 w-4 lg:h-5 lg:w-5" />,
+    iconBg: "bg-emerald-50",
+    iconColor: "text-emerald-600"
   }, {
     title: "Conversão",
     value: "12%",
