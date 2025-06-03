@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -47,13 +46,6 @@ const Sales = () => {
                   >
                     Começar Teste Gratuito <ArrowRight className="ml-2 h-4 w-4 md:h-5 md:w-5" />
                   </Button>
-                  
-                  <WhatsAppButton 
-                    phoneNumber="5584991850149" 
-                    message="Olá! Gostaria de saber mais sobre o sistema LeadConsig" 
-                    label="Falar com Consultor"
-                    className="w-full sm:w-auto"
-                  />
                 </div>
               </div>
               <div className="w-full lg:w-1/2">
