@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import Header from "@/components/Header";
-import Sidebar from "@/components/Sidebar";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Calendar as CalendarIcon, Loader2, Plus, Trash2, Edit, Check, X, Clock, MapPin } from "lucide-react";
+import { Calendar as CalendarIcon, Loader2, Plus, Trash2, Edit, Check, X, Clock, MapPin, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -36,14 +34,26 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Lead, Appointment } from "@/types/models";
+import Header from "@/components/Header";
+import Sidebar from "@/components/Sidebar";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
+
+type AppointmentStatus = "all" | "completed" | "overdue" | "pending";
 
 const LeadScheduling = () => {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [filteredAppointments, setFilteredAppointments] = useState<Appointment[]>([]);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
+  const [currentStatus, setCurrentStatus] = useState<AppointmentStatus>("all");
 
   // Form state
   const [title, setTitle] = useState("");
@@ -75,6 +85,7 @@ const LeadScheduling = () => {
         
       if (appointmentsError) throw appointmentsError;
       setAppointments(appointmentsData as Appointment[]);
+      setFilteredAppointments(appointmentsData as Appointment[]);
     } catch (error: any) {
       console.error("Error fetching data:", error);
       toast.error(`Erro ao carregar dados: ${error.message}`);
@@ -86,6 +97,37 @@ const LeadScheduling = () => {
   useEffect(() => {
     fetchData();
   }, []);
+
+  useEffect(() => {
+    filterAppointments(currentStatus);
+  }, [appointments, currentStatus]);
+
+  const filterAppointments = (status: AppointmentStatus) => {
+    setCurrentStatus(status);
+    
+    if (status === "all") {
+      setFilteredAppointments(appointments);
+      return;
+    }
+    
+    const now = new Date();
+    
+    const filtered = appointments.filter(appointment => {
+      const appointmentDate = new Date(`${appointment.date} ${appointment.time}`);
+      
+      if (status === "completed") {
+        return appointment.status === "completed";
+      } else if (status === "overdue") {
+        return appointment.status === "scheduled" && appointmentDate < now;
+      } else if (status === "pending") {
+        return appointment.status === "scheduled" && appointmentDate >= now;
+      }
+      
+      return true;
+    });
+    
+    setFilteredAppointments(filtered);
+  };
 
   const handleSubmit = async () => {
     if (!title || !leadId || !date || !time) {
@@ -244,12 +286,31 @@ const LeadScheduling = () => {
     resetForm();
   };
 
+  const isPastDue = (dateString: string, timeString: string, appointmentStatus: string) => {
+    if (appointmentStatus === "completed") return false;
+    const appointmentDate = new Date(`${dateString} ${timeString}`);
+    const now = new Date();
+    return appointmentDate < now && appointmentStatus === "scheduled";
+  };
+
+  const getAppointmentStatusBadge = (appointment: Appointment) => {
+    if (appointment.status === "completed") {
+      return <Badge className="bg-green-100 text-green-800 hover:bg-green-200 px-3 py-1 text-sm">Finalizado</Badge>;
+    } else if (appointment.status === "cancelled") {
+      return <Badge className="bg-red-100 text-red-800 hover:bg-red-200 px-3 py-1 text-sm">Cancelado</Badge>;
+    } else if (isPastDue(appointment.date, appointment.time, appointment.status)) {
+      return <Badge className="bg-red-100 text-red-800 hover:bg-red-200 px-3 py-1 text-sm">Atrasado</Badge>;
+    } else {
+      return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-200 px-3 py-1 text-sm">Pendente</Badge>;
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Sidebar />
-      <div className="md:ml-64">
+      <div className="ml-0 md:ml-64">
         <Header />
-        <main className="container mx-auto p-6 py-8 space-y-8">
+        <main className="w-full p-4 md:p-6 py-8 space-y-8">
           <div className="flex items-center justify-between">
             <div className="space-y-2">
               <h1 className="text-3xl font-bold">Agendamentos</h1>
@@ -393,6 +454,15 @@ const LeadScheduling = () => {
             </Dialog>
           </div>
 
+          <Tabs defaultValue="all" className="mb-6" onValueChange={(value) => filterAppointments(value as AppointmentStatus)}>
+            <TabsList className="grid w-full grid-cols-4 md:w-auto">
+              <TabsTrigger value="all">Todos</TabsTrigger>
+              <TabsTrigger value="completed">Finalizados</TabsTrigger>
+              <TabsTrigger value="overdue">Atrasados</TabsTrigger>
+              <TabsTrigger value="pending">Pendentes</TabsTrigger>
+            </TabsList>
+          </Tabs>
+
           {isLoading ? (
             <div className="space-y-6">
               {[1, 2, 3].map(i => (
@@ -401,9 +471,9 @@ const LeadScheduling = () => {
                 </Card>
               ))}
             </div>
-          ) : appointments.length > 0 ? (
+          ) : filteredAppointments.length > 0 ? (
             <div className="space-y-6">
-              {appointments.map((appointment) => (
+              {filteredAppointments.map((appointment) => (
                 <Card
                   key={appointment.id}
                   className={cn(
@@ -416,9 +486,7 @@ const LeadScheduling = () => {
                       <div className="flex-1 space-y-3">
                         <div className="flex items-center gap-3">
                           <CardTitle className="text-xl">{appointment.title}</CardTitle>
-                          <Badge className={cn("text-sm px-3 py-1", getStatusColor(appointment.status))}>
-                            {getStatusText(appointment.status)}
-                          </Badge>
+                          {getAppointmentStatusBadge(appointment)}
                         </div>
                         
                         <div className="space-y-2">
@@ -479,8 +547,11 @@ const LeadScheduling = () => {
                   {appointment.notes && (
                     <CardContent className="pt-0">
                       <div className="bg-gray-50 p-4 rounded-md">
-                        <span className="font-medium text-sm text-gray-700">Observações:</span>
-                        <p className="text-gray-600 mt-1">{appointment.notes}</p>
+                        <div className="flex items-center gap-2 mb-2">
+                          <MapPin className="h-4 w-4 text-gray-600" />
+                          <span className="font-medium text-sm text-gray-700">Observações:</span>
+                        </div>
+                        <p className="text-gray-600">{appointment.notes}</p>
                       </div>
                     </CardContent>
                   )}
@@ -490,7 +561,7 @@ const LeadScheduling = () => {
           ) : (
             <Card className="text-center py-16">
               <CardContent>
-                <CalendarIcon className="h-16 w-16 mx-auto text-gray-400 mb-4" />
+                <AlertCircle className="h-16 w-16 mx-auto text-gray-400 mb-4" />
                 <h3 className="text-xl font-medium text-gray-900 mb-2">Nenhum agendamento</h3>
                 <p className="text-gray-500 text-lg">
                   Crie o seu primeiro agendamento com um cliente.

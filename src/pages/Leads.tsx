@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import Header from "@/components/Header";
 import LeadList from "@/components/LeadList";
@@ -9,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
+
 const Leads = () => {
   const [activeTab, setActiveTab] = useState("all");
   const [leadStats, setLeadStats] = useState({
@@ -19,6 +21,7 @@ const Leads = () => {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+
   useEffect(() => {
     const fetchLeadStats = async () => {
       setIsLoading(true);
@@ -89,11 +92,13 @@ const Leads = () => {
     };
     fetchLeadStats();
   }, []);
-  return <div className="min-h-screen bg-background">
+
+  return (
+    <div className="min-h-screen bg-background">
       <Sidebar />
-      <div className="md:ml-64 transition-all duration-300">
+      <div className="ml-0 md:ml-64 transition-all duration-300">
         <Header />
-        <main className="container mx-auto space-y-6 p-4 py-8">
+        <main className="w-full space-y-6 p-4 md:p-6 py-8">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6">
             <div>
               <h1 className="text-3xl font-bold text-slate-900">Gestão de Leads</h1>
@@ -177,6 +182,7 @@ const Leads = () => {
           </Tabs>
         </main>
       </div>
-    </div>;
+    </div>
+  );
 };
 export default Leads;
