@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -171,66 +170,58 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-blue-800 flex items-center justify-center p-4">
-      {/* Background decorative elements */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-20 left-20 w-32 h-32 rounded-full bg-white/5"></div>
-        <div className="absolute bottom-32 right-32 w-24 h-24 rounded-full bg-blue-400/10"></div>
-        <div className="absolute top-1/2 right-20 w-16 h-16 rounded-full bg-purple-400/10"></div>
-        <div className="absolute bottom-20 left-1/4 w-20 h-20 rounded-full bg-white/5"></div>
-      </div>
-
-      <div className="w-full max-w-6xl flex items-center justify-between relative z-10">
+    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-700 to-blue-500 flex items-center justify-center p-4">
+      <div className="w-full max-w-7xl flex items-center justify-center relative z-10">
         {/* Left side - Promotional content */}
-        <div className="hidden lg:flex flex-1 flex-col items-start text-white mr-16">
+        <div className="hidden lg:flex flex-1 flex-col items-center text-white mr-16 text-center">
           {/* Logo */}
           <div className="flex items-center mb-12">
-            <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center mr-3">
-              <div className="w-6 h-6 bg-blue-600 rounded-sm"></div>
+            <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center mr-3">
+              <div className="w-8 h-8 bg-blue-600 rounded-sm"></div>
             </div>
-            <h1 className="text-3xl font-bold">LeadConsig</h1>
+            <h1 className="text-4xl font-bold">LeadConsig</h1>
           </div>
 
           {/* Feature badge */}
-          <div className="inline-flex items-center px-4 py-2 rounded-full bg-blue-600/20 border border-blue-400/30 text-blue-200 text-sm font-medium mb-8">
+          <div className="inline-flex items-center px-6 py-3 rounded-full bg-blue-600/20 border border-blue-400/30 text-blue-200 text-sm font-medium mb-8">
             ✨ Novidade
           </div>
 
           {/* Main headline */}
-          <h1 className="text-5xl font-bold mb-6 leading-tight">
+          <h1 className="text-6xl font-bold mb-8 leading-tight max-w-4xl">
             Gerencie seus leads com{" "}
-            <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-blue-300 to-white bg-clip-text text-transparent">
               inteligência
             </span>{" "}
             e praticidade
           </h1>
 
-          <p className="text-xl text-blue-100 mb-8 leading-relaxed max-w-lg">
+          <p className="text-xl text-blue-100 mb-12 leading-relaxed max-w-2xl">
             Sistema completo para gestão de leads, agendamentos e comissões. 
             Feito especialmente para correspondentes bancários.
           </p>
 
           {/* Feature highlights */}
-          <div className="space-y-4">
-            <div className="flex items-center text-blue-100">
-              <div className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center mr-3">
-                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="space-y-6 max-w-lg">
+            <div className="flex items-center text-blue-100 text-lg">
+              <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center mr-4">
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
               </div>
               Gestão completa de leads
             </div>
-            <div className="flex items-center text-blue-100">
-              <div className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center mr-3">
-                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="flex items-center text-blue-100 text-lg">
+              <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center mr-4">
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
               </div>
               Controle de agendamentos
             </div>
-            <div className="flex items-center text-blue-100">
-              <div className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center mr-3">
-                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="flex items-center text-blue-100 text-lg">
+              <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center mr-4">
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
               </div>
@@ -241,19 +232,19 @@ const Login = () => {
 
         {/* Right side - Login form */}
         <div className="w-full lg:w-auto">
-          <div className="bg-white rounded-3xl shadow-2xl p-8 w-full lg:w-96">
+          <div className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-2xl p-10 w-full lg:w-[500px]">
             <div className="text-center mb-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              <h2 className="text-3xl font-bold text-gray-900 mb-3">
                 {isLogin ? "Login" : "Criar conta"}
               </h2>
-              <p className="text-gray-600">
+              <p className="text-gray-600 text-lg">
                 {isLogin 
                   ? "Entre na sua conta para continuar" 
                   : "Crie sua conta e comece agora"}
               </p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-5">
               {!isLogin && (
                 <>
                   <div className="space-y-2">
@@ -265,7 +256,7 @@ const Login = () => {
                       placeholder="Seu nome completo" 
                       type="text" 
                       required 
-                      className={`h-12 rounded-xl border-gray-200 ${errors.fullName ? "border-red-500" : ""}`}
+                      className={`h-14 rounded-xl border-gray-200 text-base ${errors.fullName ? "border-red-500" : ""}`}
                       value={fullName} 
                       onChange={(e) => setFullName(e.target.value)} 
                       disabled={isLoading} 
@@ -282,7 +273,7 @@ const Login = () => {
                       type="text" 
                       required 
                       placeholder="Sua empresa" 
-                      className={`h-12 rounded-xl border-gray-200 ${errors.company ? "border-red-500" : ""}`}
+                      className={`h-14 rounded-xl border-gray-200 text-base ${errors.company ? "border-red-500" : ""}`}
                       value={company} 
                       onChange={(e) => setCompany(e.target.value)} 
                       disabled={isLoading} 
@@ -299,7 +290,7 @@ const Login = () => {
                       type="text" 
                       required 
                       placeholder="(99) 99999-9999" 
-                      className={`h-12 rounded-xl border-gray-200 ${errors.whatsapp ? "border-red-500" : ""}`}
+                      className={`h-14 rounded-xl border-gray-200 text-base ${errors.whatsapp ? "border-red-500" : ""}`}
                       value={whatsapp} 
                       onChange={handlePhoneChange} 
                       maxLength={15} 
@@ -320,7 +311,7 @@ const Login = () => {
                   type="email" 
                   required 
                   autoComplete="email" 
-                  className={`h-12 rounded-xl border-gray-200 ${errors.email ? "border-red-500" : ""}`}
+                  className={`h-14 rounded-xl border-gray-200 text-base ${errors.email ? "border-red-500" : ""}`}
                   value={email} 
                   onChange={(e) => setEmail(e.target.value)} 
                   disabled={isLoading} 
@@ -339,7 +330,7 @@ const Login = () => {
                     required 
                     placeholder="••••••••"
                     autoComplete={isLogin ? "current-password" : "new-password"} 
-                    className={`h-12 rounded-xl border-gray-200 pr-12 ${errors.password ? "border-red-500" : ""}`}
+                    className={`h-14 rounded-xl border-gray-200 pr-12 text-base ${errors.password ? "border-red-500" : ""}`}
                     value={password} 
                     onChange={(e) => setPassword(e.target.value)} 
                     disabled={isLoading} 
@@ -371,7 +362,7 @@ const Login = () => {
                       required 
                       placeholder="••••••••"
                       autoComplete="new-password" 
-                      className={`h-12 rounded-xl border-gray-200 pr-12 ${errors.confirmPassword ? "border-red-500" : ""}`}
+                      className={`h-14 rounded-xl border-gray-200 pr-12 text-base ${errors.confirmPassword ? "border-red-500" : ""}`}
                       value={confirmPassword} 
                       onChange={(e) => setConfirmPassword(e.target.value)} 
                       disabled={isLoading} 
@@ -383,7 +374,7 @@ const Login = () => {
 
               <Button 
                 type="submit" 
-                className="w-full h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium rounded-xl shadow-lg"
+                className="w-full h-14 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium rounded-xl shadow-lg text-base"
                 disabled={isLoading}
               >
                 {isLoading ? (
@@ -396,7 +387,7 @@ const Login = () => {
                 )}
               </Button>
 
-              <div className="relative my-6">
+              <div className="relative my-8">
                 <div className="absolute inset-0 flex items-center">
                   <span className="w-full border-t border-gray-200" />
                 </div>
@@ -407,10 +398,10 @@ const Login = () => {
                 </div>
               </div>
 
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <Button 
                   variant="outline" 
-                  className="w-full h-12 border-gray-200 rounded-xl hover:bg-gray-50" 
+                  className="w-full h-14 border-gray-200 rounded-xl hover:bg-gray-50 text-base" 
                   onClick={handleGoogleSignIn} 
                   disabled={isLoading}
                   type="button"
@@ -426,7 +417,7 @@ const Login = () => {
                 
                 <Button 
                   variant="outline" 
-                  className="w-full h-12 border-gray-200 rounded-xl hover:bg-gray-50"
+                  className="w-full h-14 border-gray-200 rounded-xl hover:bg-gray-50 text-base"
                   disabled={isLoading}
                   type="button"
                 >
@@ -438,7 +429,7 @@ const Login = () => {
 
                 <Button 
                   variant="outline" 
-                  className="w-full h-12 border-gray-200 rounded-xl hover:bg-gray-50"
+                  className="w-full h-14 border-gray-200 rounded-xl hover:bg-gray-50 text-base"
                   disabled={isLoading}
                   type="button"
                 >
@@ -451,7 +442,7 @@ const Login = () => {
             </form>
 
             <div className="mt-8 text-center">
-              <p className="text-sm text-gray-600">
+              <p className="text-base text-gray-600">
                 {isLogin ? "Não tem uma conta? " : "Já tem uma conta? "}
                 <button
                   onClick={() => setIsLogin(!isLogin)}
