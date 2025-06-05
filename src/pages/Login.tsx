@@ -170,8 +170,8 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-700 to-blue-500 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+    <div className="fixed inset-0 bg-gradient-to-br from-blue-900 via-blue-700 to-blue-500 flex items-center justify-center overflow-hidden">
+      <div className="flex flex-col items-center justify-center w-full h-full px-4">
         {/* Logo e título centralizados acima do formulário */}
         <div className="text-center mb-8 text-white">
           <div className="flex items-center justify-center mb-6">
@@ -198,7 +198,7 @@ const Login = () => {
         </div>
 
         {/* Container do formulário */}
-        <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl p-8 w-full">
+        <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl p-8 w-full max-w-md">
           <div className="text-center mb-6">
             <h3 className="text-2xl font-bold text-gray-900 mb-2">
               {isLogin ? "Login" : "Criar conta"}
