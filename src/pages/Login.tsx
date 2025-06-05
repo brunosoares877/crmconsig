@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -100,8 +101,8 @@ const Login = () => {
       });
 
       if (error) {
-        if (error.message.includes('provider is not enabled')) {
-          toast.error("O login com Google não está habilitado. Entre em contato com o administrador.");
+        if (error.message.includes('provider is not enabled') || error.message.includes('validation_failed')) {
+          toast.error("Login com Google não configurado. Configure no painel do Supabase em Authentication → Providers.");
         } else if (error.message.includes('invalid_request')) {
           toast.error("Configuração do Google OAuth inválida. Verifique as configurações no Supabase.");
         } else {
@@ -127,8 +128,8 @@ const Login = () => {
       });
 
       if (error) {
-        if (error.message.includes('provider is not enabled')) {
-          toast.error("O login com Facebook não está habilitado. Entre em contato com o administrador.");
+        if (error.message.includes('provider is not enabled') || error.message.includes('validation_failed')) {
+          toast.error("Login com Facebook não configurado. Configure no painel do Supabase em Authentication → Providers.");
         } else {
           toast.error(`Erro ao fazer login com Facebook: ${error.message}`);
         }
@@ -152,8 +153,8 @@ const Login = () => {
       });
 
       if (error) {
-        if (error.message.includes('provider is not enabled')) {
-          toast.error("O login com Apple não está habilitado. Entre em contato com o administrador.");
+        if (error.message.includes('provider is not enabled') || error.message.includes('validation_failed')) {
+          toast.error("Login com Apple não configurado. Configure no painel do Supabase em Authentication → Providers.");
         } else {
           toast.error(`Erro ao fazer login com Apple: ${error.message}`);
         }
