@@ -116,6 +116,56 @@ const Login = () => {
     }
   };
 
+  const handleFacebookSignIn = async () => {
+    try {
+      setIsLoading(true);
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'facebook',
+        options: {
+          redirectTo: `${window.location.origin}/dashboard`
+        }
+      });
+
+      if (error) {
+        if (error.message.includes('provider is not enabled')) {
+          toast.error("O login com Facebook não está habilitado. Entre em contato com o administrador.");
+        } else {
+          toast.error(`Erro ao fazer login com Facebook: ${error.message}`);
+        }
+        return;
+      }
+    } catch (error: any) {
+      toast.error("Erro inesperado ao fazer login com Facebook. Tente novamente.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleAppleSignIn = async () => {
+    try {
+      setIsLoading(true);
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'apple',
+        options: {
+          redirectTo: `${window.location.origin}/dashboard`
+        }
+      });
+
+      if (error) {
+        if (error.message.includes('provider is not enabled')) {
+          toast.error("O login com Apple não está habilitado. Entre em contato com o administrador.");
+        } else {
+          toast.error(`Erro ao fazer login com Apple: ${error.message}`);
+        }
+        return;
+      }
+    } catch (error: any) {
+      toast.error("Erro inesperado ao fazer login com Apple. Tente novamente.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -170,10 +220,10 @@ const Login = () => {
   };
 
   return (
-    <div className="fixed inset-0 bg-gradient-to-br from-blue-900 via-blue-700 to-blue-500 flex items-center justify-center overflow-hidden">
-      <div className="flex flex-col items-center justify-center w-full h-full px-4">
-        {/* Logo e título centralizados acima do formulário */}
-        <div className="text-center mb-8 text-white">
+    <div className="fixed inset-0 bg-gradient-to-br from-blue-900 via-blue-700 to-blue-500 flex overflow-hidden">
+      {/* Lado esquerdo - Texto promocional */}
+      <div className="flex-1 flex items-center justify-center p-8">
+        <div className="text-center text-white max-w-lg">
           <div className="flex items-center justify-center mb-6">
             <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center mr-3">
               <div className="w-8 h-8 bg-blue-600 rounded-sm"></div>
@@ -196,8 +246,10 @@ const Login = () => {
             </p>
           </div>
         </div>
+      </div>
 
-        {/* Container do formulário */}
+      {/* Lado direito - Formulário de login */}
+      <div className="flex-1 flex items-center justify-center p-8">
         <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl p-8 w-full max-w-md">
           <div className="text-center mb-6">
             <h3 className="text-2xl font-bold text-gray-900 mb-2">
@@ -384,6 +436,7 @@ const Login = () => {
               <Button 
                 variant="outline" 
                 className="w-full h-12 border-gray-200 rounded-xl hover:bg-gray-50"
+                onClick={handleFacebookSignIn}
                 disabled={isLoading}
                 type="button"
               >
@@ -396,6 +449,7 @@ const Login = () => {
               <Button 
                 variant="outline" 
                 className="w-full h-12 border-gray-200 rounded-xl hover:bg-gray-50"
+                onClick={handleAppleSignIn}
                 disabled={isLoading}
                 type="button"
               >
