@@ -170,7 +170,7 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-blue-900 flex items-center justify-center p-4">
+    <div className="w-full h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-blue-900 flex items-center justify-center p-4">
       <div className="w-full max-w-md flex flex-col items-center">
         
         {/* Logo e texto promocional */}
@@ -223,7 +223,7 @@ const Login = () => {
                     placeholder="Seu nome completo" 
                     type="text" 
                     required 
-                    className={`h-12 rounded-lg border-gray-300 text-sm ${errors.fullName ? "border-red-500" : ""}`}
+                    className={`h-10 rounded-lg border-gray-300 text-sm ${errors.fullName ? "border-red-500" : ""}`}
                     value={fullName} 
                     onChange={(e) => setFullName(e.target.value)} 
                     disabled={isLoading} 
@@ -240,7 +240,7 @@ const Login = () => {
                     type="text" 
                     required 
                     placeholder="Sua empresa" 
-                    className={`h-12 rounded-lg border-gray-300 text-sm ${errors.company ? "border-red-500" : ""}`}
+                    className={`h-10 rounded-lg border-gray-300 text-sm ${errors.company ? "border-red-500" : ""}`}
                     value={company} 
                     onChange={(e) => setCompany(e.target.value)} 
                     disabled={isLoading} 
@@ -257,7 +257,7 @@ const Login = () => {
                     type="text" 
                     required 
                     placeholder="(99) 99999-9999" 
-                    className={`h-12 rounded-lg border-gray-300 text-sm ${errors.whatsapp ? "border-red-500" : ""}`}
+                    className={`h-10 rounded-lg border-gray-300 text-sm ${errors.whatsapp ? "border-red-500" : ""}`}
                     value={whatsapp} 
                     onChange={handlePhoneChange} 
                     maxLength={15} 
@@ -278,7 +278,7 @@ const Login = () => {
                 type="email" 
                 required 
                 autoComplete="email" 
-                className={`h-12 rounded-lg border-gray-300 text-sm ${errors.email ? "border-red-500" : ""}`}
+                className={`h-10 rounded-lg border-gray-300 text-sm ${errors.email ? "border-red-500" : ""}`}
                 value={email} 
                 onChange={(e) => setEmail(e.target.value)} 
                 disabled={isLoading} 
@@ -297,7 +297,7 @@ const Login = () => {
                   required 
                   placeholder="••••••••"
                   autoComplete={isLogin ? "current-password" : "new-password"} 
-                  className={`h-12 rounded-lg border-gray-300 pr-10 text-sm ${errors.password ? "border-red-500" : ""}`}
+                  className={`h-10 rounded-lg border-gray-300 pr-10 text-sm ${errors.password ? "border-red-500" : ""}`}
                   value={password} 
                   onChange={(e) => setPassword(e.target.value)} 
                   disabled={isLoading} 
@@ -329,7 +329,7 @@ const Login = () => {
                     required 
                     placeholder="••••••••"
                     autoComplete="new-password" 
-                    className={`h-12 rounded-lg border-gray-300 pr-10 text-sm ${errors.confirmPassword ? "border-red-500" : ""}`}
+                    className={`h-10 rounded-lg border-gray-300 pr-10 text-sm ${errors.confirmPassword ? "border-red-500" : ""}`}
                     value={confirmPassword} 
                     onChange={(e) => setConfirmPassword(e.target.value)} 
                     disabled={isLoading} 
