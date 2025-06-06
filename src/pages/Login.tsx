@@ -9,14 +9,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
-
 const phoneRegex = /^\(\d{2}\) \d{5}-\d{4}$/;
-
 const LoginSchema = z.object({
   email: z.string().email("Email inválido"),
   password: z.string().min(6, "A senha deve ter pelo menos 6 caracteres")
 });
-
 const SignupSchema = z.object({
   fullName: z.string().min(3, "Nome completo é obrigatório"),
   company: z.string().min(2, "Nome da empresa é obrigatório"),
@@ -28,11 +25,15 @@ const SignupSchema = z.object({
   message: "As senhas não coincidem",
   path: ["confirmPassword"]
 });
-
 const Login = () => {
   const navigate = useNavigate();
-  const { signIn, signUp } = useAuth();
-  const { startTrial } = useSubscription();
+  const {
+    signIn,
+    signUp
+  } = useAuth();
+  const {
+    startTrial
+  } = useSubscription();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -43,7 +44,6 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-
   const maskPhone = (value: string) => {
     const digits = value.replace(/\D/g, '');
     if (digits.length <= 2) {
@@ -54,15 +54,16 @@ const Login = () => {
     }
     return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7, 11)}`;
   };
-
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setWhatsapp(maskPhone(e.target.value));
   };
-
   const validateForm = () => {
     try {
       if (isLogin) {
-        LoginSchema.parse({ email, password });
+        LoginSchema.parse({
+          email,
+          password
+        });
       } else {
         SignupSchema.parse({
           fullName,
@@ -88,17 +89,18 @@ const Login = () => {
       return false;
     }
   };
-
   const handleGoogleSignIn = async () => {
     try {
       setIsLoading(true);
-      const { data, error } = await supabase.auth.signInWithOAuth({
+      const {
+        data,
+        error
+      } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: `${window.location.origin}/dashboard`
         }
       });
-
       if (error) {
         if (error.message.includes('provider is not enabled') || error.message.includes('validation_failed')) {
           toast.error("Login com Google não configurado. Configure no painel do Supabase em Authentication → Providers.");
@@ -115,22 +117,20 @@ const Login = () => {
       setIsLoading(false);
     }
   };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!validateForm()) {
       return;
     }
-
     setIsLoading(true);
-    
     try {
       if (isLogin) {
         await signIn(email, password);
         toast.success("Login realizado com sucesso");
       } else {
-        const { error } = await supabase.auth.signUp({
+        const {
+          error
+        } = await supabase.auth.signUp({
           email,
           password,
           options: {
@@ -141,22 +141,17 @@ const Login = () => {
             }
           }
         });
-        
         if (error) throw error;
-
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .update({
-            company_name: company,
-            first_name: fullName.split(' ')[0],
-            last_name: fullName.split(' ').slice(1).join(' ')
-          })
-          .eq('id', (await supabase.auth.getUser()).data.user?.id);
-          
+        const {
+          error: profileError
+        } = await supabase.from('profiles').update({
+          company_name: company,
+          first_name: fullName.split(' ')[0],
+          last_name: fullName.split(' ').slice(1).join(' ')
+        }).eq('id', (await supabase.auth.getUser()).data.user?.id);
         if (profileError) {
           console.error("Error updating profile:", profileError);
         }
-        
         startTrial();
         toast.success("Conta criada com sucesso! Seu período de teste de 7 dias começou.");
         await signIn(email, password);
@@ -168,9 +163,7 @@ const Login = () => {
       setIsLoading(false);
     }
   };
-
-  return (
-    <div className="w-full h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-blue-900 flex items-center justify-between px-8">
+  return <div className="w-full h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-blue-900 flex items-center justify-between px-8">
       {/* Lado esquerdo - Texto promocional */}
       <div className="flex-1 max-w-lg text-white">
         <div className="flex items-center mb-8">
@@ -198,35 +191,23 @@ const Login = () => {
 
       {/* Lado direito - Formulário de login */}
       <div className="flex-1 max-w-md ml-8">
-        <div className="bg-white rounded-2xl shadow-2xl p-8 w-full">
+        <div className="bg-white rounded-2xl shadow-2xl p-8 w-full px-[31px] py-[99px] my-[9px] mx-0">
           <div className="text-center mb-6">
             <h3 className="text-xl font-bold text-gray-900 mb-1">
               {isLogin ? "Login" : "Criar conta"}
             </h3>
             <p className="text-gray-600 text-sm">
-              {isLogin 
-                ? "Entre na sua conta para continuar" 
-                : "Crie sua conta e comece agora"}
+              {isLogin ? "Entre na sua conta para continuar" : "Crie sua conta e comece agora"}
             </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            {!isLogin && (
-              <>
+            {!isLogin && <>
                 <div className="space-y-2">
                   <Label htmlFor="fullName" className="text-sm font-medium text-gray-700">
                     Nome Completo
                   </Label>
-                  <Input 
-                    id="fullName" 
-                    placeholder="Seu nome completo" 
-                    type="text" 
-                    required 
-                    className={`h-10 rounded-lg border-gray-300 text-sm ${errors.fullName ? "border-red-500" : ""}`}
-                    value={fullName} 
-                    onChange={(e) => setFullName(e.target.value)} 
-                    disabled={isLoading} 
-                  />
+                  <Input id="fullName" placeholder="Seu nome completo" type="text" required className={`h-10 rounded-lg border-gray-300 text-sm ${errors.fullName ? "border-red-500" : ""}`} value={fullName} onChange={e => setFullName(e.target.value)} disabled={isLoading} />
                   {errors.fullName && <p className="text-xs text-red-500">{errors.fullName}</p>}
                 </div>
                 
@@ -234,16 +215,7 @@ const Login = () => {
                   <Label htmlFor="company" className="text-sm font-medium text-gray-700">
                     Nome da Empresa
                   </Label>
-                  <Input 
-                    id="company" 
-                    type="text" 
-                    required 
-                    placeholder="Sua empresa" 
-                    className={`h-10 rounded-lg border-gray-300 text-sm ${errors.company ? "border-red-500" : ""}`}
-                    value={company} 
-                    onChange={(e) => setCompany(e.target.value)} 
-                    disabled={isLoading} 
-                  />
+                  <Input id="company" type="text" required placeholder="Sua empresa" className={`h-10 rounded-lg border-gray-300 text-sm ${errors.company ? "border-red-500" : ""}`} value={company} onChange={e => setCompany(e.target.value)} disabled={isLoading} />
                   {errors.company && <p className="text-xs text-red-500">{errors.company}</p>}
                 </div>
 
@@ -251,37 +223,16 @@ const Login = () => {
                   <Label htmlFor="whatsapp" className="text-sm font-medium text-gray-700">
                     WhatsApp
                   </Label>
-                  <Input 
-                    id="whatsapp" 
-                    type="text" 
-                    required 
-                    placeholder="(99) 99999-9999" 
-                    className={`h-10 rounded-lg border-gray-300 text-sm ${errors.whatsapp ? "border-red-500" : ""}`}
-                    value={whatsapp} 
-                    onChange={handlePhoneChange} 
-                    maxLength={15} 
-                    disabled={isLoading} 
-                  />
+                  <Input id="whatsapp" type="text" required placeholder="(99) 99999-9999" className={`h-10 rounded-lg border-gray-300 text-sm ${errors.whatsapp ? "border-red-500" : ""}`} value={whatsapp} onChange={handlePhoneChange} maxLength={15} disabled={isLoading} />
                   {errors.whatsapp && <p className="text-xs text-red-500">{errors.whatsapp}</p>}
                 </div>
-              </>
-            )}
+              </>}
           
             <div className="space-y-2">
               <Label htmlFor="email" className="text-sm font-medium text-gray-700">
                 E-mail ou usuário
               </Label>
-              <Input 
-                id="email" 
-                placeholder="seuemail@empresa.com" 
-                type="email" 
-                required 
-                autoComplete="email" 
-                className={`h-10 rounded-lg border-gray-300 text-sm ${errors.email ? "border-red-500" : ""}`}
-                value={email} 
-                onChange={(e) => setEmail(e.target.value)} 
-                disabled={isLoading} 
-              />
+              <Input id="email" placeholder="seuemail@empresa.com" type="email" required autoComplete="email" className={`h-10 rounded-lg border-gray-300 text-sm ${errors.email ? "border-red-500" : ""}`} value={email} onChange={e => setEmail(e.target.value)} disabled={isLoading} />
               {errors.email && <p className="text-xs text-red-500">{errors.email}</p>}
             </div>
             
@@ -290,67 +241,29 @@ const Login = () => {
                 Senha
               </Label>
               <div className="relative">
-                <Input 
-                  id="password" 
-                  type={showPassword ? "text" : "password"}
-                  required 
-                  placeholder="••••••••"
-                  autoComplete={isLogin ? "current-password" : "new-password"} 
-                  className={`h-10 rounded-lg border-gray-300 pr-10 text-sm ${errors.password ? "border-red-500" : ""}`}
-                  value={password} 
-                  onChange={(e) => setPassword(e.target.value)} 
-                  disabled={isLoading} 
-                />
-                <button
-                  type="button"
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4 text-gray-400" />
-                  ) : (
-                    <Eye className="h-4 w-4 text-gray-400" />
-                  )}
+                <Input id="password" type={showPassword ? "text" : "password"} required placeholder="••••••••" autoComplete={isLogin ? "current-password" : "new-password"} className={`h-10 rounded-lg border-gray-300 pr-10 text-sm ${errors.password ? "border-red-500" : ""}`} value={password} onChange={e => setPassword(e.target.value)} disabled={isLoading} />
+                <button type="button" className="absolute inset-y-0 right-0 pr-3 flex items-center" onClick={() => setShowPassword(!showPassword)}>
+                  {showPassword ? <EyeOff className="h-4 w-4 text-gray-400" /> : <Eye className="h-4 w-4 text-gray-400" />}
                 </button>
               </div>
               {errors.password && <p className="text-xs text-red-500">{errors.password}</p>}
             </div>
 
-            {!isLogin && (
-              <div className="space-y-2">
+            {!isLogin && <div className="space-y-2">
                 <Label htmlFor="confirmPassword" className="text-sm font-medium text-gray-700">
                   Confirmar Senha
                 </Label>
                 <div className="relative">
-                  <Input 
-                    id="confirmPassword" 
-                    type={showPassword ? "text" : "password"}
-                    required 
-                    placeholder="••••••••"
-                    autoComplete="new-password" 
-                    className={`h-10 rounded-lg border-gray-300 pr-10 text-sm ${errors.confirmPassword ? "border-red-500" : ""}`}
-                    value={confirmPassword} 
-                    onChange={(e) => setConfirmPassword(e.target.value)} 
-                    disabled={isLoading} 
-                  />
+                  <Input id="confirmPassword" type={showPassword ? "text" : "password"} required placeholder="••••••••" autoComplete="new-password" className={`h-10 rounded-lg border-gray-300 pr-10 text-sm ${errors.confirmPassword ? "border-red-500" : ""}`} value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} disabled={isLoading} />
                 </div>
                 {errors.confirmPassword && <p className="text-xs text-red-500">{errors.confirmPassword}</p>}
-              </div>
-            )}
+              </div>}
 
-            <Button 
-              type="submit" 
-              className="w-full h-10 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-lg text-sm"
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <>
+            <Button type="submit" className="w-full h-10 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-lg text-sm" disabled={isLoading}>
+              {isLoading ? <>
                   <div className="h-4 w-4 mr-2 animate-spin rounded-full border-2 border-t-transparent"></div>
                   {isLogin ? "Entrando..." : "Criando conta..."}
-                </>
-              ) : (
-                isLogin ? "Continuar" : "Criar conta"
-              )}
+                </> : isLogin ? "Continuar" : "Criar conta"}
             </Button>
 
             <div className="relative my-4">
@@ -364,13 +277,7 @@ const Login = () => {
               </div>
             </div>
 
-            <Button 
-              variant="outline" 
-              className="w-full h-10 border-gray-300 rounded-lg hover:bg-gray-50 text-sm" 
-              onClick={handleGoogleSignIn} 
-              disabled={isLoading}
-              type="button"
-            >
+            <Button variant="outline" className="w-full h-10 border-gray-300 rounded-lg hover:bg-gray-50 text-sm" onClick={handleGoogleSignIn} disabled={isLoading} type="button">
               <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
                 <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
                 <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
@@ -384,11 +291,7 @@ const Login = () => {
           <div className="mt-4 text-center">
             <p className="text-sm text-gray-600">
               {isLogin ? "Não tem uma conta? " : "Já tem uma conta? "}
-              <button
-                onClick={() => setIsLogin(!isLogin)}
-                className="font-medium text-blue-600 hover:text-blue-500"
-                disabled={isLoading}
-              >
+              <button onClick={() => setIsLogin(!isLogin)} className="font-medium text-blue-600 hover:text-blue-500" disabled={isLoading}>
                 {isLogin ? "Cadastrar" : "Fazer login"}
               </button>
             </p>
@@ -402,8 +305,6 @@ const Login = () => {
           </div>
         </div>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default Login;
