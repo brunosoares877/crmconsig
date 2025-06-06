@@ -165,7 +165,7 @@ const Login = () => {
   };
   return <div className="w-full h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-blue-900 flex items-center justify-between px-8">
       {/* Lado esquerdo - Texto promocional */}
-      <div className="flex-1 max-w-lg text-white">
+      <div className="flex-1 max-w-lg text-white my-0 mx-[176px]">
         <div className="flex items-center mb-8">
           <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center mr-3">
             <div className="w-6 h-6 bg-blue-600 rounded-sm"></div>
