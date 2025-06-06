@@ -170,36 +170,35 @@ const Login = () => {
   };
 
   return (
-    <div className="w-full h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-blue-900 flex items-center justify-center p-4">
-      <div className="w-full max-w-md flex flex-col items-center">
-        
-        {/* Logo e texto promocional */}
-        <div className="text-center text-white mb-8">
-          <div className="flex items-center justify-center mb-6">
-            <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center mr-3">
-              <div className="w-6 h-6 bg-blue-600 rounded-sm"></div>
-            </div>
-            <h1 className="text-2xl font-bold">LeadConsig</h1>
+    <div className="w-full h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-blue-900 flex items-center justify-between px-8">
+      {/* Lado esquerdo - Texto promocional */}
+      <div className="flex-1 max-w-lg text-white">
+        <div className="flex items-center mb-8">
+          <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center mr-3">
+            <div className="w-6 h-6 bg-blue-600 rounded-sm"></div>
           </div>
-          
-          <div className="mb-6">
-            <div className="inline-flex items-center px-3 py-1 rounded-full bg-blue-600/20 border border-blue-400/30 text-blue-200 text-xs font-medium mb-4">
-              ✨ Novidade
-            </div>
-            <h2 className="text-2xl font-bold mb-3 leading-tight">
-              Gerencie seus leads com{" "}
-              <span className="bg-gradient-to-r from-blue-300 to-white bg-clip-text text-transparent">
-                inteligência
-              </span>
-            </h2>
-            <p className="text-sm text-blue-100">
-              Sistema completo para gestão de leads, agendamentos e comissões.
-            </p>
-          </div>
+          <h1 className="text-3xl font-bold">LeadConsig</h1>
         </div>
+        
+        <div className="mb-8">
+          <div className="inline-flex items-center px-3 py-1 rounded-full bg-blue-600/20 border border-blue-400/30 text-blue-200 text-xs font-medium mb-6">
+            ✨ Novidade
+          </div>
+          <h2 className="text-4xl font-bold mb-4 leading-tight">
+            Gerencie seus leads com{" "}
+            <span className="bg-gradient-to-r from-blue-300 to-white bg-clip-text text-transparent">
+              inteligência
+            </span>
+          </h2>
+          <p className="text-lg text-blue-100 leading-relaxed">
+            Sistema completo para gestão de leads, agendamentos e comissões.
+          </p>
+        </div>
+      </div>
 
-        {/* Formulário de login centralizado */}
-        <div className="bg-white rounded-2xl shadow-2xl p-6 w-full">
+      {/* Lado direito - Formulário de login */}
+      <div className="flex-1 max-w-md ml-8">
+        <div className="bg-white rounded-2xl shadow-2xl p-8 w-full">
           <div className="text-center mb-6">
             <h3 className="text-xl font-bold text-gray-900 mb-1">
               {isLogin ? "Login" : "Criar conta"}
