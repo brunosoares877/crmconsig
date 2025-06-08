@@ -234,33 +234,6 @@ export type Database = {
           },
         ]
       }
-      deleted_leads: {
-        Row: {
-          deleted_at: string
-          expires_at: string
-          id: string
-          original_lead_data: Json
-          original_lead_id: string
-          user_id: string
-        }
-        Insert: {
-          deleted_at?: string
-          expires_at?: string
-          id?: string
-          original_lead_data: Json
-          original_lead_id: string
-          user_id: string
-        }
-        Update: {
-          deleted_at?: string
-          expires_at?: string
-          id?: string
-          original_lead_data?: Json
-          original_lead_id?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       documents: {
         Row: {
           created_at: string | null
@@ -486,10 +459,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      cleanup_expired_deleted_leads: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      [_ in never]: never
     }
     Enums: {
       [_ in never]: never

@@ -1,9 +1,10 @@
+
 import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { MoreHorizontal, Phone, Mail, DollarSign, Building, User, Edit, Trash2, Calendar, FileText } from "lucide-react";
 import { Lead } from "@/types/models";
@@ -101,49 +102,19 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete }) => {
 
   const handleDeleteLead = async () => {
     try {
-      const { data: userData, error: userError } = await supabase.auth.getUser();
-      if (userError) throw userError;
-
-      // Mover para a lixeira em vez de excluir diretamente
-      const { error: trashError } = await supabase
-        .from("deleted_leads")
-        .insert({
-          user_id: userData.user.id,
-          original_lead_data: {
-            name: lead.name,
-            email: lead.email,
-            phone: lead.phone,
-            phone2: lead.phone2,
-            phone3: lead.phone3,
-            cpf: lead.cpf,
-            bank: lead.bank,
-            product: lead.product,
-            amount: lead.amount,
-            status: lead.status,
-            employee: lead.employee,
-            notes: lead.notes,
-            source: lead.source,
-            benefit_type: lead.benefit_type
-          },
-          original_lead_id: lead.id
-        });
-
-      if (trashError) throw trashError;
-
-      // Remover da tabela principal
-      const { error: deleteError } = await supabase
+      const { error } = await supabase
         .from("leads")
         .delete()
         .eq("id", lead.id);
 
-      if (deleteError) throw deleteError;
+      if (error) throw error;
 
       onDelete(lead.id);
-      toast.success("Lead movido para a lixeira! Pode ser recuperado em até 30 dias.");
+      toast.success("Lead excluído com sucesso!");
       setIsDeleteDialogOpen(false);
     } catch (error: any) {
-      console.error("Error moving lead to trash:", error);
-      toast.error(`Erro ao mover lead para lixeira: ${error.message}`);
+      console.error("Error deleting lead:", error);
+      toast.error(`Erro ao excluir lead: ${error.message}`);
     }
   };
 
@@ -197,7 +168,7 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete }) => {
                     className="text-red-600"
                   >
                     <Trash2 className="mr-2 h-4 w-4" />
-                    Mover para Lixeira
+                    Excluir
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -297,16 +268,15 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete }) => {
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Mover para Lixeira</AlertDialogTitle>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja mover o lead "{lead.name}" para a lixeira? 
-              Ele ficará disponível para recuperação por 30 dias.
+              Tem certeza que deseja excluir o lead "{lead.name}"? Esta ação não pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteLead} className="bg-orange-600 hover:bg-orange-700">
-              Mover para Lixeira
+            <AlertDialogAction onClick={handleDeleteLead} className="bg-red-600 hover:bg-red-700">
+              Excluir
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
