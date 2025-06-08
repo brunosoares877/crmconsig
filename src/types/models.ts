@@ -25,7 +25,7 @@ export interface CommissionTier {
   updated_at: string;
 }
 
-// Update Lead interface to include all database fields
+// Update Lead interface to ensure status is properly typed
 export interface Lead {
   id: string;
   user_id?: string;
@@ -35,8 +35,6 @@ export interface Lead {
   phone2?: string;
   phone3?: string;
   cpf?: string;
-  bank?: string; // Add bank property
-  benefit_type?: string; // Add benefit_type property
   status: 'novo' | 'contatado' | 'qualificado' | 'negociando' | 'convertido' | 'perdido';
   source?: string;
   notes?: string;
