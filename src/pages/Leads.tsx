@@ -1,9 +1,9 @@
-
 import React, { useState, useEffect } from "react";
 import Header from "@/components/Header";
 import LeadList from "@/components/LeadList";
 import Filters from "@/components/Filters";
 import Sidebar from "@/components/Sidebar";
+import LeadTrash from "@/components/LeadTrash";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
@@ -93,6 +93,11 @@ const Leads = () => {
     fetchLeadStats();
   }, []);
 
+  const handleLeadRestored = () => {
+    // Recarregar estatísticas quando um lead for restaurado
+    setLeadStats(prev => ({ ...prev, total: prev.total + 1 }));
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Sidebar />
@@ -111,12 +116,13 @@ const Leads = () => {
           </div>
 
           <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid grid-cols-5 w-full max-w-4xl mb-6">
+            <TabsList className="grid grid-cols-6 w-full max-w-5xl mb-6">
               <TabsTrigger value="all">Todos</TabsTrigger>
               <TabsTrigger value="new">Novos</TabsTrigger>
               <TabsTrigger value="contacted">Contatados</TabsTrigger>
               <TabsTrigger value="qualified">Qualificados</TabsTrigger>
               <TabsTrigger value="converted">Convertidos</TabsTrigger>
+              <TabsTrigger value="trash">Lixeira</TabsTrigger>
             </TabsList>
             
             <TabsContent value="all">
@@ -178,6 +184,18 @@ const Leads = () => {
             
             <TabsContent value="converted">
               <LeadList searchQuery={searchQuery} status="convertido" />
+            </TabsContent>
+
+            <TabsContent value="trash">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-2xl font-bold">Lixeira de Leads</h2>
+                    <p className="text-muted-foreground">Leads excluídos que podem ser recuperados em até 30 dias</p>
+                  </div>
+                </div>
+                <LeadTrash onLeadRestored={handleLeadRestored} />
+              </div>
             </TabsContent>
           </Tabs>
         </main>
