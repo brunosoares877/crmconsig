@@ -1,7 +1,18 @@
 
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Calendar, DollarSign, List, Users, Settings } from "lucide-react";
+import { 
+  LayoutDashboard, 
+  Users, 
+  Crown, 
+  Calendar, 
+  Bell, 
+  CalendarDays, 
+  ArrowRightLeft, 
+  DollarSign, 
+  UserCheck, 
+  Settings 
+} from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -12,19 +23,24 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarSeparator,
 } from "@/components/ui/sidebar";
 
-const menuItems = [
+// Menu items organized by logical groups
+const principalItems = [
   {
     title: "Dashboard",
     url: "/dashboard",
-    icon: List,
+    icon: LayoutDashboard,
     match: (pathname: string) => pathname === "/dashboard",
   },
+];
+
+const leadsItems = [
   {
     title: "Leads",
     url: "/leads",
-    icon: List,
+    icon: Users,
     match: (pathname: string) =>
       pathname === "/leads" ||
       pathname.startsWith("/leads/"),
@@ -32,24 +48,9 @@ const menuItems = [
   {
     title: "Leads Premium",
     url: "/leads-premium",
-    icon: List,
+    icon: Crown,
     isPremium: true,
     match: (pathname: string) => pathname === "/leads-premium",
-  },
-  {
-    title: "Lembretes",
-    url: "/reminders",
-    icon: Calendar,
-    match: (pathname: string) =>
-      pathname === "/reminders" ||
-      pathname.startsWith("/reminders/"),
-  },
-  {
-    title: "Calendário",
-    url: "/reminders/calendar",
-    icon: Calendar,
-    match: (pathname: string) =>
-      pathname === "/reminders/calendar",
   },
   {
     title: "Agendamentos",
@@ -58,16 +59,31 @@ const menuItems = [
     match: (pathname: string) =>
       pathname === "/leads/scheduled",
   },
+];
+
+const lembretesItems = [
   {
-    title: "Funcionários",
-    url: "/employees",
-    icon: Users,
-    match: (pathname: string) => pathname === "/employees",
+    title: "Lembretes",
+    url: "/reminders",
+    icon: Bell,
+    match: (pathname: string) =>
+      pathname === "/reminders" ||
+      pathname.startsWith("/reminders/"),
   },
+  {
+    title: "Calendário",
+    url: "/reminders/calendar",
+    icon: CalendarDays,
+    match: (pathname: string) =>
+      pathname === "/reminders/calendar",
+  },
+];
+
+const negociosItems = [
   {
     title: "Portabilidade",
     url: "/portability",
-    icon: List,
+    icon: ArrowRightLeft,
     match: (pathname: string) => pathname === "/portability",
   },
   {
@@ -76,6 +92,15 @@ const menuItems = [
     icon: DollarSign,
     match: (pathname: string) =>
       pathname === "/commission" || pathname === "/commission-settings",
+  },
+];
+
+const administracaoItems = [
+  {
+    title: "Funcionários",
+    url: "/employees",
+    icon: UserCheck,
+    match: (pathname: string) => pathname === "/employees",
   },
   {
     title: "Configurações",
@@ -87,18 +112,64 @@ const menuItems = [
   },
 ];
 
+const allMenuItems = [
+  ...principalItems,
+  ...leadsItems,
+  ...lembretesItems,
+  ...negociosItems,
+  ...administracaoItems,
+];
+
 export function AppSidebar() {
   const location = useLocation();
 
   const getActiveIdx = () => {
-    for (let i = 0; i < menuItems.length; i++) {
-      if (menuItems[i].match(location.pathname)) {
+    for (let i = 0; i < allMenuItems.length; i++) {
+      if (allMenuItems[i].match(location.pathname)) {
         return i;
       }
     }
     return -1;
   };
   const activeIdx = getActiveIdx();
+
+  const renderMenuGroup = (items: typeof principalItems, groupLabel?: string) => (
+    <SidebarGroup>
+      {groupLabel && <SidebarGroupLabel className="text-white/60 text-xs uppercase font-semibold">{groupLabel}</SidebarGroupLabel>}
+      <SidebarGroupContent>
+        <SidebarMenu>
+          {items.map((item) => {
+            const itemIdx = allMenuItems.findIndex(menuItem => menuItem.url === item.url);
+            const isActive = itemIdx === activeIdx;
+            return (
+              <SidebarMenuItem key={item.title}>
+                <SidebarMenuButton
+                  asChild
+                  className={`w-full transition-none font-normal justify-start text-base ${
+                    isActive
+                      ? "bg-white/10 text-white"
+                      : "text-white/80"
+                  } ${item.isPremium ? "text-yellow-400 font-semibold" : ""} hover:bg-transparent hover:text-current`}
+                  aria-current={isActive ? "page" : undefined}
+                >
+                  <Link to={item.url} className="flex items-center gap-2 w-full">
+                    {item.isPremium ? (
+                      <span className="inline-block w-4 h-4 text-yellow-400" aria-label="premium">
+                        ★
+                      </span>
+                    ) : (
+                      <item.icon className="w-4 h-4 flex-shrink-0" />
+                    )}
+                    <span className="flex-1 text-left">{item.title}</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            );
+          })}
+        </SidebarMenu>
+      </SidebarGroupContent>
+    </SidebarGroup>
+  );
 
   return (
     <Sidebar collapsible="none" className="w-64 min-w-64 max-w-64 bg-[#0f2247]">
@@ -110,39 +181,19 @@ export function AppSidebar() {
         </div>
       </SidebarHeader>
       <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {menuItems.map((item, idx) => {
-                const isActive = idx === activeIdx;
-                return (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton
-                      asChild
-                      className={`w-full transition-none font-normal justify-start text-base ${
-                        isActive
-                          ? "bg-white/10 text-white"
-                          : "text-white/80"
-                      } ${item.isPremium ? "text-yellow-400 font-semibold" : ""} hover:bg-transparent hover:text-current`}
-                      aria-current={isActive ? "page" : undefined}
-                    >
-                      <Link to={item.url} className="flex items-center gap-2 w-full">
-                        {item.isPremium ? (
-                          <span className="inline-block w-4 h-4 text-yellow-400" aria-label="premium">
-                            ★
-                          </span>
-                        ) : (
-                          <item.icon className="w-4 h-4 flex-shrink-0" />
-                        )}
-                        <span className="flex-1 text-left">{item.title}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {renderMenuGroup(principalItems, "Principal")}
+        
+        <SidebarSeparator className="bg-white/20" />
+        {renderMenuGroup(leadsItems, "Leads")}
+        
+        <SidebarSeparator className="bg-white/20" />
+        {renderMenuGroup(lembretesItems, "Lembretes")}
+        
+        <SidebarSeparator className="bg-white/20" />
+        {renderMenuGroup(negociosItems, "Negócios")}
+        
+        <SidebarSeparator className="bg-white/20" />
+        {renderMenuGroup(administracaoItems, "Administração")}
       </SidebarContent>
     </Sidebar>
   );
