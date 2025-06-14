@@ -15,6 +15,12 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 
+interface Tag {
+  id: string;
+  name: string;
+  color: string;
+}
+
 const Leads = () => {
   const [leadStats, setLeadStats] = useState({
     total: 0,
@@ -24,7 +30,7 @@ const Leads = () => {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [tags, setTags] = useState<Array<{ id: string; name: string; color: string }>>([]);
+  const [tags, setTags] = useState<Tag[]>([]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [isTagDialogOpen, setIsTagDialogOpen] = useState(false);
   const [newTagName, setNewTagName] = useState("");
@@ -112,7 +118,7 @@ const Leads = () => {
       const { data: userData, error: userError } = await supabase.auth.getUser();
       if (userError) throw userError;
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('lead_tags')
         .select('*')
         .eq('user_id', userData.user.id)
@@ -132,7 +138,7 @@ const Leads = () => {
       const { data: userData, error: userError } = await supabase.auth.getUser();
       if (userError) throw userError;
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('lead_tags')
         .insert({
           name: newTagName.trim(),
@@ -144,7 +150,7 @@ const Leads = () => {
 
       if (error) throw error;
 
-      setTags([...tags, data]);
+      setTags([...tags, data as Tag]);
       setNewTagName("");
       setNewTagColor("#3b82f6");
       setIsTagDialogOpen(false);
@@ -157,7 +163,7 @@ const Leads = () => {
 
   const deleteTag = async (tagId: string) => {
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('lead_tags')
         .delete()
         .eq('id', tagId);
