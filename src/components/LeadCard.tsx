@@ -83,20 +83,31 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete }) => {
     const fetchTags = async () => {
       setTagsLoading(true);
       try {
-        // Use !inner join so supabase fetches rows from lead_tags where tag_id matches
+        // Correct Supabase join for assigned tags
+        // This will return: { tag_id: string, lead_tags: { id, name, color } }
         const { data, error } = await supabase
           .from("lead_tag_assignments")
-          .select("tag_id, lead_tags!inner(id, name, color)")
+          .select("tag_id, lead_tags(id, name, color)")
           .eq("lead_id", lead.id);
 
         if (error) throw error;
 
-        // Safely filter out any rows where we didn't get a valid tag
-        setTags(
-          Array.isArray(data)
-            ? data.filter(t => t.lead_tags && typeof t.lead_tags.id === "string")
-            : []
-        );
+        // Only keep results where lead_tags is valid
+        // Map to just the 'lead_tags' object, as expected by LeadTag[]
+        const validTags = Array.isArray(data)
+          ? data
+              .filter(t => t.lead_tags && typeof t.lead_tags.id === "string")
+              .map(t => ({
+                tag_id: t.tag_id,
+                lead_tags: {
+                  id: t.lead_tags.id,
+                  name: t.lead_tags.name,
+                  color: t.lead_tags.color,
+                }
+              }))
+          : [];
+
+        setTags(validTags);
       } catch (error) {
         setTags([]);
       } finally {
