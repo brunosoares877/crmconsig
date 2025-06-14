@@ -1,10 +1,9 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { MoreHorizontal, Phone, Mail, DollarSign, Building, User, Edit, Trash2, Calendar, FileText } from "lucide-react";
 import { Lead } from "@/types/models";
@@ -102,19 +101,34 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete }) => {
 
   const handleDeleteLead = async () => {
     try {
-      const { error } = await supabase
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (userError) throw userError;
+
+      // Move lead to trash instead of deleting permanently
+      const { error: trashError } = await supabase
+        .from("deleted_leads")
+        .insert({
+          original_lead_id: lead.id,
+          user_id: userData.user.id,
+          original_lead_data: lead
+        });
+
+      if (trashError) throw trashError;
+
+      // Remove from active leads
+      const { error: deleteError } = await supabase
         .from("leads")
         .delete()
         .eq("id", lead.id);
 
-      if (error) throw error;
+      if (deleteError) throw deleteError;
 
       onDelete(lead.id);
-      toast.success("Lead excluído com sucesso!");
+      toast.success("Lead movido para a lixeira com sucesso!");
       setIsDeleteDialogOpen(false);
     } catch (error: any) {
-      console.error("Error deleting lead:", error);
-      toast.error(`Erro ao excluir lead: ${error.message}`);
+      console.error("Error moving lead to trash:", error);
+      toast.error(`Erro ao mover lead para lixeira: ${error.message}`);
     }
   };
 
@@ -168,7 +182,7 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete }) => {
                     className="text-red-600"
                   >
                     <Trash2 className="mr-2 h-4 w-4" />
-                    Excluir
+                    Mover para Lixeira
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -268,15 +282,15 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete }) => {
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogTitle>Mover para Lixeira</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja excluir o lead "{lead.name}"? Esta ação não pode ser desfeita.
+              Tem certeza que deseja mover o lead "{lead.name}" para a lixeira? O lead ficará disponível por 30 dias na lixeira antes de ser excluído permanentemente.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeleteLead} className="bg-red-600 hover:bg-red-700">
-              Excluir
+              Mover para Lixeira
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
