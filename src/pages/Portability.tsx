@@ -83,6 +83,71 @@ const Portability = () => {
   const [status, setStatus] = useState<string>("pendente");
   const [activeTab, setActiveTab] = useState("all");
 
+  // Utility functions - moved to top to avoid hoisting issues
+  const getBankName = (bankCode: string | undefined) => {
+    switch (bankCode) {
+      case "caixa": return "Caixa Econômica Federal";
+      case "bb": return "Banco do Brasil";
+      case "itau": return "Itaú";
+      case "bradesco": return "Bradesco";
+      case "santander": return "Santander";
+      case "c6": return "C6 Bank";
+      case "brb": return "BRB - Banco de Brasília";
+      case "bmg": return "BMG";
+      case "pan": return "Banco Pan";
+      case "ole": return "Banco Olé";
+      case "daycoval": return "Daycoval";
+      case "mercantil": return "Mercantil";
+      case "cetelem": return "Cetelem";
+      case "safra": return "Safra";
+      case "inter": return "Inter";
+      case "original": return "Original";
+      case "facta": return "Facta";
+      case "bonsucesso": return "Bonsucesso";
+      case "banrisul": return "Banrisul";
+      case "sicoob": return "Sicoob";
+      case "outro": return "Outro";
+      default: return "Banco não especificado";
+    }
+  };
+
+  const getStatusLabel = (statusCode: string | undefined) => {
+    switch (statusCode) {
+      case "integrado": return "Integrado";
+      case "cancelado": return "Cancelado";
+      case "redigitado": return "Redigitado";
+      case "pendente": return "Pendente";
+      default: return "Pendente";
+    }
+  };
+
+  const getStatusColor = (statusCode: string | undefined) => {
+    switch (statusCode) {
+      case "integrado": return "bg-green-100 text-green-800 hover:bg-green-200";
+      case "cancelado": return "bg-red-100 text-red-800 hover:bg-red-200";
+      case "redigitado": return "bg-orange-100 text-orange-800 hover:bg-orange-200";
+      case "pendente": return "bg-blue-100 text-blue-800 hover:bg-blue-200";
+      default: return "bg-gray-100 text-gray-800 hover:bg-gray-200";
+    }
+  };
+
+  const getLeadName = (id: string | null) => {
+    if (!id) return "Nenhum cliente";
+    const lead = leads.find(l => l.id === id);
+    return lead ? lead.name : "Cliente não encontrado";
+  };
+
+  const formatDate = (dateString: string) => {
+    return format(new Date(dateString), "PPP", { locale: ptBR });
+  };
+
+  const isPastDue = (dateString: string, isCompleted: boolean) => {
+    if (isCompleted) return false;
+    const dueDate = new Date(dateString);
+    const today = new Date();
+    return dueDate < today;
+  };
+
   const fetchData = async () => {
     setIsLoading(true);
     try {
@@ -389,70 +454,6 @@ const Portability = () => {
       console.error("Erro ao excluir lembrete:", error);
       toast.error(`Erro ao excluir lembrete: ${error.message}`);
     }
-  };
-
-  const getLeadName = (id: string | null) => {
-    if (!id) return "Nenhum cliente";
-    const lead = leads.find(l => l.id === id);
-    return lead ? lead.name : "Cliente não encontrado";
-  };
-
-  const getBankName = (bankCode: string | undefined) => {
-    switch (bankCode) {
-      case "caixa": return "Caixa Econômica Federal";
-      case "bb": return "Banco do Brasil";
-      case "itau": return "Itaú";
-      case "bradesco": return "Bradesco";
-      case "santander": return "Santander";
-      case "c6": return "C6 Bank";
-      case "brb": return "BRB - Banco de Brasília";
-      case "bmg": return "BMG";
-      case "pan": return "Banco Pan";
-      case "ole": return "Banco Olé";
-      case "daycoval": return "Daycoval";
-      case "mercantil": return "Mercantil";
-      case "cetelem": return "Cetelem";
-      case "safra": return "Safra";
-      case "inter": return "Inter";
-      case "original": return "Original";
-      case "facta": return "Facta";
-      case "bonsucesso": return "Bonsucesso";
-      case "banrisul": return "Banrisul";
-      case "sicoob": return "Sicoob";
-      case "outro": return "Outro";
-      default: return "Banco não especificado";
-    }
-  };
-
-  const getStatusLabel = (statusCode: string | undefined) => {
-    switch (statusCode) {
-      case "integrado": return "Integrado";
-      case "cancelado": return "Cancelado";
-      case "redigitado": return "Redigitado";
-      case "pendente": return "Pendente";
-      default: return "Pendente";
-    }
-  };
-
-  const getStatusColor = (statusCode: string | undefined) => {
-    switch (statusCode) {
-      case "integrado": return "bg-green-100 text-green-800 hover:bg-green-200";
-      case "cancelado": return "bg-red-100 text-red-800 hover:bg-red-200";
-      case "redigitado": return "bg-orange-100 text-orange-800 hover:bg-orange-200";
-      case "pendente": return "bg-blue-100 text-blue-800 hover:bg-blue-200";
-      default: return "bg-gray-100 text-gray-800 hover:bg-gray-200";
-    }
-  };
-
-  const formatDate = (dateString: string) => {
-    return format(new Date(dateString), "PPP", { locale: ptBR });
-  };
-
-  const isPastDue = (dateString: string, isCompleted: boolean) => {
-    if (isCompleted) return false;
-    const dueDate = new Date(dateString);
-    const today = new Date();
-    return dueDate < today;
   };
 
   // Filter reminders based on active tab
