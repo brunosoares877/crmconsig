@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Calendar, DollarSign, List, Users, Settings } from "lucide-react";
@@ -89,7 +90,6 @@ const menuItems = [
 export function AppSidebar() {
   const location = useLocation();
 
-  // Sempre retorna o índice do atalho ativo, sem alterar array nem sumir com item algum
   const getActiveIdx = () => {
     for (let i = 0; i < menuItems.length; i++) {
       if (menuItems[i].match(location.pathname)) {
@@ -111,7 +111,6 @@ export function AppSidebar() {
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          {/* Todos os itens SEMPRE aparecem abaixo, ordem fixa */}
           <SidebarGroupContent>
             <SidebarMenu>
               {menuItems.map((item, idx) => {
@@ -120,15 +119,14 @@ export function AppSidebar() {
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton
                       asChild
-                      className={`w-full transition-all font-normal justify-start text-base ${
+                      className={`w-full transition-none font-normal justify-start text-base ${
                         isActive
                           ? "bg-white/10 text-white"
-                          : "text-white/80 hover:bg-white/5"
-                      } ${item.isPremium ? "text-yellow-400 font-semibold" : ""}`}
+                          : "text-white/80"
+                      } ${item.isPremium ? "text-yellow-400 font-semibold" : ""} hover:bg-transparent hover:text-current`}
                       aria-current={isActive ? "page" : undefined}
                     >
                       <Link to={item.url} className="flex items-center gap-2 w-full">
-                        {/* Leads Premium: sempre estrela amarela à esquerda */}
                         {item.isPremium ? (
                           <span className="inline-block w-4 h-4 text-yellow-400" aria-label="premium">
                             ★
