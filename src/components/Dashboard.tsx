@@ -253,9 +253,9 @@ const Dashboard = () => {
   }];
 
   return (
-    <div className="space-y-6">
+    <div className="w-full max-w-[1500px] mx-auto px-2 md:px-4 lg:px-6 space-y-6">
       {/* Metrics Cards Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 lg:gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 lg:gap-6">
         {metricsData.map((metric, index) => (
           <MetricsCard key={index} {...metric} />
         ))}
@@ -275,12 +275,15 @@ const Dashboard = () => {
       </div>
       
       {/* Latest Leads Full Width */}
-      <LatestLeadsCard 
-        latestLeads={latestLeads}
-        isLoading={isLoading}
-      />
+      <div>
+        <LatestLeadsCard 
+          latestLeads={latestLeads}
+          isLoading={isLoading}
+        />
+      </div>
     </div>
   );
 };
 
 export default Dashboard;
+
