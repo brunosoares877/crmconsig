@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -83,8 +84,7 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete }) => {
     const fetchTags = async () => {
       setTagsLoading(true);
       try {
-        // Correct Supabase join for assigned tags
-        // This will return: { tag_id: string, lead_tags: { id, name, color } }
+        // A query pode retornar um erro de relação caso não haja join, vamos filtrar corretamente
         const { data, error } = await supabase
           .from("lead_tag_assignments")
           .select("tag_id, lead_tags(id, name, color)")
@@ -92,20 +92,22 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete }) => {
 
         if (error) throw error;
 
-        // Only keep results where lead_tags is valid
-        // Map to just the 'lead_tags' object, as expected by LeadTag[]
-        const validTags = Array.isArray(data)
-          ? data
-              .filter(t => t.lead_tags && typeof t.lead_tags.id === "string")
-              .map(t => ({
-                tag_id: t.tag_id,
-                lead_tags: {
-                  id: t.lead_tags.id,
-                  name: t.lead_tags.name,
-                  color: t.lead_tags.color,
-                }
-              }))
-          : [];
+        // Novamente: filtrar apenas onde lead_tags é um objeto válido, não erro.
+        const validTags = (Array.isArray(data) ? data : []).filter(
+          (t: any) =>
+            t.lead_tags &&
+            typeof t.lead_tags === "object" &&
+            typeof t.lead_tags.id === "string" &&
+            typeof t.lead_tags.name === "string" &&
+            typeof t.lead_tags.color === "string"
+        ).map((t: any) => ({
+          tag_id: t.tag_id,
+          lead_tags: {
+            id: t.lead_tags.id,
+            name: t.lead_tags.name,
+            color: t.lead_tags.color,
+          }
+        }));
 
         setTags(validTags);
       } catch (error) {
