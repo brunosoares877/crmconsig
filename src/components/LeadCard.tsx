@@ -303,13 +303,35 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete }) => {
       <Card className="hover:shadow-md transition-shadow">
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between">
-            <div className="space-y-1">
-              <CardTitle className="text-lg leading-none">{lead.name}</CardTitle>
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-2">
+                <CardTitle className="text-lg leading-none">{lead.name}</CardTitle>
+                {/* Etiquetas visualizadas AO LADO do nome */}
+                {leadTags.length > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    {leadTags.map((tag) => (
+                      <Badge
+                        key={tag.id}
+                        variant="outline"
+                        className="text-xs h-5 px-2"
+                        style={{ 
+                          backgroundColor: tag.color + '20',
+                          borderColor: tag.color,
+                          color: tag.color
+                        }}
+                      >
+                        {tag.name}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
               <CardDescription className="text-sm">
                 Cadastrado em {lead.createdAt}
               </CardDescription>
             </div>
             <div className="flex items-center gap-2">
+              {/* Mantém dropdown para edição das etiquetas aqui */}
               <DropdownMenu open={isTagDropdownOpen} onOpenChange={setIsTagDropdownOpen}>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm" className="h-7 gap-1">
@@ -366,34 +388,6 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete }) => {
               </DropdownMenu>
             </div>
           </div>
-          
-          {/* Display assigned tags */}
-          {leadTags.length > 0 && (
-            <div className="flex flex-wrap gap-1 mt-2">
-              {leadTags.map((tag) => (
-                <Badge
-                  key={tag.id}
-                  variant="outline"
-                  className="text-xs h-6"
-                  style={{ 
-                    backgroundColor: tag.color + '20',
-                    borderColor: tag.color,
-                    color: tag.color
-                  }}
-                >
-                  {tag.name}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-3 w-3 p-0 ml-1 hover:bg-transparent"
-                    onClick={() => toggleTag(tag.id)}
-                  >
-                    <X className="h-2 w-2" />
-                  </Button>
-                </Badge>
-              ))}
-            </div>
-          )}
         </CardHeader>
         
         <CardContent className="space-y-4">
