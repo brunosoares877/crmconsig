@@ -260,19 +260,64 @@ const LeadForm: React.FC<LeadFormProps> = ({
     try {
       console.log("Form submission started with values:", values);
       
+      // Validate required fields before proceeding
+      if (!values.name?.trim()) {
+        toast.error("Nome é obrigatório");
+        return;
+      }
+      
+      if (!values.cpf?.trim()) {
+        toast.error("CPF é obrigatório");
+        return;
+      }
+      
+      if (!values.phone?.trim()) {
+        toast.error("Telefone é obrigatório");
+        return;
+      }
+      
+      if (!values.bank?.trim()) {
+        toast.error("Banco é obrigatório");
+        return;
+      }
+      
+      if (!values.product?.trim()) {
+        toast.error("Produto é obrigatório");
+        return;
+      }
+      
+      if (!values.amount?.trim()) {
+        toast.error("Valor é obrigatório");
+        return;
+      }
+      
+      if (!values.benefit_type?.trim()) {
+        toast.error("Espécie de benefício é obrigatória");
+        return;
+      }
+
       // Remove representative_mode from the data before sending to database
       const { representative_mode, selectedTags, ...dataToSubmit } = values;
       
-      // Ensure all required fields are present
+      // Ensure all required fields are present and clean
       const formData = {
         ...dataToSubmit,
         name: values.name.trim(),
         cpf: values.cpf.trim(),
         phone: values.phone.trim(),
+        phone2: values.phone2?.trim() || "",
+        phone3: values.phone3?.trim() || "",
+        bank: values.bank.trim(),
+        product: values.product.trim(),
+        amount: values.amount.trim(),
+        status: values.status || "novo",
+        employee: values.employee?.trim() || "",
+        notes: values.notes?.trim() || "",
+        benefit_type: values.benefit_type.trim(),
         // Only include representative fields if representative_mode is "sim"
-        representative_name: values.representative_mode === "sim" ? values.representative_name : "",
-        representative_cpf: values.representative_mode === "sim" ? values.representative_cpf : "",
-        selectedTags: selectedTags,
+        representative_name: values.representative_mode === "sim" ? (values.representative_name?.trim() || "") : "",
+        representative_cpf: values.representative_mode === "sim" ? (values.representative_cpf?.trim() || "") : "",
+        selectedTags: selectedTags || [],
       };
 
       console.log("Calling onSubmit with data:", formData);
@@ -306,7 +351,7 @@ const LeadForm: React.FC<LeadFormProps> = ({
           name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Nome completo</FormLabel>
+              <FormLabel>Nome completo *</FormLabel>
               <FormControl>
                 <Input 
                   placeholder="Nome do cliente" 
@@ -327,7 +372,7 @@ const LeadForm: React.FC<LeadFormProps> = ({
             name="cpf"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>CPF</FormLabel>
+                <FormLabel>CPF *</FormLabel>
                 <FormControl>
                   <div className="relative">
                     <Input 
@@ -351,7 +396,7 @@ const LeadForm: React.FC<LeadFormProps> = ({
             name="phone"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Telefone Principal</FormLabel>
+                <FormLabel>Telefone Principal *</FormLabel>
                 <FormControl>
                   <Input 
                     placeholder="(00) 00000-0000" 
@@ -412,7 +457,7 @@ const LeadForm: React.FC<LeadFormProps> = ({
             name="bank"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Banco</FormLabel>
+                <FormLabel>Banco *</FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading}>
                   <FormControl>
                     <SelectTrigger>
@@ -480,7 +525,7 @@ const LeadForm: React.FC<LeadFormProps> = ({
             name="product"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Produto</FormLabel>
+                <FormLabel>Produto *</FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading}>
                   <FormControl>
                     <SelectTrigger>
@@ -511,7 +556,7 @@ const LeadForm: React.FC<LeadFormProps> = ({
             name="amount"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Valor do Empréstimo</FormLabel>
+                <FormLabel>Valor do Empréstimo *</FormLabel>
                 <FormControl>
                   <Input 
                     placeholder="R$ 0,00" 
@@ -576,7 +621,7 @@ const LeadForm: React.FC<LeadFormProps> = ({
           name="benefit_type"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Espécie de Benefício</FormLabel>
+              <FormLabel>Espécie de Benefício *</FormLabel>
               <Select 
                 onValueChange={field.onChange} 
                 defaultValue={field.value} 
