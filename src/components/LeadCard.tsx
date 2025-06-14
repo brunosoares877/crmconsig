@@ -1,11 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { MoreHorizontal, Phone, Mail, DollarSign, Building, User, Edit, Trash2, Calendar, FileText } from "lucide-react";
+import { MoreHorizontal, Phone, Mail, DollarSign, Building, User, Edit, Trash2, Calendar, FileText, Tag } from "lucide-react";
 import { Lead } from "@/types/models";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -13,6 +13,15 @@ import LeadForm from "./LeadForm";
 import ClientVisits from "./leads/ClientVisits";
 import DocumentUpload from "./leads/DocumentUpload";
 import WhatsAppButton from "./WhatsAppButton";
+
+interface LeadTag {
+  tag_id: string;
+  lead_tags: {
+    id: string;
+    name: string;
+    color: string;
+  };
+}
 
 interface LeadCardProps {
   lead: Lead;
@@ -66,6 +75,29 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete }) => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [tags, setTags] = useState<LeadTag[]>([]);
+  const [tagsLoading, setTagsLoading] = useState(true);
+
+  useEffect(() => {
+    // Buscar as tags atribuídas ao lead
+    const fetchTags = async () => {
+      setTagsLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from("lead_tag_assignments")
+          .select("tag_id, lead_tags(id, name, color)")
+          .eq("lead_id", lead.id);
+
+        if (error) throw error;
+        setTags(Array.isArray(data) ? data : []);
+      } catch (error) {
+        setTags([]);
+      } finally {
+        setTagsLoading(false);
+      }
+    };
+    fetchTags();
+  }, [lead.id]);
 
   const handleUpdateLead = async (values: any) => {
     setIsUpdating(true);
@@ -216,7 +248,34 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete }) => {
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between">
             <div className="space-y-1">
-              <CardTitle className="text-lg leading-none">{lead.name}</CardTitle>
+              <div className="flex flex-wrap items-center gap-2">
+                <CardTitle className="text-lg leading-none flex items-center gap-2">
+                  {lead.name}
+                  {/* Exibe as etiquetas ao lado do nome */}
+                  {!tagsLoading && tags.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-1">
+                      {tags.map(
+                        (tag) =>
+                          tag.lead_tags && (
+                            <Badge
+                              key={tag.lead_tags.id}
+                              variant="outline"
+                              className="px-2 py-0.5 rounded-full text-xs border"
+                              style={{
+                                background: tag.lead_tags.color,
+                                color: "#fff",
+                                borderColor: tag.lead_tags.color
+                              }}
+                            >
+                              <Tag className="h-3 w-3 mr-1 inline" style={{ strokeWidth: 2 }} />
+                              {tag.lead_tags.name}
+                            </Badge>
+                          )
+                      )}
+                    </div>
+                  )}
+                </CardTitle>
+              </div>
               <CardDescription className="text-sm">
                 Cadastrado em {lead.createdAt}
               </CardDescription>
