@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Calendar, DollarSign, List, Users, Settings } from "lucide-react";
@@ -133,7 +132,6 @@ export function AppSidebar() {
                         {/* Para "Leads Premium", estrela amarela à esquerda */}
                         {item.isPremium && (
                           <span className="inline-block w-4 h-4 text-yellow-400">
-                            {/* Simples estrela unicode: */}
                             ★
                           </span>
                         )}
