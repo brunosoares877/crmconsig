@@ -21,11 +21,13 @@ const Index = () => {
   } = useAuth();
   const navigate = useNavigate();
 
-  // Redirect to payment plans ONLY if trial is expired AND not privileged
+  // Only redirect to settings if trial is expired AND not privileged AND user is trying to access restricted features
+  // Remove automatic redirect from dashboard
   useEffect(() => {
-    if (status === 'expired' && !isTrialActive && !isPrivilegedUser) {
-      navigate("/settings");
-    }
+    // Remove the automatic redirect - let users stay on dashboard
+    // if (status === 'expired' && !isTrialActive && !isPrivilegedUser) {
+    //   navigate("/settings");
+    // }
   }, [status, isTrialActive, isPrivilegedUser, navigate]);
 
   return (
