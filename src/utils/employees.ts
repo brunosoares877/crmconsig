@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 export interface Employee {
@@ -46,7 +47,7 @@ export const createEmployee = async (
       .from("employees")
       .insert({
         name: name.trim(),
-        full_name: fullName.trim(), // Will be the same as name now
+        full_name: fullName.trim(),
         bank: bank.trim(),
         pix_key_main: pixKeyMain.trim(),
         pix_key_2: pixKey2?.trim() || null,
