@@ -5,7 +5,7 @@ import Header from "@/components/Header";
 import Dashboard from "@/components/Dashboard";
 import TrialBanner from "@/components/TrialBanner";
 import { useSubscription } from "@/contexts/SubscriptionContext";
-import Sidebar from "@/components/Sidebar";
+// import Sidebar from "@/components/Sidebar";
 import AddLeadButton from "@/components/leads/AddLeadButton";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import { useAuth } from "@/contexts/AuthContext";
@@ -29,10 +29,10 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-slate-50/30 w-full">
-      <Sidebar />
-      <div className="w-full md:ml-64 transition-all duration-300">
+      {/* <Sidebar /> */}
+      <div className="w-full transition-all duration-300"> {/* Removido md:ml-64 */}
         <Header />
-        <main className="w-full p-4 md:p-6">
+        <main className="w-full p-0 md:p-0"> {/* Removido padding */}
           <div className="w-full space-y-6">
             <TrialBanner />
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
