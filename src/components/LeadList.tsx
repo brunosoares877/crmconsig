@@ -15,11 +15,13 @@ import LeadForm from "./LeadForm";
 interface LeadListProps {
   searchQuery?: string;
   status?: string;
+  selectedTags?: string[];
 }
 
 const LeadList: React.FC<LeadListProps> = ({
   searchQuery = "",
-  status
+  status,
+  selectedTags = []
 }) => {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [filteredLeads, setFilteredLeads] = useState<Lead[]>([]);
@@ -86,6 +88,13 @@ const LeadList: React.FC<LeadListProps> = ({
       result = result.filter(lead => lead.status === statusFilter);
     }
 
+    // Filter by selected tags (placeholder for now - will need to implement tag system in backend)
+    if (selectedTags.length > 0) {
+      // This would need to be implemented with a proper tag relationship in the database
+      // For now, this is just a placeholder
+      console.log('Filtering by tags:', selectedTags);
+    }
+
     activeFilters.forEach(filter => {
       if (filter.id === "novos") {
         result = result.filter(lead => lead.status === "novo");
@@ -100,7 +109,7 @@ const LeadList: React.FC<LeadListProps> = ({
     });
 
     setFilteredLeads(result);
-  }, [leads, searchQuery, internalSearchQuery, statusFilter, activeFilters, status]);
+  }, [leads, searchQuery, internalSearchQuery, statusFilter, activeFilters, status, selectedTags]);
 
   const handleLeadSubmit = async (values: any) => {
     console.log("New lead submission:", values);
