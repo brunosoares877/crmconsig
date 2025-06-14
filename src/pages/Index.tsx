@@ -8,7 +8,6 @@ import { useSubscription } from "@/contexts/SubscriptionContext";
 import AddLeadButton from "@/components/leads/AddLeadButton";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import { useAuth } from "@/contexts/AuthContext";
-import { Sidebar, SidebarContent, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 
 const Index = () => {
@@ -38,7 +37,6 @@ const Index = () => {
         <main className="w-full p-0 md:p-0">
           <div className="w-full space-y-6">
             <div className="flex items-center gap-4 px-4 py-2">
-              <SidebarTrigger />
               <TrialBanner />
             </div>
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 px-4">

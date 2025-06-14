@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Calendar, CalendarDays, CalendarPlus, DollarSign, List, ListCheck, Settings, Users } from "lucide-react";
@@ -69,7 +70,7 @@ export function AppSidebar() {
   };
 
   return (
-    <Sidebar>
+    <Sidebar collapsible="none">
       <SidebarHeader>
         <div className="flex items-center px-2 py-2">
           <h1 className="text-lg font-bold text-sidebar-foreground">LeadConsig</h1>
