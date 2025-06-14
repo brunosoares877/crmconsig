@@ -413,6 +413,80 @@ export type Database = {
         }
         Relationships: []
       }
+      leads_premium: {
+        Row: {
+          created_at: string
+          id: string
+          mensagem: string | null
+          modalidade: string
+          nome: string
+          origem: string
+          status: string
+          telefone: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          mensagem?: string | null
+          modalidade: string
+          nome: string
+          origem: string
+          status?: string
+          telefone: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          mensagem?: string | null
+          modalidade?: string
+          nome?: string
+          origem?: string
+          status?: string
+          telefone?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      mensagens_premium: {
+        Row: {
+          conteudo: string
+          created_at: string
+          id: string
+          lead_id: string
+          remetente: string
+          user_id: string
+        }
+        Insert: {
+          conteudo: string
+          created_at?: string
+          id?: string
+          lead_id: string
+          remetente: string
+          user_id: string
+        }
+        Update: {
+          conteudo?: string
+          created_at?: string
+          id?: string
+          lead_id?: string
+          remetente?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mensagens_premium_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads_premium"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           company_name: string | null

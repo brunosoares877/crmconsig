@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Link } from "react-router-dom";
-import { Calendar, CalendarDays, CalendarPlus, DollarSign, List, ListCheck, Settings, Users } from "lucide-react";
+import { Calendar, CalendarDays, CalendarPlus, DollarSign, List, ListCheck, Settings, Users, Star } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -24,6 +24,11 @@ const menuItems = [
     title: "Leads",
     url: "/leads",
     icon: List,
+  },
+  {
+    title: "Leads Premium",
+    url: "/leads-premium",
+    icon: Star,
   },
   {
     title: "Lembretes",
