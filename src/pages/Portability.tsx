@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
@@ -114,6 +115,60 @@ const Portability = () => {
   useEffect(() => {
     fetchData();
   }, []);
+
+  const resetForm = () => {
+    setTitle("");
+    setLeadId("");
+    setDate(new Date());
+    setNotes("");
+    setBankFilter("");
+    setStatus("pendente");
+  };
+
+  const handleCreateReminder = async () => {
+    if (!title || !date) {
+      toast.error("Preencha todos os campos obrigatórios");
+      return;
+    }
+    
+    setIsSubmitting(true);
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) throw new Error("Usuário não autenticado");
+      
+      // Get the bank from the selected lead
+      let bank = null;
+      if (leadId) {
+        const selectedLead = leads.find(lead => lead.id === leadId);
+        bank = selectedLead?.bank || null;
+      } else if (bankFilter) {
+        bank = bankFilter;
+      }
+      
+      const { error } = await supabase.from("reminders").insert({
+        title,
+        lead_id: leadId || null,
+        notes,
+        due_date: date?.toISOString(),
+        is_completed: false,
+        user_id: userData.user.id,
+        bank,
+        status: status
+      });
+      
+      if (error) throw error;
+      
+      toast.success("Lembrete criado com sucesso!");
+      setIsDialogOpen(false);
+      resetForm();
+      await fetchData();
+    } catch (error: any) {
+      console.error("Erro ao criar lembrete:", error);
+      toast.error(`Erro ao criar lembrete: ${error.message}`);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const headerActions = (
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -380,15 +435,6 @@ const Portability = () => {
       console.error("Erro ao excluir lembrete:", error);
       toast.error(`Erro ao excluir lembrete: ${error.message}`);
     }
-  };
-
-  const resetForm = () => {
-    setTitle("");
-    setLeadId("");
-    setDate(new Date());
-    setNotes("");
-    setBankFilter("");
-    setStatus("pendente");
   };
 
   const getLeadName = (id: string | null) => {
