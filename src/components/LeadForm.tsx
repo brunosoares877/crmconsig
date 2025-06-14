@@ -25,6 +25,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { supabase } from "@/integrations/supabase/client";
 import { getEmployees, Employee } from "@/utils/employees";
 import { toast } from "sonner";
+import { Switch } from "@/components/ui/switch";
 
 const formSchema = z.object({
   name: z.string().min(3, { message: "O nome deve ter pelo menos 3 caracteres." }),
@@ -39,6 +40,9 @@ const formSchema = z.object({
   employee: z.string().optional(),
   notes: z.string().optional(),
   benefit_type: z.string().min(1, { message: "Selecione a espécie de benefício." }),
+  representative_mode: z.string().default("nao"),
+  representative_name: z.string().optional(),
+  representative_cpf: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -60,6 +64,9 @@ const LeadForm: React.FC<LeadFormProps> = ({
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [existingClient, setExistingClient] = useState<any>(null);
   const [isCheckingClient, setIsCheckingClient] = useState(false);
+  const [hasRepresentative, setHasRepresentative] = useState(
+    initialData?.representative_name || initialData?.representative_cpf ? true : false
+  );
 
   useEffect(() => {
     const fetchBenefitTypes = async () => {
@@ -87,7 +94,7 @@ const LeadForm: React.FC<LeadFormProps> = ({
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: initialData || {
+    defaultValues: {
       name: "",
       cpf: "",
       phone: "",
@@ -100,6 +107,10 @@ const LeadForm: React.FC<LeadFormProps> = ({
       employee: "",
       notes: "",
       benefit_type: "",
+      representative_mode: initialData?.representative_name || initialData?.representative_cpf ? "sim" : "nao",
+      representative_name: initialData?.representative_name || "",
+      representative_cpf: initialData?.representative_cpf || "",
+      ...initialData,
     },
   });
 
@@ -193,6 +204,21 @@ const LeadForm: React.FC<LeadFormProps> = ({
     form.setValue("amount", value);
   };
 
+  const handleRepresentativeCPFChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value.replace(/\D/g, "");
+    if (value.length > 11) value = value.slice(0, 11);
+
+    if (value.length > 9) {
+      value = `${value.slice(0, 3)}.${value.slice(3, 6)}.${value.slice(6, 9)}-${value.slice(9)}`;
+    } else if (value.length > 6) {
+      value = `${value.slice(0, 3)}.${value.slice(3, 6)}.${value.slice(6)}`;
+    } else if (value.length > 3) {
+      value = `${value.slice(0, 3)}.${value.slice(3)}`;
+    }
+
+    form.setValue("representative_cpf", value);
+  };
+
   const handleSubmit = async (values: FormValues) => {
     try {
       console.log("Form submission started with values:", values);
@@ -206,7 +232,11 @@ const LeadForm: React.FC<LeadFormProps> = ({
       };
 
       console.log("Calling onSubmit with data:", formData);
-      await onSubmit(formData);
+      await onSubmit({
+        ...values,
+        representative_name: values.representative_mode === "sim" ? values.representative_name : "",
+        representative_cpf: values.representative_mode === "sim" ? values.representative_cpf : "",
+      });
       
     } catch (error) {
       console.error("Error in form submission:", error);
@@ -526,6 +556,78 @@ const LeadForm: React.FC<LeadFormProps> = ({
             </FormItem>
           )}
         />
+
+        {/* PERGUNTA REPRESENTANTE */}
+        <div className="flex items-center gap-4 pb-2">
+          <span className="font-medium">Possui representante?</span>
+          <Button
+            type="button"
+            variant={form.watch("representative_mode") === "sim" ? "default" : "outline"}
+            onClick={() => {
+              setHasRepresentative(true);
+              form.setValue("representative_mode", "sim");
+            }}
+            className="rounded-full"
+          >
+            Sim
+          </Button>
+          <Button
+            type="button"
+            variant={form.watch("representative_mode") === "nao" ? "default" : "outline"}
+            onClick={() => {
+              setHasRepresentative(false);
+              form.setValue("representative_mode", "nao");
+              form.setValue("representative_name", "");
+              form.setValue("representative_cpf", "");
+            }}
+            className="rounded-full"
+          >
+            Não
+          </Button>
+        </div>
+
+        {form.watch("representative_mode") === "sim" && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="representative_name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nome do Representante</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Nome completo do representante"
+                      {...field}
+                      value={field.value}
+                      disabled={isLoading}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="representative_cpf"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>CPF do Representante</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="000.000.000-00"
+                      {...field}
+                      onChange={handleRepresentativeCPFChange}
+                      value={field.value}
+                      disabled={isLoading}
+                      inputMode="numeric"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+        )}
 
         <div className="pt-4 flex justify-end space-x-2">
           <Button variant="outline" type="button" onClick={onCancel} disabled={isLoading}>

@@ -234,6 +234,33 @@ export type Database = {
           },
         ]
       }
+      deleted_leads: {
+        Row: {
+          deleted_at: string
+          expires_at: string
+          id: string
+          original_lead_data: Json
+          original_lead_id: string
+          user_id: string
+        }
+        Insert: {
+          deleted_at?: string
+          expires_at?: string
+          id?: string
+          original_lead_data: Json
+          original_lead_id: string
+          user_id: string
+        }
+        Update: {
+          deleted_at?: string
+          expires_at?: string
+          id?: string
+          original_lead_data?: Json
+          original_lead_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       documents: {
         Row: {
           created_at: string | null
@@ -333,6 +360,8 @@ export type Database = {
           phone2: string | null
           phone3: string | null
           product: string | null
+          representative_cpf: string | null
+          representative_name: string | null
           source: string | null
           status: string | null
           updated_at: string
@@ -353,6 +382,8 @@ export type Database = {
           phone2?: string | null
           phone3?: string | null
           product?: string | null
+          representative_cpf?: string | null
+          representative_name?: string | null
           source?: string | null
           status?: string | null
           updated_at?: string
@@ -373,6 +404,8 @@ export type Database = {
           phone2?: string | null
           phone3?: string | null
           product?: string | null
+          representative_cpf?: string | null
+          representative_name?: string | null
           source?: string | null
           status?: string | null
           updated_at?: string
@@ -459,7 +492,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      cleanup_expired_deleted_leads: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
