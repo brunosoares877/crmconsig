@@ -26,8 +26,17 @@ import {
   SidebarSeparator,
 } from "@/components/ui/sidebar";
 
+// Define the menu item interface
+interface MenuItem {
+  title: string;
+  url: string;
+  icon: React.ComponentType<{ className?: string }>;
+  match: (pathname: string) => boolean;
+  isPremium?: boolean;
+}
+
 // Menu items organized by logical groups
-const principalItems = [
+const principalItems: MenuItem[] = [
   {
     title: "Dashboard",
     url: "/dashboard",
@@ -36,7 +45,7 @@ const principalItems = [
   },
 ];
 
-const leadsItems = [
+const leadsItems: MenuItem[] = [
   {
     title: "Leads",
     url: "/leads",
@@ -61,7 +70,7 @@ const leadsItems = [
   },
 ];
 
-const lembretesItems = [
+const lembretesItems: MenuItem[] = [
   {
     title: "Lembretes",
     url: "/reminders",
@@ -79,7 +88,7 @@ const lembretesItems = [
   },
 ];
 
-const negociosItems = [
+const negociosItems: MenuItem[] = [
   {
     title: "Portabilidade",
     url: "/portability",
@@ -95,7 +104,7 @@ const negociosItems = [
   },
 ];
 
-const administracaoItems = [
+const administracaoItems: MenuItem[] = [
   {
     title: "Funcionários",
     url: "/employees",
@@ -112,7 +121,7 @@ const administracaoItems = [
   },
 ];
 
-const allMenuItems = [
+const allMenuItems: MenuItem[] = [
   ...principalItems,
   ...leadsItems,
   ...lembretesItems,
@@ -133,7 +142,7 @@ export function AppSidebar() {
   };
   const activeIdx = getActiveIdx();
 
-  const renderMenuGroup = (items: typeof principalItems, groupLabel?: string) => (
+  const renderMenuGroup = (items: MenuItem[], groupLabel?: string) => (
     <SidebarGroup>
       {groupLabel && <SidebarGroupLabel className="text-white/60 text-xs uppercase font-semibold">{groupLabel}</SidebarGroupLabel>}
       <SidebarGroupContent>
