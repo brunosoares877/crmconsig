@@ -63,16 +63,6 @@ const Employees = () => {
       return;
     }
 
-    if (!newEmployeeBank.trim()) {
-      toast.error("O banco não pode estar vazio");
-      return;
-    }
-
-    if (!newEmployeePixKeyMain.trim()) {
-      toast.error("A chave PIX principal é obrigatória");
-      return;
-    }
-
     try {
       setLoading(true);
 
@@ -157,7 +147,7 @@ const Employees = () => {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="bank">Banco *</Label>
+                  <Label htmlFor="bank">Banco</Label>
                   <Input
                     id="bank"
                     type="text"
@@ -168,7 +158,7 @@ const Employees = () => {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="pixMain">Chave PIX Principal *</Label>
+                  <Label htmlFor="pixMain">Chave PIX Principal</Label>
                   <Input
                     id="pixMain"
                     type="text"
@@ -203,7 +193,7 @@ const Employees = () => {
                 <div className="md:col-span-2">
                   <Button 
                     onClick={handleAddEmployee} 
-                    disabled={loading || !newEmployeeName.trim() || !newEmployeeBank.trim() || !newEmployeePixKeyMain.trim()}
+                    disabled={loading || !newEmployeeName.trim()}
                     className="w-full"
                   >
                     {loading ? "Adicionando..." : "Adicionar Funcionário"}
