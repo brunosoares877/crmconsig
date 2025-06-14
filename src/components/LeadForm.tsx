@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -223,20 +224,22 @@ const LeadForm: React.FC<LeadFormProps> = ({
     try {
       console.log("Form submission started with values:", values);
       
+      // Remove representative_mode from the data before sending to database
+      const { representative_mode, ...dataToSubmit } = values;
+      
       // Ensure all required fields are present
       const formData = {
-        ...values,
+        ...dataToSubmit,
         name: values.name.trim(),
         cpf: values.cpf.trim(),
         phone: values.phone.trim(),
+        // Only include representative fields if representative_mode is "sim"
+        representative_name: values.representative_mode === "sim" ? values.representative_name : "",
+        representative_cpf: values.representative_mode === "sim" ? values.representative_cpf : "",
       };
 
       console.log("Calling onSubmit with data:", formData);
-      await onSubmit({
-        ...values,
-        representative_name: values.representative_mode === "sim" ? values.representative_name : "",
-        representative_cpf: values.representative_mode === "sim" ? values.representative_cpf : "",
-      });
+      await onSubmit(formData);
       
     } catch (error) {
       console.error("Error in form submission:", error);
