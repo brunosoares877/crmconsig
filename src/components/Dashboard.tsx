@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, PhoneCall, CalendarCheck, TrendingUp, TrendingDown, User, Search, BarChart3, DollarSign } from "lucide-react";
@@ -211,58 +210,60 @@ const Dashboard = () => {
     };
   };
 
-  const metricsData = [{
-    title: "Leads Hoje",
-    value: metrics.leadsToday.toString(),
-    change: calculateChange(metrics.leadsToday, metrics.leadsToday - 2),
-    subtitle: `Comparado com ontem`,
-    positive: true,
-    icon: <Users className="h-4 w-4 lg:h-5 lg:w-5" />,
-    iconBg: "bg-blue-50",
-    iconColor: "text-blue-600"
-  }, {
-    title: "Total de Leads",
-    value: metrics.leadsThisMonth.toString(),
-    change: calculateChange(metrics.leadsThisMonth, metrics.leadsThisMonth - 5),
-    subtitle: `Leads do mês atual`,
-    positive: true,
-    icon: <PhoneCall className="h-4 w-4 lg:h-5 lg:w-5" />,
-    iconBg: "bg-green-50",
-    iconColor: "text-green-600"
-  }, {
-    title: "Produção Mensal",
-    value: `R$ ${metrics.monthlyProduction.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
-    change: calculateChange(metrics.monthlyProduction, metrics.monthlyProduction - 5000),
-    subtitle: `Total vendido no mês`,
-    positive: true,
-    icon: <DollarSign className="h-4 w-4 lg:h-5 lg:w-5" />,
-    iconBg: "bg-emerald-50",
-    iconColor: "text-emerald-600"
-  }, {
-    title: "Conversão",
-    value: "12%",
-    change: {
-      value: "+2.1%",
-      positive: true
-    },
-    subtitle: `Taxa de conversão`,
-    positive: true,
-    icon: <BarChart3 className="h-4 w-4 lg:h-5 lg:w-5" />,
-    iconBg: "bg-orange-50",
-    iconColor: "text-orange-600"
-  }];
+  const metricsData = [
+    {
+      title: "Leads Hoje",
+      value: metrics.leadsToday.toString(),
+      change: calculateChange(metrics.leadsToday, metrics.leadsToday - 2),
+      subtitle: `Comparado com ontem`,
+      positive: true,
+      icon: <Users className="h-4 w-4 lg:h-5 lg:w-5" />,
+      iconBg: "bg-blue-50",
+      iconColor: "text-blue-600"
+    }, {
+      title: "Total de Leads",
+      value: metrics.leadsThisMonth.toString(),
+      change: calculateChange(metrics.leadsThisMonth, metrics.leadsThisMonth - 5),
+      subtitle: `Leads do mês atual`,
+      positive: true,
+      icon: <PhoneCall className="h-4 w-4 lg:h-5 lg:w-5" />,
+      iconBg: "bg-green-50",
+      iconColor: "text-green-600"
+    }, {
+      title: "Produção Mensal",
+      value: `R$ ${metrics.monthlyProduction.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+      change: calculateChange(metrics.monthlyProduction, metrics.monthlyProduction - 5000),
+      subtitle: `Total vendido no mês`,
+      positive: true,
+      icon: <DollarSign className="h-4 w-4 lg:h-5 lg:w-5" />,
+      iconBg: "bg-emerald-50",
+      iconColor: "text-emerald-600"
+    }, {
+      title: "Conversão",
+      value: "12%",
+      change: {
+        value: "+2.1%",
+        positive: true
+      },
+      subtitle: `Taxa de conversão`,
+      positive: true,
+      icon: <BarChart3 className="h-4 w-4 lg:h-5 lg:w-5" />,
+      iconBg: "bg-orange-50",
+      iconColor: "text-orange-600"
+    }
+  ];
 
   return (
-    <div className="w-full max-w-[1500px] mx-auto px-2 md:px-4 lg:px-6 space-y-6">
+    <div className="w-full px-1 md:px-4 lg:px-6 space-y-6 overflow-x-hidden">
       {/* Metrics Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 lg:gap-6">
+      <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 lg:gap-6">
         {metricsData.map((metric, index) => (
           <MetricsCard key={index} {...metric} />
         ))}
       </div>
 
       {/* Main Content Grid */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+      <div className="w-full grid grid-cols-1 xl:grid-cols-2 gap-6">
         <ProductionCard 
           dailyProduction={dailyProduction}
           isLoading={isLoading}
@@ -275,7 +276,7 @@ const Dashboard = () => {
       </div>
       
       {/* Latest Leads Full Width */}
-      <div>
+      <div className="w-full">
         <LatestLeadsCard 
           latestLeads={latestLeads}
           isLoading={isLoading}
@@ -286,4 +287,3 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
-
