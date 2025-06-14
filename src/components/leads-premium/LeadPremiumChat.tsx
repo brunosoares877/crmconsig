@@ -76,7 +76,15 @@ const LeadPremiumChat: React.FC<LeadPremiumChatProps> = ({ lead, onBack, onLeadU
         return;
       }
 
-      setMensagens(data || []);
+      // Tipagem correta dos dados vindos do Supabase
+      const mensagensTyped: Mensagem[] = (data || []).map(msg => ({
+        id: msg.id,
+        conteudo: msg.conteudo,
+        remetente: msg.remetente as 'lead' | 'atendente',
+        created_at: msg.created_at
+      }));
+
+      setMensagens(mensagensTyped);
     } catch (error) {
       console.error('Erro ao buscar mensagens:', error);
       toast.error("Erro ao carregar mensagens");
@@ -113,7 +121,15 @@ const LeadPremiumChat: React.FC<LeadPremiumChatProps> = ({ lead, onBack, onLeadU
         return;
       }
 
-      setMensagens(prev => [...prev, data]);
+      // Tipagem correta da nova mensagem
+      const novaMensagemTyped: Mensagem = {
+        id: data.id,
+        conteudo: data.conteudo,
+        remetente: data.remetente as 'lead' | 'atendente',
+        created_at: data.created_at
+      };
+
+      setMensagens(prev => [...prev, novaMensagemTyped]);
       setNovaMensagem("");
     } catch (error) {
       console.error('Erro ao enviar mensagem:', error);
@@ -181,7 +197,13 @@ const LeadPremiumChat: React.FC<LeadPremiumChatProps> = ({ lead, onBack, onLeadU
             .single();
 
           if (!error && data) {
-            setMensagens([data]);
+            const mensagemTyped: Mensagem = {
+              id: data.id,
+              conteudo: data.conteudo,
+              remetente: data.remetente as 'lead' | 'atendente',
+              created_at: data.created_at
+            };
+            setMensagens([mensagemTyped]);
           }
         } catch (error) {
           console.error('Erro ao adicionar mensagem inicial:', error);
