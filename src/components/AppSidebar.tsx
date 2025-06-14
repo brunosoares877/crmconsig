@@ -1,6 +1,6 @@
 
 import React from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Calendar, CalendarDays, CalendarPlus, DollarSign, List, ListCheck, Settings, Users } from "lucide-react";
 import {
   Sidebar,
@@ -63,39 +63,6 @@ const menuItems = [
 ];
 
 export function AppSidebar() {
-  const location = useLocation();
-
-  const isActive = (path: string) => {
-    // Verificação exata para evitar múltiplas seleções
-    if (location.pathname === path) {
-      return true;
-    }
-    
-    // Verificação especial para rotas aninhadas específicas
-    if (path === "/reminders" && location.pathname === "/reminders") {
-      return true;
-    }
-    
-    if (path === "/reminders/calendar" && location.pathname === "/reminders/calendar") {
-      return true;
-    }
-    
-    if (path === "/leads" && location.pathname === "/leads") {
-      return true;
-    }
-    
-    if (path === "/leads/scheduled" && location.pathname === "/leads/scheduled") {
-      return true;
-    }
-    
-    // Para outras rotas, verificar se começa com o path (exceto para reminders e leads que já foram tratados acima)
-    if (path !== "/reminders" && path !== "/leads" && path !== "/reminders/calendar" && path !== "/leads/scheduled") {
-      return location.pathname.startsWith(path + "/");
-    }
-    
-    return false;
-  };
-
   return (
     <Sidebar collapsible="none" className="w-64 min-w-64 max-w-64">
       <SidebarHeader>
@@ -110,7 +77,7 @@ export function AppSidebar() {
             <SidebarMenu>
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild isActive={isActive(item.url)} className="w-full">
+                  <SidebarMenuButton asChild className="w-full">
                     <Link to={item.url} className="flex items-center gap-2 w-full">
                       <item.icon className="w-4 h-4 flex-shrink-0" />
                       <span className="flex-1 text-left">{item.title}</span>
