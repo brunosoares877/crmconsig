@@ -6,7 +6,6 @@ import { Lead } from "@/types/models";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Search, Plus, Filter, X } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -15,13 +14,11 @@ import LeadForm from "./LeadForm";
 
 interface LeadListProps {
   searchQuery?: string;
-  status?: string;
   selectedTags?: string[];
 }
 
 const LeadList: React.FC<LeadListProps> = ({
   searchQuery = "",
-  status,
   selectedTags = []
 }) => {
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -29,7 +26,6 @@ const LeadList: React.FC<LeadListProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [isOpenSheet, setIsOpenSheet] = useState(false);
   const [internalSearchQuery, setInternalSearchQuery] = useState(searchQuery);
-  const [statusFilter, setStatusFilter] = useState(status || "todos");
   const [activeFilters, setActiveFilters] = useState<Array<{
     id: string;
     label: string;
@@ -39,10 +35,6 @@ const LeadList: React.FC<LeadListProps> = ({
     setIsLoading(true);
     try {
       let query = supabase.from("leads").select("*");
-
-      if (status) {
-        query = query.eq("status", status);
-      }
 
       const { data, error } = await query.order("created_at", { ascending: false });
       
@@ -68,9 +60,67 @@ const LeadList: React.FC<LeadListProps> = ({
     }
   };
 
+  const fetchLeadsWithTags = async () => {
+    if (selectedTags.length === 0) {
+      fetchLeads();
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      // First, get leads that have the selected tags
+      const { data: tagAssignments, error: tagError } = await (supabase as any)
+        .from('lead_tag_assignments')
+        .select('lead_id')
+        .in('tag_id', selectedTags);
+
+      if (tagError) throw tagError;
+
+      const leadIds = tagAssignments?.map((assignment: any) => assignment.lead_id) || [];
+
+      if (leadIds.length === 0) {
+        setLeads([]);
+        setFilteredLeads([]);
+        setIsLoading(false);
+        return;
+      }
+
+      // Then get the actual leads
+      const { data, error } = await supabase
+        .from("leads")
+        .select("*")
+        .in('id', leadIds)
+        .order("created_at", { ascending: false });
+      
+      if (error) throw error;
+
+      const formattedLeads = data.map(lead => ({
+        ...lead,
+        createdAt: new Date(lead.created_at).toLocaleDateString('pt-BR', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric'
+        }),
+        status: lead.status || "novo"
+      })) as Lead[];
+
+      setLeads(formattedLeads);
+      setFilteredLeads(formattedLeads);
+    } catch (error: any) {
+      console.error("Error fetching leads with tags:", error);
+      toast.error(`Erro ao carregar leads: ${error.message}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    fetchLeads();
-  }, [status]);
+    if (selectedTags.length > 0) {
+      fetchLeadsWithTags();
+    } else {
+      fetchLeads();
+    }
+  }, [selectedTags]);
 
   useEffect(() => {
     setInternalSearchQuery(searchQuery);
@@ -82,15 +132,14 @@ const LeadList: React.FC<LeadListProps> = ({
     const searchTerms = internalSearchQuery || searchQuery;
     if (searchTerms) {
       const searchLower = searchTerms.toLowerCase();
-      result = result.filter(lead => lead.name && lead.name.toLowerCase().includes(searchLower) || lead.phone && lead.phone.includes(searchTerms) || lead.phone2 && lead.phone2.includes(searchTerms) || lead.phone3 && lead.phone3.includes(searchTerms) || lead.cpf && lead.cpf.includes(searchTerms) || lead.email && lead.email?.toLowerCase().includes(searchLower));
-    }
-
-    if (!status && statusFilter && statusFilter !== "todos") {
-      result = result.filter(lead => lead.status === statusFilter);
-    }
-
-    if (selectedTags.length > 0) {
-      console.log('Filtering by tags:', selectedTags);
+      result = result.filter(lead => 
+        lead.name && lead.name.toLowerCase().includes(searchLower) || 
+        lead.phone && lead.phone.includes(searchTerms) || 
+        lead.phone2 && lead.phone2.includes(searchTerms) || 
+        lead.phone3 && lead.phone3.includes(searchTerms) || 
+        lead.cpf && lead.cpf.includes(searchTerms) || 
+        lead.email && lead.email?.toLowerCase().includes(searchLower)
+      );
     }
 
     activeFilters.forEach(filter => {
@@ -107,7 +156,7 @@ const LeadList: React.FC<LeadListProps> = ({
     });
 
     setFilteredLeads(result);
-  }, [leads, searchQuery, internalSearchQuery, statusFilter, activeFilters, status, selectedTags]);
+  }, [leads, searchQuery, internalSearchQuery, activeFilters]);
 
   const handleLeadSubmit = async (values: any) => {
     console.log("New lead submission:", values);
@@ -150,7 +199,13 @@ const LeadList: React.FC<LeadListProps> = ({
       console.log("Lead saved successfully:", leadInsertData);
       toast.success("Lead cadastrado com sucesso!");
       setIsOpenSheet(false);
-      fetchLeads();
+      
+      // Refresh leads based on current filters
+      if (selectedTags.length > 0) {
+        fetchLeadsWithTags();
+      } else {
+        fetchLeads();
+      }
       
     } catch (error: any) {
       console.error("Error saving lead:", error);
@@ -205,34 +260,27 @@ const LeadList: React.FC<LeadListProps> = ({
                 <span>Filtros</span>
               </Button>
               <div className="flex flex-wrap gap-2">
-                {activeFilters.map(filter => <Badge key={filter.id} variant="outline" className="h-8 gap-1 pl-2 pr-1">
+                {activeFilters.map(filter => 
+                  <Badge key={filter.id} variant="outline" className="h-8 gap-1 pl-2 pr-1">
                     {filter.label}
                     <Button variant="ghost" className="h-5 w-5 p-0 hover:bg-transparent" onClick={() => removeFilter(filter.id)}>
                       <X className="h-3.5 w-3.5" />
                     </Button>
-                  </Badge>)}
+                  </Badge>
+                )}
               </div>
             </div>
             
             <div className="flex w-full items-center space-x-2 md:w-auto">
               <div className="relative w-full md:w-[280px]">
                 <Search className="absolute left-3 top-2.5 h-4 w-4 text-blue-500" />
-                <Input placeholder="Buscar por nome, telefone ou CPF..." className="pl-10 border-blue-100 bg-blue-50/50 hover:bg-blue-50 focus:border-blue-200 focus:ring-1 focus:ring-blue-200 transition-all rounded-full" value={internalSearchQuery} onChange={e => setInternalSearchQuery(e.target.value)} />
+                <Input 
+                  placeholder="Buscar por nome, telefone ou CPF..." 
+                  className="pl-10 border-blue-100 bg-blue-50/50 hover:bg-blue-50 focus:border-blue-200 focus:ring-1 focus:ring-blue-200 transition-all rounded-full" 
+                  value={internalSearchQuery} 
+                  onChange={e => setInternalSearchQuery(e.target.value)} 
+                />
               </div>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="h-10 w-full md:w-[180px]">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todos os status</SelectItem>
-                  <SelectItem value="novo">Novo</SelectItem>
-                  <SelectItem value="contatado">Contatado</SelectItem>
-                  <SelectItem value="qualificado">Qualificado</SelectItem>
-                  <SelectItem value="negociando">Negociando</SelectItem>
-                  <SelectItem value="convertido">Convertido</SelectItem>
-                  <SelectItem value="perdido">Perdido</SelectItem>
-                </SelectContent>
-              </Select>
               
               <Sheet open={isOpenSheet} onOpenChange={setIsOpenSheet}>
                 <SheetTrigger asChild>

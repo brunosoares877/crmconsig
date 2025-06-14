@@ -187,6 +187,10 @@ const Leads = () => {
     );
   };
 
+  const clearSelectedTags = () => {
+    setSelectedTags([]);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Sidebar />
@@ -260,6 +264,12 @@ const Leads = () => {
               <div className="flex items-center gap-2">
                 <Tag className="h-5 w-5" />
                 <h3 className="text-lg font-semibold">Filtrar por Etiquetas</h3>
+                {selectedTags.length > 0 && (
+                  <Button variant="outline" size="sm" onClick={clearSelectedTags}>
+                    <X className="h-4 w-4 mr-2" />
+                    Limpar Filtros ({selectedTags.length})
+                  </Button>
+                )}
               </div>
               <Dialog open={isTagDialogOpen} onOpenChange={setIsTagDialogOpen}>
                 <DialogTrigger asChild>
