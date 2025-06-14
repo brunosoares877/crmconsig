@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -71,14 +70,51 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete }) => {
   const handleUpdateLead = async (values: any) => {
     setIsUpdating(true);
     try {
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (userError) throw userError;
+
+      // Separate selectedTags from lead data
+      const { selectedTags, ...leadData } = values;
+
+      console.log("Updating lead with data:", leadData);
+      console.log("Selected tags:", selectedTags);
+
+      // Update the lead data (without selectedTags)
       const { data, error } = await supabase
         .from("leads")
-        .update(values)
+        .update(leadData)
         .eq("id", lead.id)
         .select()
         .single();
 
       if (error) throw error;
+
+      // Handle tag assignments separately
+      if (selectedTags) {
+        // First, delete existing tag assignments for this lead
+        await (supabase as any)
+          .from('lead_tag_assignments')
+          .delete()
+          .eq('lead_id', lead.id);
+
+        // Then, create new tag assignments if any tags were selected
+        if (selectedTags.length > 0) {
+          const tagAssignments = selectedTags.map((tagId: string) => ({
+            lead_id: lead.id,
+            tag_id: tagId,
+            user_id: userData.user.id,
+          }));
+
+          const { error: tagError } = await (supabase as any)
+            .from('lead_tag_assignments')
+            .insert(tagAssignments);
+
+          if (tagError) {
+            console.error('Error updating tag assignments:', tagError);
+            toast.error('Lead atualizado, mas erro ao aplicar etiquetas');
+          }
+        }
+      }
 
       const updatedLead = {
         ...data,

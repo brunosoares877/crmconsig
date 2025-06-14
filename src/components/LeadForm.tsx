@@ -115,10 +115,29 @@ const LeadForm: React.FC<LeadFormProps> = ({
       }
     };
 
+    const fetchExistingTags = async () => {
+      if (initialData?.id) {
+        try {
+          const { data, error } = await (supabase as any)
+            .from('lead_tag_assignments')
+            .select('tag_id')
+            .eq('lead_id', initialData.id);
+
+          if (error) throw error;
+          
+          const existingTagIds = data?.map((assignment: any) => assignment.tag_id) || [];
+          form.setValue('selectedTags', existingTagIds);
+        } catch (error) {
+          console.error('Error fetching existing tags for lead:', error);
+        }
+      }
+    };
+
     fetchBenefitTypes();
     fetchEmployees();
     fetchTags();
-  }, []);
+    fetchExistingTags();
+  }, [initialData?.id]);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
