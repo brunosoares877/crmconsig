@@ -19,58 +19,86 @@ const menuItems = [
     title: "Dashboard",
     url: "/dashboard",
     icon: ListCheck,
+    match: (pathname: string) => pathname === "/dashboard",
   },
   {
     title: "Leads",
     url: "/leads",
     icon: List,
+    match: (pathname: string) =>
+      pathname === "/leads" ||
+      pathname.startsWith("/leads/"),
   },
   {
     title: "Leads Premium",
     url: "/leads-premium",
     icon: Star,
     isPremium: true,
+    match: (pathname: string) => pathname === "/leads-premium",
   },
   {
     title: "Lembretes",
     url: "/reminders",
     icon: Calendar,
+    match: (pathname: string) =>
+      pathname === "/reminders" ||
+      pathname.startsWith("/reminders/"),
   },
   {
     title: "Calendário",
     url: "/reminders/calendar",
     icon: CalendarDays,
+    match: (pathname: string) =>
+      pathname === "/reminders/calendar",
   },
   {
     title: "Agendamentos",
     url: "/leads/scheduled",
     icon: CalendarPlus,
+    match: (pathname: string) =>
+      pathname === "/leads/scheduled",
   },
   {
     title: "Funcionários",
     url: "/employees",
     icon: Users,
+    match: (pathname: string) => pathname === "/employees",
   },
   {
     title: "Portabilidade",
     url: "/portability",
     icon: ListCheck,
+    match: (pathname: string) => pathname === "/portability",
   },
   {
     title: "Comissões",
     url: "/commission",
     icon: DollarSign,
+    match: (pathname: string) =>
+      pathname === "/commission" || pathname === "/commission-settings",
   },
   {
     title: "Configurações",
     url: "/settings",
     icon: Settings,
+    match: (pathname: string) =>
+      pathname === "/settings" ||
+      pathname.startsWith("/settings/"),
   },
 ];
 
 export function AppSidebar() {
   const location = useLocation();
   const isLeadsPremium = location.pathname === "/leads-premium";
+
+  // Calcula ativo: só um deve ser active por vez (primeiro que casar)
+  let firstActiveIdx = -1;
+  for (let i = 0; i < menuItems.length; i++) {
+    if (menuItems[i].match(location.pathname)) {
+      firstActiveIdx = i;
+      break;
+    }
+  }
 
   return (
     <Sidebar 
@@ -95,8 +123,8 @@ export function AppSidebar() {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => {
-                const isActive = location.pathname === item.url;
+              {menuItems.map((item, idx) => {
+                const isActive = idx === firstActiveIdx;
                 return (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton 
@@ -110,6 +138,7 @@ export function AppSidebar() {
                             ? "bg-sidebar-accent text-sidebar-accent-foreground" 
                             : ""
                       }`}
+                      aria-current={isActive ? "page" : undefined}
                     >
                       <Link to={item.url} className="flex items-center gap-2 w-full">
                         <item.icon className={`w-4 h-4 flex-shrink-0 ${
