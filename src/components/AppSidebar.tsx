@@ -29,6 +29,7 @@ const menuItems = [
     title: "Leads Premium",
     url: "/leads-premium",
     icon: Star,
+    isPremium: true,
   },
   {
     title: "Lembretes",
@@ -84,8 +85,14 @@ export function AppSidebar() {
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild className="w-full">
                     <Link to={item.url} className="flex items-center gap-2 w-full">
-                      <item.icon className="w-4 h-4 flex-shrink-0" />
-                      <span className="flex-1 text-left">{item.title}</span>
+                      <item.icon className={`w-4 h-4 flex-shrink-0 ${
+                        item.isPremium ? "text-yellow-400 fill-yellow-400" : ""
+                      }`} />
+                      <span className={`flex-1 text-left ${
+                        item.isPremium ? "text-yellow-400 font-semibold" : ""
+                      }`}>
+                        {item.title}
+                      </span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
