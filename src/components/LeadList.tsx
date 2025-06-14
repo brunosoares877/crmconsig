@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import LeadCard from "./LeadCard";
 import EmptyState from "./EmptyState";
@@ -59,67 +60,9 @@ const LeadList: React.FC<LeadListProps> = ({
     }
   };
 
-  const fetchLeadsWithTags = async () => {
-    if (selectedTags.length === 0) {
-      fetchLeads();
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      // First, get leads that have the selected tags
-      const { data: tagAssignments, error: tagError } = await (supabase as any)
-        .from('lead_tag_assignments')
-        .select('lead_id')
-        .in('tag_id', selectedTags);
-
-      if (tagError) throw tagError;
-
-      const leadIds = tagAssignments?.map((assignment: any) => assignment.lead_id) || [];
-
-      if (leadIds.length === 0) {
-        setLeads([]);
-        setFilteredLeads([]);
-        setIsLoading(false);
-        return;
-      }
-
-      // Then get the actual leads
-      const { data, error } = await supabase
-        .from("leads")
-        .select("*")
-        .in('id', leadIds)
-        .order("created_at", { ascending: false });
-      
-      if (error) throw error;
-
-      const formattedLeads = data.map(lead => ({
-        ...lead,
-        createdAt: new Date(lead.created_at).toLocaleDateString('pt-BR', {
-          day: '2-digit',
-          month: 'short',
-          year: 'numeric'
-        }),
-        status: lead.status || "novo"
-      })) as Lead[];
-
-      setLeads(formattedLeads);
-      setFilteredLeads(formattedLeads);
-    } catch (error: any) {
-      console.error("Error fetching leads with tags:", error);
-      toast.error(`Erro ao carregar leads: ${error.message}`);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   useEffect(() => {
-    if (selectedTags.length > 0) {
-      fetchLeadsWithTags();
-    } else {
-      fetchLeads();
-    }
-  }, [selectedTags]);
+    fetchLeads();
+  }, []);
 
   useEffect(() => {
     setInternalSearchQuery(searchQuery);
@@ -198,13 +141,7 @@ const LeadList: React.FC<LeadListProps> = ({
       console.log("Lead saved successfully:", leadInsertData);
       toast.success("Lead cadastrado com sucesso!");
       setIsOpenSheet(false);
-      
-      // Refresh leads based on current filters
-      if (selectedTags.length > 0) {
-        fetchLeadsWithTags();
-      } else {
-        fetchLeads();
-      }
+      fetchLeads();
       
     } catch (error: any) {
       console.error("Error saving lead:", error);

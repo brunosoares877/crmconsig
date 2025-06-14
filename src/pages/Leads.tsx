@@ -10,16 +10,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
-import { Search, Trash2, Plus, Tag, X } from "lucide-react";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-
-interface Tag {
-  id: string;
-  name: string;
-  color: string;
-}
+import { Search, Trash2 } from "lucide-react";
 
 const Leads = () => {
   const [leadStats, setLeadStats] = useState({
@@ -30,16 +21,6 @@ const Leads = () => {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [tags, setTags] = useState<Tag[]>([]);
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [isTagDialogOpen, setIsTagDialogOpen] = useState(false);
-  const [newTagName, setNewTagName] = useState("");
-  const [newTagColor, setNewTagColor] = useState("#3b82f6");
-
-  const tagColors = [
-    "#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6",
-    "#f97316", "#06b6d4", "#84cc16", "#ec4899", "#6b7280"
-  ];
 
   useEffect(() => {
     const fetchLeadStats = async () => {
@@ -110,86 +91,7 @@ const Leads = () => {
       }
     };
     fetchLeadStats();
-    fetchTags();
   }, []);
-
-  const fetchTags = async () => {
-    try {
-      const { data: userData, error: userError } = await supabase.auth.getUser();
-      if (userError) throw userError;
-
-      const { data, error } = await (supabase as any)
-        .from('lead_tags')
-        .select('*')
-        .eq('user_id', userData.user.id)
-        .order('name');
-
-      if (error) throw error;
-      setTags(data || []);
-    } catch (error) {
-      console.error('Error fetching tags:', error);
-    }
-  };
-
-  const createTag = async () => {
-    if (!newTagName.trim()) return;
-
-    try {
-      const { data: userData, error: userError } = await supabase.auth.getUser();
-      if (userError) throw userError;
-
-      const { data, error } = await (supabase as any)
-        .from('lead_tags')
-        .insert({
-          name: newTagName.trim(),
-          color: newTagColor,
-          user_id: userData.user.id
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      setTags([...tags, data as Tag]);
-      setNewTagName("");
-      setNewTagColor("#3b82f6");
-      setIsTagDialogOpen(false);
-      toast.success("Etiqueta criada com sucesso!");
-    } catch (error: any) {
-      console.error('Error creating tag:', error);
-      toast.error(`Erro ao criar etiqueta: ${error.message}`);
-    }
-  };
-
-  const deleteTag = async (tagId: string) => {
-    try {
-      const { error } = await (supabase as any)
-        .from('lead_tags')
-        .delete()
-        .eq('id', tagId);
-
-      if (error) throw error;
-
-      setTags(tags.filter(tag => tag.id !== tagId));
-      setSelectedTags(selectedTags.filter(id => id !== tagId));
-      toast.success("Etiqueta removida com sucesso!");
-    } catch (error: any) {
-      console.error('Error deleting tag:', error);
-      toast.error(`Erro ao remover etiqueta: ${error.message}`);
-    }
-  };
-
-  const toggleTag = (tagId: string) => {
-    setSelectedTags(prev => 
-      prev.includes(tagId) 
-        ? prev.filter(id => id !== tagId)
-        : [...prev, tagId]
-    );
-  };
-
-  const clearSelectedTags = () => {
-    setSelectedTags([]);
-  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -258,105 +160,7 @@ const Leads = () => {
             </Card>
           </div>
 
-          {/* Tags Filter Section */}
-          <Card className="p-4">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <Tag className="h-5 w-5" />
-                <h3 className="text-lg font-semibold">Filtrar por Etiquetas</h3>
-                {selectedTags.length > 0 && (
-                  <Button variant="outline" size="sm" onClick={clearSelectedTags}>
-                    <X className="h-4 w-4 mr-2" />
-                    Limpar Filtros ({selectedTags.length})
-                  </Button>
-                )}
-              </div>
-              <Dialog open={isTagDialogOpen} onOpenChange={setIsTagDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Nova Etiqueta
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Criar Nova Etiqueta</DialogTitle>
-                    <DialogDescription>
-                      Crie uma nova etiqueta para organizar seus leads.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="tagName">Nome da Etiqueta</Label>
-                      <Input
-                        id="tagName"
-                        value={newTagName}
-                        onChange={(e) => setNewTagName(e.target.value)}
-                        placeholder="Ex: Cliente VIP, Urgente, etc."
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="tagColor">Cor da Etiqueta</Label>
-                      <div className="flex gap-2 mt-2">
-                        {tagColors.map((color) => (
-                          <button
-                            key={color}
-                            className={`w-8 h-8 rounded-full border-2 ${
-                              newTagColor === color ? 'border-gray-900' : 'border-gray-300'
-                            }`}
-                            style={{ backgroundColor: color }}
-                            onClick={() => setNewTagColor(color)}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                    <div className="flex justify-end gap-2">
-                      <Button variant="outline" onClick={() => setIsTagDialogOpen(false)}>
-                        Cancelar
-                      </Button>
-                      <Button onClick={createTag}>Criar Etiqueta</Button>
-                    </div>
-                  </div>
-                </DialogContent>
-              </Dialog>
-            </div>
-            
-            <div className="flex flex-wrap gap-2">
-              {tags.map((tag) => (
-                <div key={tag.id} className="relative group">
-                  <Badge
-                    variant="outline"
-                    className={`cursor-pointer transition-all ${
-                      selectedTags.includes(tag.id) 
-                        ? 'ring-2 ring-offset-1' 
-                        : 'hover:scale-105'
-                    }`}
-                    style={{ 
-                      backgroundColor: selectedTags.includes(tag.id) ? tag.color : 'transparent',
-                      borderColor: tag.color,
-                      color: selectedTags.includes(tag.id) ? 'white' : tag.color
-                    }}
-                    onClick={() => toggleTag(tag.id)}
-                  >
-                    {tag.name}
-                  </Badge>
-                  <button
-                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 text-xs opacity-0 group-hover:opacity-100 transition-opacity"
-                    onClick={() => deleteTag(tag.id)}
-                  >
-                    ×
-                  </button>
-                </div>
-              ))}
-              {tags.length === 0 && (
-                <p className="text-muted-foreground text-sm">
-                  Nenhuma etiqueta criada. Clique em "Nova Etiqueta" para começar.
-                </p>
-              )}
-            </div>
-          </Card>
-
-          <LeadList searchQuery={searchQuery} selectedTags={selectedTags} />
+          <LeadList searchQuery={searchQuery} selectedTags={[]} />
         </main>
       </div>
     </div>
