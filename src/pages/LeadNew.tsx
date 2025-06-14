@@ -18,12 +18,36 @@ const LeadNew = () => {
       const { data: userData, error: userError } = await supabase.auth.getUser();
       if (userError) throw userError;
 
-      const { data, error } = await supabase.from("leads").insert({
-        ...values,
-        user_id: userData.user.id,
-      });
+      const { selectedTags, ...leadData } = values;
 
-      if (error) throw error;
+      const { data: leadInsertData, error: leadError } = await supabase
+        .from("leads")
+        .insert({
+          ...leadData,
+          user_id: userData.user.id,
+        })
+        .select()
+        .single();
+
+      if (leadError) throw leadError;
+
+      // Save tag assignments if any tags were selected
+      if (selectedTags && selectedTags.length > 0) {
+        const tagAssignments = selectedTags.map((tagId: string) => ({
+          lead_id: leadInsertData.id,
+          tag_id: tagId,
+          user_id: userData.user.id,
+        }));
+
+        const { error: tagError } = await (supabase as any)
+          .from('lead_tag_assignments')
+          .insert(tagAssignments);
+
+        if (tagError) {
+          console.error('Error saving tag assignments:', tagError);
+          toast.error('Lead salvo, mas erro ao aplicar etiquetas');
+        }
+      }
       
       toast.success("Lead cadastrado com sucesso!");
       navigate("/leads");

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -21,12 +20,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, AlertCircle } from "lucide-react";
+import { Loader2, AlertCircle, Tag } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { supabase } from "@/integrations/supabase/client";
 import { getEmployees, Employee } from "@/utils/employees";
 import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 
 const formSchema = z.object({
   name: z.string().min(3, { message: "O nome deve ter pelo menos 3 caracteres." }),
@@ -44,9 +44,16 @@ const formSchema = z.object({
   representative_mode: z.string().default("nao"),
   representative_name: z.string().optional(),
   representative_cpf: z.string().optional(),
+  selectedTags: z.array(z.string()).default([]),
 });
 
 type FormValues = z.infer<typeof formSchema>;
+
+interface Tag {
+  id: string;
+  name: string;
+  color: string;
+}
 
 interface LeadFormProps {
   onSubmit: (values: FormValues) => void;
@@ -68,6 +75,7 @@ const LeadForm: React.FC<LeadFormProps> = ({
   const [hasRepresentative, setHasRepresentative] = useState(
     initialData?.representative_name || initialData?.representative_cpf ? true : false
   );
+  const [tags, setTags] = useState<Tag[]>([]);
 
   useEffect(() => {
     const fetchBenefitTypes = async () => {
@@ -89,8 +97,27 @@ const LeadForm: React.FC<LeadFormProps> = ({
       setEmployees(employeeList);
     };
 
+    const fetchTags = async () => {
+      try {
+        const { data: userData, error: userError } = await supabase.auth.getUser();
+        if (userError) throw userError;
+
+        const { data, error } = await (supabase as any)
+          .from('lead_tags')
+          .select('*')
+          .eq('user_id', userData.user.id)
+          .order('name');
+
+        if (error) throw error;
+        setTags(data || []);
+      } catch (error) {
+        console.error('Error fetching tags:', error);
+      }
+    };
+
     fetchBenefitTypes();
     fetchEmployees();
+    fetchTags();
   }, []);
 
   const form = useForm<FormValues>({
@@ -111,6 +138,7 @@ const LeadForm: React.FC<LeadFormProps> = ({
       representative_mode: initialData?.representative_name || initialData?.representative_cpf ? "sim" : "nao",
       representative_name: initialData?.representative_name || "",
       representative_cpf: initialData?.representative_cpf || "",
+      selectedTags: [],
       ...initialData,
     },
   });
@@ -220,12 +248,20 @@ const LeadForm: React.FC<LeadFormProps> = ({
     form.setValue("representative_cpf", value);
   };
 
+  const toggleTag = (tagId: string) => {
+    const currentTags = form.getValues("selectedTags");
+    const updatedTags = currentTags.includes(tagId)
+      ? currentTags.filter(id => id !== tagId)
+      : [...currentTags, tagId];
+    form.setValue("selectedTags", updatedTags);
+  };
+
   const handleSubmit = async (values: FormValues) => {
     try {
       console.log("Form submission started with values:", values);
       
       // Remove representative_mode from the data before sending to database
-      const { representative_mode, ...dataToSubmit } = values;
+      const { representative_mode, selectedTags, ...dataToSubmit } = values;
       
       // Ensure all required fields are present
       const formData = {
@@ -236,6 +272,7 @@ const LeadForm: React.FC<LeadFormProps> = ({
         // Only include representative fields if representative_mode is "sim"
         representative_name: values.representative_mode === "sim" ? values.representative_name : "",
         representative_cpf: values.representative_mode === "sim" ? values.representative_cpf : "",
+        selectedTags: selectedTags,
       };
 
       console.log("Calling onSubmit with data:", formData);
@@ -558,6 +595,54 @@ const LeadForm: React.FC<LeadFormProps> = ({
                   ))}
                 </SelectContent>
               </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* Tags Section */}
+        <FormField
+          control={form.control}
+          name="selectedTags"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="flex items-center gap-2">
+                <Tag className="h-4 w-4" />
+                Etiquetas
+              </FormLabel>
+              <FormControl>
+                <div className="space-y-3">
+                  <div className="text-sm text-muted-foreground">
+                    Selecione as etiquetas para organizar este lead:
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {tags.map((tag) => (
+                      <Badge
+                        key={tag.id}
+                        variant="outline"
+                        className={`cursor-pointer transition-all ${
+                          form.watch("selectedTags").includes(tag.id)
+                            ? 'ring-2 ring-offset-1' 
+                            : 'hover:scale-105'
+                        }`}
+                        style={{ 
+                          backgroundColor: form.watch("selectedTags").includes(tag.id) ? tag.color : 'transparent',
+                          borderColor: tag.color,
+                          color: form.watch("selectedTags").includes(tag.id) ? 'white' : tag.color
+                        }}
+                        onClick={() => toggleTag(tag.id)}
+                      >
+                        {tag.name}
+                      </Badge>
+                    ))}
+                    {tags.length === 0 && (
+                      <p className="text-muted-foreground text-sm">
+                        Nenhuma etiqueta disponível. Crie etiquetas na página principal.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}
