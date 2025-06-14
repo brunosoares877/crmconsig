@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { MoreHorizontal, Phone, Mail, DollarSign, Building, User, Edit, Trash2, Calendar, FileText, Tag, Plus, X } from "lucide-react";
+import { MoreHorizontal, Phone, Mail, DollarSign, Building, User, Edit, Trash2, Calendar, FileText } from "lucide-react";
 import { Lead } from "@/types/models";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -18,12 +18,6 @@ interface LeadCardProps {
   lead: Lead;
   onUpdate: (updatedLead: Lead) => void;
   onDelete: (id: string) => void;
-}
-
-interface Tag {
-  id: string;
-  name: string;
-  color: string;
 }
 
 const statusColors = {
@@ -72,87 +66,6 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete }) => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
-  const [tags, setTags] = useState<Tag[]>([]);
-  const [leadTags, setLeadTags] = useState<Tag[]>([]);
-  const [isTagDropdownOpen, setIsTagDropdownOpen] = useState(false);
-
-  useEffect(() => {
-    fetchTags();
-    fetchLeadTags();
-  }, []);
-
-  const fetchTags = async () => {
-    try {
-      const { data: userData, error: userError } = await supabase.auth.getUser();
-      if (userError) throw userError;
-
-      const { data, error } = await (supabase as any)
-        .from('lead_tags')
-        .select('*')
-        .eq('user_id', userData.user.id)
-        .order('name');
-
-      if (error) throw error;
-      setTags(data || []);
-    } catch (error) {
-      console.error('Error fetching tags:', error);
-    }
-  };
-
-  const fetchLeadTags = async () => {
-    try {
-      const { data: assignments, error } = await (supabase as any)
-        .from('lead_tag_assignments')
-        .select(`
-          tag_id,
-          lead_tags (
-            id,
-            name,
-            color
-          )
-        `)
-        .eq('lead_id', lead.id);
-
-      if (error) throw error;
-
-      const leadTagsData = assignments?.map((assignment: any) => assignment.lead_tags) || [];
-      setLeadTags(leadTagsData);
-    } catch (error) {
-      console.error('Error fetching lead tags:', error);
-    }
-  };
-
-  const toggleTag = async (tagId: string) => {
-    try {
-      const { data: userData, error: userError } = await supabase.auth.getUser();
-      if (userError) throw userError;
-
-      const isTagAssigned = leadTags.some(tag => tag.id === tagId);
-
-      if (isTagAssigned) {
-        // Remove tag
-        await (supabase as any)
-          .from('lead_tag_assignments')
-          .delete()
-          .eq('lead_id', lead.id)
-          .eq('tag_id', tagId);
-      } else {
-        // Add tag
-        await (supabase as any)
-          .from('lead_tag_assignments')
-          .insert({
-            lead_id: lead.id,
-            tag_id: tagId,
-            user_id: userData.user.id
-          });
-      }
-
-      fetchLeadTags();
-    } catch (error: any) {
-      console.error('Error toggling tag:', error);
-      toast.error(`Erro ao atualizar etiqueta: ${error.message}`);
-    }
-  };
 
   const handleUpdateLead = async (values: any) => {
     setIsUpdating(true);
@@ -215,7 +128,6 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete }) => {
       onUpdate(updatedLead);
       toast.success("Lead atualizado com sucesso!");
       setIsEditDialogOpen(false);
-      fetchLeadTags();
     } catch (error: any) {
       console.error("Error updating lead:", error);
       toast.error(`Erro ao atualizar lead: ${error.message}`);
@@ -303,69 +215,16 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete }) => {
       <Card className="hover:shadow-md transition-shadow">
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between">
-            <div className="flex flex-col gap-1">
-              <div className="flex items-center gap-2">
-                <CardTitle className="text-lg leading-none">{lead.name}</CardTitle>
-                {/* Etiquetas visualizadas AO LADO do nome */}
-                {leadTags.length > 0 && (
-                  <div className="flex flex-wrap gap-1">
-                    {leadTags.map((tag) => (
-                      <Badge
-                        key={tag.id}
-                        variant="outline"
-                        className="text-xs h-5 px-2"
-                        style={{ 
-                          backgroundColor: tag.color + '20',
-                          borderColor: tag.color,
-                          color: tag.color
-                        }}
-                      >
-                        {tag.name}
-                      </Badge>
-                    ))}
-                  </div>
-                )}
-              </div>
+            <div className="space-y-1">
+              <CardTitle className="text-lg leading-none">{lead.name}</CardTitle>
               <CardDescription className="text-sm">
                 Cadastrado em {lead.createdAt}
               </CardDescription>
             </div>
             <div className="flex items-center gap-2">
-              {/* Mantém dropdown para edição das etiquetas aqui */}
-              <DropdownMenu open={isTagDropdownOpen} onOpenChange={setIsTagDropdownOpen}>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="h-7 gap-1">
-                    <Tag className="h-3 w-3" />
-                    <span className="text-xs">Etiquetas</span>
-                    <Plus className="h-3 w-3" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  {tags.map((tag) => (
-                    <DropdownMenuItem
-                      key={tag.id}
-                      onClick={() => toggleTag(tag.id)}
-                      className="flex items-center justify-between"
-                    >
-                      <div className="flex items-center gap-2">
-                        <div
-                          className="w-3 h-3 rounded-full"
-                          style={{ backgroundColor: tag.color }}
-                        />
-                        <span>{tag.name}</span>
-                      </div>
-                      {leadTags.some(leadTag => leadTag.id === tag.id) && (
-                        <div className="w-2 h-2 bg-green-500 rounded-full" />
-                      )}
-                    </DropdownMenuItem>
-                  ))}
-                  {tags.length === 0 && (
-                    <DropdownMenuItem disabled>
-                      Nenhuma etiqueta disponível
-                    </DropdownMenuItem>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <Badge className={statusColors[lead.status]}>
+                {statusLabels[lead.status]}
+              </Badge>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="h-8 w-8 p-0">
@@ -442,12 +301,6 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete }) => {
                 <span>{lead.employee}</span>
               </div>
             )}
-
-            <div className="flex items-center gap-2">
-              <Badge className={statusColors[lead.status]}>
-                {statusLabels[lead.status]}
-              </Badge>
-            </div>
           </div>
 
           <div className="border-t pt-3">

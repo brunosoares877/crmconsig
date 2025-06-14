@@ -60,9 +60,67 @@ const LeadList: React.FC<LeadListProps> = ({
     }
   };
 
+  const fetchLeadsWithTags = async () => {
+    if (selectedTags.length === 0) {
+      fetchLeads();
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      // First, get leads that have the selected tags
+      const { data: tagAssignments, error: tagError } = await (supabase as any)
+        .from('lead_tag_assignments')
+        .select('lead_id')
+        .in('tag_id', selectedTags);
+
+      if (tagError) throw tagError;
+
+      const leadIds = tagAssignments?.map((assignment: any) => assignment.lead_id) || [];
+
+      if (leadIds.length === 0) {
+        setLeads([]);
+        setFilteredLeads([]);
+        setIsLoading(false);
+        return;
+      }
+
+      // Then get the actual leads
+      const { data, error } = await supabase
+        .from("leads")
+        .select("*")
+        .in('id', leadIds)
+        .order("created_at", { ascending: false });
+      
+      if (error) throw error;
+
+      const formattedLeads = data.map(lead => ({
+        ...lead,
+        createdAt: new Date(lead.created_at).toLocaleDateString('pt-BR', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric'
+        }),
+        status: lead.status || "novo"
+      })) as Lead[];
+
+      setLeads(formattedLeads);
+      setFilteredLeads(formattedLeads);
+    } catch (error: any) {
+      console.error("Error fetching leads with tags:", error);
+      toast.error(`Erro ao carregar leads: ${error.message}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    fetchLeads();
-  }, []);
+    if (selectedTags.length > 0) {
+      fetchLeadsWithTags();
+    } else {
+      fetchLeads();
+    }
+  }, [selectedTags]);
 
   useEffect(() => {
     setInternalSearchQuery(searchQuery);
@@ -141,7 +199,13 @@ const LeadList: React.FC<LeadListProps> = ({
       console.log("Lead saved successfully:", leadInsertData);
       toast.success("Lead cadastrado com sucesso!");
       setIsOpenSheet(false);
-      fetchLeads();
+      
+      // Refresh leads based on current filters
+      if (selectedTags.length > 0) {
+        fetchLeadsWithTags();
+      } else {
+        fetchLeads();
+      }
       
     } catch (error: any) {
       console.error("Error saving lead:", error);
@@ -200,23 +264,6 @@ const LeadList: React.FC<LeadListProps> = ({
                   onChange={e => setInternalSearchQuery(e.target.value)} 
                 />
               </div>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <Button variant="outline" className="h-8 gap-1" onClick={() => addFilter("novos", "Novos")}>
-                <Filter className="h-3.5 w-3.5" />
-                <span>Filtros</span>
-              </Button>
-              <div className="flex flex-wrap gap-2">
-                {activeFilters.map(filter => 
-                  <Badge key={filter.id} variant="outline" className="h-8 gap-1 pl-2 pr-1">
-                    {filter.label}
-                    <Button variant="ghost" className="h-5 w-5 p-0 hover:bg-transparent" onClick={() => removeFilter(filter.id)}>
-                      <X className="h-3.5 w-3.5" />
-                    </Button>
-                  </Badge>
-                )}
-              </div>
               
               <Sheet open={isOpenSheet} onOpenChange={setIsOpenSheet}>
                 <SheetTrigger asChild>
@@ -235,6 +282,23 @@ const LeadList: React.FC<LeadListProps> = ({
                   <LeadForm onSubmit={handleLeadSubmit} onCancel={() => setIsOpenSheet(false)} />
                 </SheetContent>
               </Sheet>
+            </div>
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            <Button variant="outline" className="h-8 gap-1" onClick={() => addFilter("novos", "Novos")}>
+              <Filter className="h-3.5 w-3.5" />
+              <span>Filtros</span>
+            </Button>
+            <div className="flex flex-wrap gap-2">
+              {activeFilters.map(filter => 
+                <Badge key={filter.id} variant="outline" className="h-8 gap-1 pl-2 pr-1">
+                  {filter.label}
+                  <Button variant="ghost" className="h-5 w-5 p-0 hover:bg-transparent" onClick={() => removeFilter(filter.id)}>
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                </Badge>
+              )}
             </div>
           </div>
         </div>
