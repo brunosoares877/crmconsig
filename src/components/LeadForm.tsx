@@ -1,53 +1,46 @@
+
 import React, { useState, useEffect } from "react";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 import { Button } from "@/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, AlertCircle, Tag } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
-import { getEmployees, Employee } from "@/utils/employees";
 import { toast } from "sonner";
-import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import { X } from "lucide-react";
 
 const formSchema = z.object({
-  name: z.string().min(3, { message: "O nome deve ter pelo menos 3 caracteres." }),
-  cpf: z.string().min(11, { message: "CPF inválido." }),
-  phone: z.string().min(10, { message: "Telefone inválido." }),
+  name: z.string().min(1, "Nome é obrigatório"),
+  cpf: z.string().optional(),
+  phone: z.string().optional(),
   phone2: z.string().optional(),
   phone3: z.string().optional(),
-  bank: z.string().min(1, { message: "Selecione um banco." }),
-  product: z.string().min(1, { message: "Selecione um produto." }),
-  amount: z.string().min(1, { message: "Digite um valor." }),
-  status: z.string().default("novo"),
+  email: z.string().email("Email inválido").optional().or(z.literal("")),
+  bank: z.string().optional(),
+  product: z.string().optional(),
+  amount: z.string().optional(),
   employee: z.string().optional(),
   notes: z.string().optional(),
-  benefit_type: z.string().min(1, { message: "Selecione a espécie de benefício." }),
-  representative_mode: z.string().default("nao"),
+  benefit_type: z.string().optional(),
+  representative_mode: z.string().optional(),
   representative_name: z.string().optional(),
   representative_cpf: z.string().optional(),
-  selectedTags: z.array(z.string()).default([]),
+  selectedTags: z.array(z.string()).optional()
 });
 
-type FormValues = z.infer<typeof formSchema>;
+type FormData = z.infer<typeof formSchema>;
+
+interface LeadFormProps {
+  onSubmit: (data: FormData) => void;
+  onCancel: () => void;
+  initialData?: Partial<FormData>;
+  isEditing?: boolean;
+}
 
 interface Tag {
   id: string;
@@ -55,764 +48,299 @@ interface Tag {
   color: string;
 }
 
-interface LeadFormProps {
-  onSubmit: (values: FormValues) => void;
-  onCancel: () => void;
-  initialData?: any;
-  isLoading?: boolean;
-}
-
-const LeadForm: React.FC<LeadFormProps> = ({ 
-  onSubmit, 
-  onCancel, 
-  initialData, 
-  isLoading = false 
-}) => {
-  const [benefitTypes, setBenefitTypes] = useState<{code: string, description: string}[]>([]);
-  const [employees, setEmployees] = useState<Employee[]>([]);
-  const [existingClient, setExistingClient] = useState<any>(null);
-  const [isCheckingClient, setIsCheckingClient] = useState(false);
-  const [hasRepresentative, setHasRepresentative] = useState(
-    initialData?.representative_name || initialData?.representative_cpf ? true : false
-  );
+const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, isEditing = false }) => {
   const [tags, setTags] = useState<Tag[]>([]);
+  const [selectedTags, setSelectedTags] = useState<string[]>(initialData?.selectedTags || []);
 
-  useEffect(() => {
-    const fetchBenefitTypes = async () => {
-      const { data, error } = await supabase
-        .from('benefit_types')
-        .select('code, description')
-        .order('description');
-
-      if (error) {
-        console.error('Error fetching benefit types:', error);
-        return;
-      }
-
-      setBenefitTypes(data || []);
-    };
-
-    const fetchEmployees = async () => {
-      const employeeList = await getEmployees();
-      setEmployees(employeeList);
-    };
-
-    const fetchTags = async () => {
-      try {
-        const { data: userData, error: userError } = await supabase.auth.getUser();
-        if (userError) throw userError;
-
-        const { data, error } = await (supabase as any)
-          .from('lead_tags')
-          .select('*')
-          .eq('user_id', userData.user.id)
-          .order('name');
-
-        if (error) throw error;
-        setTags(data || []);
-      } catch (error) {
-        console.error('Error fetching tags:', error);
-      }
-    };
-
-    const fetchExistingTags = async () => {
-      if (initialData?.id) {
-        try {
-          const { data, error } = await (supabase as any)
-            .from('lead_tag_assignments')
-            .select('tag_id')
-            .eq('lead_id', initialData.id);
-
-          if (error) throw error;
-          
-          const existingTagIds = data?.map((assignment: any) => assignment.tag_id) || [];
-          form.setValue('selectedTags', existingTagIds);
-        } catch (error) {
-          console.error('Error fetching existing tags for lead:', error);
-        }
-      }
-    };
-
-    fetchBenefitTypes();
-    fetchEmployees();
-    fetchTags();
-    fetchExistingTags();
-  }, [initialData?.id]);
-
-  const form = useForm<FormValues>({
+  const { register, handleSubmit, formState: { errors }, setValue, watch } = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: "",
-      cpf: "",
-      phone: "",
-      phone2: "",
-      phone3: "",
-      bank: "",
-      product: "",
-      amount: "",
-      status: "novo",
-      employee: "",
-      notes: "",
-      benefit_type: "",
-      representative_mode: initialData?.representative_name || initialData?.representative_cpf ? "sim" : "nao",
+      name: initialData?.name || "",
+      cpf: initialData?.cpf || "",
+      phone: initialData?.phone || "",
+      phone2: initialData?.phone2 || "",
+      phone3: initialData?.phone3 || "",
+      email: initialData?.email || "",
+      bank: initialData?.bank || "",
+      product: initialData?.product || "",
+      amount: initialData?.amount || "",
+      employee: initialData?.employee || "",
+      notes: initialData?.notes || "",
+      benefit_type: initialData?.benefit_type || "",
+      representative_mode: initialData?.representative_mode || "nao",
       representative_name: initialData?.representative_name || "",
       representative_cpf: initialData?.representative_cpf || "",
-      selectedTags: [],
-      ...initialData,
-    },
+      selectedTags: initialData?.selectedTags || []
+    }
   });
 
-  // Check for existing client when CPF is entered
-  const checkExistingClient = async (cpf: string) => {
-    if (cpf.length < 14) return; // Wait for complete CPF
+  const representativeMode = watch("representative_mode");
 
-    setIsCheckingClient(true);
+  useEffect(() => {
+    fetchTags();
+  }, []);
+
+  const fetchTags = async () => {
     try {
-      const { data, error } = await supabase
-        .from("leads")
-        .select("*")
-        .eq("cpf", cpf)
-        .order("created_at", { ascending: false })
-        .limit(1);
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (userError) throw userError;
+
+      const { data, error } = await (supabase as any)
+        .from('lead_tags')
+        .select('*')
+        .eq('user_id', userData.user.id)
+        .order('name');
 
       if (error) throw error;
-
-      if (data && data.length > 0) {
-        setExistingClient(data[0]);
-        // Pre-fill form with existing client data
-        const client = data[0];
-        form.setValue("name", client.name || "");
-        form.setValue("phone", client.phone || "");
-        form.setValue("phone2", client.phone2 || "");
-        form.setValue("phone3", client.phone3 || "");
-        form.setValue("bank", client.bank || "");
-        form.setValue("employee", client.employee || "");
-        toast.info("Cliente encontrado! Dados preenchidos automaticamente.");
-      } else {
-        setExistingClient(null);
-      }
+      setTags(data || []);
     } catch (error) {
-      console.error("Error checking existing client:", error);
-    } finally {
-      setIsCheckingClient(false);
+      console.error('Error fetching tags:', error);
     }
-  };
-
-  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.toUpperCase();
-    form.setValue("name", value);
-  };
-
-  const handleCPFChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let value = e.target.value.replace(/\D/g, "");
-    if (value.length > 11) value = value.slice(0, 11);
-    
-    if (value.length > 9) {
-      value = `${value.slice(0, 3)}.${value.slice(3, 6)}.${value.slice(6, 9)}-${value.slice(9)}`;
-    } else if (value.length > 6) {
-      value = `${value.slice(0, 3)}.${value.slice(3, 6)}.${value.slice(6)}`;
-    } else if (value.length > 3) {
-      value = `${value.slice(0, 3)}.${value.slice(3)}`;
-    }
-    
-    form.setValue("cpf", value);
-    
-    // Check for existing client when CPF is complete
-    if (value.length === 14) {
-      checkExistingClient(value);
-    }
-  };
-
-  const handlePhoneChange = (
-    e: React.ChangeEvent<HTMLInputElement>, 
-    field: "phone" | "phone2" | "phone3"
-  ) => {
-    let value = e.target.value.replace(/\D/g, "");
-    if (value.length > 11) value = value.slice(0, 11);
-    
-    if (value.length > 6) {
-      value = `(${value.slice(0, 2)}) ${value.slice(2, 7)}-${value.slice(7)}`;
-    } else if (value.length > 2) {
-      value = `(${value.slice(0, 2)}) ${value.slice(2)}`;
-    } else if (value.length > 0) {
-      value = `(${value}`;
-    }
-    
-    form.setValue(field, value);
-  };
-
-  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let value = e.target.value.replace(/\D/g, "");
-    value = (parseInt(value) / 100).toLocaleString('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-    });
-    
-    if (value === 'R$ NaN') value = '';
-    form.setValue("amount", value);
-  };
-
-  const handleRepresentativeCPFChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let value = e.target.value.replace(/\D/g, "");
-    if (value.length > 11) value = value.slice(0, 11);
-
-    if (value.length > 9) {
-      value = `${value.slice(0, 3)}.${value.slice(3, 6)}.${value.slice(6, 9)}-${value.slice(9)}`;
-    } else if (value.length > 6) {
-      value = `${value.slice(0, 3)}.${value.slice(3, 6)}.${value.slice(6)}`;
-    } else if (value.length > 3) {
-      value = `${value.slice(0, 3)}.${value.slice(3)}`;
-    }
-
-    form.setValue("representative_cpf", value);
   };
 
   const toggleTag = (tagId: string) => {
-    const currentTags = form.getValues("selectedTags");
-    const updatedTags = currentTags.includes(tagId)
-      ? currentTags.filter(id => id !== tagId)
-      : [...currentTags, tagId];
-    form.setValue("selectedTags", updatedTags);
+    const newSelectedTags = selectedTags.includes(tagId)
+      ? selectedTags.filter(id => id !== tagId)
+      : [...selectedTags, tagId];
+    
+    setSelectedTags(newSelectedTags);
+    setValue('selectedTags', newSelectedTags);
   };
 
-  const handleSubmit = async (values: FormValues) => {
-    try {
-      console.log("Form submission started with values:", values);
-      
-      // Validate required fields before proceeding
-      if (!values.name?.trim()) {
-        toast.error("Nome é obrigatório");
-        return;
-      }
-      
-      if (!values.cpf?.trim()) {
-        toast.error("CPF é obrigatório");
-        return;
-      }
-      
-      if (!values.phone?.trim()) {
-        toast.error("Telefone é obrigatório");
-        return;
-      }
-      
-      if (!values.bank?.trim()) {
-        toast.error("Banco é obrigatório");
-        return;
-      }
-      
-      if (!values.product?.trim()) {
-        toast.error("Produto é obrigatório");
-        return;
-      }
-      
-      if (!values.amount?.trim()) {
-        toast.error("Valor é obrigatório");
-        return;
-      }
-      
-      if (!values.benefit_type?.trim()) {
-        toast.error("Espécie de benefício é obrigatória");
-        return;
-      }
+  const removeTag = (tagId: string) => {
+    const newSelectedTags = selectedTags.filter(id => id !== tagId);
+    setSelectedTags(newSelectedTags);
+    setValue('selectedTags', newSelectedTags);
+  };
 
-      // Remove representative_mode from the data before sending to database
-      const { representative_mode, selectedTags, ...dataToSubmit } = values;
-      
-      // Ensure all required fields are present and clean
-      const formData = {
-        ...dataToSubmit,
-        name: values.name.trim(),
-        cpf: values.cpf.trim(),
-        phone: values.phone.trim(),
-        phone2: values.phone2?.trim() || "",
-        phone3: values.phone3?.trim() || "",
-        bank: values.bank.trim(),
-        product: values.product.trim(),
-        amount: values.amount.trim(),
-        status: values.status || "novo",
-        employee: values.employee?.trim() || "",
-        notes: values.notes?.trim() || "",
-        benefit_type: values.benefit_type.trim(),
-        // Only include representative fields if representative_mode is "sim"
-        representative_name: values.representative_mode === "sim" ? (values.representative_name?.trim() || "") : "",
-        representative_cpf: values.representative_mode === "sim" ? (values.representative_cpf?.trim() || "") : "",
-        selectedTags: selectedTags || [],
-      };
-
-      console.log("Calling onSubmit with data:", formData);
-      await onSubmit(formData);
-      
-    } catch (error) {
-      console.error("Error in form submission:", error);
-      toast.error("Erro ao salvar lead. Tente novamente.");
+  const onFormSubmit = (data: FormData) => {
+    console.log("Form submission started with values:", data);
+    
+    if (!data.name || data.name.trim() === "") {
+      console.error("Validation failed: Name is required");
+      toast.error("Nome é obrigatório");
+      return;
     }
+
+    const submitData = {
+      ...data,
+      selectedTags
+    };
+
+    console.log("Calling onSubmit with data:", submitData);
+    onSubmit(submitData);
+  };
+
+  const getSelectedTagsDisplay = () => {
+    return selectedTags.map(tagId => {
+      const tag = tags.find(t => t.id === tagId);
+      return tag ? (
+        <Badge 
+          key={tagId} 
+          variant="outline" 
+          className="mr-1 mb-1"
+          style={{ borderColor: tag.color, color: tag.color }}
+        >
+          {tag.name}
+          <button
+            type="button"
+            className="ml-1 hover:bg-gray-200 rounded-full"
+            onClick={() => removeTag(tagId)}
+          >
+            <X className="h-3 w-3" />
+          </button>
+        </Badge>
+      ) : null;
+    });
   };
 
   return (
-    <Form {...form}>
-      <form
-        onSubmit={form.handleSubmit(handleSubmit)}
-        className="space-y-4 w-full max-w-2xl mx-auto"
-      >
-        {existingClient && (
-          <Alert>
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              Cliente já cadastrado! Você está adicionando um novo produto para{" "}
-              <strong>{existingClient.name}</strong>. 
-              Os dados foram preenchidos automaticamente.
-            </AlertDescription>
-          </Alert>
-        )}
-
-        <FormField
-          control={form.control}
-          name="name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Nome completo *</FormLabel>
-              <FormControl>
-                <Input 
-                  placeholder="Nome do cliente" 
-                  {...field} 
-                  onChange={handleNameChange}
-                  value={field.value}
-                  disabled={isLoading} 
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="cpf"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>CPF *</FormLabel>
-                <FormControl>
-                  <div className="relative">
-                    <Input 
-                      placeholder="000.000.000-00" 
-                      {...field} 
-                      onChange={handleCPFChange}
-                      disabled={isLoading}
-                    />
-                    {isCheckingClient && (
-                      <Loader2 className="absolute right-3 top-2.5 h-4 w-4 animate-spin" />
-                    )}
-                  </div>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="phone"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Telefone Principal *</FormLabel>
-                <FormControl>
-                  <Input 
-                    placeholder="(00) 00000-0000" 
-                    {...field}
-                    onChange={(e) => handlePhoneChange(e, "phone")}
-                    disabled={isLoading}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+    <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="name">Nome *</Label>
+          <Input id="name" {...register("name")} className={errors.name ? "border-red-500" : ""} />
+          {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="phone2"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Telefone 2</FormLabel>
-                <FormControl>
-                  <Input 
-                    placeholder="(00) 00000-0000" 
-                    {...field}
-                    onChange={(e) => handlePhoneChange(e, "phone2")}
-                    disabled={isLoading}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="phone3"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Telefone 3</FormLabel>
-                <FormControl>
-                  <Input 
-                    placeholder="(00) 00000-0000" 
-                    {...field}
-                    onChange={(e) => handlePhoneChange(e, "phone3")}
-                    disabled={isLoading}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+        <div>
+          <Label htmlFor="cpf">CPF</Label>
+          <Input id="cpf" {...register("cpf")} placeholder="000.000.000-00" />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="bank"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Banco *</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o banco" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="caixa">Caixa Econômica Federal</SelectItem>
-                    <SelectItem value="bb">Banco do Brasil</SelectItem>
-                    <SelectItem value="itau">Itaú</SelectItem>
-                    <SelectItem value="bradesco">Bradesco</SelectItem>
-                    <SelectItem value="santander">Santander</SelectItem>
-                    <SelectItem value="c6">C6 Bank</SelectItem>
-                    <SelectItem value="brb">BRB - Banco de Brasília</SelectItem>
-                    <SelectItem value="bmg">BMG</SelectItem>
-                    <SelectItem value="pan">Banco Pan</SelectItem>
-                    <SelectItem value="ole">Banco Olé</SelectItem>
-                    <SelectItem value="daycoval">Daycoval</SelectItem>
-                    <SelectItem value="mercantil">Mercantil</SelectItem>
-                    <SelectItem value="cetelem">Cetelem</SelectItem>
-                    <SelectItem value="safra">Safra</SelectItem>
-                    <SelectItem value="inter">Inter</SelectItem>
-                    <SelectItem value="original">Original</SelectItem>
-                    <SelectItem value="facta">Facta</SelectItem>
-                    <SelectItem value="bonsucesso">Bonsucesso</SelectItem>
-                    <SelectItem value="banrisul">Banrisul</SelectItem>
-                    <SelectItem value="sicoob">Sicoob</SelectItem>
-                    <SelectItem value="outro">Outro</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="employee"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Funcionário Responsável</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o funcionário" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {employees.map(employee => (
-                      <SelectItem key={employee.id} value={employee.name}>
-                        {employee.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+        <div>
+          <Label htmlFor="phone">Telefone</Label>
+          <Input id="phone" {...register("phone")} placeholder="(00) 00000-0000" />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="product"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Produto *</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o produto" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="CREDITO FGTS">CRÉDITO FGTS</SelectItem>
-                    <SelectItem value="CREDITO CLT">CRÉDITO CLT</SelectItem>
-                    <SelectItem value="CREDITO PIX/CARTAO">CRÉDITO PIX/CARTÃO</SelectItem>
-                    <SelectItem value="CREDITO INSS">CRÉDITO INSS</SelectItem>
-                    <SelectItem value="PORTABILIDADE INSS">PORTABILIDADE INSS</SelectItem>
-                    <SelectItem value="novo">Novo</SelectItem>
-                    <SelectItem value="portabilidade">Portabilidade</SelectItem>
-                    <SelectItem value="refinanciamento">Refinanciamento</SelectItem>
-                    <SelectItem value="fgts">FGTS</SelectItem>
-                    <SelectItem value="cartao">Cartão Consignado</SelectItem>
-                    <SelectItem value="outro">Outro</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="amount"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Valor do Empréstimo *</FormLabel>
-                <FormControl>
-                  <Input 
-                    placeholder="R$ 0,00" 
-                    {...field}
-                    onChange={handleAmountChange}
-                    disabled={isLoading}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+        <div>
+          <Label htmlFor="phone2">Telefone 2</Label>
+          <Input id="phone2" {...register("phone2")} placeholder="(00) 00000-0000" />
         </div>
 
-        <FormField
-          control={form.control}
-          name="status"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Status</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o status" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="novo">Novo</SelectItem>
-                  <SelectItem value="contatado">Contatado</SelectItem>
-                  <SelectItem value="qualificado">Qualificado</SelectItem>
-                  <SelectItem value="negociando">Em andamento</SelectItem>
-                  <SelectItem value="convertido">Aprovado</SelectItem>
-                  <SelectItem value="perdido">Recusado</SelectItem>
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="notes"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Observações</FormLabel>
-              <FormControl>
-                <Textarea 
-                  placeholder="Observações sobre o lead" 
-                  className="min-h-24"
-                  {...field} 
-                  disabled={isLoading}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="benefit_type"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Espécie de Benefício *</FormLabel>
-              <Select 
-                onValueChange={field.onChange} 
-                defaultValue={field.value} 
-                disabled={isLoading}
-              >
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione a espécie de benefício" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {benefitTypes.map((type) => (
-                    <SelectItem key={type.code} value={type.code}>
-                      {type.description}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        {/* Tags Section */}
-        <FormField
-          control={form.control}
-          name="selectedTags"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel className="flex items-center gap-2">
-                <Tag className="h-4 w-4" />
-                Etiquetas
-              </FormLabel>
-              <FormControl>
-                <div className="space-y-3">
-                  <div className="text-sm text-muted-foreground">
-                    Selecione as etiquetas para organizar este lead:
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {tags.map((tag) => (
-                      <Badge
-                        key={tag.id}
-                        variant="outline"
-                        className={`cursor-pointer transition-all ${
-                          form.watch("selectedTags").includes(tag.id)
-                            ? 'ring-2 ring-offset-1' 
-                            : 'hover:scale-105'
-                        }`}
-                        style={{ 
-                          backgroundColor: form.watch("selectedTags").includes(tag.id) ? tag.color : 'transparent',
-                          borderColor: tag.color,
-                          color: form.watch("selectedTags").includes(tag.id) ? 'white' : tag.color
-                        }}
-                        onClick={() => toggleTag(tag.id)}
-                      >
-                        {tag.name}
-                      </Badge>
-                    ))}
-                    {tags.length === 0 && (
-                      <p className="text-muted-foreground text-sm">
-                        Nenhuma etiqueta disponível. Crie etiquetas na página principal.
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        {/* PERGUNTA REPRESENTANTE */}
-        <div className="flex items-center gap-4 pb-2">
-          <span className="font-medium">Possui representante?</span>
-          <Button
-            type="button"
-            variant={form.watch("representative_mode") === "sim" ? "default" : "outline"}
-            onClick={() => {
-              setHasRepresentative(true);
-              form.setValue("representative_mode", "sim");
-            }}
-            className="rounded-full"
-          >
-            Sim
-          </Button>
-          <Button
-            type="button"
-            variant={form.watch("representative_mode") === "nao" ? "default" : "outline"}
-            onClick={() => {
-              setHasRepresentative(false);
-              form.setValue("representative_mode", "nao");
-              form.setValue("representative_name", "");
-              form.setValue("representative_cpf", "");
-            }}
-            className="rounded-full"
-          >
-            Não
-          </Button>
+        <div>
+          <Label htmlFor="phone3">Telefone 3</Label>
+          <Input id="phone3" {...register("phone3")} placeholder="(00) 00000-0000" />
         </div>
 
-        {form.watch("representative_mode") === "sim" && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField
-              control={form.control}
-              name="representative_name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nome do Representante</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="Nome completo do representante"
-                      {...field}
-                      value={field.value}
-                      disabled={isLoading}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="representative_cpf"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>CPF do Representante</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="000.000.000-00"
-                      {...field}
-                      onChange={handleRepresentativeCPFChange}
-                      value={field.value}
-                      disabled={isLoading}
-                      inputMode="numeric"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+        <div>
+          <Label htmlFor="email">Email</Label>
+          <Input id="email" type="email" {...register("email")} />
+          {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>}
+        </div>
+
+        <div>
+          <Label htmlFor="bank">Banco</Label>
+          <Select onValueChange={(value) => setValue("bank", value)} defaultValue={initialData?.bank}>
+            <SelectTrigger>
+              <SelectValue placeholder="Selecione o banco" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="nubank">Nubank</SelectItem>
+              <SelectItem value="itau">Itaú</SelectItem>
+              <SelectItem value="bradesco">Bradesco</SelectItem>
+              <SelectItem value="santander">Santander</SelectItem>
+              <SelectItem value="bb">Banco do Brasil</SelectItem>
+              <SelectItem value="caixa">Caixa Econômica</SelectItem>
+              <SelectItem value="outros">Outros</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div>
+          <Label htmlFor="product">Produto</Label>
+          <Select onValueChange={(value) => setValue("product", value)} defaultValue={initialData?.product}>
+            <SelectTrigger>
+              <SelectValue placeholder="Selecione o produto" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="CREDITO PIX/CARTAO">CREDITO PIX/CARTAO</SelectItem>
+              <SelectItem value="EMPRESTIMO CONSIGNADO">EMPRESTIMO CONSIGNADO</SelectItem>
+              <SelectItem value="CARTAO CONSIGNADO">CARTAO CONSIGNADO</SelectItem>
+              <SelectItem value="PORTABILIDADE">PORTABILIDADE</SelectItem>
+              <SelectItem value="REFINANCIAMENTO">REFINANCIAMENTO</SelectItem>
+              <SelectItem value="SAQUE ANIVERSARIO">SAQUE ANIVERSARIO</SelectItem>
+              <SelectItem value="ANTECIPACAO 13º">ANTECIPACAO 13º</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div>
+          <Label htmlFor="amount">Valor</Label>
+          <Input id="amount" {...register("amount")} placeholder="R$ 0,00" />
+        </div>
+
+        <div>
+          <Label htmlFor="employee">Funcionário</Label>
+          <Select onValueChange={(value) => setValue("employee", value)} defaultValue={initialData?.employee}>
+            <SelectTrigger>
+              <SelectValue placeholder="Selecione o funcionário" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="JANE">JANE</SelectItem>
+              <SelectItem value="JOÃO">JOÃO</SelectItem>
+              <SelectItem value="MARIA">MARIA</SelectItem>
+              <SelectItem value="PEDRO">PEDRO</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div>
+          <Label htmlFor="benefit_type">Tipo de Benefício</Label>
+          <Select onValueChange={(value) => setValue("benefit_type", value)} defaultValue={initialData?.benefit_type}>
+            <SelectTrigger>
+              <SelectValue placeholder="Selecione o tipo" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="87">87 - Aposentadoria por Idade</SelectItem>
+              <SelectItem value="88">88 - Aposentadoria por Invalidez</SelectItem>
+              <SelectItem value="89">89 - Pensão por Morte</SelectItem>
+              <SelectItem value="21">21 - Auxílio-Doença</SelectItem>
+              <SelectItem value="25">25 - Auxílio-Reclusão</SelectItem>
+              <SelectItem value="32">32 - Aposentadoria por Tempo de Contribuição</SelectItem>
+              <SelectItem value="42">42 - Aposentadoria Especial</SelectItem>
+              <SelectItem value="46">46 - Auxílio-Acidente</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div>
+          <Label htmlFor="representative_mode">Modo Representante</Label>
+          <Select onValueChange={(value) => setValue("representative_mode", value)} defaultValue={representativeMode}>
+            <SelectTrigger>
+              <SelectValue placeholder="Selecione" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="nao">Não</SelectItem>
+              <SelectItem value="sim">Sim</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      {representativeMode === "sim" && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 border rounded-lg bg-gray-50">
+          <div>
+            <Label htmlFor="representative_name">Nome do Representante</Label>
+            <Input id="representative_name" {...register("representative_name")} />
           </div>
-        )}
-
-        <div className="pt-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end sm:space-x-2">
-          <Button
-            variant="outline"
-            type="button"
-            onClick={onCancel}
-            disabled={isLoading}
-            className="w-full sm:w-auto"
-          >
-            Cancelar
-          </Button>
-          <Button
-            type="submit"
-            disabled={isLoading}
-            className="w-full sm:w-auto"
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Salvando...
-              </>
-            ) : existingClient ? (
-              "Adicionar Novo Produto"
-            ) : (
-              "Salvar Lead"
-            )}
-          </Button>
+          <div>
+            <Label htmlFor="representative_cpf">CPF do Representante</Label>
+            <Input id="representative_cpf" {...register("representative_cpf")} placeholder="000.000.000-00" />
+          </div>
         </div>
-      </form>
-    </Form>
+      )}
+
+      {/* Tags Section */}
+      <div>
+        <Label>Etiquetas</Label>
+        <div className="mt-2 space-y-2">
+          <div className="flex flex-wrap gap-2">
+            {tags.map((tag) => (
+              <Badge
+                key={tag.id}
+                variant="outline"
+                className={`cursor-pointer transition-all ${
+                  selectedTags.includes(tag.id) 
+                    ? 'ring-2 ring-offset-1' 
+                    : 'hover:scale-105'
+                }`}
+                style={{ 
+                  backgroundColor: selectedTags.includes(tag.id) ? tag.color : 'transparent',
+                  borderColor: tag.color,
+                  color: selectedTags.includes(tag.id) ? 'white' : tag.color
+                }}
+                onClick={() => toggleTag(tag.id)}
+              >
+                {tag.name}
+              </Badge>
+            ))}
+          </div>
+          {selectedTags.length > 0 && (
+            <div>
+              <Label className="text-sm text-muted-foreground">Etiquetas selecionadas:</Label>
+              <div className="flex flex-wrap gap-1 mt-1">
+                {getSelectedTagsDisplay()}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div>
+        <Label htmlFor="notes">Observações</Label>
+        <Textarea id="notes" {...register("notes")} rows={3} />
+      </div>
+
+      <div className="flex gap-2 justify-end">
+        <Button type="button" variant="outline" onClick={onCancel}>
+          Cancelar
+        </Button>
+        <Button type="submit">
+          {isEditing ? "Atualizar Lead" : "Salvar Lead"}
+        </Button>
+      </div>
+    </form>
   );
 };
 
