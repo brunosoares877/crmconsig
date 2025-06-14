@@ -246,7 +246,10 @@ const LeadForm: React.FC<LeadFormProps> = ({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+      <form
+        onSubmit={form.handleSubmit(handleSubmit)}
+        className="space-y-4 w-full max-w-2xl mx-auto"
+      >
         {existingClient && (
           <Alert>
             <AlertCircle className="h-4 w-4" />
@@ -629,11 +632,21 @@ const LeadForm: React.FC<LeadFormProps> = ({
           </div>
         )}
 
-        <div className="pt-4 flex justify-end space-x-2">
-          <Button variant="outline" type="button" onClick={onCancel} disabled={isLoading}>
+        <div className="pt-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end sm:space-x-2">
+          <Button
+            variant="outline"
+            type="button"
+            onClick={onCancel}
+            disabled={isLoading}
+            className="w-full sm:w-auto"
+          >
             Cancelar
           </Button>
-          <Button type="submit" disabled={isLoading}>
+          <Button
+            type="submit"
+            disabled={isLoading}
+            className="w-full sm:w-auto"
+          >
             {isLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
