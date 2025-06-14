@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Calendar, CalendarDays, CalendarPlus, DollarSign, List, ListCheck, Settings, Users, Star } from "lucide-react";
+import { Calendar, DollarSign, List, Users, Settings } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -18,7 +18,7 @@ const menuItems = [
   {
     title: "Dashboard",
     url: "/dashboard",
-    icon: ListCheck,
+    icon: List,
     match: (pathname: string) => pathname === "/dashboard",
   },
   {
@@ -32,7 +32,7 @@ const menuItems = [
   {
     title: "Leads Premium",
     url: "/leads-premium",
-    icon: Star,
+    icon: List,
     isPremium: true,
     match: (pathname: string) => pathname === "/leads-premium",
   },
@@ -47,14 +47,14 @@ const menuItems = [
   {
     title: "Calendário",
     url: "/reminders/calendar",
-    icon: CalendarDays,
+    icon: Calendar,
     match: (pathname: string) =>
       pathname === "/reminders/calendar",
   },
   {
     title: "Agendamentos",
     url: "/leads/scheduled",
-    icon: CalendarPlus,
+    icon: Calendar,
     match: (pathname: string) =>
       pathname === "/leads/scheduled",
   },
@@ -67,7 +67,7 @@ const menuItems = [
   {
     title: "Portabilidade",
     url: "/portability",
-    icon: ListCheck,
+    icon: List,
     match: (pathname: string) => pathname === "/portability",
   },
   {
@@ -90,51 +90,58 @@ const menuItems = [
 export function AppSidebar() {
   const location = useLocation();
 
-  // Aponta para o primeiro índice ativo encontrando via match
-  let firstActiveIdx = -1;
-  for (let i = 0; i < menuItems.length; i++) {
-    if (menuItems[i].match(location.pathname)) {
-      firstActiveIdx = i;
-      break;
+  // Ajuste: só UM item ativo por vez, fixo, todos sempre aparecem
+  const getActiveIdx = () => {
+    for (let i = 0; i < menuItems.length; i++) {
+      if (menuItems[i].match(location.pathname)) {
+        return i;
+      }
     }
-  }
+    return -1;
+  };
+  const activeIdx = getActiveIdx();
 
   return (
-    <Sidebar collapsible="none" className="w-64 min-w-64 max-w-64">
+    <Sidebar collapsible="none" className="w-64 min-w-64 max-w-64 bg-[#0f2247]">
       <SidebarHeader>
         <div className="flex items-center px-2 py-2">
-          <h1 className="text-lg font-bold text-sidebar-foreground">
+          <h1 className="text-lg font-bold text-sidebar-foreground text-white">
             LeadConsig
           </h1>
         </div>
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>
-            Menu Principal
-          </SidebarGroupLabel>
+          {/* Label removido para igualar visual à primeira imagem */}
+          {/* <SidebarGroupLabel>Menu Principal</SidebarGroupLabel> */}
           <SidebarGroupContent>
             <SidebarMenu>
               {menuItems.map((item, idx) => {
-                const isActive = idx === firstActiveIdx;
+                const isActive = idx === activeIdx;
                 return (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton
                       asChild
-                      className={`w-full ${
+                      className={`w-full transition-all font-normal justify-start text-base ${
                         isActive
-                          ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                          : ""
-                      }`}
+                          ? "bg-white/10 text-white"
+                          : "text-white/80 hover:bg-white/5"
+                      } ${item.isPremium ? "text-yellow-400 font-semibold" : ""}`}
                       aria-current={isActive ? "page" : undefined}
                     >
                       <Link to={item.url} className="flex items-center gap-2 w-full">
-                        <item.icon className={`w-4 h-4 flex-shrink-0 ${item.isPremium ? "text-yellow-400 fill-yellow-400" : ""}`} />
-                        <span className={`flex-1 text-left ${
-                          item.isPremium ? "text-yellow-400 font-semibold" : ""
-                        }`}>
-                          {item.title}
-                        </span>
+                        {/* Para "Leads Premium", estrela amarela à esquerda */}
+                        {item.isPremium && (
+                          <span className="inline-block w-4 h-4 text-yellow-400">
+                            {/* Simples estrela unicode: */}
+                            ★
+                          </span>
+                        )}
+                        {/* Icone padrão para os outros */}
+                        {!item.isPremium && (
+                          <item.icon className="w-4 h-4 flex-shrink-0" />
+                        )}
+                        <span className="flex-1 text-left">{item.title}</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
