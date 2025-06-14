@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import LeadCard from "./LeadCard";
 import EmptyState from "./EmptyState";
@@ -264,6 +263,23 @@ const LeadList: React.FC<LeadListProps> = ({
                   onChange={e => setInternalSearchQuery(e.target.value)} 
                 />
               </div>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <Button variant="outline" className="h-8 gap-1" onClick={() => addFilter("novos", "Novos")}>
+                <Filter className="h-3.5 w-3.5" />
+                <span>Filtros</span>
+              </Button>
+              <div className="flex flex-wrap gap-2">
+                {activeFilters.map(filter => 
+                  <Badge key={filter.id} variant="outline" className="h-8 gap-1 pl-2 pr-1">
+                    {filter.label}
+                    <Button variant="ghost" className="h-5 w-5 p-0 hover:bg-transparent" onClick={() => removeFilter(filter.id)}>
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  </Badge>
+                )}
+              </div>
               
               <Sheet open={isOpenSheet} onOpenChange={setIsOpenSheet}>
                 <SheetTrigger asChild>
@@ -282,23 +298,6 @@ const LeadList: React.FC<LeadListProps> = ({
                   <LeadForm onSubmit={handleLeadSubmit} onCancel={() => setIsOpenSheet(false)} />
                 </SheetContent>
               </Sheet>
-            </div>
-          </div>
-          
-          <div className="flex items-center space-x-2">
-            <Button variant="outline" className="h-8 gap-1" onClick={() => addFilter("novos", "Novos")}>
-              <Filter className="h-3.5 w-3.5" />
-              <span>Filtros</span>
-            </Button>
-            <div className="flex flex-wrap gap-2">
-              {activeFilters.map(filter => 
-                <Badge key={filter.id} variant="outline" className="h-8 gap-1 pl-2 pr-1">
-                  {filter.label}
-                  <Button variant="ghost" className="h-5 w-5 p-0 hover:bg-transparent" onClick={() => removeFilter(filter.id)}>
-                    <X className="h-3.5 w-3.5" />
-                  </Button>
-                </Badge>
-              )}
             </div>
           </div>
         </div>
