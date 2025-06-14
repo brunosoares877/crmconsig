@@ -57,14 +57,32 @@ const LeadsTrash = () => {
       const { data: userData, error: userError } = await supabase.auth.getUser();
       if (userError) throw userError;
 
+      // Prepare lead data with only valid columns for the leads table
+      const leadDataToRestore = {
+        id: deletedLead.original_lead_id,
+        user_id: userData.user.id,
+        name: deletedLead.original_lead_data.name || '',
+        email: deletedLead.original_lead_data.email || null,
+        phone: deletedLead.original_lead_data.phone || null,
+        phone2: deletedLead.original_lead_data.phone2 || null,
+        phone3: deletedLead.original_lead_data.phone3 || null,
+        cpf: deletedLead.original_lead_data.cpf || null,
+        status: deletedLead.original_lead_data.status || 'novo',
+        source: deletedLead.original_lead_data.source || null,
+        notes: deletedLead.original_lead_data.notes || null,
+        amount: deletedLead.original_lead_data.amount || null,
+        product: deletedLead.original_lead_data.product || null,
+        employee: deletedLead.original_lead_data.employee || null,
+        bank: deletedLead.original_lead_data.bank || null,
+        benefit_type: deletedLead.original_lead_data.benefit_type || null,
+        representative_name: deletedLead.original_lead_data.representative_name || null,
+        representative_cpf: deletedLead.original_lead_data.representative_cpf || null
+      };
+
       // Restore lead to active leads table
       const { error: restoreError } = await supabase
         .from("leads")
-        .insert({
-          ...deletedLead.original_lead_data,
-          id: deletedLead.original_lead_id,
-          user_id: userData.user.id
-        });
+        .insert(leadDataToRestore);
 
       if (restoreError) throw restoreError;
 
