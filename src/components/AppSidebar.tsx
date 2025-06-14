@@ -89,9 +89,8 @@ const menuItems = [
 
 export function AppSidebar() {
   const location = useLocation();
-  const isLeadsPremium = location.pathname === "/leads-premium";
 
-  // Calcula ativo: só um deve ser active por vez (primeiro que casar)
+  // Aponta para o primeiro índice ativo encontrando via match
   let firstActiveIdx = -1;
   for (let i = 0; i < menuItems.length; i++) {
     if (menuItems[i].match(location.pathname)) {
@@ -101,24 +100,17 @@ export function AppSidebar() {
   }
 
   return (
-    <Sidebar 
-      collapsible="none" 
-      className={`w-64 min-w-64 max-w-64 ${
-        isLeadsPremium ? "bg-blue-900" : ""
-      }`}
-    >
-      <SidebarHeader className={isLeadsPremium ? "bg-blue-900" : ""}>
+    <Sidebar collapsible="none" className="w-64 min-w-64 max-w-64">
+      <SidebarHeader>
         <div className="flex items-center px-2 py-2">
-          <h1 className={`text-lg font-bold ${
-            isLeadsPremium ? "text-white" : "text-sidebar-foreground"
-          }`}>
+          <h1 className="text-lg font-bold text-sidebar-foreground">
             LeadConsig
           </h1>
         </div>
       </SidebarHeader>
-      <SidebarContent className={isLeadsPremium ? "bg-blue-900" : ""}>
+      <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel className={isLeadsPremium ? "text-blue-200" : ""}>
+          <SidebarGroupLabel>
             Menu Principal
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -127,27 +119,19 @@ export function AppSidebar() {
                 const isActive = idx === firstActiveIdx;
                 return (
                   <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton 
-                      asChild 
+                    <SidebarMenuButton
+                      asChild
                       className={`w-full ${
-                        isLeadsPremium 
-                          ? isActive 
-                            ? "bg-blue-700 text-white hover:bg-blue-600" 
-                            : "text-blue-100 hover:bg-blue-800 hover:text-white"
-                          : isActive 
-                            ? "bg-sidebar-accent text-sidebar-accent-foreground" 
-                            : ""
+                        isActive
+                          ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                          : ""
                       }`}
                       aria-current={isActive ? "page" : undefined}
                     >
                       <Link to={item.url} className="flex items-center gap-2 w-full">
-                        <item.icon className={`w-4 h-4 flex-shrink-0 ${
-                          item.isPremium ? "text-yellow-400 fill-yellow-400" : 
-                          isLeadsPremium ? "text-blue-100" : ""
-                        }`} />
+                        <item.icon className={`w-4 h-4 flex-shrink-0 ${item.isPremium ? "text-yellow-400 fill-yellow-400" : ""}`} />
                         <span className={`flex-1 text-left ${
-                          item.isPremium ? "text-yellow-400 font-semibold" : 
-                          isLeadsPremium ? "text-blue-100" : ""
+                          item.isPremium ? "text-yellow-400 font-semibold" : ""
                         }`}>
                           {item.title}
                         </span>
