@@ -43,7 +43,7 @@ const FeaturesList = () => {
           Funcionalidades poderosas
         </h2>
         <p className="text-xl text-gray-600 mt-4 max-w-2xl mx-auto">
-          Tudo o que você precisa para alavancar seus resultados em um só lugar
+          Tudo o que você precisa para alavancar seus resultados em um só lugar papae
         </p>
       </div>
       
