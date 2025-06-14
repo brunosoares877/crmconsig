@@ -152,11 +152,24 @@ const LeadsPremium = () => {
           <Header />
           <main className="w-full space-y-6 p-4 md:p-6 py-8">
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6">
-              <div className="flex items-center gap-2">
-                <Star className="h-6 w-6 text-yellow-500" />
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <Star className="h-8 w-8 text-yellow-400 fill-yellow-400 drop-shadow-sm" />
+                  <div className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-400 rounded-full animate-pulse"></div>
+                </div>
                 <div>
-                  <h1 className="text-3xl font-bold text-slate-900">Leads Premium</h1>
-                  <p className="text-muted-foreground mt-1">Leads recebidos via tráfego pago</p>
+                  <h1 className="text-3xl font-bold text-slate-900">
+                    Leads{" "}
+                    <span className="bg-gradient-to-r from-yellow-400 to-yellow-600 bg-clip-text text-transparent font-extrabold">
+                      Premium
+                    </span>
+                  </h1>
+                  <p className="text-muted-foreground mt-1">
+                    <span className="inline-flex items-center gap-1">
+                      <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
+                      Leads recebidos via tráfego pago
+                    </span>
+                  </p>
                 </div>
               </div>
               <Button onClick={handleAddMockLeads} className="gap-2">
@@ -208,7 +221,7 @@ const LeadsPremium = () => {
               ) : filteredLeads.length === 0 ? (
                 <Card>
                   <CardContent className="text-center py-8">
-                    <Star className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                    <Star className="h-12 w-12 text-yellow-400 fill-yellow-400 mx-auto mb-4" />
                     <p className="text-gray-500">Nenhum lead premium encontrado</p>
                     <p className="text-sm text-gray-400 mt-2">
                       Clique no botão "Adicionar Leads Mockados" para testar a funcionalidade
