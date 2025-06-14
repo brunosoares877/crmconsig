@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Copy, MessageCircle, Star } from "lucide-react";
+import { Search, Copy, MessageCircle, Star, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -13,6 +12,7 @@ import { ptBR } from "date-fns/locale";
 import { AppSidebar } from "@/components/AppSidebar";
 import Header from "@/components/Header";
 import LeadPremiumChat from "@/components/leads-premium/LeadPremiumChat";
+import { useAddMockLeads } from "@/hooks/useAddMockLeads";
 
 interface LeadPremium {
   id: string;
@@ -33,6 +33,7 @@ const LeadsPremium = () => {
   const [statusFilter, setStatusFilter] = useState("all");
   const [modalidadeFilter, setModalidadeFilter] = useState("all");
   const [selectedLead, setSelectedLead] = useState<LeadPremium | null>(null);
+  const { addMockLeads } = useAddMockLeads();
 
   const getModalidadeBadgeColor = (modalidade: string) => {
     switch (modalidade) {
@@ -70,9 +71,16 @@ const LeadsPremium = () => {
   const fetchLeads = async () => {
     setIsLoading(true);
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error("Usuário não autenticado");
+        return;
+      }
+
       const { data, error } = await supabase
         .from('leads_premium')
         .select('*')
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -81,6 +89,7 @@ const LeadsPremium = () => {
         return;
       }
 
+      console.log('Leads carregados:', data);
       setLeads(data || []);
       setFilteredLeads(data || []);
     } catch (error) {
@@ -89,6 +98,12 @@ const LeadsPremium = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleAddMockLeads = async () => {
+    await addMockLeads();
+    // Recarregar leads após adicionar mockados
+    fetchLeads();
   };
 
   useEffect(() => {
@@ -144,6 +159,10 @@ const LeadsPremium = () => {
                   <p className="text-muted-foreground mt-1">Leads recebidos via tráfego pago</p>
                 </div>
               </div>
+              <Button onClick={handleAddMockLeads} className="gap-2">
+                <Plus className="h-4 w-4" />
+                Adicionar Leads Mockados
+              </Button>
             </div>
 
             {/* Filtros */}
@@ -191,6 +210,9 @@ const LeadsPremium = () => {
                   <CardContent className="text-center py-8">
                     <Star className="h-12 w-12 text-gray-300 mx-auto mb-4" />
                     <p className="text-gray-500">Nenhum lead premium encontrado</p>
+                    <p className="text-sm text-gray-400 mt-2">
+                      Clique no botão "Adicionar Leads Mockados" para testar a funcionalidade
+                    </p>
                   </CardContent>
                 </Card>
               ) : (
