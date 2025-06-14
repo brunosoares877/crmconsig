@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -104,13 +105,35 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete }) => {
       const { data: userData, error: userError } = await supabase.auth.getUser();
       if (userError) throw userError;
 
+      // Convert Lead to JSON-compatible format
+      const leadData = {
+        id: lead.id,
+        user_id: lead.user_id,
+        name: lead.name,
+        email: lead.email,
+        phone: lead.phone,
+        phone2: lead.phone2,
+        phone3: lead.phone3,
+        cpf: lead.cpf,
+        status: lead.status,
+        source: lead.source,
+        notes: lead.notes,
+        amount: lead.amount,
+        createdAt: lead.createdAt,
+        updatedAt: lead.updatedAt,
+        scheduledAt: lead.scheduledAt,
+        product: lead.product,
+        employee: lead.employee,
+        created_at: lead.created_at
+      };
+
       // Move lead to trash instead of deleting permanently
       const { error: trashError } = await supabase
         .from("deleted_leads")
         .insert({
           original_lead_id: lead.id,
           user_id: userData.user.id,
-          original_lead_data: lead
+          original_lead_data: leadData
         });
 
       if (trashError) throw trashError;
