@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, PhoneCall, CalendarCheck, TrendingUp, TrendingDown, User, Search, BarChart3, DollarSign } from "lucide-react";
@@ -255,38 +254,36 @@ const Dashboard = () => {
   ];
 
   return (
--    <div className="w-full px-1 md:px-4 lg:px-6 space-y-6">
-+    <div className="w-full px-0 md:px-0 lg:px-0 space-y-6"> {/* Sem margem lateral */}
-       {/* Metrics Cards Grid */}
-       <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 lg:gap-6">
-         {metricsData.map((metric, index) => (
-           <MetricsCard key={index} {...metric} />
-         ))}
-       </div>
+    <div className="w-full px-0 md:px-0 lg:px-0 space-y-6">
+      {/* Metrics Cards Grid */}
+      <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 lg:gap-6">
+        {metricsData.map((metric, index) => (
+          <MetricsCard key={index} {...metric} />
+        ))}
+      </div>
 
-       {/* Main Content Grid */}
-       <div className="w-full grid grid-cols-1 xl:grid-cols-2 gap-6">
-         <ProductionCard 
-           dailyProduction={dailyProduction}
-           isLoading={isLoading}
-         />
-         
-         <EmployeePerformanceCard 
-           employeeSales={employeeSales}
-           isLoading={isLoading}
-         />
-       </div>
-       
-       {/* Latest Leads Full Width */}
-       <div className="w-full">
-         <LatestLeadsCard 
-           latestLeads={latestLeads}
-           isLoading={isLoading}
-         />
-       </div>
-     </div>
-   );
- };
+      {/* Main Content Grid */}
+      <div className="w-full grid grid-cols-1 xl:grid-cols-2 gap-6">
+        <ProductionCard 
+          dailyProduction={dailyProduction}
+          isLoading={isLoading}
+        />
+        
+        <EmployeePerformanceCard 
+          employeeSales={employeeSales}
+          isLoading={isLoading}
+        />
+      </div>
+      
+      {/* Latest Leads Full Width */}
+      <div className="w-full">
+        <LatestLeadsCard 
+          latestLeads={latestLeads}
+          isLoading={isLoading}
+        />
+      </div>
+    </div>
+  );
+};
 
- export default Dashboard;
-
+export default Dashboard;
