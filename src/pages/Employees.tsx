@@ -30,7 +30,6 @@ const Employees = () => {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(false);
   const [newEmployeeName, setNewEmployeeName] = useState("");
-  const [newEmployeeFullName, setNewEmployeeFullName] = useState("");
   const [newEmployeeBank, setNewEmployeeBank] = useState("");
   const [newEmployeePixKeyMain, setNewEmployeePixKeyMain] = useState("");
   const [newEmployeePixKey2, setNewEmployeePixKey2] = useState("");
@@ -64,11 +63,6 @@ const Employees = () => {
       return;
     }
 
-    if (!newEmployeeFullName.trim()) {
-      toast.error("O nome completo não pode estar vazio");
-      return;
-    }
-
     if (!newEmployeeBank.trim()) {
       toast.error("O banco não pode estar vazio");
       return;
@@ -84,7 +78,7 @@ const Employees = () => {
 
       const success = await createEmployee(
         newEmployeeName,
-        newEmployeeFullName,
+        newEmployeeName, // Using name as full_name for database compatibility
         newEmployeeBank,
         newEmployeePixKeyMain,
         newEmployeePixKey2,
@@ -94,7 +88,6 @@ const Employees = () => {
       if (success) {
         toast.success(`Funcionário ${newEmployeeName} adicionado com sucesso`);
         setNewEmployeeName("");
-        setNewEmployeeFullName("");
         setNewEmployeeBank("");
         setNewEmployeePixKeyMain("");
         setNewEmployeePixKey2("");
@@ -164,17 +157,6 @@ const Employees = () => {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="fullName">Nome Completo *</Label>
-                  <Input
-                    id="fullName"
-                    type="text"
-                    placeholder="Nome completo do funcionário"
-                    value={newEmployeeFullName}
-                    onChange={(e) => setNewEmployeeFullName(e.target.value)}
-                    disabled={loading}
-                  />
-                </div>
-                <div>
                   <Label htmlFor="bank">Banco *</Label>
                   <Input
                     id="bank"
@@ -221,7 +203,7 @@ const Employees = () => {
                 <div className="md:col-span-2">
                   <Button 
                     onClick={handleAddEmployee} 
-                    disabled={loading || !newEmployeeName.trim() || !newEmployeeFullName.trim() || !newEmployeeBank.trim() || !newEmployeePixKeyMain.trim()}
+                    disabled={loading || !newEmployeeName.trim() || !newEmployeeBank.trim() || !newEmployeePixKeyMain.trim()}
                     className="w-full"
                   >
                     {loading ? "Adicionando..." : "Adicionar Funcionário"}
@@ -245,7 +227,6 @@ const Employees = () => {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Nome</TableHead>
-                    <TableHead>Nome Completo</TableHead>
                     <TableHead>Banco</TableHead>
                     <TableHead>Chave PIX Principal</TableHead>
                     <TableHead>Chave PIX 2</TableHead>
@@ -258,7 +239,6 @@ const Employees = () => {
                   {employees.map((employee) => (
                     <TableRow key={employee.id}>
                       <TableCell className="font-medium">{employee.name}</TableCell>
-                      <TableCell>{employee.full_name || "-"}</TableCell>
                       <TableCell>{employee.bank || "-"}</TableCell>
                       <TableCell>{employee.pix_key_main || "-"}</TableCell>
                       <TableCell>{employee.pix_key_2 || "-"}</TableCell>
