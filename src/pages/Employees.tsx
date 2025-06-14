@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/dialog";
 import { getEmployees, createEmployee, deleteEmployee, Employee } from "@/utils/employees";
 import { AppSidebar } from "@/components/AppSidebar";
+import Header from "@/components/Header";
 
 const Employees = () => {
   const [employees, setEmployees] = useState<Employee[]>([]);
