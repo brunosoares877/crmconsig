@@ -5,7 +5,6 @@ import { useNavigate } from "react-router-dom";
 import { Bell, Menu, Settings, User } from "lucide-react";
 import { useSidebar } from "@/components/ui/sidebar";
 import { useIsMobile } from "@/hooks/use-mobile";
-import SupportButton from "@/components/SupportButton";
 import { useAuth } from "@/contexts/AuthContext";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -46,7 +45,6 @@ const Header = () => {
       </div>
 
       <div className="flex items-center gap-1 md:gap-2">
-        <SupportButton />
         <Button 
           variant="ghost" 
           size="icon"
