@@ -70,7 +70,7 @@ export function AppSidebar() {
   };
 
   return (
-    <Sidebar collapsible="none">
+    <Sidebar collapsible="none" className="w-64 min-w-64 max-w-64">
       <SidebarHeader>
         <div className="flex items-center px-2 py-2">
           <h1 className="text-lg font-bold text-sidebar-foreground">LeadConsig</h1>
@@ -83,10 +83,10 @@ export function AppSidebar() {
             <SidebarMenu>
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild isActive={isActive(item.url)}>
-                    <Link to={item.url}>
-                      <item.icon />
-                      <span>{item.title}</span>
+                  <SidebarMenuButton asChild isActive={isActive(item.url)} className="w-full">
+                    <Link to={item.url} className="flex items-center gap-2 w-full">
+                      <item.icon className="w-4 h-4 flex-shrink-0" />
+                      <span className="flex-1 text-left">{item.title}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
