@@ -22,10 +22,10 @@ const PageLayout = ({
   return (
     <div className="min-h-screen bg-slate-50/30 w-full flex">
       <AppSidebar />
-      <div className="flex-1 w-full">
+      <div className="flex-1 w-full overflow-hidden">
         <Header />
-        <main className="w-full">
-          <div className="w-full space-y-6">
+        <main className="w-full h-full">
+          <div className="w-full space-y-6 h-full">
             {showTrialBanner && (
               <div className="flex items-center gap-4 px-4 py-2">
                 <TrialBanner />
@@ -50,7 +50,7 @@ const PageLayout = ({
               </div>
             )}
             
-            <div className="px-4">
+            <div className="px-4 pb-4">
               {children}
             </div>
           </div>
