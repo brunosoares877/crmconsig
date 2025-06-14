@@ -89,7 +89,7 @@ const menuItems = [
 export function AppSidebar() {
   const location = useLocation();
 
-  // Ajuste: só UM item ativo por vez, fixo, todos sempre aparecem
+  // Sempre retorna o índice do atalho ativo, sem alterar array nem sumir com item algum
   const getActiveIdx = () => {
     for (let i = 0; i < menuItems.length; i++) {
       if (menuItems[i].match(location.pathname)) {
@@ -111,8 +111,7 @@ export function AppSidebar() {
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          {/* Label removido para igualar visual à primeira imagem */}
-          {/* <SidebarGroupLabel>Menu Principal</SidebarGroupLabel> */}
+          {/* Todos os itens SEMPRE aparecem abaixo, ordem fixa */}
           <SidebarGroupContent>
             <SidebarMenu>
               {menuItems.map((item, idx) => {
@@ -129,14 +128,12 @@ export function AppSidebar() {
                       aria-current={isActive ? "page" : undefined}
                     >
                       <Link to={item.url} className="flex items-center gap-2 w-full">
-                        {/* Para "Leads Premium", estrela amarela à esquerda */}
-                        {item.isPremium && (
-                          <span className="inline-block w-4 h-4 text-yellow-400">
+                        {/* Leads Premium: sempre estrela amarela à esquerda */}
+                        {item.isPremium ? (
+                          <span className="inline-block w-4 h-4 text-yellow-400" aria-label="premium">
                             ★
                           </span>
-                        )}
-                        {/* Icone padrão para os outros */}
-                        {!item.isPremium && (
+                        ) : (
                           <item.icon className="w-4 h-4 flex-shrink-0" />
                         )}
                         <span className="flex-1 text-left">{item.title}</span>
