@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, PhoneCall, CalendarCheck, TrendingUp, TrendingDown, User, Search, BarChart3, DollarSign } from "lucide-react";
@@ -254,7 +255,7 @@ const Dashboard = () => {
   ];
 
   return (
-    <div className="w-full px-1 md:px-4 lg:px-6 space-y-6 overflow-x-hidden">
+    <div className="w-full px-1 md:px-4 lg:px-6 space-y-6">
       {/* Metrics Cards Grid */}
       <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 lg:gap-6">
         {metricsData.map((metric, index) => (
