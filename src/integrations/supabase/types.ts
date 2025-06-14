@@ -412,6 +412,7 @@ export type Database = {
           phone3: string | null
           product: string | null
           representative_cpf: string | null
+          representative_mode: string | null
           representative_name: string | null
           source: string | null
           status: string | null
@@ -434,6 +435,7 @@ export type Database = {
           phone3?: string | null
           product?: string | null
           representative_cpf?: string | null
+          representative_mode?: string | null
           representative_name?: string | null
           source?: string | null
           status?: string | null
@@ -456,6 +458,7 @@ export type Database = {
           phone3?: string | null
           product?: string | null
           representative_cpf?: string | null
+          representative_mode?: string | null
           representative_name?: string | null
           source?: string | null
           status?: string | null
