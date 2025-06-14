@@ -40,6 +40,7 @@ interface LeadFormProps {
   onCancel: () => void;
   initialData?: Partial<FormData>;
   isEditing?: boolean;
+  isLoading?: boolean;
 }
 
 interface Tag {
@@ -48,7 +49,7 @@ interface Tag {
   color: string;
 }
 
-const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, isEditing = false }) => {
+const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, isEditing = false, isLoading = false }) => {
   const [tags, setTags] = useState<Tag[]>([]);
   const [selectedTags, setSelectedTags] = useState<string[]>(initialData?.selectedTags || []);
 
@@ -78,7 +79,10 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
 
   useEffect(() => {
     fetchTags();
-  }, []);
+    if (isEditing && initialData?.selectedTags) {
+      setSelectedTags(initialData.selectedTags);
+    }
+  }, [isEditing, initialData]);
 
   const fetchTags = async () => {
     try {
@@ -333,11 +337,11 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
       </div>
 
       <div className="flex gap-2 justify-end">
-        <Button type="button" variant="outline" onClick={onCancel}>
+        <Button type="button" variant="outline" onClick={onCancel} disabled={isLoading}>
           Cancelar
         </Button>
-        <Button type="submit">
-          {isEditing ? "Atualizar Lead" : "Salvar Lead"}
+        <Button type="submit" disabled={isLoading}>
+          {isLoading ? "Salvando..." : (isEditing ? "Atualizar Lead" : "Salvar Lead")}
         </Button>
       </div>
     </form>
