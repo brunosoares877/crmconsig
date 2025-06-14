@@ -66,7 +66,34 @@ export function AppSidebar() {
   const location = useLocation();
 
   const isActive = (path: string) => {
-    return location.pathname === path || location.pathname.startsWith(path + "/");
+    // Verificação exata para evitar múltiplas seleções
+    if (location.pathname === path) {
+      return true;
+    }
+    
+    // Verificação especial para rotas aninhadas específicas
+    if (path === "/reminders" && location.pathname === "/reminders") {
+      return true;
+    }
+    
+    if (path === "/reminders/calendar" && location.pathname === "/reminders/calendar") {
+      return true;
+    }
+    
+    if (path === "/leads" && location.pathname === "/leads") {
+      return true;
+    }
+    
+    if (path === "/leads/scheduled" && location.pathname === "/leads/scheduled") {
+      return true;
+    }
+    
+    // Para outras rotas, verificar se começa com o path (exceto para reminders e leads que já foram tratados acima)
+    if (path !== "/reminders" && path !== "/leads" && path !== "/reminders/calendar" && path !== "/leads/scheduled") {
+      return location.pathname.startsWith(path + "/");
+    }
+    
+    return false;
   };
 
   return (
