@@ -49,7 +49,7 @@ const AddLeadButton = ({ onLeadAdded }: { onLeadAdded?: () => void }) => {
           Cadastrar Lead
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-full w-[95vw] max-h-[95vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Cadastrar Novo Lead</DialogTitle>
           <DialogDescription>
