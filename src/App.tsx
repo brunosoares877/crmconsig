@@ -12,6 +12,7 @@ import Leads from "@/pages/Leads";
 import LeadNew from "@/pages/LeadNew";
 import LeadImport from "@/pages/LeadImport";
 import LeadScheduling from "@/pages/LeadScheduling";
+import LeadsTrash from "@/pages/LeadsTrash";
 import Login from "@/pages/Login";
 import Sales from "@/pages/Sales";
 import Portability from "@/pages/Portability";
@@ -43,6 +44,7 @@ function App() {
                   <Route path="/leads/new" element={<LeadNew />} />
                   <Route path="/leads/import" element={<LeadImport />} />
                   <Route path="/leads/scheduled" element={<LeadScheduling />} />
+                  <Route path="/leads/trash" element={<LeadsTrash />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/sales" element={<Sales />} />
                   <Route path="/portability" element={<Portability />} />
