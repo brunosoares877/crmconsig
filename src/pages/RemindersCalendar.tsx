@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { format, parseISO, isSameDay } from "date-fns";
+import { format, parseISO, isSameDay, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { CalendarIcon, Loader2, Check } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
@@ -80,12 +80,12 @@ const RemindersCalendar = () => {
     const uniqueDates = new Set<string>();
     
     remindersList.forEach(reminder => {
-      const dueDate = parseISO(reminder.due_date);
+      const dueDate = startOfDay(parseISO(reminder.due_date));
       const dateKey = format(dueDate, 'yyyy-MM-dd');
       uniqueDates.add(dateKey);
     });
     
-    const dates = Array.from(uniqueDates).map(dateKey => parseISO(dateKey));
+    const dates = Array.from(uniqueDates).map(dateKey => startOfDay(parseISO(dateKey)));
     setDaysWithReminders(dates);
   };
 
@@ -175,7 +175,7 @@ const RemindersCalendar = () => {
   // Find reminders for the selected day
   const selectedDayReminders = selectedDay 
     ? reminders.filter(reminder => 
-        isSameDay(new Date(reminder.due_date), selectedDay)
+        isSameDay(startOfDay(new Date(reminder.due_date)), startOfDay(selectedDay))
       )
     : [];
 
@@ -202,10 +202,14 @@ const RemindersCalendar = () => {
                   onSelect={setSelectedDay}
                   className="pointer-events-auto"
                   modifiers={{
-                    hasReminders: daysWithReminders
+                    hasReminders: (date) => {
+                      return daysWithReminders.some(reminderDate => 
+                        isSameDay(startOfDay(date), startOfDay(reminderDate))
+                      );
+                    }
                   }}
                   modifiersClassNames={{
-                    hasReminders: "bg-purple-100 font-bold"
+                    hasReminders: "bg-purple-100 font-bold text-purple-800"
                   }}
                   disabled={date => {
                     const now = new Date();
