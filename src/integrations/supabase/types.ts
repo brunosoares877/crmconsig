@@ -549,6 +549,7 @@ export type Database = {
           id: string
           last_name: string | null
           updated_at: string
+          whatsapp: string | null
         }
         Insert: {
           company_name?: string | null
@@ -557,6 +558,7 @@ export type Database = {
           id: string
           last_name?: string | null
           updated_at?: string
+          whatsapp?: string | null
         }
         Update: {
           company_name?: string | null
@@ -565,6 +567,7 @@ export type Database = {
           id?: string
           last_name?: string | null
           updated_at?: string
+          whatsapp?: string | null
         }
         Relationships: []
       }

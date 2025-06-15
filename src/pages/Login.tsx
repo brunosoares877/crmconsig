@@ -46,6 +46,7 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
   const maskPhone = (value: string) => {
     const digits = value.replace(/\D/g, '');
     if (digits.length <= 2) {
@@ -131,7 +132,7 @@ const Login = () => {
         await signIn(email, password);
         toast.success("Login realizado com sucesso");
       } else {
-        // Create user account with metadata
+        // Create user account with complete metadata
         const { data: authData, error } = await supabase.auth.signUp({
           email,
           password,
@@ -149,7 +150,7 @@ const Login = () => {
         // Wait a moment for the profile to be created by the trigger
         await new Promise(resolve => setTimeout(resolve, 1000));
         
-        // Update the profile with additional data including WhatsApp
+        // Update the profile with all additional data
         if (authData.user) {
           const { error: profileError } = await supabase
             .from('profiles')
