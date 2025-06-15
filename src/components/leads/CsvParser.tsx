@@ -19,10 +19,19 @@ export interface CsvParseResult {
 }
 
 /**
- * Advanced CSV parser that handles comma-separated values properly
+ * Advanced CSV parser that handles both comma and semicolon separated values properly
  */
 export class CsvParser {
-  private static parseCSVLine(line: string): string[] {
+  private static detectSeparator(line: string): string {
+    // Count semicolons and commas to determine the most likely separator
+    const semicolonCount = (line.match(/;/g) || []).length;
+    const commaCount = (line.match(/,/g) || []).length;
+    
+    // If we have more semicolons, use semicolon, otherwise use comma
+    return semicolonCount > commaCount ? ';' : ',';
+  }
+
+  private static parseCSVLine(line: string, separator: string): string[] {
     const values: string[] = [];
     let current = '';
     let inQuotes = false;
@@ -41,7 +50,7 @@ export class CsvParser {
           inQuotes = !inQuotes;
           i++;
         }
-      } else if (char === ',' && !inQuotes) {
+      } else if (char === separator && !inQuotes) {
         // End of field
         values.push(current.trim());
         current = '';
@@ -143,8 +152,12 @@ export class CsvParser {
       };
     }
 
+    // Detect separator from the first line
+    const separator = this.detectSeparator(lines[0]);
+    console.log(`Detected CSV separator: ${separator}`);
+
     // Parse header
-    const headerValues = this.parseCSVLine(lines[0]);
+    const headerValues = this.parseCSVLine(lines[0], separator);
     const indices = this.findColumnIndices(headerValues);
     
     // Validate required columns
@@ -162,7 +175,7 @@ export class CsvParser {
       const line = lines[i].trim();
       if (!line) continue;
 
-      const values = this.parseCSVLine(line);
+      const values = this.parseCSVLine(line, separator);
       
       // Skip rows with insufficient data
       if (values.length < Math.max(...Object.values(indices).filter(idx => idx !== -1)) + 1) {
@@ -200,5 +213,78 @@ export class CsvParser {
       errors,
       totalRows: lines.length - 1
     };
+  }
+
+  private static findColumnIndices(headers: string[]): Record<string, number> {
+    const headerLower = headers.map(h => h.toLowerCase().trim().replace(/"/g, ''));
+    
+    return {
+      name: headerLower.findIndex(h => h.includes('nome')),
+      cpf: headerLower.findIndex(h => h.includes('cpf')),
+      phone: headerLower.findIndex(h => h.includes('telefone')),
+      bank: headerLower.findIndex(h => h.includes('banco')),
+      product: headerLower.findIndex(h => h.includes('produto')),
+      date: headerLower.findIndex(h => h.includes('data')),
+      amount: headerLower.findIndex(h => h.includes('valor')),
+      employee: headerLower.findIndex(h => h.includes('funcionario') || h.includes('funcionário'))
+    };
+  }
+
+  private static validateRequiredColumns(indices: Record<string, number>): string[] {
+    const errors: string[] = [];
+    const required = ['name', 'phone', 'bank', 'product', 'amount'];
+    
+    required.forEach(field => {
+      if (indices[field] === -1) {
+        const fieldNames = {
+          name: 'Nome',
+          phone: 'Telefone', 
+          bank: 'Banco',
+          product: 'Produto',
+          amount: 'Valor'
+        };
+        errors.push(`Coluna obrigatória não encontrada: ${fieldNames[field as keyof typeof fieldNames]}`);
+      }
+    });
+
+    return errors;
+  }
+
+  private static mapBankValue(bankValue: string): string {
+    const bank = bankValue.toLowerCase().trim();
+    if (bank.includes('caixa')) return 'caixa';
+    if (bank.includes('brasil') || bank.includes('bb')) return 'bb';
+    if (bank.includes('itau') || bank.includes('itaú')) return 'itau';
+    if (bank.includes('bradesco')) return 'bradesco';
+    if (bank.includes('santander')) return 'santander';
+    return 'outro';
+  }
+
+  private static mapProductValue(productValue: string): string {
+    const product = productValue.toLowerCase().trim();
+    if (product.includes('novo')) return 'novo';
+    if (product.includes('porta')) return 'portabilidade';
+    if (product.includes('refin')) return 'refinanciamento';
+    if (product.includes('fgts')) return 'fgts';
+    if (product.includes('cart')) return 'cartao';
+    return 'outro';
+  }
+
+  private static validateLeadData(lead: CsvLead, rowNumber: number): string[] {
+    const errors: string[] = [];
+
+    if (!lead.name || lead.name.length < 2) {
+      errors.push(`Linha ${rowNumber}: Nome inválido ou muito curto`);
+    }
+
+    if (!lead.phone || lead.phone.length < 10) {
+      errors.push(`Linha ${rowNumber}: Telefone inválido`);
+    }
+
+    if (!lead.amount || isNaN(parseFloat(lead.amount.replace(/[^\d.,]/g, '').replace(',', '.')))) {
+      errors.push(`Linha ${rowNumber}: Valor inválido`);
+    }
+
+    return errors;
   }
 }
