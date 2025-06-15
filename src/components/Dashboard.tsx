@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, PhoneCall, CalendarCheck, TrendingUp, TrendingDown, User, Search, BarChart3, DollarSign, Calendar } from "lucide-react";
@@ -41,7 +42,6 @@ const Dashboard = () => {
         const monthEnd = endOfMonth(today).toISOString();
 
         // Get week's date range
-        const today = new Date();
         const weekStart = startOfWeek(today, { weekStartsOn: 1 }).toISOString(); // Monday as start
         const weekEnd = endOfWeek(today, { weekStartsOn: 1 }).toISOString();
 
