@@ -13,15 +13,15 @@ const SubscriptionPlans = () => {
   };
 
   return (
-    <div className="flex flex-col gap-8 max-w-4xl mx-auto">
+    <div className="flex flex-col gap-8 max-w-2xl mx-auto">
       {/* Monthly Plan */}
       <div className="bg-white rounded-xl shadow-lg border-2 border-gray-100 overflow-hidden transition-all hover:shadow-xl">
-        <div className="flex flex-col lg:flex-row">
-          <div className="p-8 lg:w-1/2">
+        <div className="p-8">
+          <div className="text-center mb-6">
             <div className="inline-block px-4 py-1 bg-blue-100 text-primary rounded-full text-sm font-medium mb-4">
               Plano Mensal
             </div>
-            <div className="flex items-end mb-6">
+            <div className="flex items-end justify-center mb-4">
               <span className="text-5xl font-bold">R$37,90</span>
               <span className="text-gray-500 ml-2">/mês</span>
             </div>
@@ -36,7 +36,7 @@ const SubscriptionPlans = () => {
               Assinar Plano Mensal
             </Button>
           </div>
-          <div className="border-t lg:border-t-0 lg:border-l border-gray-100 p-8 lg:w-1/2">
+          <div className="border-t border-gray-100 pt-6">
             <ul className="space-y-4">
               {[
                 "Acesso completo ao sistema",
@@ -62,12 +62,12 @@ const SubscriptionPlans = () => {
         <div className="absolute top-0 right-0 bg-primary text-primary-foreground px-4 py-1 text-sm font-medium rounded-bl-lg">
           Recomendado
         </div>
-        <div className="flex flex-col lg:flex-row">
-          <div className="p-8 lg:w-1/2">
+        <div className="p-8">
+          <div className="text-center mb-6">
             <div className="inline-block px-4 py-1 bg-blue-100 text-primary rounded-full text-sm font-medium mb-4">
               Plano Semestral
             </div>
-            <div className="flex items-end mb-2">
+            <div className="flex items-end justify-center mb-2">
               <span className="text-5xl font-bold">R$187,00</span>
               <span className="text-gray-500 ml-2">/6 meses</span>
             </div>
@@ -85,7 +85,7 @@ const SubscriptionPlans = () => {
               Assinar Plano Semestral
             </Button>
           </div>
-          <div className="border-t lg:border-t-0 lg:border-l border-gray-100 p-8 lg:w-1/2">
+          <div className="border-t border-gray-100 pt-6">
             <ul className="space-y-4">
               {[
                 "Acesso completo ao sistema",
@@ -111,12 +111,12 @@ const SubscriptionPlans = () => {
         <div className="absolute top-0 right-0 bg-primary text-white px-4 py-1 text-sm font-medium rounded-bl-lg">
           Melhor Custo-Benefício
         </div>
-        <div className="flex flex-col lg:flex-row">
-          <div className="p-8 lg:w-1/2">
+        <div className="p-8">
+          <div className="text-center mb-6">
             <div className="inline-block px-4 py-1 bg-blue-100 text-primary rounded-full text-sm font-medium mb-4">
               Plano Anual
             </div>
-            <div className="flex items-end mb-2">
+            <div className="flex items-end justify-center mb-2">
               <span className="text-5xl font-bold">R$297,00</span>
               <span className="text-gray-500 ml-2">/ano</span>
             </div>
@@ -134,7 +134,7 @@ const SubscriptionPlans = () => {
               Assinar Plano Anual
             </Button>
           </div>
-          <div className="border-t lg:border-t-0 lg:border-l border-gray-100 p-8 lg:w-1/2">
+          <div className="border-t border-gray-100 pt-6">
             <ul className="space-y-4">
               {[
                 "Acesso completo ao sistema",
@@ -160,12 +160,12 @@ const SubscriptionPlans = () => {
         <div className="absolute top-0 right-0 bg-orange-500 text-white px-4 py-1 text-sm font-medium rounded-bl-lg">
           Upsell
         </div>
-        <div className="flex flex-col lg:flex-row">
-          <div className="p-8 lg:w-1/2">
+        <div className="p-8">
+          <div className="text-center mb-6">
             <div className="inline-block px-4 py-1 bg-orange-100 text-orange-600 rounded-full text-sm font-medium mb-4">
               Tráfego Pago
             </div>
-            <div className="flex items-end mb-2">
+            <div className="flex items-end justify-center mb-2">
               <span className="text-4xl font-bold">R$397,00</span>
               <span className="text-gray-500 ml-2">/mês</span>
             </div>
@@ -183,7 +183,7 @@ const SubscriptionPlans = () => {
               Adicionar Tráfego Pago
             </Button>
           </div>
-          <div className="border-t lg:border-t-0 lg:border-l border-gray-100 p-8 lg:w-1/2">
+          <div className="border-t border-gray-100 pt-6">
             <ul className="space-y-4">
               {[
                 "Leads segmentados INSS",
