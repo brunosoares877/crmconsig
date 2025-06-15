@@ -44,10 +44,10 @@ const Header = () => {
           </Button>
         )}
         
-        {/* Logo igual ao do login */}
+        {/* Logo com cores brancas elegantes */}
         <div className="flex items-center">
-          <div className="w-6 h-6 md:w-8 md:h-8 bg-blue-600 rounded-lg flex items-center justify-center mr-2 md:mr-3">
-            <div className="w-4 h-4 md:w-6 md:h-6 bg-white rounded-sm"></div>
+          <div className="w-6 h-6 md:w-8 md:h-8 bg-white border-2 border-gray-200 rounded-lg flex items-center justify-center mr-2 md:mr-3 shadow-sm">
+            <div className="w-3 h-3 md:w-4 md:h-4 bg-blue-600 rounded-sm"></div>
           </div>
           <h1 className="text-lg md:text-xl font-bold text-slate-900">LeadConsig</h1>
         </div>
