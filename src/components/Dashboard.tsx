@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, PhoneCall, CalendarCheck, TrendingUp, TrendingDown, User, Search, BarChart3, DollarSign } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { format, startOfToday, endOfToday, startOfMonth, endOfMonth, differenceInMinutes } from "date-fns";
+import { format, startOfToday, endOfToday, startOfMonth, endOfMonth, differenceInMinutes, startOfWeek, endOfWeek } from "date-fns";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -20,7 +19,7 @@ const Dashboard = () => {
     averageLeadsPerDay: 0,
     averageTimeBetweenLeads: "0min",
     monthlyProduction: 0,
-    conversionRate: 0
+    weeklyConversionRate: 0
   });
   const [isLoading, setIsLoading] = useState(true);
   const [dailyProduction, setDailyProduction] = useState([]);
@@ -39,6 +38,10 @@ const Dashboard = () => {
         // Get month's date range
         const monthStart = startOfMonth(today).toISOString();
         const monthEnd = endOfMonth(today).toISOString();
+
+        // Get week's date range
+        const weekStart = startOfWeek(today, { weekStartsOn: 1 }).toISOString(); // Monday as start
+        const weekEnd = endOfWeek(today, { weekStartsOn: 1 }).toISOString();
 
         console.log("Fetching dashboard metrics...");
 
@@ -116,18 +119,25 @@ const Dashboard = () => {
 
         console.log("Monthly production:", monthlyProduction);
 
-        // Calculate conversion rate
+        // Calculate weekly conversion rate
         const {
-          count: convertedCount
+          count: weeklyLeadsCount
         } = await supabase.from('leads').select('*', {
           count: 'exact',
           head: true
-        }).eq('status', 'convertido').gte('created_at', monthStart).lte('created_at', monthEnd);
+        }).gte('created_at', weekStart).lte('created_at', weekEnd);
 
-        const conversionRate = leadsThisMonth && leadsThisMonth > 0 ? 
-          ((convertedCount || 0) / leadsThisMonth * 100) : 0;
+        const {
+          count: weeklyConvertedCount
+        } = await supabase.from('leads').select('*', {
+          count: 'exact',
+          head: true
+        }).eq('status', 'convertido').gte('created_at', weekStart).lte('created_at', weekEnd);
 
-        console.log("Conversion rate:", conversionRate);
+        const weeklyConversionRate = weeklyLeadsCount && weeklyLeadsCount > 0 ? 
+          ((weeklyConvertedCount || 0) / weeklyLeadsCount * 100) : 0;
+
+        console.log("Weekly conversion rate:", weeklyConversionRate);
 
         // Fetch daily production data (converted leads today)
         const {
@@ -220,7 +230,7 @@ const Dashboard = () => {
           averageLeadsPerDay: averageLeadsPerDay,
           averageTimeBetweenLeads: averageTimeBetweenLeads,
           monthlyProduction: monthlyProduction,
-          conversionRate: conversionRate
+          weeklyConversionRate: weeklyConversionRate
         });
 
         console.log("Updated metrics:", {
@@ -229,7 +239,7 @@ const Dashboard = () => {
           averageLeadsPerDay: averageLeadsPerDay,
           averageTimeBetweenLeads: averageTimeBetweenLeads,
           monthlyProduction: monthlyProduction,
-          conversionRate: conversionRate
+          weeklyConversionRate: weeklyConversionRate
         });
 
       } catch (error) {
@@ -288,13 +298,13 @@ const Dashboard = () => {
       iconBg: "bg-emerald-50",
       iconColor: "text-emerald-600"
     }, {
-      title: "Conversão",
-      value: `${metrics.conversionRate.toFixed(1)}%`,
+      title: "Conversão Semanal",
+      value: `${metrics.weeklyConversionRate.toFixed(1)}%`,
       change: {
         value: "+2.1%",
         positive: true
       },
-      subtitle: `Taxa de conversão`,
+      subtitle: `Taxa de conversão da semana`,
       positive: true,
       icon: <BarChart3 className="h-4 w-4 lg:h-5 lg:w-5" />,
       iconBg: "bg-orange-50",
