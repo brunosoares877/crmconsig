@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { LayoutDashboard, Users, Crown, Calendar, Bell, CalendarDays, ArrowRightLeft, DollarSign, UserCheck, Settings, Cog } from "lucide-react";
@@ -19,13 +20,14 @@ const principalItems: MenuItem[] = [{
   title: "Dashboard",
   url: "/dashboard",
   icon: LayoutDashboard,
-  match: (pathname: string) => pathname === "/dashboard"
+  match: (pathname: string) => pathname === "/dashboard" || pathname === "/"
 }];
+
 const leadsItems: MenuItem[] = [{
   title: "Leads",
   url: "/leads",
   icon: Users,
-  match: (pathname: string) => pathname === "/leads" || pathname.startsWith("/leads/")
+  match: (pathname: string) => pathname === "/leads" || (pathname.startsWith("/leads/") && !pathname.startsWith("/leads-"))
 }, {
   title: "Leads Premium",
   url: "/leads-premium",
@@ -38,17 +40,19 @@ const leadsItems: MenuItem[] = [{
   icon: Calendar,
   match: (pathname: string) => pathname === "/leads/scheduled"
 }];
+
 const lembretesItems: MenuItem[] = [{
   title: "Lembretes",
   url: "/reminders",
   icon: Bell,
-  match: (pathname: string) => pathname === "/reminders" || pathname.startsWith("/reminders/")
+  match: (pathname: string) => pathname === "/reminders" && !pathname.startsWith("/reminders/calendar")
 }, {
   title: "Calendário",
   url: "/reminders/calendar",
   icon: CalendarDays,
   match: (pathname: string) => pathname === "/reminders/calendar"
 }];
+
 const negociosItems: MenuItem[] = [{
   title: "Portabilidade",
   url: "/portability",
@@ -58,13 +62,14 @@ const negociosItems: MenuItem[] = [{
   title: "Comissões",
   url: "/commission",
   icon: DollarSign,
-  match: (pathname: string) => pathname === "/commission"
+  match: (pathname: string) => pathname === "/commission" && !pathname.startsWith("/commission/settings")
 }, {
   title: "Config. Comissões",
   url: "/commission/settings",
   icon: Cog,
   match: (pathname: string) => pathname === "/commission/settings"
 }];
+
 const administracaoItems: MenuItem[] = [{
   title: "Funcionários",
   url: "/employees",
@@ -74,13 +79,15 @@ const administracaoItems: MenuItem[] = [{
   title: "Configurações",
   url: "/settings",
   icon: Settings,
-  match: (pathname: string) => pathname === "/settings" || pathname.startsWith("/settings/")
+  match: (pathname: string) => pathname.startsWith("/settings")
 }];
 
 // Menu items organized by logical groups
 const allMenuItems: MenuItem[] = [...principalItems, ...leadsItems, ...lembretesItems, ...negociosItems, ...administracaoItems];
+
 export function AppSidebar() {
   const location = useLocation();
+  
   const getActiveIdx = () => {
     for (let i = 0; i < allMenuItems.length; i++) {
       if (allMenuItems[i].match(location.pathname)) {
@@ -89,30 +96,49 @@ export function AppSidebar() {
     }
     return -1;
   };
+  
   const activeIdx = getActiveIdx();
-  const renderMenuGroup = (items: MenuItem[], groupLabel?: string) => <SidebarGroup>
+  
+  const renderMenuGroup = (items: MenuItem[], groupLabel?: string) => (
+    <SidebarGroup>
       {groupLabel && <SidebarGroupLabel className="text-white/60 text-xs uppercase font-semibold">{groupLabel}</SidebarGroupLabel>}
       <SidebarGroupContent>
         <SidebarMenu>
           {items.map(item => {
-          const itemIdx = allMenuItems.findIndex(menuItem => menuItem.url === item.url);
-          const isActive = itemIdx === activeIdx;
-          return <SidebarMenuItem key={item.title}>
-                <SidebarMenuButton asChild className={`w-full transition-none font-normal justify-start text-base ${isActive ? "bg-white/10 text-white" : "text-white/80"} ${item.isPremium ? "text-yellow-400 font-semibold" : ""} hover:bg-transparent hover:text-current`} aria-current={isActive ? "page" : undefined}>
+            const itemIdx = allMenuItems.findIndex(menuItem => menuItem.url === item.url);
+            const isActive = itemIdx === activeIdx;
+            return (
+              <SidebarMenuItem key={item.title}>
+                <SidebarMenuButton 
+                  asChild 
+                  className={`w-full transition-colors duration-200 font-normal justify-start text-base ${
+                    isActive 
+                      ? "bg-white/20 text-white font-medium" 
+                      : "text-white/80 hover:bg-white/10 hover:text-white"
+                  } ${item.isPremium ? "text-yellow-400 font-semibold" : ""}`}
+                  isActive={isActive}
+                >
                   <Link to={item.url} className="flex items-center gap-2 w-full">
-                    {item.isPremium ? <span className="inline-block w-4 h-4 text-yellow-400" aria-label="premium">
+                    {item.isPremium ? (
+                      <span className="inline-block w-4 h-4 text-yellow-400" aria-label="premium">
                         ★
-                      </span> : <item.icon className="w-4 h-4 flex-shrink-0" />}
+                      </span>
+                    ) : (
+                      <item.icon className="w-4 h-4 flex-shrink-0" />
+                    )}
                     <span className="flex-1 text-left">{item.title}</span>
                   </Link>
                 </SidebarMenuButton>
-              </SidebarMenuItem>;
-        })}
+              </SidebarMenuItem>
+            );
+          })}
         </SidebarMenu>
       </SidebarGroupContent>
-    </SidebarGroup>;
-  return <Sidebar collapsible="none" className="w-64 min-w-64 max-w-64 bg-[#0f2247]">
-      
+    </SidebarGroup>
+  );
+
+  return (
+    <Sidebar collapsible="none" className="w-64 min-w-64 max-w-64 bg-[#0f2247]">
       <SidebarContent>
         {renderMenuGroup(principalItems, "Principal")}
         
@@ -128,5 +154,6 @@ export function AppSidebar() {
         <SidebarSeparator className="bg-white/20" />
         {renderMenuGroup(administracaoItems, "Administração")}
       </SidebarContent>
-    </Sidebar>;
+    </Sidebar>
+  );
 }
