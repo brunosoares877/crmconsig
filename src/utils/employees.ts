@@ -64,6 +64,37 @@ export const createEmployee = async (
   }
 };
 
+export const updateEmployee = async (
+  id: string,
+  name: string,
+  fullName: string,
+  bank: string,
+  pixKeyMain: string,
+  pixKey2?: string,
+  pixKey3?: string
+): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from("employees")
+      .update({
+        name: name.trim(),
+        full_name: fullName.trim(),
+        bank: bank.trim(),
+        pix_key_main: pixKeyMain.trim(),
+        pix_key_2: pixKey2?.trim() || null,
+        pix_key_3: pixKey3?.trim() || null,
+      })
+      .eq("id", id);
+
+    if (error) throw error;
+
+    return true;
+  } catch (error) {
+    console.error("Error updating employee:", error);
+    return false;
+  }
+};
+
 export const deleteEmployee = async (id: string): Promise<boolean> => {
   try {
     const { error } = await supabase

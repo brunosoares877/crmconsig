@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,7 +23,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { getEmployees, createEmployee, deleteEmployee, Employee } from "@/utils/employees";
+import { Edit } from "lucide-react";
+import { getEmployees, createEmployee, updateEmployee, deleteEmployee, Employee } from "@/utils/employees";
 import PageLayout from "@/components/PageLayout";
 
 const Employees = () => {
@@ -34,7 +36,14 @@ const Employees = () => {
   const [newEmployeePixKey2, setNewEmployeePixKey2] = useState("");
   const [newEmployeePixKey3, setNewEmployeePixKey3] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [employeeToDelete, setEmployeeToDelete] = useState<Employee | null>(null);
+  const [employeeToEdit, setEmployeeToEdit] = useState<Employee | null>(null);
+  const [editEmployeeName, setEditEmployeeName] = useState("");
+  const [editEmployeeBank, setEditEmployeeBank] = useState("");
+  const [editEmployeePixKeyMain, setEditEmployeePixKeyMain] = useState("");
+  const [editEmployeePixKey2, setEditEmployeePixKey2] = useState("");
+  const [editEmployeePixKey3, setEditEmployeePixKey3] = useState("");
   const { user } = useAuth();
 
   useEffect(() => {
@@ -88,6 +97,51 @@ const Employees = () => {
     } catch (error: any) {
       console.error("Error adding employee:", error);
       toast.error(`Erro ao adicionar funcionário: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const openEditDialog = (employee: Employee) => {
+    setEmployeeToEdit(employee);
+    setEditEmployeeName(employee.name);
+    setEditEmployeeBank(employee.bank || "");
+    setEditEmployeePixKeyMain(employee.pix_key_main || "");
+    setEditEmployeePixKey2(employee.pix_key_2 || "");
+    setEditEmployeePixKey3(employee.pix_key_3 || "");
+    setEditDialogOpen(true);
+  };
+
+  const handleEditEmployee = async () => {
+    if (!employeeToEdit || !editEmployeeName.trim()) {
+      toast.error("O nome do funcionário não pode estar vazio");
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const success = await updateEmployee(
+        employeeToEdit.id,
+        editEmployeeName,
+        editEmployeeName, // Using name as full_name
+        editEmployeeBank,
+        editEmployeePixKeyMain,
+        editEmployeePixKey2,
+        editEmployeePixKey3
+      );
+
+      if (success) {
+        toast.success(`Funcionário ${editEmployeeName} atualizado com sucesso`);
+        setEditDialogOpen(false);
+        setEmployeeToEdit(null);
+        fetchEmployees();
+      } else {
+        toast.error("Erro ao atualizar funcionário");
+      }
+    } catch (error: any) {
+      console.error("Error updating employee:", error);
+      toast.error(`Erro ao atualizar funcionário: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -228,14 +282,24 @@ const Employees = () => {
                   <TableCell>{employee.pix_key_3 || "-"}</TableCell>
                   <TableCell>{new Date(employee.created_at).toLocaleDateString()}</TableCell>
                   <TableCell className="text-right">
-                    <Button 
-                      variant="destructive" 
-                      size="sm" 
-                      onClick={() => confirmDeleteEmployee(employee)}
-                      disabled={loading}
-                    >
-                      Remover
-                    </Button>
+                    <div className="flex gap-2 justify-end">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => openEditDialog(employee)}
+                        disabled={loading}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        variant="destructive" 
+                        size="sm" 
+                        onClick={() => confirmDeleteEmployee(employee)}
+                        disabled={loading}
+                      >
+                        Remover
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -243,6 +307,7 @@ const Employees = () => {
           </Table>
         )}
 
+        {/* Delete Dialog */}
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogContent>
             <DialogHeader>
@@ -261,6 +326,86 @@ const Employees = () => {
                 disabled={loading}
               >
                 {loading ? "Removendo..." : "Confirmar exclusão"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit Dialog */}
+        <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Editar Funcionário</DialogTitle>
+              <DialogDescription>
+                Atualize os dados do funcionário "{employeeToEdit?.name}".
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
+              <div>
+                <Label htmlFor="editName">Nome *</Label>
+                <Input
+                  id="editName"
+                  type="text"
+                  placeholder="Nome do funcionário"
+                  value={editEmployeeName}
+                  onChange={(e) => setEditEmployeeName(e.target.value)}
+                  disabled={loading}
+                />
+              </div>
+              <div>
+                <Label htmlFor="editBank">Banco</Label>
+                <Input
+                  id="editBank"
+                  type="text"
+                  placeholder="Nome do banco"
+                  value={editEmployeeBank}
+                  onChange={(e) => setEditEmployeeBank(e.target.value)}
+                  disabled={loading}
+                />
+              </div>
+              <div>
+                <Label htmlFor="editPixMain">Chave PIX Principal</Label>
+                <Input
+                  id="editPixMain"
+                  type="text"
+                  placeholder="CPF, e-mail, telefone ou chave aleatória"
+                  value={editEmployeePixKeyMain}
+                  onChange={(e) => setEditEmployeePixKeyMain(e.target.value)}
+                  disabled={loading}
+                />
+              </div>
+              <div>
+                <Label htmlFor="editPix2">Chave PIX 2 (opcional)</Label>
+                <Input
+                  id="editPix2"
+                  type="text"
+                  placeholder="CPF, e-mail, telefone ou chave aleatória"
+                  value={editEmployeePixKey2}
+                  onChange={(e) => setEditEmployeePixKey2(e.target.value)}
+                  disabled={loading}
+                />
+              </div>
+              <div className="md:col-span-2">
+                <Label htmlFor="editPix3">Chave PIX 3 (opcional)</Label>
+                <Input
+                  id="editPix3"
+                  type="text"
+                  placeholder="CPF, e-mail, telefone ou chave aleatória"
+                  value={editEmployeePixKey3}
+                  onChange={(e) => setEditEmployeePixKey3(e.target.value)}
+                  disabled={loading}
+                />
+              </div>
+            </div>
+            <DialogFooter className="flex flex-col sm:flex-row sm:justify-end gap-2">
+              <DialogClose asChild>
+                <Button variant="outline">Cancelar</Button>
+              </DialogClose>
+              <Button 
+                onClick={handleEditEmployee}
+                disabled={loading || !editEmployeeName.trim()}
+              >
+                {loading ? "Atualizando..." : "Salvar alterações"}
               </Button>
             </DialogFooter>
           </DialogContent>
