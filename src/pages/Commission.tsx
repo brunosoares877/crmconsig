@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -37,6 +38,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import PageLayout from "@/components/PageLayout";
+import { getEmployees, Employee } from "@/utils/employees";
 
 const Commission = () => {
   const [loading, setLoading] = useState(false);
@@ -47,7 +49,7 @@ const Commission = () => {
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [dateFrom, setDateFrom] = useState<Date>();
   const [dateTo, setDateTo] = useState<Date>();
-  const [employees, setEmployees] = useState<string[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
   const [totalCommissionsPending, setTotalCommissionsPending] = useState(0);
   const [totalCommissionsApproved, setTotalCommissionsApproved] = useState(0);
   const [totalCommissionsPaid, setTotalCommissionsPaid] = useState(0);
@@ -60,18 +62,8 @@ const Commission = () => {
 
   const fetchEmployees = async () => {
     try {
-      const { data, error } = await supabase
-        .from("leads")
-        .select("employee")
-        .not("employee", "is", null)
-        .order("employee");
-
-      if (error) throw error;
-
-      if (data) {
-        const uniqueEmployees = [...new Set(data.map(item => item.employee).filter(Boolean))];
-        setEmployees(uniqueEmployees);
-      }
+      const employeeList = await getEmployees();
+      setEmployees(employeeList);
     } catch (error: any) {
       console.error("Error fetching employees:", error);
     }
@@ -339,8 +331,8 @@ const Commission = () => {
               <SelectContent>
                 <SelectItem value="all">Todos os funcionários</SelectItem>
                 {employees.map(employee => (
-                  <SelectItem key={employee} value={employee || ""}>
-                    {employee}
+                  <SelectItem key={employee.id} value={employee.name}>
+                    {employee.name}
                   </SelectItem>
                 ))}
               </SelectContent>

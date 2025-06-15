@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -14,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { X } from "lucide-react";
 import BenefitTypeSelect from "@/components/forms/BenefitTypeSelect";
 import BankSelect from "@/components/forms/BankSelect";
+import EmployeeSelect from "@/components/EmployeeSelect";
 
 const formSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
@@ -225,17 +227,11 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
 
         <div>
           <Label htmlFor="employee">Funcionário</Label>
-          <Select onValueChange={(value) => setValue("employee", value)} defaultValue={initialData?.employee}>
-            <SelectTrigger>
-              <SelectValue placeholder="Selecione o funcionário" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="JANE">JANE</SelectItem>
-              <SelectItem value="JOÃO">JOÃO</SelectItem>
-              <SelectItem value="MARIA">MARIA</SelectItem>
-              <SelectItem value="PEDRO">PEDRO</SelectItem>
-            </SelectContent>
-          </Select>
+          <EmployeeSelect
+            value={watch("employee")}
+            onValueChange={(value) => setValue("employee", value)}
+            placeholder="Selecione o funcionário"
+          />
         </div>
 
         <BenefitTypeSelect
