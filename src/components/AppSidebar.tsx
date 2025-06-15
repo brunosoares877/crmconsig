@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import { Link } from "react-router-dom";
@@ -300,8 +301,8 @@ export function AppSidebar() {
                     {user ? getInitials(user.email || "") : "U"}
                   </AvatarFallback>
                 )}
-                {/* Botão de editar sobreposto (ícone lápis) visível ao hover */}
-                <div className="absolute inset-0 bg-black/20 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
+                {/* Botão de editar sobreposto (ícone lápis) visível apenas ao hover */}
+                <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                   <Edit className="h-6 w-6 text-white drop-shadow-lg" />
                 </div>
               </Avatar>
