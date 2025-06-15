@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { format, parseISO, isSameDay } from "date-fns";
@@ -37,11 +36,6 @@ interface Lead {
   id: string;
   name: string;
   bank?: string;
-}
-
-interface DayWithReminders {
-  date: Date;
-  reminders: Reminder[];
 }
 
 const RemindersCalendar = () => {
@@ -210,11 +204,8 @@ const RemindersCalendar = () => {
                   modifiers={{
                     hasReminders: daysWithReminders
                   }}
-                  modifiersStyles={{
-                    hasReminders: { 
-                      backgroundColor: "#E5DEFF",
-                      fontWeight: "bold"
-                    }
+                  modifiersClassNames={{
+                    hasReminders: "bg-purple-100 font-bold"
                   }}
                   disabled={date => {
                     const now = new Date();
