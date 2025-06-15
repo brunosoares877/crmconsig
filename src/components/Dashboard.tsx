@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, PhoneCall, CalendarCheck, TrendingUp, TrendingDown, User, Search, BarChart3, DollarSign, Calendar, FileText, CheckCircle } from "lucide-react";
@@ -23,7 +22,7 @@ const Dashboard = () => {
     weeklyProduction: 0,
     weeklyConversionRate: 0,
     proposalsDigitated: 0,
-    conversionsCount: 0
+    conversionsValue: 0
   });
   const [isLoading, setIsLoading] = useState(true);
   const [dailyProduction, setDailyProduction] = useState([]);
@@ -81,18 +80,32 @@ const Dashboard = () => {
 
         console.log("Proposals digitadas this month:", proposalsDigitated);
 
-        // Get conversões (leads convertidos) do mês
+        // Get conversões (leads convertidos) com valores do mês
         const {
-          count: conversionsCount
+          data: conversionsData,
+          error: conversionsError
         } = await supabase.from('leads')
-          .select('*', { count: 'exact', head: true })
+          .select('amount')
           .eq('status', 'convertido')
+          .not('amount', 'is', null)
+          .neq('amount', '')
           .gte('created_at', monthStart)
           .lte('created_at', monthEnd);
 
-        console.log("Conversions this month:", conversionsCount);
+        if (conversionsError) {
+          console.error('Error fetching conversions:', conversionsError);
+        }
 
-        // Get all leads from this month to calculate average time between leads
+        // Calculate total conversions value
+        const conversionsValue = conversionsData ? conversionsData.reduce((total, lead) => {
+          const cleanAmount = lead.amount?.replace(/[^\d,]/g, '').replace(',', '.') || "0";
+          const amount = parseFloat(cleanAmount);
+          return isNaN(amount) ? total : total + amount;
+        }, 0) : 0;
+
+        console.log("Conversions value this month:", conversionsValue);
+
+        // Get average time between leads (in minutes)
         const {
           data: monthLeads,
           error: monthLeadsError
@@ -103,7 +116,6 @@ const Dashboard = () => {
           console.error('Error fetching month leads:', monthLeadsError);
         }
 
-        // Calculate average time between leads (in minutes)
         let averageTimeBetweenLeads = "0min";
         if (monthLeads && monthLeads.length > 1) {
           let totalMinutesDiff = 0;
@@ -307,7 +319,7 @@ const Dashboard = () => {
           weeklyProduction: weeklyProduction,
           weeklyConversionRate: weeklyConversionRate,
           proposalsDigitated: proposalsDigitated || 0,
-          conversionsCount: conversionsCount || 0
+          conversionsValue: conversionsValue
         });
 
         console.log("Updated metrics:", {
@@ -319,7 +331,7 @@ const Dashboard = () => {
           weeklyProduction: weeklyProduction,
           weeklyConversionRate: weeklyConversionRate,
           proposalsDigitated: proposalsDigitated || 0,
-          conversionsCount: conversionsCount || 0
+          conversionsValue: conversionsValue
         });
 
       } catch (error) {
@@ -379,9 +391,9 @@ const Dashboard = () => {
       iconColor: "text-orange-600"
     }, {
       title: "Conversões",
-      value: metrics.conversionsCount.toString(),
-      change: calculateChange(metrics.conversionsCount, metrics.conversionsCount - 1),
-      subtitle: `Clientes convertidos no mês`,
+      value: `R$ ${metrics.conversionsValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+      change: calculateChange(metrics.conversionsValue, metrics.conversionsValue - 1000),
+      subtitle: `Valor convertido no mês`,
       positive: true,
       icon: <CheckCircle className="h-4 w-4 lg:h-5 lg:w-5" />,
       iconBg: "bg-emerald-50",
