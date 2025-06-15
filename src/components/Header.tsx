@@ -12,9 +12,17 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem,
 
 const Header = () => {
   const navigate = useNavigate();
-  const sidebar = useSidebar();
   const isMobile = useIsMobile();
   const { user, signOut } = useAuth();
+
+  // Safely try to use sidebar context
+  let sidebar = null;
+  try {
+    sidebar = useSidebar();
+  } catch (error) {
+    // useSidebar is not available, component is being used outside SidebarProvider
+    console.log("Header used outside SidebarProvider context");
+  }
 
   const handleLogout = async () => {
     try {
@@ -33,7 +41,7 @@ const Header = () => {
   return (
     <header className="border-b py-2 px-3 md:py-3 md:px-4 flex justify-between items-center bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 w-full">
       <div className="flex items-center gap-2">
-        {isMobile && (
+        {isMobile && sidebar && (
           <Button 
             variant="ghost" 
             size="icon" 
