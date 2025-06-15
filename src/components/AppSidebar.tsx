@@ -51,7 +51,8 @@ const items = [
     title: "Leads Premium",
     url: "/leads-premium", // "/leads-premium"
     icon: Star,
-    group: "LEADS"
+    group: "LEADS",
+    highlight: true // <-- Novidade: campo para destaque
   },
   {
     title: "Agendamentos",
@@ -247,10 +248,18 @@ export function AppSidebar() {
                     <SidebarMenuButton
                       asChild
                       isActive={location.pathname === item.url}
-                      className="w-full"
+                      className={
+                        "w-full" +
+                        (item.highlight
+                          ? " bg-yellow-100 text-yellow-800 border border-yellow-200 font-semibold hover:bg-yellow-200 hover:text-yellow-900 transition-colors"
+                          : "")
+                      }
                     >
                       <Link to={item.url} className="flex items-center gap-2">
-                        <item.icon className="h-4 w-4" />
+                        <item.icon className={
+                          "h-4 w-4" +
+                          (item.highlight ? " text-yellow-500" : "")
+                        } />
                         <span>{item.title}</span>
                       </Link>
                     </SidebarMenuButton>
