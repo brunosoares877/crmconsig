@@ -19,7 +19,6 @@ const Dashboard = () => {
     averageLeadsPerDay: 0,
     averageTimeBetweenLeads: "0min",
     monthlyProduction: 0,
-    weeklyProduction: 0,
     weeklyConversionRate: 0,
     proposalsDigitated: 0,
     conversionsValue: 0
@@ -139,30 +138,6 @@ const Dashboard = () => {
         // Calculate average leads per day in this month
         const daysPassed = Math.max(1, new Date().getDate());
         const averageLeadsPerDay = leadsThisMonth ? parseFloat((leadsThisMonth / daysPassed).toFixed(1)) : 0;
-
-        // Get weekly production (all leads with amount this week, regardless of status)
-        const {
-          data: weeklyLeadsWithAmount,
-          error: weeklyError
-        } = await supabase.from('leads')
-          .select('amount')
-          .not('amount', 'is', null)
-          .neq('amount', '')
-          .gte('created_at', weekStart)
-          .lte('created_at', weekEnd);
-        
-        if (weeklyError) {
-          console.error('Error fetching weekly production:', weeklyError);
-        }
-
-        // Calculate total weekly production from all leads with amounts
-        const weeklyProduction = weeklyLeadsWithAmount ? weeklyLeadsWithAmount.reduce((total, lead) => {
-          const cleanAmount = lead.amount?.replace(/[^\d,]/g, '').replace(',', '.') || "0";
-          const amount = parseFloat(cleanAmount);
-          return isNaN(amount) ? total : total + amount;
-        }, 0) : 0;
-
-        console.log("Weekly production:", weeklyProduction);
 
         // Get monthly production (all leads with amount this month, regardless of status)
         const {
@@ -316,7 +291,6 @@ const Dashboard = () => {
           averageLeadsPerDay: averageLeadsPerDay,
           averageTimeBetweenLeads: averageTimeBetweenLeads,
           monthlyProduction: monthlyProduction,
-          weeklyProduction: weeklyProduction,
           weeklyConversionRate: weeklyConversionRate,
           proposalsDigitated: proposalsDigitated || 0,
           conversionsValue: conversionsValue
@@ -328,7 +302,6 @@ const Dashboard = () => {
           averageLeadsPerDay: averageLeadsPerDay,
           averageTimeBetweenLeads: averageTimeBetweenLeads,
           monthlyProduction: monthlyProduction,
-          weeklyProduction: weeklyProduction,
           weeklyConversionRate: weeklyConversionRate,
           proposalsDigitated: proposalsDigitated || 0,
           conversionsValue: conversionsValue
@@ -399,15 +372,6 @@ const Dashboard = () => {
       iconBg: "bg-emerald-50",
       iconColor: "text-emerald-600"
     }, {
-      title: "Produção Semanal",
-      value: `R$ ${metrics.weeklyProduction.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
-      change: calculateChange(metrics.weeklyProduction, metrics.weeklyProduction - 2000),
-      subtitle: `Total vendido na semana`,
-      positive: true,
-      icon: <Calendar className="h-4 w-4 lg:h-5 lg:w-5" />,
-      iconBg: "bg-purple-50",
-      iconColor: "text-purple-600"
-    }, {
       title: "Produção Mensal",
       value: `R$ ${metrics.monthlyProduction.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
       change: calculateChange(metrics.monthlyProduction, metrics.monthlyProduction - 5000),
@@ -422,7 +386,7 @@ const Dashboard = () => {
   return (
     <div className="w-full px-0 md:px-0 lg:px-0 space-y-6">
       {/* Metrics Cards Grid */}
-      <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 md:gap-4 lg:gap-6">
+      <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 md:gap-4 lg:gap-6">
         {metricsData.map((metric, index) => (
           <MetricsCard key={index} {...metric} />
         ))}
