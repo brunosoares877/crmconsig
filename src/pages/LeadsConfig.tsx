@@ -118,7 +118,7 @@ const LeadsConfig = () => {
         .from('benefit_types')
         .insert({
           description: newBenefitName.trim(),
-          code: newBenefitCode.trim() || null
+          code: newBenefitCode.trim() || ""
         })
         .select()
         .single();
@@ -161,7 +161,7 @@ const LeadsConfig = () => {
     const newBank = {
       id: Date.now().toString(),
       name: newBankName.trim(),
-      code: newBankCode.trim() || Date.now().toString()
+      code: newBankCode.trim() || ""
     };
 
     const updatedBanks = [...banks, newBank];
@@ -188,7 +188,7 @@ const LeadsConfig = () => {
     const newProduct = {
       id: Date.now().toString(),
       name: newProductName.trim(),
-      code: newProductCode.trim() || Date.now().toString()
+      code: newProductCode.trim() || ""
     };
 
     const updatedProducts = [...products, newProduct];
@@ -269,7 +269,9 @@ const LeadsConfig = () => {
                   <div key={bank.id} className="flex items-center justify-between p-3 border rounded-lg">
                     <div>
                       <div className="font-medium">{bank.name}</div>
-                      <div className="text-sm text-muted-foreground">Código: {bank.code}</div>
+                      <div className="text-sm text-muted-foreground">
+                        Código: {bank.code || "Não informado"}
+                      </div>
                     </div>
                     <Button variant="destructive" size="sm" onClick={() => deleteBank(bank.id)}>
                       <Trash2 className="h-4 w-4" />
@@ -322,7 +324,9 @@ const LeadsConfig = () => {
                   <div key={product.id} className="flex items-center justify-between p-3 border rounded-lg">
                     <div>
                       <div className="font-medium">{product.name}</div>
-                      <div className="text-sm text-muted-foreground">Código: {product.code}</div>
+                      <div className="text-sm text-muted-foreground">
+                        Código: {product.code || "Não informado"}
+                      </div>
                     </div>
                     <Button variant="destructive" size="sm" onClick={() => deleteProduct(product.id)}>
                       <Trash2 className="h-4 w-4" />
