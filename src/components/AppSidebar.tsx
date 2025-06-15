@@ -37,67 +37,67 @@ import { toast } from "sonner";
 const items = [
   {
     title: "Dashboard",
-    url: "/dashboard",
+    url: "/dashboard", // corresponde ao App.tsx -> "/dashboard"
     icon: BarChart3,
     group: "PRINCIPAL"
   },
   {
     title: "Leads",
-    url: "/leads",
+    url: "/leads", // "/leads"
     icon: Users,
     group: "LEADS"
   },
   {
     title: "Leads Premium",
-    url: "/leads-premium",
+    url: "/leads-premium", // "/leads-premium"
     icon: Star,
     group: "LEADS"
   },
   {
     title: "Agendamentos",
-    url: "/lead-scheduling",
+    url: "/leads/scheduled", // corrigido de "/lead-scheduling" para "/leads/scheduled"
     icon: Calendar,
     group: "LEADS"
   },
   {
     title: "Lembretes",
-    url: "/reminders",
+    url: "/reminders", // "/reminders"
     icon: Bell,
     group: "LEMBRETES"
   },
   {
     title: "Calendário",
-    url: "/reminders-calendar",
+    url: "/reminders/calendar", // corrigido de "/reminders-calendar" para "/reminders/calendar"
     icon: CalendarDays,
     group: "LEMBRETES"
   },
   {
     title: "Portabilidade",
-    url: "/portability",
+    url: "/portability", // "/portability"
     icon: TrendingUp,
     group: "NEGÓCIOS"
   },
   {
     title: "Comissões",
-    url: "/commission",
+    url: "/commission", // "/commission"
     icon: DollarSign,
     group: "NEGÓCIOS"
   },
   {
     title: "Config. Comissões",
-    url: "/commission-settings",
+    url: "/commission/settings", // corrigido de "/commission-settings" para "/commission/settings"
     icon: Settings,
     group: "NEGÓCIOS"
   },
   {
     title: "Funcionários",
-    url: "/employees",
+    url: "/employees", // "/employees"
     icon: Users2,
     group: "ADMINISTRAÇÃO"
   },
   {
     title: "Configurações",
-    url: "/settings",
+    url: "/settings", // "/settings"
     icon: Settings,
     group: "ADMINISTRAÇÃO"
   },
