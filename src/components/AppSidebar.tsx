@@ -184,6 +184,9 @@ export function AppSidebar() {
     <Sidebar collapsible="none" className="w-64 min-w-64 max-w-64 bg-[#0f2247]">
       <SidebarHeader>
         <div className="flex items-center px-2 py-2">
+          <div className="w-6 h-6 bg-white rounded-lg flex items-center justify-center mr-3">
+            <div className="w-4 h-4 bg-blue-600 rounded-sm"></div>
+          </div>
           <h1 className="text-lg font-bold text-sidebar-foreground text-white">
             LeadConsig
           </h1>
