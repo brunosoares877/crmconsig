@@ -21,7 +21,7 @@ const testimonials = [
   },
   {
     name: "Ana Paula Oliveira",
-    role: "Consultora Financeira",
+    role: "Consultora Financeira",  
     content: "O melhor investimento que fiz para meu negócio. O controle de leads e o acompanhamento das propostas ficou muito mais fácil.",
     stars: 5,
     date: "3 semanas atrás"
@@ -50,40 +50,26 @@ const Testimonials = () => {
           Depoimentos de nossos clientes
         </h2>
         
-        <div className="max-w-5xl mx-auto">
-          <Carousel
-            opts={{
-              align: "start",
-              loop: true
-            }}
-            className="w-full"
-          >
-            <CarouselContent className="-ml-2 md:-ml-4">
-              {testimonials.map((testimonial, index) => (
-                <CarouselItem key={index} className="pl-2 md:pl-4 md:basis-1/2 lg:basis-1/3">
-                  <Card className="h-full">
-                    <CardContent className="p-6">
-                      <div className="flex gap-0.5 mb-3">
-                        {Array(testimonial.stars).fill(null).map((_, i) => (
-                          <Star key={i} className="h-5 w-5 fill-yellow-400 text-yellow-400" />
-                        ))}
-                      </div>
-                      <p className="text-sm text-gray-600 mb-4">{testimonial.date}</p>
-                      <p className="mb-4">{testimonial.content}</p>
-                      <div>
-                        <p className="font-semibold">{testimonial.name}</p>
-                        <p className="text-sm text-gray-600">{testimonial.role}</p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </CarouselItem>
-              ))}
-            </CarouselContent>
-            <div className="hidden md:flex">
-              <CarouselPrevious className="left-0" />
-              <CarouselNext className="right-0" />
-            </div>
-          </Carousel>
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {testimonials.slice(0, 4).map((testimonial, index) => (
+              <Card key={index} className="h-full">
+                <CardContent className="p-6">
+                  <div className="flex gap-0.5 mb-3">
+                    {Array(testimonial.stars).fill(null).map((_, i) => (
+                      <Star key={i} className="h-5 w-5 fill-yellow-400 text-yellow-400" />
+                    ))}
+                  </div>
+                  <p className="text-sm text-gray-600 mb-4">{testimonial.date}</p>
+                  <p className="mb-4">{testimonial.content}</p>
+                  <div>
+                    <p className="font-semibold">{testimonial.name}</p>
+                    <p className="text-sm text-gray-600">{testimonial.role}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         </div>
       </div>
     </section>
