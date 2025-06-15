@@ -23,9 +23,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { CommissionRate, CommissionTier } from "@/types/models";
 import { PlusCircle, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import CommissionRateForm from "@/components/commission/CommissionRateForm";
-import CommissionTierForm from "@/components/commission/CommissionTierForm";
-import DefaultCommissionsButton from "@/components/commission/DefaultCommissionsButton";
+import FixedRateForm from "@/components/commission/FixedRateForm";
+import VariableRateForm from "@/components/commission/VariableRateForm";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 
@@ -165,7 +164,7 @@ const CommissionSettings = () => {
             <CardTitle>{editingRate ? "Editar Taxa Fixa" : "Nova Taxa Fixa"}</CardTitle>
           </CardHeader>
           <CardContent>
-            <CommissionRateForm 
+            <FixedRateForm 
               onCancel={() => {
                 setShowNewRateForm(false);
                 setEditingRate(null);
@@ -176,8 +175,7 @@ const CommissionSettings = () => {
           </CardContent>
         </Card>
       ) : (
-        <div className="mb-4 flex justify-between items-center">
-          <DefaultCommissionsButton onSuccess={fetchCommissionData} />
+        <div className="mb-4 flex justify-end">
           <Button onClick={() => setShowNewRateForm(true)} className="flex items-center gap-1">
             <PlusCircle className="h-5 w-5" /> Adicionar Taxa Fixa
           </Button>
@@ -260,7 +258,7 @@ const CommissionSettings = () => {
             <CardTitle>{editingTier ? "Editar Taxa Variável" : "Nova Taxa Variável"}</CardTitle>
           </CardHeader>
           <CardContent>
-            <CommissionTierForm 
+            <VariableRateForm 
               onCancel={() => {
                 setShowNewTierForm(false);
                 setEditingTier(null);
