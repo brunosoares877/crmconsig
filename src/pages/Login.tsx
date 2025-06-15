@@ -9,6 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
+
 const phoneRegex = /^\(\d{2}\) \d{5}-\d{4}$/;
 const LoginSchema = z.object({
   email: z.string().email("Email inválido"),
@@ -25,6 +26,7 @@ const SignupSchema = z.object({
   message: "As senhas não coincidem",
   path: ["confirmPassword"]
 });
+
 const Login = () => {
   const navigate = useNavigate();
   const {
@@ -122,15 +124,15 @@ const Login = () => {
     if (!validateForm()) {
       return;
     }
+    
     setIsLoading(true);
     try {
       if (isLogin) {
         await signIn(email, password);
         toast.success("Login realizado com sucesso");
       } else {
-        const {
-          error
-        } = await supabase.auth.signUp({
+        // Create user account with metadata
+        const { data: authData, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
@@ -141,17 +143,30 @@ const Login = () => {
             }
           }
         });
+        
         if (error) throw error;
-        const {
-          error: profileError
-        } = await supabase.from('profiles').update({
-          company_name: company,
-          first_name: fullName.split(' ')[0],
-          last_name: fullName.split(' ').slice(1).join(' ')
-        }).eq('id', (await supabase.auth.getUser()).data.user?.id);
-        if (profileError) {
-          console.error("Error updating profile:", profileError);
+        
+        // Wait a moment for the profile to be created by the trigger
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Update the profile with additional data including WhatsApp
+        if (authData.user) {
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .update({
+              company_name: company,
+              first_name: fullName.split(' ')[0],
+              last_name: fullName.split(' ').slice(1).join(' '),
+              whatsapp: whatsapp
+            })
+            .eq('id', authData.user.id);
+          
+          if (profileError) {
+            console.error("Error updating profile:", profileError);
+            // Don't throw error here as the account was created successfully
+          }
         }
+        
         startTrial();
         toast.success("Conta criada com sucesso! Seu período de teste de 7 dias começou.");
         await signIn(email, password);
