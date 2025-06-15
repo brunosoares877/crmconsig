@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -14,6 +13,7 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { X } from "lucide-react";
 import BenefitTypeSelect from "@/components/forms/BenefitTypeSelect";
+import BankSelect from "@/components/forms/BankSelect";
 
 const formSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
@@ -194,23 +194,11 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
           {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>}
         </div>
 
-        <div>
-          <Label htmlFor="bank">Banco</Label>
-          <Select onValueChange={(value) => setValue("bank", value)} defaultValue={initialData?.bank}>
-            <SelectTrigger>
-              <SelectValue placeholder="Selecione o banco" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="nubank">Nubank</SelectItem>
-              <SelectItem value="itau">Itaú</SelectItem>
-              <SelectItem value="bradesco">Bradesco</SelectItem>
-              <SelectItem value="santander">Santander</SelectItem>
-              <SelectItem value="bb">Banco do Brasil</SelectItem>
-              <SelectItem value="caixa">Caixa Econômica</SelectItem>
-              <SelectItem value="outros">Outros</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        <BankSelect
+          value={watch("bank")}
+          onValueChange={(value) => setValue("bank", value)}
+          defaultValue={initialData?.bank}
+        />
 
         <div>
           <Label htmlFor="product">Produto</Label>
