@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,17 +17,8 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { CommissionRate, CommissionTier } from "@/types/models";
@@ -171,7 +163,7 @@ const CommissionSettings = () => {
       {showNewRateForm || editingRate ? (
         <Card className="mb-4">
           <CardHeader>
-            <CardTitle>{editingRate ? "Editar Taxa" : "Nova Taxa"}</CardTitle>
+            <CardTitle>{editingRate ? "Editar Taxa Fixa" : "Nova Taxa Fixa"}</CardTitle>
           </CardHeader>
           <CardContent>
             <CommissionRateForm 
@@ -188,13 +180,13 @@ const CommissionSettings = () => {
         <div className="mb-4 flex justify-between items-center">
           <DefaultCommissionsButton onSuccess={fetchCommissionData} />
           <Button onClick={() => setShowNewRateForm(true)} className="flex items-center gap-1">
-            <PlusCircle className="h-5 w-5" /> Adicionar Taxa
+            <PlusCircle className="h-5 w-5" /> Adicionar Taxa Fixa
           </Button>
         </div>
       )}
 
       <Table>
-        <TableCaption>Lista de taxas de comissão por produto.</TableCaption>
+        <TableCaption>Lista de taxas de comissão fixas por produto.</TableCaption>
         <TableHeader>
           <TableRow>
             <TableHead className="w-[180px]">Produto</TableHead>
@@ -266,7 +258,7 @@ const CommissionSettings = () => {
       {showNewTierForm || editingTier ? (
         <Card className="mb-4">
           <CardHeader>
-            <CardTitle>{editingTier ? "Editar Nível" : "Novo Nível"}</CardTitle>
+            <CardTitle>{editingTier ? "Editar Taxa Variável" : "Nova Taxa Variável"}</CardTitle>
           </CardHeader>
           <CardContent>
             <CommissionTierForm 
@@ -282,13 +274,13 @@ const CommissionSettings = () => {
       ) : (
         <div className="mb-4 flex justify-end">
           <Button onClick={() => setShowNewTierForm(true)} className="flex items-center gap-1">
-            <PlusCircle className="h-5 w-5" /> Adicionar Nível
+            <PlusCircle className="h-5 w-5" /> Adicionar Taxa Variável
           </Button>
         </div>
       )}
 
       <Table>
-        <TableCaption>Lista de níveis de comissão por produto e valor.</TableCaption>
+        <TableCaption>Lista de taxas de comissão variáveis por produto e valor.</TableCaption>
         <TableHeader>
           <TableRow>
             <TableHead className="w-[180px]">Produto</TableHead>
@@ -303,11 +295,11 @@ const CommissionSettings = () => {
         <TableBody>
           {loading ? (
             <TableRow>
-              <TableCell colSpan={7} className="text-center py-8">Carregando níveis de comissão...</TableCell>
+              <TableCell colSpan={7} className="text-center py-8">Carregando taxas de comissão...</TableCell>
             </TableRow>
           ) : tiers.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={7} className="text-center py-8">Nenhum nível de comissão encontrado.</TableCell>
+              <TableCell colSpan={7} className="text-center py-8">Nenhuma taxa de comissão encontrada.</TableCell>
             </TableRow>
           ) : (
             tiers.map((tier) => (
@@ -374,7 +366,7 @@ const CommissionSettings = () => {
           <Tabs defaultValue="rates" className="w-full">
             <TabsList className="mb-6">
               <TabsTrigger value="rates">Taxas Fixas</TabsTrigger>
-              <TabsTrigger value="tiers">Taxas por Faixa de Valor</TabsTrigger>
+              <TabsTrigger value="tiers">Taxas Variáveis (Por Faixa de Valor)</TabsTrigger>
             </TabsList>
             <TabsContent value="rates">
               {renderRatesTable()}
