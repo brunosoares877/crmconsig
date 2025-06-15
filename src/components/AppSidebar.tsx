@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { LayoutDashboard, Users, Crown, Calendar, Bell, CalendarDays, ArrowRightLeft, DollarSign, UserCheck, Settings } from "lucide-react";
@@ -106,15 +105,7 @@ export function AppSidebar() {
       </SidebarGroupContent>
     </SidebarGroup>;
   return <Sidebar collapsible="none" className="w-64 min-w-64 max-w-64 bg-[#0f2247]">
-      <SidebarHeader>
-        <div className="flex items-center px-4 py-4">
-          {/* Logo aumentada com fundo semitransparente */}
-          <div className="w-12 h-12 bg-white/20 backdrop-blur-sm border border-white/30 rounded-xl flex items-center justify-center mr-4 shadow-lg">
-            <div className="w-6 h-6 bg-white rounded-lg"></div>
-          </div>
-          <h1 className="text-2xl font-bold text-white">LeadConsig</h1>
-        </div>
-      </SidebarHeader>
+      
       <SidebarContent>
         {renderMenuGroup(principalItems, "Principal")}
         
