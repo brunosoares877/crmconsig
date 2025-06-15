@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { LayoutDashboard, Users, Crown, Calendar, Bell, CalendarDays, ArrowRightLeft, DollarSign, UserCheck, Settings } from "lucide-react";
@@ -49,6 +50,7 @@ const lembretesItems: MenuItem[] = [{
   icon: CalendarDays,
   match: (pathname: string) => pathname === "/reminders/calendar"
 }];
+// ATUALIZADO: O item "Comissões" agora aponta diretamente para "/commission/settings"
 const negociosItems: MenuItem[] = [{
   title: "Portabilidade",
   url: "/portability",
@@ -56,9 +58,9 @@ const negociosItems: MenuItem[] = [{
   match: (pathname: string) => pathname === "/portability"
 }, {
   title: "Comissões",
-  url: "/commission",
+  url: "/commission/settings",
   icon: DollarSign,
-  match: (pathname: string) => pathname === "/commission" || pathname === "/commission-settings"
+  match: (pathname: string) => pathname === "/commission" || pathname === "/commission-settings" || pathname === "/commission/settings"
 }];
 const administracaoItems: MenuItem[] = [{
   title: "Funcionários",
