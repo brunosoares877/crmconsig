@@ -1,6 +1,7 @@
+
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { CircleCheck } from "lucide-react";
+import { CircleCheck, Target } from "lucide-react";
 
 const SubscriptionPlans = () => {
   const handlePayment = async (priceId: string, url: string) => {
@@ -12,7 +13,7 @@ const SubscriptionPlans = () => {
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+    <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-8 max-w-7xl mx-auto">
       {/* Monthly Plan */}
       <div className="bg-white rounded-xl shadow-lg border-2 border-gray-100 overflow-hidden transition-all hover:shadow-xl">
         <div className="p-8">
@@ -141,6 +142,53 @@ const SubscriptionPlans = () => {
             ].map((feature, index) => (
               <li key={index} className="flex items-center">
                 <CircleCheck className="h-5 w-5 mr-3 text-green-500" />
+                <span>{feature}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+
+      {/* Tráfego Pago Plan */}
+      <div className="bg-white rounded-xl shadow-lg border-2 border-orange-400 overflow-hidden transition-all hover:shadow-xl relative">
+        <div className="absolute top-0 right-0 bg-orange-500 text-white px-4 py-1 text-sm font-medium rounded-bl-lg">
+          Upsell
+        </div>
+        <div className="p-8">
+          <div className="inline-block px-4 py-1 bg-orange-100 text-orange-600 rounded-full text-sm font-medium mb-4">
+            Tráfego Pago
+          </div>
+          <div className="flex items-end mb-2">
+            <span className="text-3xl font-bold">+ R$0,00</span>
+            <span className="text-gray-500 ml-2">/mês</span>
+          </div>
+          <div className="text-orange-600 font-medium mb-4">
+            Adicional aos planos existentes
+          </div>
+          <p className="text-gray-600 mb-6">
+            Leads qualificados para INSS, Bolsa Família e FGTS via tráfego pago.
+          </p>
+          <Button 
+            className="w-full bg-orange-500 hover:bg-orange-600" 
+            size="lg"
+            onClick={() => handlePayment("price_trafego", "#")}
+          >
+            Adicionar Tráfego Pago
+          </Button>
+        </div>
+        <div className="border-t border-gray-100 p-8">
+          <ul className="space-y-4">
+            {[
+              "Leads segmentados INSS",
+              "Leads Bolsa Família",
+              "Leads FGTS qualificados",
+              "Campanhas otimizadas",
+              "Relatórios de performance",
+              "Suporte especializado",
+              "ROI garantido"
+            ].map((feature, index) => (
+              <li key={index} className="flex items-center">
+                <Target className="h-5 w-5 mr-3 text-orange-500" />
                 <span>{feature}</span>
               </li>
             ))}
