@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -58,14 +57,6 @@ const Commission = () => {
     fetchCommissions();
     fetchEmployees();
   }, []);
-
-  useEffect(() => {
-    if (isPrivilegedUser) {
-      toast.success("Bem-vindo! Você tem acesso completo e vitalício ao sistema.", {
-        duration: 5000,
-      });
-    }
-  }, [isPrivilegedUser]);
 
   const fetchEmployees = async () => {
     try {
