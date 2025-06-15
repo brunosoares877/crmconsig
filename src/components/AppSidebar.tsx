@@ -1,158 +1,205 @@
-import React from "react";
-import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, Users, Crown, Calendar, Bell, CalendarDays, ArrowRightLeft, DollarSign, UserCheck, Settings, Cog } from "lucide-react";
-import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarSeparator } from "@/components/ui/sidebar";
 
-// Define the menu item interface
-interface MenuItem {
-  title: string;
-  url: string;
-  icon: React.ComponentType<{
-    className?: string;
-  }>;
-  match: (pathname: string) => boolean;
-  isPremium?: boolean;
-}
+import React, { useState } from "react";
+import { useLocation } from "react-router-dom";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+} from "@/components/ui/sidebar";
+import {
+  BarChart3,
+  Users,
+  Star,
+  Calendar,
+  Bell,
+  CalendarDays,
+  TrendingUp,
+  DollarSign,
+  Settings,
+  Users2,
+  Camera,
+  User
+} from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
-// Menu items organized by logical groups
-const principalItems: MenuItem[] = [{
-  title: "Dashboard",
-  url: "/dashboard",
-  icon: LayoutDashboard,
-  match: (pathname: string) => pathname === "/dashboard" || pathname === "/"
-}];
-
-const leadsItems: MenuItem[] = [{
-  title: "Leads",
-  url: "/leads",
-  icon: Users,
-  match: (pathname: string) => pathname === "/leads" && !pathname.startsWith("/leads/")
-}, {
-  title: "Leads Premium",
-  url: "/leads-premium",
-  icon: Crown,
-  isPremium: true,
-  match: (pathname: string) => pathname === "/leads-premium"
-}, {
-  title: "Agendamentos",
-  url: "/leads/scheduled",
-  icon: Calendar,
-  match: (pathname: string) => pathname === "/leads/scheduled"
-}];
-
-const lembretesItems: MenuItem[] = [{
-  title: "Lembretes",
-  url: "/reminders",
-  icon: Bell,
-  match: (pathname: string) => pathname === "/reminders" && !pathname.startsWith("/reminders/calendar")
-}, {
-  title: "Calendário",
-  url: "/reminders/calendar",
-  icon: CalendarDays,
-  match: (pathname: string) => pathname === "/reminders/calendar"
-}];
-
-const negociosItems: MenuItem[] = [{
-  title: "Portabilidade",
-  url: "/portability",
-  icon: ArrowRightLeft,
-  match: (pathname: string) => pathname === "/portability"
-}, {
-  title: "Comissões",
-  url: "/commission",
-  icon: DollarSign,
-  match: (pathname: string) => pathname === "/commission" && !pathname.startsWith("/commission/settings")
-}, {
-  title: "Config. Comissões",
-  url: "/commission/settings",
-  icon: Cog,
-  match: (pathname: string) => pathname === "/commission/settings"
-}];
-
-const administracaoItems: MenuItem[] = [{
-  title: "Funcionários",
-  url: "/employees",
-  icon: UserCheck,
-  match: (pathname: string) => pathname === "/employees"
-}, {
-  title: "Configurações",
-  url: "/settings",
-  icon: Settings,
-  match: (pathname: string) => pathname.startsWith("/settings")
-}];
-
-// Menu items organized by logical groups
-const allMenuItems: MenuItem[] = [...principalItems, ...leadsItems, ...lembretesItems, ...negociosItems, ...administracaoItems];
+const items = [
+  {
+    title: "Dashboard",
+    url: "/dashboard",
+    icon: BarChart3,
+    group: "PRINCIPAL"
+  },
+  {
+    title: "Leads",
+    url: "/leads",
+    icon: Users,
+    group: "LEADS"
+  },
+  {
+    title: "Leads Premium",
+    url: "/leads-premium",
+    icon: Star,
+    group: "LEADS"
+  },
+  {
+    title: "Agendamentos",
+    url: "/lead-scheduling",
+    icon: Calendar,
+    group: "LEADS"
+  },
+  {
+    title: "Lembretes",
+    url: "/reminders",
+    icon: Bell,
+    group: "LEMBRETES"
+  },
+  {
+    title: "Calendário",
+    url: "/reminders-calendar",
+    icon: CalendarDays,
+    group: "LEMBRETES"
+  },
+  {
+    title: "Portabilidade",
+    url: "/portability",
+    icon: TrendingUp,
+    group: "NEGÓCIOS"
+  },
+  {
+    title: "Comissões",
+    url: "/commission",
+    icon: DollarSign,
+    group: "NEGÓCIOS"
+  },
+  {
+    title: "Config. Comissões",
+    url: "/commission-settings",
+    icon: Settings,
+    group: "NEGÓCIOS"
+  },
+  {
+    title: "Funcionários",
+    url: "/employees",
+    icon: Users2,
+    group: "ADMINISTRAÇÃO"
+  },
+  {
+    title: "Configurações",
+    url: "/settings",
+    icon: Settings,
+    group: "ADMINISTRAÇÃO"
+  },
+];
 
 export function AppSidebar() {
   const location = useLocation();
-  
-  const getActiveIdx = () => {
-    for (let i = 0; i < allMenuItems.length; i++) {
-      if (allMenuItems[i].match(location.pathname)) {
-        return i;
-      }
+  const { user } = useAuth();
+  const [profileImage, setProfileImage] = useState<string | null>(null);
+
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setProfileImage(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
     }
-    return -1;
   };
-  
-  const activeIdx = getActiveIdx();
-  
-  const renderMenuGroup = (items: MenuItem[], groupLabel?: string) => (
-    <SidebarGroup>
-      {groupLabel && <SidebarGroupLabel className="text-white/60 text-xs uppercase font-semibold">{groupLabel}</SidebarGroupLabel>}
-      <SidebarGroupContent>
-        <SidebarMenu>
-          {items.map(item => {
-            const itemIdx = allMenuItems.findIndex(menuItem => menuItem.url === item.url);
-            const isActive = itemIdx === activeIdx;
-            return (
-              <SidebarMenuItem key={item.title}>
-                <SidebarMenuButton 
-                  asChild 
-                  className={`w-full transition-colors duration-200 font-normal justify-start text-base ${
-                    isActive 
-                      ? "bg-white/20 text-white font-medium" 
-                      : "text-white/80 hover:bg-white/10 hover:text-white"
-                  } ${item.isPremium ? "text-yellow-400 font-semibold" : ""}`}
-                  isActive={isActive}
-                >
-                  <Link to={item.url} className="flex items-center gap-2 w-full">
-                    {item.isPremium ? (
-                      <span className="inline-block w-4 h-4 text-yellow-400" aria-label="premium">
-                        ★
-                      </span>
-                    ) : (
-                      <item.icon className="w-4 h-4 flex-shrink-0" />
-                    )}
-                    <span className="flex-1 text-left">{item.title}</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            );
-          })}
-        </SidebarMenu>
-      </SidebarGroupContent>
-    </SidebarGroup>
-  );
+
+  const getInitials = (email: string) => {
+    if (!email) return "U";
+    return email.charAt(0).toUpperCase();
+  };
+
+  // Group items by category
+  const groupedItems = items.reduce((acc, item) => {
+    if (!acc[item.group]) {
+      acc[item.group] = [];
+    }
+    acc[item.group].push(item);
+    return acc;
+  }, {} as Record<string, typeof items>);
 
   return (
-    <Sidebar collapsible="none" className="w-64 min-w-64 max-w-64 bg-[#0f2247]">
+    <Sidebar>
       <SidebarContent>
-        {renderMenuGroup(principalItems, "Principal")}
-        
-        <SidebarSeparator className="bg-white/20" />
-        {renderMenuGroup(leadsItems, "Leads")}
-        
-        <SidebarSeparator className="bg-white/20" />
-        {renderMenuGroup(lembretesItems, "Lembretes")}
-        
-        <SidebarSeparator className="bg-white/20" />
-        {renderMenuGroup(negociosItems, "Negócios")}
-        
-        <SidebarSeparator className="bg-white/20" />
-        {renderMenuGroup(administracaoItems, "Administração")}
+        {Object.entries(groupedItems).map(([group, groupItems]) => (
+          <SidebarGroup key={group}>
+            <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground">
+              {group}
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {groupItems.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={location.pathname === item.url}
+                      className="w-full"
+                    >
+                      <a href={item.url} className="flex items-center gap-2">
+                        <item.icon className="h-4 w-4" />
+                        <span>{item.title}</span>
+                      </a>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        ))}
       </SidebarContent>
+      
+      <SidebarFooter>
+        <div className="border-t pt-4">
+          <div className="flex flex-col items-center space-y-3 px-3">
+            {/* Profile Image/Selfie Section */}
+            <div className="relative">
+              <Avatar className="h-16 w-16">
+                {profileImage ? (
+                  <AvatarImage src={profileImage} alt="Profile" />
+                ) : (
+                  <AvatarFallback className="text-lg">
+                    {user ? getInitials(user.email || "") : "U"}
+                  </AvatarFallback>
+                )}
+              </Avatar>
+              <label htmlFor="profile-upload" className="absolute -bottom-1 -right-1 cursor-pointer">
+                <div className="bg-primary text-primary-foreground rounded-full p-1 shadow-lg hover:bg-primary/90 transition-colors">
+                  <Camera className="h-3 w-3" />
+                </div>
+                <Input
+                  id="profile-upload"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
+              </label>
+            </div>
+            
+            {/* User Email */}
+            <div className="text-center w-full">
+              <p className="text-sm font-medium truncate px-2">
+                {user?.email || "Usuário"}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Conectado
+              </p>
+            </div>
+          </div>
+        </div>
+      </SidebarFooter>
     </Sidebar>
   );
 }
