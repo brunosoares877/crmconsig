@@ -162,52 +162,52 @@ const LeadsConfig = () => {
       const configuredBanks = savedBanks ? JSON.parse(savedBanks) : [];
       
       // Combine default banks with configured banks
-      const allBanks = [...DEFAULT_BANKS];
-      configuredBanks.forEach((configBank: any) => {
+      const allBanks: Bank[] = [];
+      
+      // Add default banks with generated IDs
+      DEFAULT_BANKS.forEach(bank => {
+        allBanks.push({
+          id: `default-${bank.code}`,
+          name: bank.name,
+          code: bank.code
+        });
+      });
+      
+      // Add configured banks
+      configuredBanks.forEach((configBank: Bank) => {
         const exists = allBanks.find(bank => bank.code === configBank.code || bank.name === configBank.name);
         if (!exists) {
-          allBanks.push({
-            id: configBank.id,
-            name: configBank.name,
-            code: configBank.code
-          });
+          allBanks.push(configBank);
         }
       });
       
-      // Convert default banks to have id and ensure all have unique ids
-      const banksWithIds = allBanks.map(bank => ({
-        id: bank.id || `default-${bank.code}`,
-        name: bank.name,
-        code: bank.code
-      }));
-      
-      setBanks(banksWithIds);
+      setBanks(allBanks);
 
       // Get configured products from localStorage
       const savedProducts = localStorage.getItem('configProducts');
       const configuredProducts = savedProducts ? JSON.parse(savedProducts) : [];
       
       // Combine default products with configured products
-      const allProducts = [...DEFAULT_PRODUCTS];
-      configuredProducts.forEach((configProduct: any) => {
+      const allProducts: Product[] = [];
+      
+      // Add default products with generated IDs
+      DEFAULT_PRODUCTS.forEach(product => {
+        allProducts.push({
+          id: `default-${product.code}`,
+          name: product.name,
+          code: product.code
+        });
+      });
+      
+      // Add configured products
+      configuredProducts.forEach((configProduct: Product) => {
         const exists = allProducts.find(product => product.code === configProduct.code || product.name === configProduct.name);
         if (!exists) {
-          allProducts.push({
-            id: configProduct.id,
-            name: configProduct.name,
-            code: configProduct.code
-          });
+          allProducts.push(configProduct);
         }
       });
       
-      // Convert default products to have id and ensure all have unique ids
-      const productsWithIds = allProducts.map(product => ({
-        id: product.id || `default-${product.code}`,
-        name: product.name,
-        code: product.code
-      }));
-      
-      setProducts(productsWithIds);
+      setProducts(allProducts);
 
       // Fetch benefit types from Supabase and combine with defaults
       const { data: benefitData, error: benefitError } = await supabase
@@ -218,27 +218,26 @@ const LeadsConfig = () => {
       if (benefitError) throw benefitError;
       
       const dbBenefits = benefitData || [];
-      const allBenefits = [...DEFAULT_BENEFIT_TYPES];
+      const allBenefits: BenefitType[] = [];
       
-      dbBenefits.forEach((dbBenefit: any) => {
+      // Add default benefits with generated IDs
+      DEFAULT_BENEFIT_TYPES.forEach((benefit, index) => {
+        allBenefits.push({
+          id: 1000 + index, // Use high numbers for defaults to avoid conflicts
+          description: benefit.description,
+          code: benefit.code
+        });
+      });
+      
+      // Add database benefits
+      dbBenefits.forEach((dbBenefit: BenefitType) => {
         const exists = allBenefits.find(benefit => benefit.code === dbBenefit.code || benefit.description === dbBenefit.description);
         if (!exists) {
-          allBenefits.push({
-            id: dbBenefit.id,
-            description: dbBenefit.description,
-            code: dbBenefit.code
-          });
+          allBenefits.push(dbBenefit);
         }
       });
       
-      // Convert default benefits to have proper id
-      const benefitsWithIds = allBenefits.map((benefit, index) => ({
-        id: benefit.id || (1000 + index), // Use high numbers for defaults to avoid conflicts
-        description: benefit.description,
-        code: benefit.code
-      }));
-      
-      setBenefitTypes(benefitsWithIds);
+      setBenefitTypes(allBenefits);
 
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -305,10 +304,10 @@ const LeadsConfig = () => {
       return;
     }
 
-    const newBank = {
+    const newBank: Bank = {
       id: Date.now().toString(),
       name: newBankName.trim(),
-      code: newBankCode.trim() || ""
+      code: newBankCode.trim()
     };
 
     const updatedBanks = [...banks, newBank];
@@ -346,10 +345,10 @@ const LeadsConfig = () => {
       return;
     }
 
-    const newProduct = {
+    const newProduct: Product = {
       id: Date.now().toString(),
       name: newProductName.trim(),
-      code: newProductCode.trim() || ""
+      code: newProductCode.trim()
     };
 
     const updatedProducts = [...products, newProduct];
