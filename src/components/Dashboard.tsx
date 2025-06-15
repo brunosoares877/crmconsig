@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, PhoneCall, CalendarCheck, TrendingUp, TrendingDown, User, Search, BarChart3, DollarSign } from "lucide-react";
+import { Users, PhoneCall, CalendarCheck, TrendingUp, TrendingDown, User, Search, BarChart3, DollarSign, Calendar } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { format, startOfToday, endOfToday, startOfMonth, endOfMonth, differenceInMinutes, startOfWeek, endOfWeek } from "date-fns";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -19,6 +19,7 @@ const Dashboard = () => {
     averageLeadsPerDay: 0,
     averageTimeBetweenLeads: "0min",
     monthlyProduction: 0,
+    weeklyProduction: 0,
     weeklyConversionRate: 0
   });
   const [isLoading, setIsLoading] = useState(true);
@@ -40,6 +41,7 @@ const Dashboard = () => {
         const monthEnd = endOfMonth(today).toISOString();
 
         // Get week's date range
+        const today = new Date();
         const weekStart = startOfWeek(today, { weekStartsOn: 1 }).toISOString(); // Monday as start
         const weekEnd = endOfWeek(today, { weekStartsOn: 1 }).toISOString();
 
@@ -100,6 +102,30 @@ const Dashboard = () => {
         // Calculate average leads per day in this month
         const daysPassed = Math.max(1, new Date().getDate());
         const averageLeadsPerDay = leadsThisMonth ? parseFloat((leadsThisMonth / daysPassed).toFixed(1)) : 0;
+
+        // Get weekly production (all leads with amount this week, regardless of status)
+        const {
+          data: weeklyLeadsWithAmount,
+          error: weeklyError
+        } = await supabase.from('leads')
+          .select('amount')
+          .not('amount', 'is', null)
+          .neq('amount', '')
+          .gte('created_at', weekStart)
+          .lte('created_at', weekEnd);
+        
+        if (weeklyError) {
+          console.error('Error fetching weekly production:', weeklyError);
+        }
+
+        // Calculate total weekly production from all leads with amounts
+        const weeklyProduction = weeklyLeadsWithAmount ? weeklyLeadsWithAmount.reduce((total, lead) => {
+          const cleanAmount = lead.amount?.replace(/[^\d,]/g, '').replace(',', '.') || "0";
+          const amount = parseFloat(cleanAmount);
+          return isNaN(amount) ? total : total + amount;
+        }, 0) : 0;
+
+        console.log("Weekly production:", weeklyProduction);
 
         // Get monthly production (all leads with amount this month, regardless of status)
         const {
@@ -253,6 +279,7 @@ const Dashboard = () => {
           averageLeadsPerDay: averageLeadsPerDay,
           averageTimeBetweenLeads: averageTimeBetweenLeads,
           monthlyProduction: monthlyProduction,
+          weeklyProduction: weeklyProduction,
           weeklyConversionRate: weeklyConversionRate
         });
 
@@ -262,6 +289,7 @@ const Dashboard = () => {
           averageLeadsPerDay: averageLeadsPerDay,
           averageTimeBetweenLeads: averageTimeBetweenLeads,
           monthlyProduction: monthlyProduction,
+          weeklyProduction: weeklyProduction,
           weeklyConversionRate: weeklyConversionRate
         });
 
@@ -312,6 +340,15 @@ const Dashboard = () => {
       iconBg: "bg-green-50",
       iconColor: "text-green-600"
     }, {
+      title: "Produção Semanal",
+      value: `R$ ${metrics.weeklyProduction.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+      change: calculateChange(metrics.weeklyProduction, metrics.weeklyProduction - 2000),
+      subtitle: `Total vendido na semana`,
+      positive: true,
+      icon: <Calendar className="h-4 w-4 lg:h-5 lg:w-5" />,
+      iconBg: "bg-purple-50",
+      iconColor: "text-purple-600"
+    }, {
       title: "Produção Mensal",
       value: `R$ ${metrics.monthlyProduction.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
       change: calculateChange(metrics.monthlyProduction, metrics.monthlyProduction - 5000),
@@ -320,18 +357,6 @@ const Dashboard = () => {
       icon: <DollarSign className="h-4 w-4 lg:h-5 lg:w-5" />,
       iconBg: "bg-emerald-50",
       iconColor: "text-emerald-600"
-    }, {
-      title: "Conversão Semanal",
-      value: `${metrics.weeklyConversionRate.toFixed(1)}%`,
-      change: {
-        value: "+2.1%",
-        positive: true
-      },
-      subtitle: `Taxa de conversão da semana`,
-      positive: true,
-      icon: <BarChart3 className="h-4 w-4 lg:h-5 lg:w-5" />,
-      iconBg: "bg-orange-50",
-      iconColor: "text-orange-600"
     }
   ];
 
