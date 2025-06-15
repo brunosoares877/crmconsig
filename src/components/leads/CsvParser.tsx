@@ -1,0 +1,204 @@
+
+import { toast } from "sonner";
+
+export interface CsvLead {
+  name: string;
+  cpf: string;
+  phone: string;
+  bank: string;
+  product: string;
+  date: string;
+  amount: string;
+  employee: string;
+}
+
+export interface CsvParseResult {
+  leads: CsvLead[];
+  errors: string[];
+  totalRows: number;
+}
+
+/**
+ * Advanced CSV parser that handles comma-separated values properly
+ */
+export class CsvParser {
+  private static parseCSVLine(line: string): string[] {
+    const values: string[] = [];
+    let current = '';
+    let inQuotes = false;
+    let i = 0;
+
+    while (i < line.length) {
+      const char = line[i];
+
+      if (char === '"') {
+        if (inQuotes && line[i + 1] === '"') {
+          // Handle escaped quotes ("")
+          current += '"';
+          i += 2;
+        } else {
+          // Toggle quote state
+          inQuotes = !inQuotes;
+          i++;
+        }
+      } else if (char === ',' && !inQuotes) {
+        // End of field
+        values.push(current.trim());
+        current = '';
+        i++;
+      } else {
+        current += char;
+        i++;
+      }
+    }
+
+    // Don't forget the last value
+    values.push(current.trim());
+    return values;
+  }
+
+  private static findColumnIndices(headers: string[]): Record<string, number> {
+    const headerLower = headers.map(h => h.toLowerCase().trim().replace(/"/g, ''));
+    
+    return {
+      name: headerLower.findIndex(h => h.includes('nome')),
+      cpf: headerLower.findIndex(h => h.includes('cpf')),
+      phone: headerLower.findIndex(h => h.includes('telefone')),
+      bank: headerLower.findIndex(h => h.includes('banco')),
+      product: headerLower.findIndex(h => h.includes('produto')),
+      date: headerLower.findIndex(h => h.includes('data')),
+      amount: headerLower.findIndex(h => h.includes('valor')),
+      employee: headerLower.findIndex(h => h.includes('funcionario') || h.includes('funcionário'))
+    };
+  }
+
+  private static validateRequiredColumns(indices: Record<string, number>): string[] {
+    const errors: string[] = [];
+    const required = ['name', 'phone', 'bank', 'product', 'amount'];
+    
+    required.forEach(field => {
+      if (indices[field] === -1) {
+        const fieldNames = {
+          name: 'Nome',
+          phone: 'Telefone', 
+          bank: 'Banco',
+          product: 'Produto',
+          amount: 'Valor'
+        };
+        errors.push(`Coluna obrigatória não encontrada: ${fieldNames[field as keyof typeof fieldNames]}`);
+      }
+    });
+
+    return errors;
+  }
+
+  private static mapBankValue(bankValue: string): string {
+    const bank = bankValue.toLowerCase().trim();
+    if (bank.includes('caixa')) return 'caixa';
+    if (bank.includes('brasil') || bank.includes('bb')) return 'bb';
+    if (bank.includes('itau') || bank.includes('itaú')) return 'itau';
+    if (bank.includes('bradesco')) return 'bradesco';
+    if (bank.includes('santander')) return 'santander';
+    return 'outro';
+  }
+
+  private static mapProductValue(productValue: string): string {
+    const product = productValue.toLowerCase().trim();
+    if (product.includes('novo')) return 'novo';
+    if (product.includes('porta')) return 'portabilidade';
+    if (product.includes('refin')) return 'refinanciamento';
+    if (product.includes('fgts')) return 'fgts';
+    if (product.includes('cart')) return 'cartao';
+    return 'outro';
+  }
+
+  private static validateLeadData(lead: CsvLead, rowNumber: number): string[] {
+    const errors: string[] = [];
+
+    if (!lead.name || lead.name.length < 2) {
+      errors.push(`Linha ${rowNumber}: Nome inválido ou muito curto`);
+    }
+
+    if (!lead.phone || lead.phone.length < 10) {
+      errors.push(`Linha ${rowNumber}: Telefone inválido`);
+    }
+
+    if (!lead.amount || isNaN(parseFloat(lead.amount.replace(/[^\d.,]/g, '').replace(',', '.')))) {
+      errors.push(`Linha ${rowNumber}: Valor inválido`);
+    }
+
+    return errors;
+  }
+
+  public static parseFile(fileContent: string): CsvParseResult {
+    const lines = fileContent.split('\n').filter(line => line.trim());
+    const errors: string[] = [];
+    const leads: CsvLead[] = [];
+
+    if (lines.length < 2) {
+      return {
+        leads: [],
+        errors: ['Arquivo deve conter pelo menos uma linha de cabeçalho e uma linha de dados'],
+        totalRows: 0
+      };
+    }
+
+    // Parse header
+    const headerValues = this.parseCSVLine(lines[0]);
+    const indices = this.findColumnIndices(headerValues);
+    
+    // Validate required columns
+    const columnErrors = this.validateRequiredColumns(indices);
+    if (columnErrors.length > 0) {
+      return {
+        leads: [],
+        errors: columnErrors,
+        totalRows: lines.length - 1
+      };
+    }
+
+    // Parse data rows
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (!line) continue;
+
+      const values = this.parseCSVLine(line);
+      
+      // Skip rows with insufficient data
+      if (values.length < Math.max(...Object.values(indices).filter(idx => idx !== -1)) + 1) {
+        errors.push(`Linha ${i + 1}: Dados insuficientes`);
+        continue;
+      }
+
+      const leadData: CsvLead = {
+        name: values[indices.name] || '',
+        cpf: indices.cpf !== -1 ? values[indices.cpf] || '' : '',
+        phone: values[indices.phone] || '',
+        bank: values[indices.bank] || '',
+        product: values[indices.product] || '',
+        date: indices.date !== -1 ? values[indices.date] || '' : '',
+        amount: values[indices.amount] || '',
+        employee: indices.employee !== -1 ? values[indices.employee] || '' : ''
+      };
+
+      // Validate lead data
+      const leadErrors = this.validateLeadData(leadData, i + 1);
+      if (leadErrors.length > 0) {
+        errors.push(...leadErrors);
+        continue;
+      }
+
+      // Map values to system format
+      leadData.bank = this.mapBankValue(leadData.bank);
+      leadData.product = this.mapProductValue(leadData.product);
+
+      leads.push(leadData);
+    }
+
+    return {
+      leads,
+      errors,
+      totalRows: lines.length - 1
+    };
+  }
+}
