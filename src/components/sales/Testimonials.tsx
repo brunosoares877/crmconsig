@@ -3,6 +3,12 @@ import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Star } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+} from "@/components/ui/carousel";
+import Autoplay from "embla-carousel-autoplay";
 
 const testimonials = [
   {
@@ -76,10 +82,78 @@ const testimonials = [
     stars: 5,
     date: "1 mês atrás",
     avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&h=150&fit=crop&crop=face"
+  },
+  {
+    name: "Marcos Pereira",
+    role: "Consultor Sênior",
+    content: "Interface limpa e funcional. Consegui organizar minha carteira de clientes em poucas horas de uso.",
+    stars: 5,
+    date: "1 semana atrás",
+    avatar: "https://images.unsplash.com/photo-1566492031773-4f4e44671d66?w=150&h=150&fit=crop&crop=face"
+  },
+  {
+    name: "Juliana Rodrigues",
+    role: "Agente de Crédito",
+    content: "O suporte técnico é excepcional! Sempre que preciso, sou atendida rapidamente e com qualidade.",
+    stars: 5,
+    date: "2 semanas atrás",
+    avatar: "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=150&h=150&fit=crop&crop=face"
+  },
+  {
+    name: "Rafael Martins",
+    role: "Supervisor de Vendas",
+    content: "Implementamos o sistema em toda a equipe. Os resultados foram impressionantes já no primeiro trimestre.",
+    stars: 5,
+    date: "3 semanas atrás",
+    avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face"
+  },
+  {
+    name: "Camila Torres",
+    role: "Assessora Comercial",
+    content: "A praticidade para agendar follow-ups e controlar prazos transformou completamente minha rotina de trabalho.",
+    stars: 5,
+    date: "1 mês atrás",
+    avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&h=150&fit=crop&crop=face"
+  },
+  {
+    name: "Eduardo Nascimento",
+    role: "Gerente Regional",
+    content: "Visibilidade total do pipeline de vendas. Agora consigo acompanhar o desempenho da equipe em tempo real.",
+    stars: 5,
+    date: "2 semanas atrás",
+    avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face"
+  },
+  {
+    name: "Isabela Campos",
+    role: "Consultora de Negócios",
+    content: "A integração com WhatsApp facilitou muito o contato com os clientes. Comunicação muito mais eficiente!",
+    stars: 5,
+    date: "1 semana atrás",
+    avatar: "https://images.unsplash.com/photo-1502685104226-ee32379fefbe?w=150&h=150&fit=crop&crop=face"
+  },
+  {
+    name: "Thiago Barbosa",
+    role: "Coordenador Comercial",
+    content: "Relatórios detalhados que me ajudam a identificar oportunidades e otimizar processos. Ferramenta completa!",
+    stars: 5,
+    date: "3 semanas atrás",
+    avatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&h=150&fit=crop&crop=face"
+  },
+  {
+    name: "Vanessa Duarte",
+    role: "Especialista em Crédito",
+    content: "Sistema intuitivo e poderoso. Consegui dobrar minha conversão de leads em apenas dois meses de uso.",
+    stars: 5,
+    date: "1 mês atrás",
+    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&h=150&fit=crop&crop=face"
   }
 ];
 
 const Testimonials = () => {
+  const plugin = React.useRef(
+    Autoplay({ delay: 4000, stopOnInteraction: false, stopOnMouseEnter: false })
+  );
+
   return (
     <section className="py-16 bg-gradient-to-b from-primary/10 to-transparent">
       <div className="container mx-auto px-4">
@@ -88,33 +162,44 @@ const Testimonials = () => {
         </h2>
         
         <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {testimonials.slice(0, 8).map((testimonial, index) => (
-              <Card key={index} className="h-full">
-                <CardContent className="p-6">
-                  <div className="flex items-center gap-3 mb-4">
-                    <Avatar className="h-12 w-12">
-                      <AvatarImage src={testimonial.avatar} alt={testimonial.name} />
-                      <AvatarFallback>{testimonial.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="font-semibold text-sm">{testimonial.name}</p>
-                      <p className="text-xs text-gray-600">{testimonial.role}</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex gap-0.5 mb-3">
-                    {Array(testimonial.stars).fill(null).map((_, i) => (
-                      <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                    ))}
-                  </div>
-                  
-                  <p className="text-sm text-gray-600 mb-4">{testimonial.date}</p>
-                  <p className="text-sm">{testimonial.content}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          <Carousel
+            plugins={[plugin.current]}
+            className="w-full"
+            opts={{
+              align: "start",
+              loop: true,
+            }}
+          >
+            <CarouselContent className="-ml-2 md:-ml-4">
+              {testimonials.map((testimonial, index) => (
+                <CarouselItem key={index} className="pl-2 md:pl-4 basis-full sm:basis-1/2 lg:basis-1/3 xl:basis-1/4">
+                  <Card className="h-full">
+                    <CardContent className="p-6">
+                      <div className="flex items-center gap-3 mb-4">
+                        <Avatar className="h-12 w-12">
+                          <AvatarImage src={testimonial.avatar} alt={testimonial.name} />
+                          <AvatarFallback>{testimonial.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-semibold text-sm">{testimonial.name}</p>
+                          <p className="text-xs text-gray-600">{testimonial.role}</p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex gap-0.5 mb-3">
+                        {Array(testimonial.stars).fill(null).map((_, i) => (
+                          <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                        ))}
+                      </div>
+                      
+                      <p className="text-sm text-gray-600 mb-4">{testimonial.date}</p>
+                      <p className="text-sm">{testimonial.content}</p>
+                    </CardContent>
+                  </Card>
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+          </Carousel>
         </div>
       </div>
     </section>
