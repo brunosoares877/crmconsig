@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import {
   Sidebar,
@@ -23,7 +23,8 @@ import {
   Settings,
   Users2,
   Camera,
-  User
+  User,
+  Edit
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -221,6 +222,15 @@ export function AppSidebar() {
     return acc;
   }, {} as Record<string, typeof items>);
 
+  // Adiciona focus ao input ao clicar na imagem/ícone
+  const inputRef = React.useRef<HTMLInputElement | null>(null);
+
+  const handleAvatarClick = () => {
+    if (inputRef.current && !uploading) {
+      inputRef.current.click();
+    }
+  };
+
   return (
     <Sidebar>
       <SidebarContent>
@@ -255,29 +265,39 @@ export function AppSidebar() {
         <div className="border-t pt-4">
           <div className="flex flex-col items-center space-y-3 px-3">
             {/* Profile Image/Selfie Section */}
-            <div className="relative">
-              <Avatar className="h-16 w-16">
+            <div className="relative group">
+              <Avatar 
+                className="h-16 w-16 cursor-pointer ring-2 ring-primary/20 transition-shadow group-hover:ring-primary/80"
+                onClick={handleAvatarClick}
+                tabIndex={0}
+                onKeyDown={e => {
+                  if (e.key === "Enter" || e.key === " ") handleAvatarClick();
+                }}
+                aria-label={uploading ? "Enviando foto" : "Editar foto de perfil"}
+                role="button"
+              >
                 {profileImage ? (
-                  <AvatarImage src={profileImage} alt="Profile" />
+                  <AvatarImage src={profileImage} alt="Profile" className="h-full w-full object-cover" />
                 ) : (
                   <AvatarFallback className="text-lg">
                     {user ? getInitials(user.email || "") : "U"}
                   </AvatarFallback>
                 )}
-              </Avatar>
-              <label htmlFor="profile-upload" className="absolute -bottom-1 -right-1 cursor-pointer">
-                <div className="bg-primary text-primary-foreground rounded-full p-1 shadow-lg hover:bg-primary/90 transition-colors">
-                  <Camera className="h-3 w-3" />
+                {/* Botão de editar sobreposto (ícone lápis) visível ao hover */}
+                <div className="absolute inset-0 bg-black/20 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
+                  <Edit className="h-6 w-6 text-white drop-shadow-lg" />
                 </div>
-                <Input
-                  id="profile-upload"
-                  type="file"
-                  accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
-                  onChange={handleImageUpload}
-                  className="hidden"
-                  disabled={uploading}
-                />
-              </label>
+              </Avatar>
+              {/* Input escondido, acionado ao clicar no avatar */}
+              <Input
+                id="profile-upload"
+                ref={inputRef}
+                type="file"
+                accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                onChange={handleImageUpload}
+                className="hidden"
+                disabled={uploading}
+              />
             </div>
             
             {/* User Email */}
