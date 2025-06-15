@@ -20,7 +20,7 @@ const Dashboard = () => {
     averageTimeBetweenLeads: "0min",
     monthlyProduction: 0,
     weeklyConversionRate: 0,
-    proposalsDigitated: 0,
+    proposalsDigitatedToday: 0,
     conversionsValue: 0
   });
   const [isLoading, setIsLoading] = useState(true);
@@ -67,6 +67,18 @@ const Dashboard = () => {
 
         console.log("Leads this month:", leadsThisMonth);
 
+        // Get proposals digitadas (leads que tem amount preenchido) do dia atual
+        const {
+          count: proposalsDigitatedToday
+        } = await supabase.from('leads')
+          .select('*', { count: 'exact', head: true })
+          .not('amount', 'is', null)
+          .neq('amount', '')
+          .gte('created_at', todayStart)
+          .lte('created_at', todayEnd);
+
+        console.log("Proposals digitadas today:", proposalsDigitatedToday);
+
         // Get proposals digitadas (leads que tem amount preenchido) do mês
         const {
           count: proposalsDigitated
@@ -90,7 +102,7 @@ const Dashboard = () => {
           .neq('amount', '')
           .gte('created_at', monthStart)
           .lte('created_at', monthEnd);
-
+        
         if (conversionsError) {
           console.error('Error fetching conversions:', conversionsError);
         }
@@ -292,7 +304,7 @@ const Dashboard = () => {
           averageTimeBetweenLeads: averageTimeBetweenLeads,
           monthlyProduction: monthlyProduction,
           weeklyConversionRate: weeklyConversionRate,
-          proposalsDigitated: proposalsDigitated || 0,
+          proposalsDigitatedToday: proposalsDigitatedToday || 0,
           conversionsValue: conversionsValue
         });
 
@@ -303,7 +315,7 @@ const Dashboard = () => {
           averageTimeBetweenLeads: averageTimeBetweenLeads,
           monthlyProduction: monthlyProduction,
           weeklyConversionRate: weeklyConversionRate,
-          proposalsDigitated: proposalsDigitated || 0,
+          proposalsDigitatedToday: proposalsDigitatedToday || 0,
           conversionsValue: conversionsValue
         });
 
@@ -355,9 +367,9 @@ const Dashboard = () => {
       iconColor: "text-green-600"
     }, {
       title: "Propostas Digitadas",
-      value: metrics.proposalsDigitated.toString(),
-      change: calculateChange(metrics.proposalsDigitated, metrics.proposalsDigitated - 3),
-      subtitle: `Clientes com propostas no mês`,
+      value: metrics.proposalsDigitatedToday.toString(),
+      change: calculateChange(metrics.proposalsDigitatedToday, metrics.proposalsDigitatedToday - 1),
+      subtitle: `Clientes com propostas hoje`,
       positive: true,
       icon: <FileText className="h-4 w-4 lg:h-5 lg:w-5" />,
       iconBg: "bg-orange-50",
