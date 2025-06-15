@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import LeadForm from "./LeadForm";
 import { Link } from "react-router-dom";
+import LeadImportButton from "@/components/leads/LeadImportButton";
 
 interface LeadListProps {
   searchQuery?: string;
@@ -242,6 +243,7 @@ const LeadList: React.FC<LeadListProps> = ({
           <span className="text-sm text-muted-foreground mr-2">
             Mostrando {filteredLeads.length} leads
           </span>
+          <LeadImportButton />
         </div>
       </div>
       
