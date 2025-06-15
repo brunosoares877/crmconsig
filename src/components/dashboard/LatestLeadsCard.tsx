@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Clock, ArrowRight, Sparkles2 } from "lucide-react";
+import { Clock, ArrowRight, Sparkles } from "lucide-react";
 
 interface LatestLeadsCardProps {
   latestLeads: any[];
@@ -65,7 +65,7 @@ const LatestLeadsCard = ({ latestLeads, isLoading }: LatestLeadsCardProps) => {
           <CardTitle className="text-xl font-semibold text-slate-900 flex items-center gap-3">
             <div className="w-2 h-2 bg-gradient-to-r from-slate-500 to-gray-500 rounded-full animate-pulse"></div>
             Últimos Leads
-            <Sparkles2 className="h-4 w-4 text-slate-500 group-hover:animate-bounce" />
+            <Sparkles className="h-4 w-4 text-slate-500 group-hover:animate-bounce" />
           </CardTitle>
           <p className="text-sm text-slate-600">
             Leads cadastrados recentemente
