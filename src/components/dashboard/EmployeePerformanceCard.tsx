@@ -39,7 +39,7 @@ const EmployeePerformanceCard = ({ employeeSales, isLoading }: EmployeePerforman
             Performance dos Funcionários
           </CardTitle>
           <p className="text-sm text-slate-600">
-            Ranking de vendas por funcionário
+            Ranking de leads por funcionário (total/convertidos)
           </p>
         </div>
       </CardHeader>
@@ -58,7 +58,7 @@ const EmployeePerformanceCard = ({ employeeSales, isLoading }: EmployeePerforman
                 <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-sm">
                   <User className="h-8 w-8 text-blue-500" />
                 </div>
-                <p className="font-medium">Nenhuma venda por funcionário registrada</p>
+                <p className="font-medium">Nenhum lead por funcionário registrado</p>
                 <p className="text-xs text-slate-400 mt-1">O ranking aparecerá aqui</p>
               </div>
             ) : (
@@ -86,7 +86,9 @@ const EmployeePerformanceCard = ({ employeeSales, isLoading }: EmployeePerforman
                   </div>
                   <div className="text-right ml-4">
                     <p className="font-bold text-blue-700 text-lg">{employee.count}</p>
-                    <p className="text-xs text-slate-500 font-medium">vendas</p>
+                    <p className="text-xs text-slate-500 font-medium">
+                      {employee.convertedSales || 0} vendas
+                    </p>
                   </div>
                 </div>
               ))

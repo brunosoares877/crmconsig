@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, PhoneCall, CalendarCheck, TrendingUp, TrendingDown, User, Search, BarChart3, DollarSign } from "lucide-react";
@@ -18,7 +19,8 @@ const Dashboard = () => {
     leadsThisMonth: 0,
     averageLeadsPerDay: 0,
     averageTimeBetweenLeads: "0min",
-    monthlyProduction: 0
+    monthlyProduction: 0,
+    conversionRate: 0
   });
   const [isLoading, setIsLoading] = useState(true);
   const [dailyProduction, setDailyProduction] = useState([]);
@@ -38,6 +40,8 @@ const Dashboard = () => {
         const monthStart = startOfMonth(today).toISOString();
         const monthEnd = endOfMonth(today).toISOString();
 
+        console.log("Fetching dashboard metrics...");
+
         // Get leads created today
         const {
           count: leadsToday
@@ -46,6 +50,8 @@ const Dashboard = () => {
           head: true
         }).gte('created_at', todayStart).lte('created_at', todayEnd);
 
+        console.log("Leads today:", leadsToday);
+
         // Get leads created this month
         const {
           count: leadsThisMonth
@@ -53,6 +59,8 @@ const Dashboard = () => {
           count: 'exact',
           head: true
         }).gte('created_at', monthStart).lte('created_at', monthEnd);
+
+        console.log("Leads this month:", leadsThisMonth);
 
         // Get all leads from this month to calculate average time between leads
         const {
@@ -106,7 +114,22 @@ const Dashboard = () => {
           return isNaN(amount) ? total : total + amount;
         }, 0) : 0;
 
-        // Fetch daily production data
+        console.log("Monthly production:", monthlyProduction);
+
+        // Calculate conversion rate
+        const {
+          count: convertedCount
+        } = await supabase.from('leads').select('*', {
+          count: 'exact',
+          head: true
+        }).eq('status', 'convertido').gte('created_at', monthStart).lte('created_at', monthEnd);
+
+        const conversionRate = leadsThisMonth && leadsThisMonth > 0 ? 
+          ((convertedCount || 0) / leadsThisMonth * 100) : 0;
+
+        console.log("Conversion rate:", conversionRate);
+
+        // Fetch daily production data (converted leads today)
         const {
           data: dailyData,
           error: dailyError
@@ -115,43 +138,55 @@ const Dashboard = () => {
           console.error('Error fetching daily production:', dailyError);
           toast.error("Erro ao carregar produção diária");
         } else {
+          console.log("Daily production data:", dailyData);
           setDailyProduction(dailyData || []);
         }
 
-        // Fetch employee sales data
+        // Fetch employee performance data (all leads, not just converted)
         const {
           data: employeeData,
           error: employeeError
-        } = await supabase.from('leads').select('employee, amount').eq('status', 'convertido').not('employee', 'is', null);
+        } = await supabase.from('leads')
+          .select('employee, amount, status')
+          .not('employee', 'is', null)
+          .gte('created_at', monthStart)
+          .lte('created_at', monthEnd);
+        
         if (employeeError) {
           console.error('Error fetching employee sales:', employeeError);
           toast.error("Erro ao carregar vendas por funcionário");
         } else {
-          // Process employee data to count sales per employee
+          console.log("Employee data:", employeeData);
+          // Process employee data to count total leads and sales per employee
           const employeeSalesMap = {};
 
-          // Count sales per employee
+          // Count all leads and converted sales per employee
           employeeData?.forEach(lead => {
             if (lead.employee) {
               if (!employeeSalesMap[lead.employee]) {
                 employeeSalesMap[lead.employee] = {
-                  count: 0
+                  totalLeads: 0,
+                  convertedSales: 0
                 };
               }
-              employeeSalesMap[lead.employee].count += 1;
+              employeeSalesMap[lead.employee].totalLeads += 1;
+              
+              if (lead.status === 'convertido') {
+                employeeSalesMap[lead.employee].convertedSales += 1;
+              }
             }
           });
 
           // Convert to array format for display
           const employeeSalesArray = Object.entries(employeeSalesMap).map(([employee, data]) => ({
             employee,
-            count: (data as {
-              count: number;
-            }).count
+            count: (data as { totalLeads: number; convertedSales: number }).totalLeads,
+            convertedSales: (data as { totalLeads: number; convertedSales: number }).convertedSales
           }));
 
-          // Sort by count (highest first)
+          // Sort by total leads (highest first)
           employeeSalesArray.sort((a, b) => b.count - a.count);
+          console.log("Employee sales array:", employeeSalesArray);
           setEmployeeSales(employeeSalesArray);
         }
 
@@ -174,6 +209,7 @@ const Dashboard = () => {
               year: 'numeric'
             })
           })) || [];
+          console.log("Latest leads:", formattedLatestLeads);
           setLatestLeads(formattedLatestLeads);
         }
 
@@ -183,8 +219,19 @@ const Dashboard = () => {
           leadsThisMonth: leadsThisMonth || 0,
           averageLeadsPerDay: averageLeadsPerDay,
           averageTimeBetweenLeads: averageTimeBetweenLeads,
-          monthlyProduction: monthlyProduction
+          monthlyProduction: monthlyProduction,
+          conversionRate: conversionRate
         });
+
+        console.log("Updated metrics:", {
+          leadsToday: leadsToday || 0,
+          leadsThisMonth: leadsThisMonth || 0,
+          averageLeadsPerDay: averageLeadsPerDay,
+          averageTimeBetweenLeads: averageTimeBetweenLeads,
+          monthlyProduction: monthlyProduction,
+          conversionRate: conversionRate
+        });
+
       } catch (error) {
         console.error('Error fetching metrics:', error);
         toast.error("Erro ao carregar métricas do dashboard");
@@ -192,9 +239,11 @@ const Dashboard = () => {
         setIsLoading(false);
       }
     };
+    
     fetchMetrics();
-    // Refresh metrics every 5 minutes
-    const interval = setInterval(fetchMetrics, 5 * 60 * 1000);
+    
+    // Refresh metrics every 30 seconds for real-time updates
+    const interval = setInterval(fetchMetrics, 30 * 1000);
     return () => clearInterval(interval);
   }, []);
 
@@ -240,7 +289,7 @@ const Dashboard = () => {
       iconColor: "text-emerald-600"
     }, {
       title: "Conversão",
-      value: "12%",
+      value: `${metrics.conversionRate.toFixed(1)}%`,
       change: {
         value: "+2.1%",
         positive: true
