@@ -1,5 +1,4 @@
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import {
   Sidebar,
@@ -30,6 +29,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const items = [
   {
@@ -104,15 +105,105 @@ export function AppSidebar() {
   const location = useLocation();
   const { user } = useAuth();
   const [profileImage, setProfileImage] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
 
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setProfileImage(e.target?.result as string);
-      };
-      reader.readAsDataURL(file);
+  // Load existing profile image on component mount
+  useEffect(() => {
+    const loadProfileImage = async () => {
+      if (!user) return;
+      
+      try {
+        const { data } = supabase.storage
+          .from('avatars')
+          .getPublicUrl(`profiles/${user.id}_profile.jpg`);
+        
+        // Check if image exists by making a HEAD request
+        const response = await fetch(data.publicUrl, { method: 'HEAD' });
+        if (response.ok) {
+          setProfileImage(data.publicUrl);
+        }
+      } catch (error) {
+        console.log('No existing profile image found');
+      }
+    };
+    
+    loadProfileImage();
+  }, [user]);
+
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    try {
+      setUploading(true);
+      const file = event.target.files?.[0];
+      
+      if (!file) {
+        toast.error("Nenhum arquivo selecionado");
+        return;
+      }
+
+      if (!user) {
+        toast.error("Usuário não autenticado");
+        return;
+      }
+
+      // Validar tipo de arquivo
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+      if (!allowedTypes.includes(file.type)) {
+        toast.error("Formato não suportado. Use: JPG, PNG, GIF ou WebP");
+        return;
+      }
+
+      // Validar tamanho do arquivo (máximo 5MB)
+      const maxSize = 5 * 1024 * 1024; // 5MB
+      if (file.size > maxSize) {
+        toast.error("Arquivo muito grande. Tamanho máximo: 5MB");
+        return;
+      }
+
+      const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+      const fileName = `${user.id}_profile.${fileExt}`;
+      const filePath = `profiles/${fileName}`;
+
+      console.log('Uploading file:', { fileName, fileType: file.type, fileSize: file.size });
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file, {
+          upsert: true,
+          contentType: file.type
+        });
+
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        throw uploadError;
+      }
+
+      const { data } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+
+      if (data?.publicUrl) {
+        setProfileImage(data.publicUrl);
+        toast.success("Foto de perfil atualizada com sucesso!");
+      } else {
+        throw new Error("Erro ao obter URL da imagem");
+      }
+
+    } catch (error: any) {
+      console.error('Error uploading file:', error);
+      
+      if (error.message?.includes('Bucket not found')) {
+        toast.error("Storage não configurado. Entre em contato com o suporte.");
+      } else if (error.message?.includes('new row violates row-level security')) {
+        toast.error("Permissão negada para upload. Verifique as configurações de segurança.");
+      } else {
+        toast.error(`Erro ao fazer upload da foto: ${error.message || 'Erro desconhecido'}`);
+      }
+    } finally {
+      setUploading(false);
+      // Limpar o input para permitir o mesmo arquivo novamente
+      if (event.target) {
+        event.target.value = '';
+      }
     }
   };
 
@@ -181,9 +272,10 @@ export function AppSidebar() {
                 <Input
                   id="profile-upload"
                   type="file"
-                  accept="image/*"
+                  accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
                   onChange={handleImageUpload}
                   className="hidden"
+                  disabled={uploading}
                 />
               </label>
             </div>
@@ -193,9 +285,13 @@ export function AppSidebar() {
               <p className="text-sm font-medium truncate px-2">
                 {user?.email || "Usuário"}
               </p>
-              <p className="text-xs text-muted-foreground">
-                Conectado
-              </p>
+              {uploading ? (
+                <p className="text-xs text-blue-500">Fazendo upload...</p>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  Conectado
+                </p>
+              )}
             </div>
           </div>
         </div>
