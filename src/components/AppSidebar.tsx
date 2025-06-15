@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { LayoutDashboard, Users, Crown, Calendar, Bell, CalendarDays, ArrowRightLeft, DollarSign, UserCheck, Settings, Cog } from "lucide-react";
@@ -27,7 +26,7 @@ const leadsItems: MenuItem[] = [{
   title: "Leads",
   url: "/leads",
   icon: Users,
-  match: (pathname: string) => pathname === "/leads" || (pathname.startsWith("/leads/") && !pathname.startsWith("/leads-"))
+  match: (pathname: string) => pathname === "/leads" && !pathname.startsWith("/leads/")
 }, {
   title: "Leads Premium",
   url: "/leads-premium",
