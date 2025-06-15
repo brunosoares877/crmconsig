@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { format, parseISO, isSameDay } from "date-fns";
@@ -48,7 +49,7 @@ const RemindersCalendar = () => {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedDay, setSelectedDay] = useState<Date | undefined>(new Date());
-  const [daysWithReminders, setDaysWithReminders] = useState<DayWithReminders[]>([]);
+  const [daysWithReminders, setDaysWithReminders] = useState<Date[]>([]);
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -82,28 +83,16 @@ const RemindersCalendar = () => {
   };
 
   const processReminders = (remindersList: Reminder[]) => {
-    const daysMap = new Map<string, Reminder[]>();
+    const uniqueDates = new Set<string>();
     
     remindersList.forEach(reminder => {
       const dueDate = parseISO(reminder.due_date);
       const dateKey = format(dueDate, 'yyyy-MM-dd');
-      
-      if (!daysMap.has(dateKey)) {
-        daysMap.set(dateKey, []);
-      }
-      
-      daysMap.get(dateKey)?.push(reminder);
+      uniqueDates.add(dateKey);
     });
     
-    const days: DayWithReminders[] = [];
-    daysMap.forEach((dayReminders, dateKey) => {
-      days.push({
-        date: parseISO(dateKey),
-        reminders: dayReminders
-      });
-    });
-    
-    setDaysWithReminders(days);
+    const dates = Array.from(uniqueDates).map(dateKey => parseISO(dateKey));
+    setDaysWithReminders(dates);
   };
 
   useEffect(() => {
@@ -219,10 +208,10 @@ const RemindersCalendar = () => {
                   onSelect={setSelectedDay}
                   className="pointer-events-auto"
                   modifiers={{
-                    highlighted: daysWithReminders.map(day => day.date)
+                    hasReminders: daysWithReminders
                   }}
                   modifiersStyles={{
-                    highlighted: { 
+                    hasReminders: { 
                       backgroundColor: "#E5DEFF",
                       fontWeight: "bold"
                     }
