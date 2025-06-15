@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import LeadCard from "./LeadCard";
 import EmptyState from "./EmptyState";
@@ -11,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import LeadForm from "./LeadForm";
+import { Link } from "react-router-dom";
 
 interface LeadListProps {
   searchQuery?: string;
@@ -242,11 +242,11 @@ const LeadList: React.FC<LeadListProps> = ({
           <span className="text-sm text-muted-foreground mr-2">
             Mostrando {filteredLeads.length} leads
           </span>
-          <Button variant="outline" className="gap-1" onClick={() => {
-          window.location.href = "/leads/import";
-        }}>
-            <Plus className="h-3.5 w-3.5" />
-            <span>Importar</span>
+          <Button asChild variant="outline" className="gap-1">
+            <Link to="/leads/import">
+              <Plus className="h-3.5 w-3.5" />
+              <span>Importar</span>
+            </Link>
           </Button>
         </div>
       </div>
