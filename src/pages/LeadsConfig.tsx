@@ -9,6 +9,7 @@ import { Plus, Trash2, Edit, Save, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 // Default data from other components
 const DEFAULT_BANKS = [
@@ -447,11 +448,34 @@ const LeadsConfig = () => {
                         Código: {bank.code || "Não informado"}
                       </div>
                     </div>
-                    {!bank.id.startsWith('default-') && (
-                      <Button variant="destructive" size="sm" onClick={() => deleteBank(bank.id)}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {bank.id.startsWith('default-') && (
+                        <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">Padrão</span>
+                      )}
+                      {!bank.id.startsWith('default-') && (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="destructive" size="sm">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Tem certeza que deseja remover o banco "{bank.name}"? Esta ação não pode ser desfeita.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => deleteBank(bank.id)}>
+                                Remover
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -504,11 +528,34 @@ const LeadsConfig = () => {
                         Código: {product.code || "Não informado"}
                       </div>
                     </div>
-                    {!product.id.startsWith('default-') && (
-                      <Button variant="destructive" size="sm" onClick={() => deleteProduct(product.id)}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {product.id.startsWith('default-') && (
+                        <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">Padrão</span>
+                      )}
+                      {!product.id.startsWith('default-') && (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="destructive" size="sm">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Tem certeza que deseja remover o produto "{product.name}"? Esta ação não pode ser desfeita.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => deleteProduct(product.id)}>
+                                Remover
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -561,11 +608,34 @@ const LeadsConfig = () => {
                         Código: {benefit.code || "Não informado"}
                       </div>
                     </div>
-                    {benefit.id < 1000 && (
-                      <Button variant="destructive" size="sm" onClick={() => deleteBenefit(benefit.id)}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {benefit.id >= 1000 && (
+                        <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">Padrão</span>
+                      )}
+                      {benefit.id < 1000 && (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="destructive" size="sm">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Tem certeza que deseja remover o tipo de benefício "{benefit.description}"? Esta ação não pode ser desfeita.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => deleteBenefit(benefit.id)}>
+                                Remover
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
