@@ -277,22 +277,24 @@ const LeadsConfig = () => {
   };
 
   const deleteBenefit = async (id: number) => {
-    // Check if it's a default benefit (id >= 1000)
-    if (id >= 1000) {
-      toast.error("Não é possível remover tipos de benefícios padrão");
-      return;
-    }
-
     try {
-      const { error } = await supabase
-        .from('benefit_types')
-        .delete()
-        .eq('id', id);
+      // Check if it's a default benefit (id >= 1000)
+      if (id >= 1000) {
+        // For default benefits, just remove from local state
+        setBenefitTypes(benefitTypes.filter(b => b.id !== id));
+        toast.success("Tipo de benefício removido com sucesso!");
+      } else {
+        // For database benefits, delete from Supabase
+        const { error } = await supabase
+          .from('benefit_types')
+          .delete()
+          .eq('id', id);
 
-      if (error) throw error;
+        if (error) throw error;
 
-      setBenefitTypes(benefitTypes.filter(b => b.id !== id));
-      toast.success("Tipo de benefício removido com sucesso!");
+        setBenefitTypes(benefitTypes.filter(b => b.id !== id));
+        toast.success("Tipo de benefício removido com sucesso!");
+      }
     } catch (error: any) {
       console.error('Error deleting benefit:', error);
       toast.error(`Erro ao remover tipo de benefício: ${error.message}`);
@@ -324,12 +326,6 @@ const LeadsConfig = () => {
   };
 
   const deleteBank = (id: string) => {
-    // Check if it's a default bank
-    if (id.startsWith('default-')) {
-      toast.error("Não é possível remover bancos padrão");
-      return;
-    }
-
     const updatedBanks = banks.filter(b => b.id !== id);
     setBanks(updatedBanks);
     
@@ -365,12 +361,6 @@ const LeadsConfig = () => {
   };
 
   const deleteProduct = (id: string) => {
-    // Check if it's a default product
-    if (id.startsWith('default-')) {
-      toast.error("Não é possível remover produtos padrão");
-      return;
-    }
-
     const updatedProducts = products.filter(p => p.id !== id);
     setProducts(updatedProducts);
     
@@ -452,29 +442,27 @@ const LeadsConfig = () => {
                       {bank.id.startsWith('default-') && (
                         <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">Padrão</span>
                       )}
-                      {!bank.id.startsWith('default-') && (
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="destructive" size="sm">
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Tem certeza que deseja remover o banco "{bank.name}"? Esta ação não pode ser desfeita.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => deleteBank(bank.id)}>
-                                Remover
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      )}
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="destructive" size="sm">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Tem certeza que deseja remover o banco "{bank.name}"? Esta ação não pode ser desfeita.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => deleteBank(bank.id)}>
+                              Remover
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
                   </div>
                 ))}
@@ -532,29 +520,27 @@ const LeadsConfig = () => {
                       {product.id.startsWith('default-') && (
                         <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">Padrão</span>
                       )}
-                      {!product.id.startsWith('default-') && (
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="destructive" size="sm">
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Tem certeza que deseja remover o produto "{product.name}"? Esta ação não pode ser desfeita.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => deleteProduct(product.id)}>
-                                Remover
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      )}
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="destructive" size="sm">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Tem certeza que deseja remover o produto "{product.name}"? Esta ação não pode ser desfeita.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => deleteProduct(product.id)}>
+                              Remover
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
                   </div>
                 ))}
@@ -612,29 +598,27 @@ const LeadsConfig = () => {
                       {benefit.id >= 1000 && (
                         <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">Padrão</span>
                       )}
-                      {benefit.id < 1000 && (
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="destructive" size="sm">
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Tem certeza que deseja remover o tipo de benefício "{benefit.description}"? Esta ação não pode ser desfeita.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => deleteBenefit(benefit.id)}>
-                                Remover
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      )}
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="destructive" size="sm">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Tem certeza que deseja remover o tipo de benefício "{benefit.description}"? Esta ação não pode ser desfeita.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => deleteBenefit(benefit.id)}>
+                              Remover
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
                   </div>
                 ))}
