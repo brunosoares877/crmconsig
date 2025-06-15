@@ -44,6 +44,38 @@ const testimonials = [
     stars: 5,
     date: "2 meses atrás",
     avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&h=150&fit=crop&crop=face"
+  },
+  {
+    name: "Roberto Lima",
+    role: "Consultor de Crédito",
+    content: "Aumentei minha produtividade em 60%! O sistema me permite focar no que realmente importa: fechar negócios.",
+    stars: 5,
+    date: "3 semanas atrás",
+    avatar: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150&h=150&fit=crop&crop=face"
+  },
+  {
+    name: "Fernanda Costa",
+    role: "Analista Comercial",
+    content: "Nunca foi tão fácil acompanhar o funil de vendas. O CRM me dá total controle sobre meus processos.",
+    stars: 5,
+    date: "1 semana atrás",
+    avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&h=150&fit=crop&crop=face"
+  },
+  {
+    name: "Diego Almeida",
+    role: "Gerente de Relacionamento",
+    content: "A automação dos lembretes salvou meu negócio! Não perco mais nenhum follow-up importante.",
+    stars: 5,
+    date: "2 semanas atrás",
+    avatar: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150&h=150&fit=crop&crop=face"
+  },
+  {
+    name: "Lucia Fernandes",
+    role: "Diretora Comercial",
+    content: "Sistema robusto e confiável. Minha equipe triplicou os resultados desde que começamos a usar o LeadConsig.",
+    stars: 5,
+    date: "1 mês atrás",
+    avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&h=150&fit=crop&crop=face"
   }
 ];
 
@@ -57,7 +89,7 @@ const Testimonials = () => {
         
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {testimonials.slice(0, 4).map((testimonial, index) => (
+            {testimonials.slice(0, 8).map((testimonial, index) => (
               <Card key={index} className="h-full">
                 <CardContent className="p-6">
                   <div className="flex items-center gap-3 mb-4">
