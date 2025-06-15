@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import PageLayout from "@/components/PageLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,7 +23,7 @@ interface Product {
 }
 
 interface BenefitType {
-  id: string;
+  id: number;
   description: string;
   code: string;
 }
@@ -46,7 +45,7 @@ const LeadsConfig = () => {
   // Edit states
   const [editingBank, setEditingBank] = useState<string | null>(null);
   const [editingProduct, setEditingProduct] = useState<string | null>(null);
-  const [editingBenefit, setEditingBenefit] = useState<string | null>(null);
+  const [editingBenefit, setEditingBenefit] = useState<number | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -119,7 +118,7 @@ const LeadsConfig = () => {
     }
   };
 
-  const deleteBenefit = async (id: string) => {
+  const deleteBenefit = async (id: number) => {
     try {
       const { error } = await supabase
         .from('benefit_types')
