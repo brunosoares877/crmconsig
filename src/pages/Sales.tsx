@@ -1,3 +1,4 @@
+
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -99,28 +100,55 @@ const Sales = () => {
         <FAQ />
 
         {/* CTA Section */}
-        <section className="text-white py-12 md:py-16 bg-gradient-to-r from-blue-600 to-blue-700 w-full">
-          <div className="container mx-auto px-4 text-center max-w-4xl">
-            <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-4 md:mb-6 text-white">
+        <section className="text-white py-16 md:py-20 bg-gradient-to-r from-blue-600 to-blue-700 w-full relative overflow-hidden">
+          {/* Background pattern for visual appeal */}
+          <div className="absolute inset-0 opacity-10">
+            <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-white/20 to-transparent"></div>
+          </div>
+          
+          <div className="container mx-auto px-4 text-center max-w-4xl relative z-10">
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6 md:mb-8 text-white">
               Pronto para aumentar suas vendas?
             </h2>
-            <p className="text-lg md:text-xl mb-6 md:mb-8 text-blue-100">
+            <p className="text-xl md:text-2xl mb-8 md:mb-12 text-blue-100 leading-relaxed">
               Experimente nosso CRM por 7 dias gratuitamente e veja como podemos ajudar sua empresa a crescer.
             </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            
+            {/* Main CTA Button - Made much more prominent */}
+            <div className="mb-8 md:mb-10">
               <Button 
                 onClick={handleStartTrial} 
                 size="lg" 
-                className="text-base md:text-lg px-6 md:px-8 py-4 md:py-6 bg-white text-blue-600 hover:bg-blue-50 w-full sm:w-auto"
+                className="text-xl md:text-2xl px-12 md:px-16 py-6 md:py-8 bg-white text-blue-600 hover:bg-blue-50 shadow-2xl hover:shadow-3xl transform hover:scale-105 transition-all duration-300 font-bold border-4 border-white/20 hover:border-white/40 w-full sm:w-auto min-w-[320px]"
               >
-                Começar agora mesmo <ArrowRight className="ml-2 h-4 w-4 md:h-5 md:w-5" />
+                🚀 Começar agora mesmo <ArrowRight className="ml-3 h-6 w-6 md:h-7 md:w-7" />
               </Button>
+            </div>
+            
+            {/* Secondary action */}
+            <div className="flex justify-center">
               <WhatsAppButton 
                 phoneNumber="5584991850149" 
                 message="Olá! Tenho dúvidas sobre o LeadConsig" 
                 label="Falar com Suporte"
-                className="w-full sm:w-auto"
+                className="bg-green-500 hover:bg-green-600 text-white px-8 py-4 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
               />
+            </div>
+            
+            {/* Trust indicators */}
+            <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-6 text-blue-100">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-green-400 rounded-full"></div>
+                <span className="text-sm">7 dias grátis</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-green-400 rounded-full"></div>
+                <span className="text-sm">Sem cartão de crédito</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-green-400 rounded-full"></div>
+                <span className="text-sm">Cancele quando quiser</span>
+              </div>
             </div>
           </div>
         </section>
