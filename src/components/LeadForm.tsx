@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { X } from "lucide-react";
 import BenefitTypeSelect from "@/components/forms/BenefitTypeSelect";
 import BankSelect from "@/components/forms/BankSelect";
+import ProductSelect from "@/components/forms/ProductSelect";
 import EmployeeSelect from "@/components/EmployeeSelect";
 
 const formSchema = z.object({
@@ -202,23 +203,11 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
           defaultValue={initialData?.bank}
         />
 
-        <div>
-          <Label htmlFor="product">Produto</Label>
-          <Select onValueChange={(value) => setValue("product", value)} defaultValue={initialData?.product}>
-            <SelectTrigger>
-              <SelectValue placeholder="Selecione o produto" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="CREDITO PIX/CARTAO">CREDITO PIX/CARTAO</SelectItem>
-              <SelectItem value="EMPRESTIMO CONSIGNADO">EMPRESTIMO CONSIGNADO</SelectItem>
-              <SelectItem value="CARTAO CONSIGNADO">CARTAO CONSIGNADO</SelectItem>
-              <SelectItem value="PORTABILIDADE">PORTABILIDADE</SelectItem>
-              <SelectItem value="REFINANCIAMENTO">REFINANCIAMENTO</SelectItem>
-              <SelectItem value="SAQUE ANIVERSARIO">SAQUE ANIVERSARIO</SelectItem>
-              <SelectItem value="ANTECIPACAO 13º">ANTECIPACAO 13º</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        <ProductSelect
+          value={watch("product")}
+          onValueChange={(value) => setValue("product", value)}
+          defaultValue={initialData?.product}
+        />
 
         <div>
           <Label htmlFor="amount">Valor</Label>
@@ -301,7 +290,7 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
             </div>
           )}
         </div>
-      </div>
+      )}
 
       <div>
         <Label htmlFor="notes">Observações</Label>

@@ -1,11 +1,12 @@
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
-const BENEFIT_TYPES = [
+const DEFAULT_BENEFIT_TYPES = [
   { code: "01", description: "Pensão por morte – trabalhador rural" },
   { code: "02", description: "Pensão por morte acidentária" },
   { code: "03", description: "Pensão por morte – empregador rural" },
@@ -72,22 +73,58 @@ interface BenefitTypeSelectProps {
 
 const BenefitTypeSelect: React.FC<BenefitTypeSelectProps> = ({ value, onValueChange, defaultValue }) => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [isOpen, setIsOpen] = useState(false);
+  const [dbBenefitTypes, setDbBenefitTypes] = useState([]);
+
+  useEffect(() => {
+    fetchBenefitTypes();
+  }, []);
+
+  const fetchBenefitTypes = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('benefit_types')
+        .select('*')
+        .order('description');
+
+      if (error) throw error;
+      setDbBenefitTypes(data || []);
+    } catch (error) {
+      console.error('Error fetching benefit types:', error);
+    }
+  };
+
+  const allBenefitTypes = useMemo(() => {
+    // Combine default benefit types with database benefit types
+    const combined = [...DEFAULT_BENEFIT_TYPES];
+    
+    dbBenefitTypes.forEach((dbBenefit: any) => {
+      // Check if benefit already exists
+      const exists = combined.find(benefit => benefit.code === dbBenefit.code);
+      if (!exists) {
+        combined.push({
+          code: dbBenefit.code,
+          description: dbBenefit.description
+        });
+      }
+    });
+    
+    return combined.sort((a, b) => a.description.localeCompare(b.description));
+  }, [dbBenefitTypes]);
 
   const filteredBenefits = useMemo(() => {
-    if (!searchTerm) return BENEFIT_TYPES;
+    if (!searchTerm) return allBenefitTypes;
     
     const search = searchTerm.toLowerCase();
-    return BENEFIT_TYPES.filter(benefit => 
+    return allBenefitTypes.filter(benefit => 
       benefit.code.includes(search) || 
       benefit.description.toLowerCase().includes(search)
     );
-  }, [searchTerm]);
+  }, [searchTerm, allBenefitTypes]);
 
   return (
     <div>
       <Label htmlFor="benefit_type">Tipo de Benefício</Label>
-      <Select value={value} onValueChange={onValueChange} defaultValue={defaultValue} onOpenChange={setIsOpen}>
+      <Select value={value} onValueChange={onValueChange} defaultValue={defaultValue}>
         <SelectTrigger>
           <SelectValue placeholder="Selecione o tipo" />
         </SelectTrigger>

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import PageLayout from "@/components/PageLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -55,23 +56,39 @@ const LeadsConfig = () => {
     try {
       setLoading(true);
       
-      // Fetch banks (mock data for now)
-      setBanks([
-        { id: "1", name: "Banco do Brasil", code: "bb" },
-        { id: "2", name: "Caixa Econômica Federal", code: "caixa" },
-        { id: "3", name: "Itaú", code: "itau" },
-        { id: "4", name: "Bradesco", code: "bradesco" },
-        { id: "5", name: "Santander", code: "santander" }
-      ]);
+      // Load banks from localStorage
+      const savedBanks = localStorage.getItem('configBanks');
+      if (savedBanks) {
+        setBanks(JSON.parse(savedBanks));
+      } else {
+        // Default banks
+        const defaultBanks = [
+          { id: "1", name: "Banco do Brasil", code: "001" },
+          { id: "2", name: "Caixa Econômica Federal", code: "104" },
+          { id: "3", name: "Itaú", code: "341" },
+          { id: "4", name: "Bradesco", code: "237" },
+          { id: "5", name: "Santander", code: "033" }
+        ];
+        setBanks(defaultBanks);
+        localStorage.setItem('configBanks', JSON.stringify(defaultBanks));
+      }
 
-      // Fetch products (mock data for now)
-      setProducts([
-        { id: "1", name: "Empréstimo Novo", code: "novo" },
-        { id: "2", name: "Portabilidade", code: "portabilidade" },
-        { id: "3", name: "Refinanciamento", code: "refinanciamento" },
-        { id: "4", name: "FGTS", code: "fgts" },
-        { id: "5", name: "Cartão de Crédito", code: "cartao" }
-      ]);
+      // Load products from localStorage
+      const savedProducts = localStorage.getItem('configProducts');
+      if (savedProducts) {
+        setProducts(JSON.parse(savedProducts));
+      } else {
+        // Default products
+        const defaultProducts = [
+          { id: "1", name: "Empréstimo Novo", code: "novo" },
+          { id: "2", name: "Portabilidade", code: "portabilidade" },
+          { id: "3", name: "Refinanciamento", code: "refinanciamento" },
+          { id: "4", name: "FGTS", code: "fgts" },
+          { id: "5", name: "Cartão de Crédito", code: "cartao" }
+        ];
+        setProducts(defaultProducts);
+        localStorage.setItem('configProducts', JSON.stringify(defaultProducts));
+      }
 
       // Fetch benefit types from Supabase
       const { data: benefitData, error: benefitError } = await supabase
@@ -91,8 +108,8 @@ const LeadsConfig = () => {
   };
 
   const addBenefit = async () => {
-    if (!newBenefitName.trim() || !newBenefitCode.trim()) {
-      toast.error("Preencha todos os campos");
+    if (!newBenefitName.trim()) {
+      toast.error("Descrição é obrigatória");
       return;
     }
 
@@ -101,7 +118,7 @@ const LeadsConfig = () => {
         .from('benefit_types')
         .insert({
           description: newBenefitName.trim(),
-          code: newBenefitCode.trim()
+          code: newBenefitCode.trim() || null
         })
         .select()
         .single();
@@ -135,50 +152,57 @@ const LeadsConfig = () => {
     }
   };
 
-  // Mock functions for banks and products (since they're not in database yet)
   const addBank = () => {
-    if (!newBankName.trim() || !newBankCode.trim()) {
-      toast.error("Preencha todos os campos");
+    if (!newBankName.trim()) {
+      toast.error("Nome do banco é obrigatório");
       return;
     }
 
     const newBank = {
       id: Date.now().toString(),
       name: newBankName.trim(),
-      code: newBankCode.trim()
+      code: newBankCode.trim() || Date.now().toString()
     };
 
-    setBanks([...banks, newBank]);
+    const updatedBanks = [...banks, newBank];
+    setBanks(updatedBanks);
+    localStorage.setItem('configBanks', JSON.stringify(updatedBanks));
     setNewBankName("");
     setNewBankCode("");
     toast.success("Banco adicionado com sucesso!");
   };
 
   const deleteBank = (id: string) => {
-    setBanks(banks.filter(b => b.id !== id));
+    const updatedBanks = banks.filter(b => b.id !== id);
+    setBanks(updatedBanks);
+    localStorage.setItem('configBanks', JSON.stringify(updatedBanks));
     toast.success("Banco removido com sucesso!");
   };
 
   const addProduct = () => {
-    if (!newProductName.trim() || !newProductCode.trim()) {
-      toast.error("Preencha todos os campos");
+    if (!newProductName.trim()) {
+      toast.error("Nome do produto é obrigatório");
       return;
     }
 
     const newProduct = {
       id: Date.now().toString(),
       name: newProductName.trim(),
-      code: newProductCode.trim()
+      code: newProductCode.trim() || Date.now().toString()
     };
 
-    setProducts([...products, newProduct]);
+    const updatedProducts = [...products, newProduct];
+    setProducts(updatedProducts);
+    localStorage.setItem('configProducts', JSON.stringify(updatedProducts));
     setNewProductName("");
     setNewProductCode("");
     toast.success("Produto adicionado com sucesso!");
   };
 
   const deleteProduct = (id: string) => {
-    setProducts(products.filter(p => p.id !== id));
+    const updatedProducts = products.filter(p => p.id !== id);
+    setProducts(updatedProducts);
+    localStorage.setItem('configProducts', JSON.stringify(updatedProducts));
     toast.success("Produto removido com sucesso!");
   };
 
@@ -215,7 +239,7 @@ const LeadsConfig = () => {
             <CardContent className="space-y-4">
               <div className="flex gap-4">
                 <div className="flex-1">
-                  <Label htmlFor="bankName">Nome do Banco</Label>
+                  <Label htmlFor="bankName">Nome do Banco *</Label>
                   <Input
                     id="bankName"
                     value={newBankName}
@@ -224,12 +248,12 @@ const LeadsConfig = () => {
                   />
                 </div>
                 <div className="flex-1">
-                  <Label htmlFor="bankCode">Código</Label>
+                  <Label htmlFor="bankCode">Código (opcional)</Label>
                   <Input
                     id="bankCode"
                     value={newBankCode}
                     onChange={(e) => setNewBankCode(e.target.value)}
-                    placeholder="Ex: central"
+                    placeholder="Ex: 001"
                   />
                 </div>
                 <div className="flex items-end">
@@ -268,7 +292,7 @@ const LeadsConfig = () => {
             <CardContent className="space-y-4">
               <div className="flex gap-4">
                 <div className="flex-1">
-                  <Label htmlFor="productName">Nome do Produto</Label>
+                  <Label htmlFor="productName">Nome do Produto *</Label>
                   <Input
                     id="productName"
                     value={newProductName}
@@ -277,7 +301,7 @@ const LeadsConfig = () => {
                   />
                 </div>
                 <div className="flex-1">
-                  <Label htmlFor="productCode">Código</Label>
+                  <Label htmlFor="productCode">Código (opcional)</Label>
                   <Input
                     id="productCode"
                     value={newProductCode}
@@ -321,7 +345,7 @@ const LeadsConfig = () => {
             <CardContent className="space-y-4">
               <div className="flex gap-4">
                 <div className="flex-1">
-                  <Label htmlFor="benefitName">Descrição do Benefício</Label>
+                  <Label htmlFor="benefitName">Descrição do Benefício *</Label>
                   <Input
                     id="benefitName"
                     value={newBenefitName}
@@ -330,7 +354,7 @@ const LeadsConfig = () => {
                   />
                 </div>
                 <div className="flex-1">
-                  <Label htmlFor="benefitCode">Código</Label>
+                  <Label htmlFor="benefitCode">Código (opcional)</Label>
                   <Input
                     id="benefitCode"
                     value={newBenefitCode}
@@ -351,7 +375,9 @@ const LeadsConfig = () => {
                   <div key={benefit.id} className="flex items-center justify-between p-3 border rounded-lg">
                     <div>
                       <div className="font-medium">{benefit.description}</div>
-                      <div className="text-sm text-muted-foreground">Código: {benefit.code}</div>
+                      <div className="text-sm text-muted-foreground">
+                        Código: {benefit.code || "Não informado"}
+                      </div>
                     </div>
                     <Button variant="destructive" size="sm" onClick={() => deleteBenefit(benefit.id)}>
                       <Trash2 className="h-4 w-4" />

@@ -1,11 +1,11 @@
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search } from "lucide-react";
 
-const BANKS = [
+const DEFAULT_BANKS = [
   { code: "001", name: "Banco do Brasil" },
   { code: "003", name: "Banco da Amazônia" },
   { code: "004", name: "Banco do Nordeste" },
@@ -45,16 +45,47 @@ interface BankSelectProps {
 
 const BankSelect: React.FC<BankSelectProps> = ({ value, onValueChange, defaultValue }) => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [configBanks, setConfigBanks] = useState([]);
+
+  useEffect(() => {
+    // Get banks from localStorage (from config page)
+    const savedBanks = localStorage.getItem('configBanks');
+    if (savedBanks) {
+      try {
+        setConfigBanks(JSON.parse(savedBanks));
+      } catch (error) {
+        console.error('Error parsing saved banks:', error);
+      }
+    }
+  }, []);
+
+  const allBanks = useMemo(() => {
+    // Combine default banks with configured banks
+    const combined = [...DEFAULT_BANKS];
+    
+    configBanks.forEach((configBank: any) => {
+      // Check if bank already exists
+      const exists = combined.find(bank => bank.code === configBank.code);
+      if (!exists) {
+        combined.push({
+          code: configBank.code,
+          name: configBank.name
+        });
+      }
+    });
+    
+    return combined.sort((a, b) => a.name.localeCompare(b.name));
+  }, [configBanks]);
 
   const filteredBanks = useMemo(() => {
-    if (!searchTerm) return BANKS;
+    if (!searchTerm) return allBanks;
     
     const search = searchTerm.toLowerCase();
-    return BANKS.filter(bank => 
+    return allBanks.filter(bank => 
       bank.code.includes(search) || 
       bank.name.toLowerCase().includes(search)
     );
-  }, [searchTerm]);
+  }, [searchTerm, allBanks]);
 
   return (
     <div>
