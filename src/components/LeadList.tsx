@@ -242,12 +242,6 @@ const LeadList: React.FC<LeadListProps> = ({
           <span className="text-sm text-muted-foreground mr-2">
             Mostrando {filteredLeads.length} leads
           </span>
-          <Button asChild variant="outline" className="gap-1">
-            <Link to="/leads/import">
-              <Plus className="h-3.5 w-3.5" />
-              <span>Importar</span>
-            </Link>
-          </Button>
         </div>
       </div>
       
