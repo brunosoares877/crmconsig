@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -267,34 +268,32 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete }) => {
       <Card className="hover:shadow-md transition-shadow">
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between">
-            <div className="space-y-1">
+            <div className="space-y-1 flex-1">
               <div className="flex flex-wrap items-center gap-2">
-                <CardTitle className="text-lg leading-none flex items-center gap-2">
+                <CardTitle className="text-lg leading-none">
                   {lead.name}
-                  {/* Exibe as etiquetas ao lado do nome */}
-                  {!tagsLoading && tags.length > 0 && (
-                    <div className="flex flex-wrap items-center gap-1">
-                      {tags.map(
-                        (tag) =>
-                          tag.lead_tags && (
-                            <Badge
-                              key={tag.lead_tags.id}
-                              variant="outline"
-                              className="px-2 py-0.5 rounded-full text-xs border"
-                              style={{
-                                background: tag.lead_tags.color,
-                                color: "#fff",
-                                borderColor: tag.lead_tags.color
-                              }}
-                            >
-                              <Tag className="h-3 w-3 mr-1 inline" style={{ strokeWidth: 2 }} />
-                              {tag.lead_tags.name}
-                            </Badge>
-                          )
-                      )}
-                    </div>
-                  )}
                 </CardTitle>
+                {/* Exibe as etiquetas ao lado do nome */}
+                {!tagsLoading && tags.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-1">
+                    {tags.map(
+                      (tag) =>
+                        tag.lead_tags && (
+                          <Badge
+                            key={tag.lead_tags.id}
+                            variant="outline"
+                            className="px-2 py-0.5 text-xs border-0"
+                            style={{
+                              backgroundColor: tag.lead_tags.color,
+                              color: "#fff"
+                            }}
+                          >
+                            {tag.lead_tags.name}
+                          </Badge>
+                        )
+                    )}
+                  </div>
+                )}
               </div>
               <CardDescription className="text-sm">
                 Cadastrado em {lead.createdAt}
@@ -438,3 +437,4 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete }) => {
 };
 
 export default LeadCard;
+
