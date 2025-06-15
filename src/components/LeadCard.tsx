@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -7,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { MoreHorizontal, Phone, Mail, DollarSign, Building, User, Edit, Trash2, Calendar, FileText, Tag } from "lucide-react";
+import { MoreHorizontal, Phone, Mail, DollarSign, Building, User, Edit, Trash2, Calendar, FileText, Tag, CheckCircle } from "lucide-react";
 import { Lead } from "@/types/models";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -244,6 +242,37 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete }) => {
     }
   };
 
+  const handleMarkAsConverted = async () => {
+    setIsUpdating(true);
+    try {
+      const { data, error } = await supabase
+        .from("leads")
+        .update({ status: 'convertido' })
+        .eq("id", lead.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const updatedLead = {
+        ...data,
+        createdAt: new Date(data.created_at).toLocaleDateString('pt-BR', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric'
+        })
+      } as Lead;
+
+      onUpdate(updatedLead);
+      toast.success("Lead marcado como convertido!");
+    } catch (error: any) {
+      console.error("Error converting lead:", error);
+      toast.error(`Erro ao converter lead: ${error.message}`);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   const formatCurrency = (value: string) => {
     if (!value) return "Não informado";
     const numericValue = parseFloat(value.replace(/[^\d,]/g, '').replace(',', '.'));
@@ -310,6 +339,16 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete }) => {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
+                  {lead.status !== 'convertido' && (
+                    <DropdownMenuItem 
+                      onClick={handleMarkAsConverted}
+                      disabled={isUpdating}
+                      className="text-green-600"
+                    >
+                      <CheckCircle className="mr-2 h-4 w-4" />
+                      Marcar como Convertido
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem onClick={() => setIsEditDialogOpen(true)}>
                     <Edit className="mr-2 h-4 w-4" />
                     Editar
@@ -437,4 +476,3 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete }) => {
 };
 
 export default LeadCard;
-
