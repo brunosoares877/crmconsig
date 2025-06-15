@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, PhoneCall, CalendarCheck, TrendingUp, TrendingDown, User, Search, BarChart3, DollarSign, Calendar, FileText, CheckCircle } from "lucide-react";
+import { Users, PhoneCall, CalendarCheck, TrendingUp, TrendingDown, User, Search, BarChart3, DollarSign, Calendar, FileText, CheckCircle, Clock, AlertTriangle, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { format, startOfToday, endOfToday, startOfMonth, endOfMonth, differenceInMinutes, startOfWeek, endOfWeek } from "date-fns";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -21,7 +21,10 @@ const Dashboard = () => {
     monthlyProduction: 0,
     weeklyConversionRate: 0,
     proposalsDigitatedToday: 0,
-    conversionsValue: 0
+    emAndamento: 0,
+    pendente: 0,
+    pago: 0,
+    cancelado: 0
   });
   const [isLoading, setIsLoading] = useState(true);
   const [dailyProduction, setDailyProduction] = useState([]);
@@ -79,42 +82,46 @@ const Dashboard = () => {
 
         console.log("Proposals digitadas today:", proposalsDigitatedToday);
 
-        // Get proposals digitadas (leads que tem amount preenchido) do mês
+        // Get financial status counts
         const {
-          count: proposalsDigitated
+          count: emAndamento
         } = await supabase.from('leads')
           .select('*', { count: 'exact', head: true })
+          .eq('status', 'negociando')
           .not('amount', 'is', null)
           .neq('amount', '')
           .gte('created_at', monthStart)
           .lte('created_at', monthEnd);
 
-        console.log("Proposals digitadas this month:", proposalsDigitated);
-
-        // Get conversões (leads convertidos) com valores do mês
         const {
-          data: conversionsData,
-          error: conversionsError
+          count: pendente
         } = await supabase.from('leads')
-          .select('amount')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'qualificado')
+          .not('amount', 'is', null)
+          .neq('amount', '')
+          .gte('created_at', monthStart)
+          .lte('created_at', monthEnd);
+
+        const {
+          count: pago
+        } = await supabase.from('leads')
+          .select('*', { count: 'exact', head: true })
           .eq('status', 'convertido')
           .not('amount', 'is', null)
           .neq('amount', '')
           .gte('created_at', monthStart)
           .lte('created_at', monthEnd);
-        
-        if (conversionsError) {
-          console.error('Error fetching conversions:', conversionsError);
-        }
 
-        // Calculate total conversions value
-        const conversionsValue = conversionsData ? conversionsData.reduce((total, lead) => {
-          const cleanAmount = lead.amount?.replace(/[^\d,]/g, '').replace(',', '.') || "0";
-          const amount = parseFloat(cleanAmount);
-          return isNaN(amount) ? total : total + amount;
-        }, 0) : 0;
-
-        console.log("Conversions value this month:", conversionsValue);
+        const {
+          count: cancelado
+        } = await supabase.from('leads')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'perdido')
+          .not('amount', 'is', null)
+          .neq('amount', '')
+          .gte('created_at', monthStart)
+          .lte('created_at', monthEnd);
 
         // Get average time between leads (in minutes)
         const {
@@ -305,7 +312,10 @@ const Dashboard = () => {
           monthlyProduction: monthlyProduction,
           weeklyConversionRate: weeklyConversionRate,
           proposalsDigitatedToday: proposalsDigitatedToday || 0,
-          conversionsValue: conversionsValue
+          emAndamento: emAndamento || 0,
+          pendente: pendente || 0,
+          pago: pago || 0,
+          cancelado: cancelado || 0
         });
 
         console.log("Updated metrics:", {
@@ -316,7 +326,10 @@ const Dashboard = () => {
           monthlyProduction: monthlyProduction,
           weeklyConversionRate: weeklyConversionRate,
           proposalsDigitatedToday: proposalsDigitatedToday || 0,
-          conversionsValue: conversionsValue
+          emAndamento: emAndamento || 0,
+          pendente: pendente || 0,
+          pago: pago || 0,
+          cancelado: cancelado || 0
         });
 
       } catch (error) {
@@ -375,30 +388,48 @@ const Dashboard = () => {
       iconBg: "bg-orange-50",
       iconColor: "text-orange-600"
     }, {
-      title: "Conversões",
-      value: `R$ ${metrics.conversionsValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
-      change: calculateChange(metrics.conversionsValue, metrics.conversionsValue - 1000),
-      subtitle: `Valor convertido no mês`,
+      title: "Em Andamento",
+      value: metrics.emAndamento.toString(),
+      change: calculateChange(metrics.emAndamento, metrics.emAndamento - 1),
+      subtitle: `Negociações em curso`,
+      positive: true,
+      icon: <Clock className="h-4 w-4 lg:h-5 lg:w-5" />,
+      iconBg: "bg-blue-50",
+      iconColor: "text-blue-600"
+    }, {
+      title: "Pendente",
+      value: metrics.pendente.toString(),
+      change: calculateChange(metrics.pendente, metrics.pendente - 1),
+      subtitle: `Aguardando aprovação`,
+      positive: true,
+      icon: <AlertTriangle className="h-4 w-4 lg:h-5 lg:w-5" />,
+      iconBg: "bg-yellow-50",
+      iconColor: "text-yellow-600"
+    }, {
+      title: "Pago",
+      value: metrics.pago.toString(),
+      change: calculateChange(metrics.pago, metrics.pago - 1),
+      subtitle: `Comissões pagas`,
       positive: true,
       icon: <CheckCircle className="h-4 w-4 lg:h-5 lg:w-5" />,
-      iconBg: "bg-emerald-50",
-      iconColor: "text-emerald-600"
+      iconBg: "bg-green-50",
+      iconColor: "text-green-600"
     }, {
-      title: "Produção Mensal",
-      value: `R$ ${metrics.monthlyProduction.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
-      change: calculateChange(metrics.monthlyProduction, metrics.monthlyProduction - 5000),
-      subtitle: `Total vendido no mês`,
-      positive: true,
-      icon: <DollarSign className="h-4 w-4 lg:h-5 lg:w-5" />,
-      iconBg: "bg-emerald-50",
-      iconColor: "text-emerald-600"
+      title: "Cancelado",
+      value: metrics.cancelado.toString(),
+      change: calculateChange(metrics.cancelado, metrics.cancelado - 1),
+      subtitle: `Negócios cancelados`,
+      positive: false,
+      icon: <X className="h-4 w-4 lg:h-5 lg:w-5" />,
+      iconBg: "bg-red-50",
+      iconColor: "text-red-600"
     }
   ];
 
   return (
     <div className="w-full px-0 md:px-0 lg:px-0 space-y-6">
       {/* Metrics Cards Grid */}
-      <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 md:gap-4 lg:gap-6">
+      <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7 gap-3 md:gap-4 lg:gap-6">
         {metricsData.map((metric, index) => (
           <MetricsCard key={index} {...metric} />
         ))}

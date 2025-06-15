@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { MoreHorizontal, Phone, Mail, DollarSign, Building, User, Edit, Trash2, Calendar, FileText, Tag, CheckCircle } from "lucide-react";
+import { MoreHorizontal, Phone, Mail, DollarSign, Building, User, Edit, Trash2, Calendar, FileText, Tag, CheckCircle, Clock, AlertTriangle, X } from "lucide-react";
 import { Lead } from "@/types/models";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -41,10 +41,10 @@ const statusColors = {
 const statusLabels = {
   novo: "Novo",
   contatado: "Contatado",
-  qualificado: "Qualificado",
-  negociando: "Em andamento",
-  convertido: "Aprovado",
-  perdido: "Recusado"
+  qualificado: "Pendente",
+  negociando: "Em Andamento",
+  convertido: "Pago",
+  perdido: "Cancelado"
 };
 
 const bankLabels = {
@@ -242,12 +242,12 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete }) => {
     }
   };
 
-  const handleMarkAsConverted = async () => {
+  const handleStatusChange = async (newStatus: string) => {
     setIsUpdating(true);
     try {
       const { data, error } = await supabase
         .from("leads")
-        .update({ status: 'convertido' })
+        .update({ status: newStatus })
         .eq("id", lead.id)
         .select()
         .single();
@@ -264,10 +264,10 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete }) => {
       } as Lead;
 
       onUpdate(updatedLead);
-      toast.success("Lead marcado como convertido!");
+      toast.success(`Lead marcado como ${statusLabels[newStatus as keyof typeof statusLabels]}!`);
     } catch (error: any) {
-      console.error("Error converting lead:", error);
-      toast.error(`Erro ao converter lead: ${error.message}`);
+      console.error("Error updating lead status:", error);
+      toast.error(`Erro ao atualizar status: ${error.message}`);
     } finally {
       setIsUpdating(false);
     }
@@ -339,15 +339,41 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete }) => {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  {lead.status !== 'convertido' && (
-                    <DropdownMenuItem 
-                      onClick={handleMarkAsConverted}
-                      disabled={isUpdating}
-                      className="text-green-600"
-                    >
-                      <CheckCircle className="mr-2 h-4 w-4" />
-                      Marcar como Convertido
-                    </DropdownMenuItem>
+                  {lead.amount && (
+                    <>
+                      <DropdownMenuItem 
+                        onClick={() => handleStatusChange('negociando')}
+                        disabled={isUpdating}
+                        className="text-blue-600"
+                      >
+                        <Clock className="mr-2 h-4 w-4" />
+                        Marcar como Em Andamento
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        onClick={() => handleStatusChange('qualificado')}
+                        disabled={isUpdating}
+                        className="text-yellow-600"
+                      >
+                        <AlertTriangle className="mr-2 h-4 w-4" />
+                        Marcar como Pendente
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        onClick={() => handleStatusChange('convertido')}
+                        disabled={isUpdating}
+                        className="text-green-600"
+                      >
+                        <CheckCircle className="mr-2 h-4 w-4" />
+                        Marcar como Pago
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        onClick={() => handleStatusChange('perdido')}
+                        disabled={isUpdating}
+                        className="text-red-600"
+                      >
+                        <X className="mr-2 h-4 w-4" />
+                        Marcar como Cancelado
+                      </DropdownMenuItem>
+                    </>
                   )}
                   <DropdownMenuItem onClick={() => setIsEditDialogOpen(true)}>
                     <Edit className="mr-2 h-4 w-4" />
