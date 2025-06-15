@@ -394,8 +394,8 @@ const Dashboard = () => {
       subtitle: `Negociações em curso`,
       positive: true,
       icon: <Clock className="h-4 w-4 lg:h-5 lg:w-5" />,
-      iconBg: "bg-blue-50",
-      iconColor: "text-blue-600"
+      iconBg: "bg-blue-100",      // azul mais claro
+      iconColor: "text-blue-500"  // azul mais claro
     }, {
       title: "Pendente",
       value: metrics.pendente.toString(),
@@ -403,7 +403,7 @@ const Dashboard = () => {
       subtitle: `Aguardando aprovação`,
       positive: true,
       icon: <AlertTriangle className="h-4 w-4 lg:h-5 lg:w-5" />,
-      iconBg: "bg-yellow-50",
+      iconBg: "bg-yellow-100",    // amarelo claro
       iconColor: "text-yellow-600"
     }, {
       title: "Pago",
@@ -412,7 +412,7 @@ const Dashboard = () => {
       subtitle: `Comissões pagas`,
       positive: true,
       icon: <CheckCircle className="h-4 w-4 lg:h-5 lg:w-5" />,
-      iconBg: "bg-green-50",
+      iconBg: "bg-green-100",     // verde claro
       iconColor: "text-green-600"
     }, {
       title: "Cancelado",
@@ -421,7 +421,7 @@ const Dashboard = () => {
       subtitle: `Negócios cancelados`,
       positive: false,
       icon: <X className="h-4 w-4 lg:h-5 lg:w-5" />,
-      iconBg: "bg-red-50",
+      iconBg: "bg-red-100",       // vermelho claro
       iconColor: "text-red-600"
     }
   ];
