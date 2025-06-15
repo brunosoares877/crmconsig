@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { downloadCsvTemplate } from "@/utils/csvTemplate";
 import { CsvParser, CsvLead, CsvParseResult } from "./CsvParser";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const ImportLeads = ({
   onLeadsImported
@@ -19,6 +20,7 @@ const ImportLeads = ({
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [parseResult, setParseResult] = useState<CsvParseResult | null>(null);
+  const [countInCurrentMonth, setCountInCurrentMonth] = useState(true);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -79,6 +81,11 @@ const ImportLeads = ({
         throw new Error("Sessão expirada. Faça login novamente.");
       }
 
+      // Define a data de criação baseada na opção escolhida
+      const createdAt = countInCurrentMonth 
+        ? new Date().toISOString()
+        : new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1).toISOString();
+
       const leadsToInsert = parseResult.leads.map(lead => ({
         name: lead.name,
         cpf: lead.cpf,
@@ -89,7 +96,7 @@ const ImportLeads = ({
         employee: lead.employee,
         status: "novo",
         user_id: session.user.id,
-        created_at: new Date().toISOString(),
+        created_at: createdAt,
         updated_at: new Date().toISOString()
       }));
 
@@ -102,10 +109,12 @@ const ImportLeads = ({
         throw new Error(`Erro ao salvar leads: ${error.message}`);
       }
 
-      toast.success(`${parseResult.leads.length} leads importados com sucesso!`);
+      const monthText = countInCurrentMonth ? "no mês atual" : "no mês anterior";
+      toast.success(`${parseResult.leads.length} leads importados com sucesso ${monthText}!`);
       setOpen(false);
       setFile(null);
       setParseResult(null);
+      setCountInCurrentMonth(true); // Reset to default
       onLeadsImported();
       
     } catch (error: any) {
@@ -119,6 +128,7 @@ const ImportLeads = ({
   const resetForm = () => {
     setFile(null);
     setParseResult(null);
+    setCountInCurrentMonth(true);
   };
 
   return (
@@ -155,6 +165,26 @@ const ImportLeads = ({
                 Formato: CSV com colunas Nome, CPF, Telefone, Banco, Produto, Data, Valor, Funcionário
               </p>
             </div>
+
+            <div className="flex items-center space-x-2 p-4 border rounded-lg bg-muted/30">
+              <Checkbox 
+                id="count-current-month" 
+                checked={countInCurrentMonth}
+                onCheckedChange={(checked) => setCountInCurrentMonth(checked as boolean)}
+              />
+              <label 
+                htmlFor="count-current-month" 
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              >
+                Contabilizar valores no mês atual
+              </label>
+            </div>
+            <p className="text-xs text-muted-foreground ml-6">
+              {countInCurrentMonth 
+                ? "Os leads importados serão contabilizados no mês atual para relatórios e métricas."
+                : "Os leads importados serão contabilizados no mês anterior."
+              }
+            </p>
 
             {parseResult && (
               <div className="space-y-3">
