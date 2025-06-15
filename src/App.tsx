@@ -12,6 +12,7 @@ import Leads from "@/pages/Leads";
 import LeadsPremium from "@/pages/LeadsPremium";
 import LeadNew from "@/pages/LeadNew";
 import LeadImport from "@/pages/LeadImport";
+import LeadsConfig from "@/pages/LeadsConfig";
 import LeadScheduling from "@/pages/LeadScheduling";
 import LeadsTrash from "@/pages/LeadsTrash";
 import Login from "@/pages/Login";
@@ -43,6 +44,7 @@ function App() {
                 <Route path="/leads-premium" element={<LeadsPremium />} />
                 <Route path="/leads/new" element={<LeadNew />} />
                 <Route path="/leads/import" element={<LeadImport />} />
+                <Route path="/leads/config" element={<LeadsConfig />} />
                 <Route path="/leads/scheduled" element={<LeadScheduling />} />
                 <Route path="/leads/trash" element={<LeadsTrash />} />
                 <Route path="/login" element={<Login />} />

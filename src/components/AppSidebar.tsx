@@ -25,7 +25,8 @@ import {
   Users2,
   Camera,
   User,
-  Edit
+  Edit,
+  Cog
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -37,68 +38,74 @@ import { toast } from "sonner";
 const items = [
   {
     title: "Dashboard",
-    url: "/dashboard", // corresponde ao App.tsx -> "/dashboard"
+    url: "/dashboard",
     icon: BarChart3,
     group: "PRINCIPAL"
   },
   {
     title: "Leads",
-    url: "/leads", // "/leads"
+    url: "/leads",
     icon: Users,
     group: "LEADS"
   },
   {
     title: "Leads Premium",
-    url: "/leads-premium", // "/leads-premium"
+    url: "/leads-premium",
     icon: Star,
     group: "LEADS",
-    highlight: true // <-- Novidade: campo para destaque
+    highlight: true
   },
   {
     title: "Agendamentos",
-    url: "/leads/scheduled", // corrigido de "/lead-scheduling" para "/leads/scheduled"
+    url: "/leads/scheduled",
     icon: Calendar,
     group: "LEADS"
   },
   {
+    title: "Config. Leads",
+    url: "/leads/config",
+    icon: Cog,
+    group: "LEADS"
+  },
+  {
     title: "Lembretes",
-    url: "/reminders", // "/reminders"
+    url: "/reminders",
     icon: Bell,
     group: "LEMBRETES"
   },
   {
     title: "Calendário",
-    url: "/reminders/calendar", // corrigido de "/reminders-calendar" para "/reminders/calendar"
+    url: "/reminders/calendar",
     icon: CalendarDays,
     group: "LEMBRETES"
   },
   {
     title: "Portabilidade",
-    url: "/portability", // "/portability"
+    url: "/portability",
     icon: TrendingUp,
     group: "NEGÓCIOS"
   },
   {
     title: "Comissões",
-    url: "/commission", // "/commission"
+    url: "/commission",
     icon: DollarSign,
     group: "NEGÓCIOS"
   },
   {
     title: "Config. Comissões",
-    url: "/commission/settings", // corrigido de "/commission-settings" para "/commission/settings"
+    url: "/commission/settings",
     icon: Settings,
     group: "NEGÓCIOS"
   },
   {
     title: "Funcionários",
-    url: "/employees", // "/employees"
+    url: "/employees",
     icon: Users2,
     group: "ADMINISTRAÇÃO"
   },
   {
     title: "Configurações",
-    url: "/settings", // "/settings"
+    url: "/settings",
     icon: Settings,
     group: "ADMINISTRAÇÃO"
   },
