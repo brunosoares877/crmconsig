@@ -1,7 +1,6 @@
-
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, Users, Crown, Calendar, Bell, CalendarDays, ArrowRightLeft, DollarSign, UserCheck, Settings } from "lucide-react";
+import { LayoutDashboard, Users, Crown, Calendar, Bell, CalendarDays, ArrowRightLeft, DollarSign, UserCheck, Settings, Cog } from "lucide-react";
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarSeparator } from "@/components/ui/sidebar";
 
 // Define the menu item interface
@@ -50,7 +49,6 @@ const lembretesItems: MenuItem[] = [{
   icon: CalendarDays,
   match: (pathname: string) => pathname === "/reminders/calendar"
 }];
-// ATUALIZADO: O item "Comissões" agora aponta diretamente para "/commission/settings"
 const negociosItems: MenuItem[] = [{
   title: "Portabilidade",
   url: "/portability",
@@ -58,9 +56,14 @@ const negociosItems: MenuItem[] = [{
   match: (pathname: string) => pathname === "/portability"
 }, {
   title: "Comissões",
-  url: "/commission/settings",
+  url: "/commission",
   icon: DollarSign,
-  match: (pathname: string) => pathname === "/commission" || pathname === "/commission-settings" || pathname === "/commission/settings"
+  match: (pathname: string) => pathname === "/commission"
+}, {
+  title: "Config. Comissões",
+  url: "/commission/settings",
+  icon: Cog,
+  match: (pathname: string) => pathname === "/commission/settings"
 }];
 const administracaoItems: MenuItem[] = [{
   title: "Funcionários",
@@ -73,6 +76,8 @@ const administracaoItems: MenuItem[] = [{
   icon: Settings,
   match: (pathname: string) => pathname === "/settings" || pathname.startsWith("/settings/")
 }];
+
+// Menu items organized by logical groups
 const allMenuItems: MenuItem[] = [...principalItems, ...leadsItems, ...lembretesItems, ...negociosItems, ...administracaoItems];
 export function AppSidebar() {
   const location = useLocation();
