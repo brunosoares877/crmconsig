@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, PhoneCall, CalendarCheck, TrendingUp, TrendingDown, User, Search, BarChart3, DollarSign, Calendar } from "lucide-react";
+import { Users, PhoneCall, CalendarCheck, TrendingUp, TrendingDown, User, Search, BarChart3, DollarSign, Calendar, FileText, CheckCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { format, startOfToday, endOfToday, startOfMonth, endOfMonth, differenceInMinutes, startOfWeek, endOfWeek } from "date-fns";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -21,7 +21,9 @@ const Dashboard = () => {
     averageTimeBetweenLeads: "0min",
     monthlyProduction: 0,
     weeklyProduction: 0,
-    weeklyConversionRate: 0
+    weeklyConversionRate: 0,
+    proposalsDigitated: 0,
+    conversionsCount: 0
   });
   const [isLoading, setIsLoading] = useState(true);
   const [dailyProduction, setDailyProduction] = useState([]);
@@ -66,6 +68,29 @@ const Dashboard = () => {
         }).gte('created_at', monthStart).lte('created_at', monthEnd);
 
         console.log("Leads this month:", leadsThisMonth);
+
+        // Get proposals digitadas (leads que tem amount preenchido) do mês
+        const {
+          count: proposalsDigitated
+        } = await supabase.from('leads')
+          .select('*', { count: 'exact', head: true })
+          .not('amount', 'is', null)
+          .neq('amount', '')
+          .gte('created_at', monthStart)
+          .lte('created_at', monthEnd);
+
+        console.log("Proposals digitadas this month:", proposalsDigitated);
+
+        // Get conversões (leads convertidos) do mês
+        const {
+          count: conversionsCount
+        } = await supabase.from('leads')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'convertido')
+          .gte('created_at', monthStart)
+          .lte('created_at', monthEnd);
+
+        console.log("Conversions this month:", conversionsCount);
 
         // Get all leads from this month to calculate average time between leads
         const {
@@ -280,7 +305,9 @@ const Dashboard = () => {
           averageTimeBetweenLeads: averageTimeBetweenLeads,
           monthlyProduction: monthlyProduction,
           weeklyProduction: weeklyProduction,
-          weeklyConversionRate: weeklyConversionRate
+          weeklyConversionRate: weeklyConversionRate,
+          proposalsDigitated: proposalsDigitated || 0,
+          conversionsCount: conversionsCount || 0
         });
 
         console.log("Updated metrics:", {
@@ -290,7 +317,9 @@ const Dashboard = () => {
           averageTimeBetweenLeads: averageTimeBetweenLeads,
           monthlyProduction: monthlyProduction,
           weeklyProduction: weeklyProduction,
-          weeklyConversionRate: weeklyConversionRate
+          weeklyConversionRate: weeklyConversionRate,
+          proposalsDigitated: proposalsDigitated || 0,
+          conversionsCount: conversionsCount || 0
         });
 
       } catch (error) {
@@ -340,6 +369,24 @@ const Dashboard = () => {
       iconBg: "bg-green-50",
       iconColor: "text-green-600"
     }, {
+      title: "Propostas Digitadas",
+      value: metrics.proposalsDigitated.toString(),
+      change: calculateChange(metrics.proposalsDigitated, metrics.proposalsDigitated - 3),
+      subtitle: `Clientes com propostas no mês`,
+      positive: true,
+      icon: <FileText className="h-4 w-4 lg:h-5 lg:w-5" />,
+      iconBg: "bg-orange-50",
+      iconColor: "text-orange-600"
+    }, {
+      title: "Conversões",
+      value: metrics.conversionsCount.toString(),
+      change: calculateChange(metrics.conversionsCount, metrics.conversionsCount - 1),
+      subtitle: `Clientes convertidos no mês`,
+      positive: true,
+      icon: <CheckCircle className="h-4 w-4 lg:h-5 lg:w-5" />,
+      iconBg: "bg-emerald-50",
+      iconColor: "text-emerald-600"
+    }, {
       title: "Produção Semanal",
       value: `R$ ${metrics.weeklyProduction.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
       change: calculateChange(metrics.weeklyProduction, metrics.weeklyProduction - 2000),
@@ -363,7 +410,7 @@ const Dashboard = () => {
   return (
     <div className="w-full px-0 md:px-0 lg:px-0 space-y-6">
       {/* Metrics Cards Grid */}
-      <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 lg:gap-6">
+      <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 md:gap-4 lg:gap-6">
         {metricsData.map((metric, index) => (
           <MetricsCard key={index} {...metric} />
         ))}
