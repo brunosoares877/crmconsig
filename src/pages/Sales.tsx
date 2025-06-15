@@ -7,6 +7,7 @@ import SubscriptionPlans from "@/components/sales/SubscriptionPlans";
 import FeaturesList from "@/components/sales/FeaturesList";
 import Testimonials from "@/components/sales/Testimonials";
 import WhatsAppButton from "@/components/WhatsAppButton";
+import FAQ from "@/components/sales/FAQ";
 
 const Sales = () => {
   const navigate = useNavigate();
@@ -93,6 +94,9 @@ const Sales = () => {
             <SubscriptionPlans />
           </div>
         </section>
+
+        {/* FAQ Section */}
+        <FAQ />
 
         {/* CTA Section */}
         <section className="text-white py-12 md:py-16 bg-gradient-to-r from-blue-600 to-blue-700 w-full">
