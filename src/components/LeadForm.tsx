@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { X } from "lucide-react";
+import BenefitTypeSelect from "@/components/forms/BenefitTypeSelect";
 
 const formSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
@@ -249,24 +250,11 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
           </Select>
         </div>
 
-        <div>
-          <Label htmlFor="benefit_type">Tipo de Benefício</Label>
-          <Select onValueChange={(value) => setValue("benefit_type", value)} defaultValue={initialData?.benefit_type}>
-            <SelectTrigger>
-              <SelectValue placeholder="Selecione o tipo" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="87">87 - Aposentadoria por Idade</SelectItem>
-              <SelectItem value="88">88 - Aposentadoria por Invalidez</SelectItem>
-              <SelectItem value="89">89 - Pensão por Morte</SelectItem>
-              <SelectItem value="21">21 - Auxílio-Doença</SelectItem>
-              <SelectItem value="25">25 - Auxílio-Reclusão</SelectItem>
-              <SelectItem value="32">32 - Aposentadoria por Tempo de Contribuição</SelectItem>
-              <SelectItem value="42">42 - Aposentadoria Especial</SelectItem>
-              <SelectItem value="46">46 - Auxílio-Acidente</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        <BenefitTypeSelect
+          value={watch("benefit_type")}
+          onValueChange={(value) => setValue("benefit_type", value)}
+          defaultValue={initialData?.benefit_type}
+        />
 
         <div>
           <Label htmlFor="representative_mode">Modo Representante</Label>
