@@ -101,19 +101,25 @@ const Dashboard = () => {
         const daysPassed = Math.max(1, new Date().getDate());
         const averageLeadsPerDay = leadsThisMonth ? parseFloat((leadsThisMonth / daysPassed).toFixed(1)) : 0;
 
-        // Get monthly production (all converted leads this month)
+        // Get monthly production (all leads with amount this month, regardless of status)
         const {
-          data: monthlyConvertedLeads,
+          data: monthlyLeadsWithAmount,
           error: monthlyError
-        } = await supabase.from('leads').select('amount').eq('status', 'convertido').gte('updated_at', monthStart).lte('updated_at', monthEnd);
+        } = await supabase.from('leads')
+          .select('amount')
+          .not('amount', 'is', null)
+          .neq('amount', '')
+          .gte('created_at', monthStart)
+          .lte('created_at', monthEnd);
         
         if (monthlyError) {
           console.error('Error fetching monthly production:', monthlyError);
         }
 
-        // Calculate total monthly production
-        const monthlyProduction = monthlyConvertedLeads ? monthlyConvertedLeads.reduce((total, lead) => {
-          const amount = parseFloat(lead.amount?.replace(/[^\d,]/g, '').replace(',', '.') || "0");
+        // Calculate total monthly production from all leads with amounts
+        const monthlyProduction = monthlyLeadsWithAmount ? monthlyLeadsWithAmount.reduce((total, lead) => {
+          const cleanAmount = lead.amount?.replace(/[^\d,]/g, '').replace(',', '.') || "0";
+          const amount = parseFloat(cleanAmount);
           return isNaN(amount) ? total : total + amount;
         }, 0) : 0;
 
@@ -139,11 +145,16 @@ const Dashboard = () => {
 
         console.log("Weekly conversion rate:", weeklyConversionRate);
 
-        // Fetch daily production data (converted leads today)
+        // Fetch daily production data (all leads with amounts today, regardless of status)
         const {
           data: dailyData,
           error: dailyError
-        } = await supabase.from('leads').select('*').eq('status', 'convertido').gte('updated_at', todayStart).lte('updated_at', todayEnd);
+        } = await supabase.from('leads')
+          .select('*')
+          .not('amount', 'is', null)
+          .neq('amount', '')
+          .gte('created_at', todayStart)
+          .lte('created_at', todayEnd);
         if (dailyError) {
           console.error('Error fetching daily production:', dailyError);
           toast.error("Erro ao carregar produção diária");
@@ -152,13 +163,15 @@ const Dashboard = () => {
           setDailyProduction(dailyData || []);
         }
 
-        // Fetch employee performance data (all leads, not just converted)
+        // Fetch employee performance data (all leads with amounts and employees)
         const {
           data: employeeData,
           error: employeeError
         } = await supabase.from('leads')
           .select('employee, amount, status')
           .not('employee', 'is', null)
+          .not('amount', 'is', null)
+          .neq('amount', '')
           .gte('created_at', monthStart)
           .lte('created_at', monthEnd);
         
@@ -167,22 +180,31 @@ const Dashboard = () => {
           toast.error("Erro ao carregar vendas por funcionário");
         } else {
           console.log("Employee data:", employeeData);
-          // Process employee data to count total leads and sales per employee
+          // Process employee data to count total leads with amounts and converted sales per employee
           const employeeSalesMap = {};
 
-          // Count all leads and converted sales per employee
+          // Count all leads with amounts and converted sales per employee
           employeeData?.forEach(lead => {
-            if (lead.employee) {
+            if (lead.employee && lead.amount) {
               if (!employeeSalesMap[lead.employee]) {
                 employeeSalesMap[lead.employee] = {
-                  totalLeads: 0,
-                  convertedSales: 0
+                  totalLeadsWithAmount: 0,
+                  convertedSales: 0,
+                  totalValue: 0
                 };
               }
-              employeeSalesMap[lead.employee].totalLeads += 1;
               
-              if (lead.status === 'convertido') {
-                employeeSalesMap[lead.employee].convertedSales += 1;
+              // Parse amount value
+              const cleanAmount = lead.amount.replace(/[^\d,]/g, '').replace(',', '.') || "0";
+              const amount = parseFloat(cleanAmount);
+              
+              if (!isNaN(amount)) {
+                employeeSalesMap[lead.employee].totalLeadsWithAmount += 1;
+                employeeSalesMap[lead.employee].totalValue += amount;
+                
+                if (lead.status === 'convertido') {
+                  employeeSalesMap[lead.employee].convertedSales += 1;
+                }
               }
             }
           });
@@ -190,12 +212,13 @@ const Dashboard = () => {
           // Convert to array format for display
           const employeeSalesArray = Object.entries(employeeSalesMap).map(([employee, data]) => ({
             employee,
-            count: (data as { totalLeads: number; convertedSales: number }).totalLeads,
-            convertedSales: (data as { totalLeads: number; convertedSales: number }).convertedSales
+            count: (data as { totalLeadsWithAmount: number; convertedSales: number; totalValue: number }).totalLeadsWithAmount,
+            convertedSales: (data as { totalLeadsWithAmount: number; convertedSales: number; totalValue: number }).convertedSales,
+            totalValue: (data as { totalLeadsWithAmount: number; convertedSales: number; totalValue: number }).totalValue
           }));
 
-          // Sort by total leads (highest first)
-          employeeSalesArray.sort((a, b) => b.count - a.count);
+          // Sort by total value (highest first)
+          employeeSalesArray.sort((a, b) => b.totalValue - a.totalValue);
           console.log("Employee sales array:", employeeSalesArray);
           setEmployeeSales(employeeSalesArray);
         }

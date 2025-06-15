@@ -11,7 +11,8 @@ interface ProductionCardProps {
 const ProductionCard = ({ dailyProduction, isLoading }: ProductionCardProps) => {
   const calculateDailyTotal = () => {
     return dailyProduction.reduce((total, lead) => {
-      const amount = parseFloat(lead.amount || "0");
+      const cleanAmount = lead.amount?.replace(/[^\d,]/g, '').replace(',', '.') || "0";
+      const amount = parseFloat(cleanAmount);
       return isNaN(amount) ? total : total + amount;
     }, 0).toFixed(2);
   };
@@ -29,7 +30,7 @@ const ProductionCard = ({ dailyProduction, isLoading }: ProductionCardProps) => 
             <Sparkles className="h-4 w-4 text-emerald-500 group-hover:animate-spin" />
           </CardTitle>
           <p className="text-sm text-slate-600">
-            Vendas realizadas hoje
+            Leads com valores hoje
           </p>
         </div>
         <div className="text-right">
@@ -57,8 +58,8 @@ const ProductionCard = ({ dailyProduction, isLoading }: ProductionCardProps) => 
                 <div className="w-16 h-16 bg-gradient-to-br from-emerald-100 to-green-100 rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-sm">
                   <TrendingUp className="h-8 w-8 text-emerald-500" />
                 </div>
-                <p className="font-medium">Nenhuma venda registrada hoje</p>
-                <p className="text-xs text-slate-400 mt-1">As vendas aparecerão aqui</p>
+                <p className="font-medium">Nenhum lead com valor registrado hoje</p>
+                <p className="text-xs text-slate-400 mt-1">Os leads com valores aparecerão aqui</p>
               </div>
             ) : (
               dailyProduction.slice(0, 5).map((lead, index) => (
@@ -70,6 +71,7 @@ const ProductionCard = ({ dailyProduction, isLoading }: ProductionCardProps) => 
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-slate-900 truncate group-hover/item:text-emerald-700 transition-colors">{lead.name}</p>
                       <p className="text-sm text-slate-600 truncate">{lead.product || "—"}</p>
+                      <p className="text-xs text-slate-500">Status: {lead.status}</p>
                     </div>
                   </div>
                   <div className="text-right ml-4">
