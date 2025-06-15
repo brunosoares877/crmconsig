@@ -26,7 +26,7 @@ const TrialBanner = () => {
           </p>
         </div>
         <Button
-          onClick={() => navigate("/settings")}
+          onClick={() => navigate("/plans")}
           variant="outline"
           className="ml-4 bg-white"
         >
@@ -48,7 +48,7 @@ const TrialBanner = () => {
         </p>
       </div>
       <Button
-        onClick={() => navigate("/settings")}
+        onClick={() => navigate("/plans")}
         variant="outline"
         className="ml-4 bg-white border-red-200 text-red-600 hover:bg-red-50"
       >
