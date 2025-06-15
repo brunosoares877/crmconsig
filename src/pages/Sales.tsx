@@ -1,4 +1,5 @@
 
+
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -114,12 +115,12 @@ const Sales = () => {
               Experimente nosso CRM por 7 dias gratuitamente e veja como podemos ajudar sua empresa a crescer.
             </p>
             
-            {/* Main CTA Button - Made much more prominent */}
+            {/* Main CTA Button - Made much more prominent with orange color */}
             <div className="mb-8 md:mb-10">
               <Button 
                 onClick={handleStartTrial} 
                 size="lg" 
-                className="text-xl md:text-2xl px-12 md:px-16 py-6 md:py-8 bg-white text-blue-600 hover:bg-blue-50 shadow-2xl hover:shadow-3xl transform hover:scale-105 transition-all duration-300 font-bold border-4 border-white/20 hover:border-white/40 w-full sm:w-auto min-w-[320px]"
+                className="text-xl md:text-2xl px-12 md:px-16 py-6 md:py-8 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-2xl hover:shadow-3xl transform hover:scale-105 transition-all duration-300 font-bold border-4 border-orange-400/30 hover:border-orange-300/50 w-full sm:w-auto min-w-[320px] animate-pulse hover:animate-none"
               >
                 🚀 Começar agora mesmo <ArrowRight className="ml-3 h-6 w-6 md:h-7 md:w-7" />
               </Button>
@@ -212,3 +213,4 @@ const Sales = () => {
 };
 
 export default Sales;
+
