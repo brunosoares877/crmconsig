@@ -6,7 +6,6 @@ import {
   TableBody,
   TableCaption,
   TableCell,
-  TableFooter,
   TableHead,
   TableHeader,
   TableRow,
@@ -27,8 +26,8 @@ import { toast } from "sonner";
 import CommissionRateForm from "@/components/commission/CommissionRateForm";
 import CommissionTierForm from "@/components/commission/CommissionTierForm";
 import DefaultCommissionsButton from "@/components/commission/DefaultCommissionsButton";
-import Sidebar from "@/components/Sidebar";
-import Header from "@/components/Header";
+import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/AppSidebar";
 
 const CommissionSettings = () => {
   const [rates, setRates] = useState<CommissionRate[]>([]);
@@ -356,28 +355,34 @@ const CommissionSettings = () => {
   );
 
   return (
-    <div className="min-h-screen bg-background">
-      <Sidebar />
-      <div className="md:ml-64 transition-all duration-300">
-        <Header />
-        <main className="container mx-auto p-4 py-8">
-          <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-6">Configurações de Comissões</h1>
+    <SidebarProvider>
+      <div className="min-h-screen flex w-full">
+        <AppSidebar />
+        <SidebarInset>
+          <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
+            <div className="flex items-center gap-2 px-4">
+              <SidebarTrigger className="-ml-1" />
+            </div>
+          </header>
+          <main className="container mx-auto p-4 py-8">
+            <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-6">Configurações de Comissões</h1>
 
-          <Tabs defaultValue="rates" className="w-full">
-            <TabsList className="mb-6">
-              <TabsTrigger value="rates">Taxas Fixas</TabsTrigger>
-              <TabsTrigger value="tiers">Taxas Variáveis (Por Faixa de Valor)</TabsTrigger>
-            </TabsList>
-            <TabsContent value="rates">
-              {renderRatesTable()}
-            </TabsContent>
-            <TabsContent value="tiers">
-              {renderTiersTable()}
-            </TabsContent>
-          </Tabs>
-        </main>
+            <Tabs defaultValue="rates" className="w-full">
+              <TabsList className="mb-6">
+                <TabsTrigger value="rates">Taxas Fixas</TabsTrigger>
+                <TabsTrigger value="tiers">Taxas Variáveis (Por Faixa de Valor)</TabsTrigger>
+              </TabsList>
+              <TabsContent value="rates">
+                {renderRatesTable()}
+              </TabsContent>
+              <TabsContent value="tiers">
+                {renderTiersTable()}
+              </TabsContent>
+            </Tabs>
+          </main>
+        </SidebarInset>
       </div>
-    </div>
+    </SidebarProvider>
   );
 };
 
