@@ -1,8 +1,32 @@
-
 import React from 'react';
-import { createRoot } from 'react-dom/client';
+import ReactDOM from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
+
+// Sistema de versionamento para forçar atualização do cache
+const APP_VERSION = '1.0.1'; // Incrementar quando houver mudanças importantes
+const STORAGE_KEY = 'app_version';
+
+// Verificar se há nova versão
+const currentVersion = localStorage.getItem(STORAGE_KEY);
+if (currentVersion !== APP_VERSION) {
+  // Nova versão detectada - limpar cache e recarregar
+  localStorage.setItem(STORAGE_KEY, APP_VERSION);
+  
+  // Limpar cache do service worker se existir
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then(registrations => {
+      registrations.forEach(registration => {
+        registration.unregister();
+      });
+    });
+  }
+  
+  // Forçar reload se não for a primeira visita
+  if (currentVersion) {
+    window.location.reload();
+  }
+}
 
 // Get the root element
 const rootElement = document.getElementById("root");
@@ -13,4 +37,8 @@ if (!rootElement) {
 }
 
 // Create root and render App
-createRoot(rootElement).render(<App />);
+ReactDOM.createRoot(rootElement).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>,
+);
