@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
@@ -73,7 +72,7 @@ const AddLeadButton = ({ onLeadAdded }: { onLeadAdded?: () => void }) => {
           Cadastrar Lead
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Cadastrar Novo Lead</DialogTitle>
           <DialogDescription>

@@ -36,8 +36,8 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
-import { AppSidebar } from "@/components/AppSidebar";
-import Header from "@/components/Header";
+import PageLayout from "@/components/PageLayout";
+import { getEmployees, Employee } from "@/utils/employees";
 
 const Commission = () => {
   const [loading, setLoading] = useState(false);
@@ -69,18 +69,8 @@ const Commission = () => {
 
   const fetchEmployees = async () => {
     try {
-      const { data, error } = await supabase
-        .from("leads")
-        .select("employee")
-        .not("employee", "is", null)
-        .order("employee");
-
-      if (error) throw error;
-
-      if (data) {
-        const uniqueEmployees = [...new Set(data.map(item => item.employee).filter(Boolean))];
-        setEmployees(uniqueEmployees);
-      }
+      const employeeList = await getEmployees();
+      setEmployees(employeeList.map(employee => employee.name));
     } catch (error: any) {
       console.error("Error fetching employees:", error);
     }
@@ -323,128 +313,125 @@ const Commission = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <AppSidebar />
-      <div className="md:ml-64 transition-all duration-300">
-        <Header />
-        <main className="container mx-auto space-y-8 p-4 py-8">
-          <h1 className="text-2xl font-bold mb-4">Comissões</h1>
-
-          <div className="mb-4 space-y-4">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
-              <div className="relative">
-                <Search className="absolute left-3 top-2.5 h-4 w-4 text-blue-500" />
-                <Input
-                  type="text"
-                  placeholder="Buscar comissões..."
-                  value={search}
-                  onChange={handleSearch}
-                  className="pl-10"
-                />
-              </div>
-              <div>
-                <Select value={employeeFilter} onValueChange={setEmployeeFilter}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Filtrar por funcionário" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos os funcionários</SelectItem>
-                    {employees.map(employee => (
-                      <SelectItem key={employee} value={employee || ""}>
-                        {employee}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Filtrar por status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos os status</SelectItem>
-                    <SelectItem value="pending">Pendente</SelectItem>
-                    <SelectItem value="approved">Aprovado</SelectItem>
-                    <SelectItem value="paid">Pago</SelectItem>
-                    <SelectItem value="cancelled">Cancelado</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Button onClick={handleSearchClick} variant="default" className="w-full">
-                  <Search className="h-4 w-4 mr-2" />
-                  Buscar
-                </Button>
-              </div>
-              <div>
-                <Button onClick={clearFilters} variant="outline" className="w-full">
-                  Limpar Filtros
-                </Button>
-              </div>
+    <PageLayout
+      title="Comissões"
+      subtitle="Acompanhe e gerencie as comissões do time"
+    >
+      <div className="space-y-8">
+        <div className="mb-4 space-y-4">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+            <div className="relative">
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-blue-500" />
+              <Input
+                type="text"
+                placeholder="Buscar comissões..."
+                value={search}
+                onChange={handleSearch}
+                className="pl-10"
+              />
             </div>
-            
-            <div className="grid gap-4 md:grid-cols-2">
-              <div>
-                <label className="block text-sm font-medium mb-2">Data Inicial</label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !dateFrom && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {dateFrom ? format(dateFrom, "dd/MM/yyyy", { locale: ptBR }) : "Selecionar data inicial"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={dateFrom}
-                      onSelect={setDateFrom}
-                      initialFocus
-                      className={cn("p-3 pointer-events-auto")}
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium mb-2">Data Final</label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !dateTo && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {dateTo ? format(dateTo, "dd/MM/yyyy", { locale: ptBR }) : "Selecionar data final"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={dateTo}
-                      onSelect={setDateTo}
-                      initialFocus
-                      className={cn("p-3 pointer-events-auto")}
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
+            <div>
+              <Select value={employeeFilter} onValueChange={setEmployeeFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Filtrar por funcionário" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os funcionários</SelectItem>
+                  {employees.map(employee => (
+                    <SelectItem key={employee} value={employee}>
+                      {employee}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Filtrar por status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os status</SelectItem>
+                  <SelectItem value="pending">Pendente</SelectItem>
+                  <SelectItem value="approved">Aprovado</SelectItem>
+                  <SelectItem value="paid">Pago</SelectItem>
+                  <SelectItem value="cancelled">Cancelado</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Button onClick={handleSearchClick} variant="default" className="w-full">
+                <Search className="h-4 w-4 mr-2" />
+                Buscar
+              </Button>
+            </div>
+            <div>
+              <Button onClick={clearFilters} variant="outline" className="w-full">
+                Limpar Filtros
+              </Button>
             </div>
           </div>
+          
+          <div className="grid gap-4 md:grid-cols-2">
+            <div>
+              <label className="block text-sm font-medium mb-2">Data Inicial</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !dateFrom && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {dateFrom ? format(dateFrom, "dd/MM/yyyy", { locale: ptBR }) : "Selecionar data inicial"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={dateFrom}
+                    onSelect={setDateFrom}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium mb-2">Data Final</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !dateTo && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {dateTo ? format(dateTo, "dd/MM/yyyy", { locale: ptBR }) : "Selecionar data final"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={dateTo}
+                    onSelect={setDateTo}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+          </div>
+        </div>
 
-          {renderCommissionTable()}
-        </main>
+        {renderCommissionTable()}
       </div>
-    </div>
+    </PageLayout>
   );
 };
 

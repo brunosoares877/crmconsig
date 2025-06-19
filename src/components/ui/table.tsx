@@ -105,13 +105,17 @@ const TableCaption = React.forwardRef<
 ))
 TableCaption.displayName = "TableCaption"
 
+// Memoização para evitar renders desnecessários
+const MemoTableRow = React.memo(TableRow);
+const MemoTableCell = React.memo(TableCell);
+
 export {
   Table,
   TableHeader,
   TableBody,
   TableFooter,
   TableHead,
-  TableRow,
-  TableCell,
+  MemoTableRow as TableRow,
+  MemoTableCell as TableCell,
   TableCaption,
 }

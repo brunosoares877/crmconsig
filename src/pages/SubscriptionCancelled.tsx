@@ -4,15 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { XCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import Header from "@/components/Header";
+import PageLayout from "@/components/PageLayout";
 
 const SubscriptionCancelled = () => {
   const navigate = useNavigate();
   
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      <main className="container mx-auto p-4 py-16 flex flex-col items-center">
+    <PageLayout showTrialBanner={false}>
+      <div className="container mx-auto p-4 py-16 flex flex-col items-center">
         <Card className="max-w-md w-full mx-auto border-2 border-gray-200">
           <CardHeader className="text-center pb-2">
             <div className="mx-auto w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
@@ -54,8 +53,8 @@ const SubscriptionCancelled = () => {
             </p>
           </CardContent>
         </Card>
-      </main>
-    </div>
+      </div>
+    </PageLayout>
   );
 };
 

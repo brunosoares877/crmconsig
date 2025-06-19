@@ -5,7 +5,6 @@ import {
   TableBody,
   TableCaption,
   TableCell,
-  TableFooter,
   TableHead,
   TableHeader,
   TableRow,
@@ -16,25 +15,17 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { CommissionRate, CommissionTier } from "@/types/models";
 import { PlusCircle, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import CommissionRateForm from "@/components/commission/CommissionRateForm";
-import CommissionTierForm from "@/components/commission/CommissionTierForm";
-import DefaultCommissionsButton from "@/components/commission/DefaultCommissionsButton";
+import PageLayout from "@/components/PageLayout";
+import FixedRateForm from "@/components/commission/FixedRateForm";
+import VariableRateForm from "@/components/commission/VariableRateForm";
+import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import Header from "@/components/Header";
 
@@ -171,10 +162,10 @@ const CommissionSettings = () => {
       {showNewRateForm || editingRate ? (
         <Card className="mb-4">
           <CardHeader>
-            <CardTitle>{editingRate ? "Editar Taxa" : "Nova Taxa"}</CardTitle>
+            <CardTitle>{editingRate ? "Editar Taxa Fixa" : "Nova Taxa Fixa"}</CardTitle>
           </CardHeader>
           <CardContent>
-            <CommissionRateForm 
+            <FixedRateForm 
               onCancel={() => {
                 setShowNewRateForm(false);
                 setEditingRate(null);
@@ -185,16 +176,15 @@ const CommissionSettings = () => {
           </CardContent>
         </Card>
       ) : (
-        <div className="mb-4 flex justify-between items-center">
-          <DefaultCommissionsButton onSuccess={fetchCommissionData} />
+        <div className="mb-4 flex justify-end">
           <Button onClick={() => setShowNewRateForm(true)} className="flex items-center gap-1">
-            <PlusCircle className="h-5 w-5" /> Adicionar Taxa
+            <PlusCircle className="h-5 w-5" /> Adicionar Taxa Fixa
           </Button>
         </div>
       )}
 
       <Table>
-        <TableCaption>Lista de taxas de comissão por produto.</TableCaption>
+        <TableCaption>Lista de taxas de comissão fixas por produto.</TableCaption>
         <TableHeader>
           <TableRow>
             <TableHead className="w-[180px]">Produto</TableHead>
@@ -266,10 +256,10 @@ const CommissionSettings = () => {
       {showNewTierForm || editingTier ? (
         <Card className="mb-4">
           <CardHeader>
-            <CardTitle>{editingTier ? "Editar Nível" : "Novo Nível"}</CardTitle>
+            <CardTitle>{editingTier ? "Editar Taxa Variável" : "Nova Taxa Variável"}</CardTitle>
           </CardHeader>
           <CardContent>
-            <CommissionTierForm 
+            <VariableRateForm 
               onCancel={() => {
                 setShowNewTierForm(false);
                 setEditingTier(null);
@@ -282,13 +272,13 @@ const CommissionSettings = () => {
       ) : (
         <div className="mb-4 flex justify-end">
           <Button onClick={() => setShowNewTierForm(true)} className="flex items-center gap-1">
-            <PlusCircle className="h-5 w-5" /> Adicionar Nível
+            <PlusCircle className="h-5 w-5" /> Adicionar Taxa Variável
           </Button>
         </div>
       )}
 
       <Table>
-        <TableCaption>Lista de níveis de comissão por produto e valor.</TableCaption>
+        <TableCaption>Lista de taxas de comissão variáveis por produto e valor.</TableCaption>
         <TableHeader>
           <TableRow>
             <TableHead className="w-[180px]">Produto</TableHead>
@@ -303,11 +293,11 @@ const CommissionSettings = () => {
         <TableBody>
           {loading ? (
             <TableRow>
-              <TableCell colSpan={7} className="text-center py-8">Carregando níveis de comissão...</TableCell>
+              <TableCell colSpan={7} className="text-center py-8">Carregando taxas de comissão...</TableCell>
             </TableRow>
           ) : tiers.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={7} className="text-center py-8">Nenhum nível de comissão encontrado.</TableCell>
+              <TableCell colSpan={7} className="text-center py-8">Nenhuma taxa de comissão encontrada.</TableCell>
             </TableRow>
           ) : (
             tiers.map((tier) => (
@@ -364,28 +354,25 @@ const CommissionSettings = () => {
   );
 
   return (
-    <div className="min-h-screen bg-background">
-      <AppSidebar />
-      <div className="md:ml-64 transition-all duration-300">
-        <Header />
-        <main className="container mx-auto p-4 py-8">
-          <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-6">Configurações de Comissões</h1>
-
-          <Tabs defaultValue="rates" className="w-full">
-            <TabsList className="mb-6">
-              <TabsTrigger value="rates">Taxas Fixas</TabsTrigger>
-              <TabsTrigger value="tiers">Taxas por Faixa de Valor</TabsTrigger>
-            </TabsList>
-            <TabsContent value="rates">
-              {renderRatesTable()}
-            </TabsContent>
-            <TabsContent value="tiers">
-              {renderTiersTable()}
-            </TabsContent>
-          </Tabs>
-        </main>
+    <PageLayout
+      title="Configurações de Comissões"
+      subtitle="Gerencie as regras e faixas de comissão do sistema"
+    >
+      <div className="space-y-8">
+        <Tabs defaultValue="rates" className="w-full">
+          <TabsList className="mb-6">
+            <TabsTrigger value="rates">Taxas Fixas</TabsTrigger>
+            <TabsTrigger value="tiers">Taxas Variáveis (Por Faixa de Valor)</TabsTrigger>
+          </TabsList>
+          <TabsContent value="rates">
+            {renderRatesTable()}
+          </TabsContent>
+          <TabsContent value="tiers">
+            {renderTiersTable()}
+          </TabsContent>
+        </Tabs>
       </div>
-    </div>
+    </PageLayout>
   );
 };
 

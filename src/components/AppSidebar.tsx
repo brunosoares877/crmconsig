@@ -1,10 +1,9 @@
-import React from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Calendar, CalendarDays, CalendarPlus, DollarSign, List, ListCheck, Settings, Users, Star } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -12,88 +11,236 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarFooter,
 } from "@/components/ui/sidebar";
+import {
+  BarChart3,
+  Users,
+  Star,
+  Calendar,
+  Bell,
+  CalendarDays,
+  TrendingUp,
+  DollarSign,
+  Settings,
+  Users2,
+  Camera,
+  User,
+  Edit,
+  Cog
+} from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
-const menuItems = [
+// Menu agrupado por seções
+const items = [
   {
     title: "Dashboard",
     url: "/dashboard",
-    icon: ListCheck,
-    match: (pathname) => pathname === "/dashboard",
+    icon: BarChart3,
+    group: "PRINCIPAL"
   },
   {
     title: "Leads",
     url: "/leads",
-    icon: List,
-    match: (pathname) => pathname === "/leads" || pathname.startsWith("/leads/"),
+    icon: Users,
+    group: "LEADS"
   },
   {
     title: "Leads Premium",
     url: "/leads-premium",
     icon: Star,
-    isPremium: true,
-    match: (pathname) => pathname === "/leads-premium",
+    group: "LEADS",
+    highlight: true
+  },
+  {
+    title: "Agendamentos",
+    url: "/leads/scheduled",
+    icon: Calendar,
+    group: "LEADS"
+  },
+  {
+    title: "Config. Leads",
+    url: "/leads/config",
+    icon: Cog,
+    group: "LEADS"
   },
   {
     title: "Lembretes",
     url: "/reminders",
-    icon: Calendar,
-    match: (pathname) => pathname === "/reminders",
+    icon: Bell,
+    group: "LEMBRETES"
   },
   {
     title: "Calendário",
     url: "/reminders/calendar",
     icon: CalendarDays,
-    match: (pathname) => pathname === "/reminders/calendar",
-  },
-  {
-    title: "Agendamentos",
-    url: "/leads/scheduled",
-    icon: CalendarPlus,
-    match: (pathname) => pathname === "/leads/scheduled",
-  },
-  {
-    title: "Funcionários",
-    url: "/employees",
-    icon: Users,
-    match: (pathname) => pathname === "/employees",
+    group: "LEMBRETES"
   },
   {
     title: "Portabilidade",
     url: "/portability",
-    icon: ListCheck,
-    match: (pathname) => pathname === "/portability",
+    icon: TrendingUp,
+    group: "NEGÓCIOS"
   },
   {
     title: "Comissões",
     url: "/commission",
     icon: DollarSign,
-    match: (pathname) => pathname === "/commission" || pathname === "/commission-settings",
+    group: "NEGÓCIOS"
+  },
+  {
+    title: "Config. Comissões",
+    url: "/commission/settings",
+    icon: Settings,
+    group: "NEGÓCIOS"
+  },
+  {
+    title: "Funcionários",
+    url: "/employees",
+    icon: Users2,
+    group: "ADMINISTRAÇÃO"
   },
   {
     title: "Configurações",
     url: "/settings",
     icon: Settings,
-    match: (pathname) => pathname === "/settings",
+    group: "ADMINISTRAÇÃO"
   },
 ];
+
+// Agrupa os itens por grupo
+const groupedItems = items.reduce((acc, item) => {
+  if (!acc[item.group]) acc[item.group] = [];
+  acc[item.group].push(item);
+  return acc;
+}, {} as Record<string, typeof items>);
 
 export function AppSidebar() {
   const location = useLocation();
   const { user } = useAuth();
+  const [profileImage, setProfileImage] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
 
-  // Aponta para o primeiro índice ativo encontrando via match
-  let activeIdx = -1;
-  for (let i = 0; i < menuItems.length; i++) {
-    if (menuItems[i].match(location.pathname)) {
-      activeIdx = i;
-      break; // Garante que só um item fique ativo
+  // Load existing profile image on component mount
+  useEffect(() => {
+    const loadProfileImage = async () => {
+      if (!user) return;
+      
+      try {
+        const { data } = supabase.storage
+          .from('avatars')
+          .getPublicUrl(`profiles/${user.id}_profile.jpg`);
+        
+        // Check if image exists by making a HEAD request
+        const response = await fetch(data.publicUrl, { method: 'HEAD' });
+        if (response.ok) {
+          setProfileImage(data.publicUrl);
+        }
+      } catch (error) {
+        console.log('No existing profile image found');
+      }
+    };
+    
+    loadProfileImage();
+  }, [user]);
+
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    try {
+      setUploading(true);
+      const file = event.target.files?.[0];
+      
+      if (!file) {
+        toast.error("Nenhum arquivo selecionado");
+        return;
+      }
+
+      if (!user) {
+        toast.error("Usuário não autenticado");
+        return;
+      }
+
+      // Validar tipo de arquivo
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+      if (!allowedTypes.includes(file.type)) {
+        toast.error("Formato não suportado. Use: JPG, PNG, GIF ou WebP");
+        return;
+      }
+
+      // Validar tamanho do arquivo (máximo 5MB)
+      const maxSize = 5 * 1024 * 1024; // 5MB
+      if (file.size > maxSize) {
+        toast.error("Arquivo muito grande. Tamanho máximo: 5MB");
+        return;
+      }
+
+      const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+      const fileName = `${user.id}_profile.${fileExt}`;
+      const filePath = `profiles/${fileName}`;
+
+      console.log('Uploading file:', { fileName, fileType: file.type, fileSize: file.size });
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file, {
+          upsert: true,
+          contentType: file.type
+        });
+
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        throw uploadError;
+      }
+
+      const { data } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+
+      if (data?.publicUrl) {
+        setProfileImage(data.publicUrl);
+        toast.success("Foto de perfil atualizada com sucesso!");
+      } else {
+        throw new Error("Erro ao obter URL da imagem");
+      }
+
+    } catch (error: any) {
+      console.error('Error uploading file:', error);
+      
+      if (error.message?.includes('Bucket not found')) {
+        toast.error("Storage não configurado. Entre em contato com o suporte.");
+      } else if (error.message?.includes('new row violates row-level security')) {
+        toast.error("Permissão negada para upload. Verifique as configurações de segurança.");
+      } else {
+        toast.error(`Erro ao fazer upload da foto: ${error.message || 'Erro desconhecido'}`);
+      }
+    } finally {
+      setUploading(false);
+      // Limpar o input para permitir o mesmo arquivo novamente
+      if (event.target) {
+        event.target.value = '';
+      }
     }
-  }
+  };
+
+  const getInitials = (email: string) => {
+    if (!email) return "U";
+    return email.charAt(0).toUpperCase();
+  };
+
+  // Adiciona focus ao input ao clicar na imagem/ícone
+  const inputRef = React.useRef<HTMLInputElement | null>(null);
+
+  const handleAvatarClick = () => {
+    if (inputRef.current && !uploading) {
+      inputRef.current.click();
+    }
+  };
 
   return (
-    <Sidebar collapsible="none" className="w-64 min-w-64 max-w-64 h-screen flex flex-col">
+    <Sidebar>
       <SidebarHeader>
         <div className="flex items-center px-2 py-2">
           <h1 className="text-lg font-bold text-sidebar-foreground">
@@ -102,49 +249,93 @@ export function AppSidebar() {
         </div>
       </SidebarHeader>
       <SidebarContent className="flex-1">
-        <SidebarGroup>
-          <SidebarGroupLabel>
-            Menu Principal
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {menuItems.map((item, idx) => {
-                const isActive = idx === activeIdx;
-                const isLeadsPremium = item.title === "Leads Premium";
-                return (
+        {Object.entries(groupedItems).map(([group, groupItems]) => (
+          <SidebarGroup key={group}>
+            <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground">
+              {group}
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {groupItems.map((item) => (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton
                       asChild
-                      className={`w-full text-sm font-normal transition-all duration-150 ${
-                        isActive
-                          ? isLeadsPremium
-                            ? "bg-yellow-400 text-yellow-900 font-bold"
-                            : "bg-sidebar-accent text-sidebar-accent-foreground font-semibold"
-                          : isLeadsPremium
-                            ? "text-yellow-400 font-semibold"
-                            : ""
-                      }`}
-                      aria-current={isActive ? "page" : undefined}
+                      isActive={location.pathname === item.url}
+                      className={
+                        "w-full" +
+                        (item.highlight
+                          ? " bg-yellow-100 text-yellow-800 border border-yellow-200 font-semibold hover:bg-yellow-200 hover:text-yellow-900 transition-colors"
+                          : "")
+                      }
                     >
-                      <Link to={item.url} className="flex items-center gap-2 w-full">
-                        <item.icon className={`w-4 h-4 flex-shrink-0 ${isLeadsPremium ? "text-yellow-400 fill-yellow-400" : ""}`} />
-                        <span className={`flex-1 text-left ${
-                          isLeadsPremium ? "text-yellow-400 font-semibold" : ""
-                        }`}>
-                          {item.title}
-                        </span>
+                      <Link to={item.url} className="flex items-center gap-2">
+                        <item.icon className={
+                          "h-4 w-4" +
+                          (item.highlight ? " text-yellow-500" : "")
+                        } />
+                        <span>{item.title}</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        ))}
       </SidebarContent>
-      <SidebarFooter className="p-4 border-t border-sidebar-border">
-        <div className="text-sm text-sidebar-foreground">
-          {user?.email}
+      <SidebarFooter>
+        <div className="border-t pt-4">
+          <div className="flex flex-col items-center space-y-3 px-3">
+            {/* Profile Image/Selfie Section */}
+            <div className="relative group">
+              <Avatar 
+                className="h-16 w-16 cursor-pointer ring-2 ring-primary/20 transition-shadow group-hover:ring-primary/80"
+                onClick={handleAvatarClick}
+                tabIndex={0}
+                onKeyDown={e => {
+                  if (e.key === "Enter" || e.key === " ") handleAvatarClick();
+                }}
+                aria-label={uploading ? "Enviando foto" : "Editar foto de perfil"}
+                role="button"
+              >
+                {profileImage ? (
+                  <AvatarImage src={profileImage} alt="Profile" className="h-full w-full object-cover" loading="lazy" />
+                ) : (
+                  <AvatarFallback className="text-lg">
+                    {user ? getInitials(user.email || "") : "U"}
+                  </AvatarFallback>
+                )}
+                {/* Botão de editar sobreposto (ícone lápis) visível apenas ao hover */}
+                <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Edit className="h-6 w-6 text-white drop-shadow-lg" />
+                </div>
+              </Avatar>
+              {/* Input escondido, acionado ao clicar no avatar */}
+              <Input
+                id="profile-upload"
+                ref={inputRef}
+                type="file"
+                accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                onChange={handleImageUpload}
+                className="hidden"
+                disabled={uploading}
+              />
+            </div>
+            
+            {/* User Email */}
+            <div className="text-center w-full">
+              <p className="text-sm font-medium truncate px-2">
+                {user?.email || "Usuário"}
+              </p>
+              {uploading ? (
+                <p className="text-xs text-blue-500">Fazendo upload...</p>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  Conectado
+                </p>
+              )}
+            </div>
+          </div>
         </div>
       </SidebarFooter>
     </Sidebar>

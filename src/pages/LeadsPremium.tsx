@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,10 +10,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { AppSidebar } from "@/components/AppSidebar";
-import Header from "@/components/Header";
 import LeadPremiumChat from "@/components/leads-premium/LeadPremiumChat";
 import { useAddMockLeads } from "@/hooks/useAddMockLeads";
+import PageLayout from "@/components/PageLayout";
 
 interface LeadPremium {
   id: string;
@@ -144,148 +144,125 @@ const LeadsPremium = () => {
     );
   }
 
+  const headerActions = (
+    <Button onClick={handleAddMockLeads} className="gap-2">
+      <Plus className="h-4 w-4" />
+      Adicionar Leads Mockados
+    </Button>
+  );
+
   return (
-    <div className="min-h-screen bg-background">
-      <div className="flex w-full">
-        <AppSidebar />
-        <div className="flex-1 transition-all duration-300">
-          <Header />
-          <main className="w-full space-y-6 p-4 md:p-6 py-8">
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                <div className="relative">
-                  <Star className="h-8 w-8 text-yellow-400 fill-yellow-400 drop-shadow-sm" />
-                  <div className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-400 rounded-full animate-pulse"></div>
-                </div>
-                <div>
-                  <h1 className="text-3xl font-bold text-slate-900">
-                    Leads{" "}
-                    <span className="bg-gradient-to-r from-yellow-400 to-yellow-600 bg-clip-text text-transparent font-extrabold">
-                      Premium
-                    </span>
-                  </h1>
-                  <p className="text-muted-foreground mt-1">
-                    <span className="inline-flex items-center gap-1">
-                      <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
-                      Leads recebidos via tráfego pago
-                    </span>
-                  </p>
-                </div>
-              </div>
-              <Button onClick={handleAddMockLeads} className="gap-2">
-                <Plus className="h-4 w-4" />
-                Adicionar Leads Mockados
-              </Button>
-            </div>
-
-            {/* Filtros */}
-            <div className="flex flex-col md:flex-row gap-4 mb-6">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Buscar por nome ou telefone..."
-                  className="pl-10"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
-              <Select value={modalidadeFilter} onValueChange={setModalidadeFilter}>
-                <SelectTrigger className="w-full md:w-48">
-                  <SelectValue placeholder="Modalidade" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas as modalidades</SelectItem>
-                  <SelectItem value="Aposentado">Aposentado</SelectItem>
-                  <SelectItem value="Bolsa Família">Bolsa Família</SelectItem>
-                  <SelectItem value="FGTS">FGTS</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-full md:w-48">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos os status</SelectItem>
-                  <SelectItem value="Novo">Novo</SelectItem>
-                  <SelectItem value="Em atendimento">Em atendimento</SelectItem>
-                  <SelectItem value="Fechado">Fechado</SelectItem>
-                  <SelectItem value="Perdido">Perdido</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Lista de Leads */}
-            <div className="grid gap-4">
-              {isLoading ? (
-                <div className="text-center py-8">Carregando leads...</div>
-              ) : filteredLeads.length === 0 ? (
-                <Card>
-                  <CardContent className="text-center py-8">
-                    <Star className="h-12 w-12 text-yellow-400 fill-yellow-400 mx-auto mb-4" />
-                    <p className="text-gray-500">Nenhum lead premium encontrado</p>
-                    <p className="text-sm text-gray-400 mt-2">
-                      Clique no botão "Adicionar Leads Mockados" para testar a funcionalidade
-                    </p>
-                  </CardContent>
-                </Card>
-              ) : (
-                filteredLeads.map((lead) => (
-                  <Card key={lead.id} className="hover:shadow-lg transition-shadow cursor-pointer">
-                    <CardContent className="p-6">
-                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <div className="flex-1">
-                          <div className="flex flex-col md:flex-row md:items-center gap-2 mb-2">
-                            <h3 className="font-semibold text-lg">{lead.nome}</h3>
-                            <div className="flex gap-2">
-                              <Badge className={getModalidadeBadgeColor(lead.modalidade)}>
-                                {lead.modalidade}
-                              </Badge>
-                              <Badge className={getStatusBadgeColor(lead.status)}>
-                                {lead.status}
-                              </Badge>
-                            </div>
-                          </div>
-                          <div className="flex flex-col md:flex-row md:items-center gap-2 text-sm text-gray-600">
-                            <span>📱 {lead.telefone}</span>
-                            <span>📍 {lead.origem}</span>
-                            <span>🕒 {format(new Date(lead.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</span>
-                          </div>
-                          {lead.mensagem && (
-                            <p className="text-sm text-gray-700 mt-2 line-clamp-2">
-                              💬 {lead.mensagem}
-                            </p>
-                          )}
-                        </div>
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              copyToClipboard(lead.telefone);
-                            }}
-                          >
-                            <Copy className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="default"
-                            size="sm"
-                            onClick={() => setSelectedLead(lead)}
-                          >
-                            <MessageCircle className="h-4 w-4 mr-2" />
-                            Chat
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))
-              )}
-            </div>
-          </main>
+    <PageLayout 
+      title="Leads Premium"
+      subtitle="Leads recebidos via tráfego pago"
+      headerActions={headerActions}
+      showTrialBanner={true}
+    >
+      {/* Filtros */}
+      <div className="flex flex-col md:flex-row gap-4 mb-6">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+          <Input
+            placeholder="Buscar por nome ou telefone..."
+            className="pl-10"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
         </div>
+        <Select value={modalidadeFilter} onValueChange={setModalidadeFilter}>
+          <SelectTrigger className="w-full md:w-48">
+            <SelectValue placeholder="Modalidade" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todas as modalidades</SelectItem>
+            <SelectItem value="Aposentado">Aposentado</SelectItem>
+            <SelectItem value="Bolsa Família">Bolsa Família</SelectItem>
+            <SelectItem value="FGTS">FGTS</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-full md:w-48">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os status</SelectItem>
+            <SelectItem value="Novo">Novo</SelectItem>
+            <SelectItem value="Em atendimento">Em atendimento</SelectItem>
+            <SelectItem value="Fechado">Fechado</SelectItem>
+            <SelectItem value="Perdido">Perdido</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
-    </div>
+
+      {/* Lista de Leads */}
+      <div className="grid gap-4">
+        {isLoading ? (
+          <div className="text-center py-8">Carregando leads...</div>
+        ) : filteredLeads.length === 0 ? (
+          <Card>
+            <CardContent className="text-center py-8">
+              <Star className="h-12 w-12 text-yellow-400 fill-yellow-400 mx-auto mb-4" />
+              <p className="text-gray-500">Nenhum lead premium encontrado</p>
+              <p className="text-sm text-gray-400 mt-2">
+                Clique no botão "Adicionar Leads Mockados" para testar a funcionalidade
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          filteredLeads.map((lead) => (
+            <Card key={lead.id} className="hover:shadow-lg transition-shadow cursor-pointer">
+              <CardContent className="p-6">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div className="flex-1">
+                    <div className="flex flex-col md:flex-row md:items-center gap-2 mb-2">
+                      <h3 className="font-semibold text-lg">{lead.nome}</h3>
+                      <div className="flex gap-2">
+                        <Badge className={getModalidadeBadgeColor(lead.modalidade)}>
+                          {lead.modalidade}
+                        </Badge>
+                        <Badge className={getStatusBadgeColor(lead.status)}>
+                          {lead.status}
+                        </Badge>
+                      </div>
+                    </div>
+                    <div className="flex flex-col md:flex-row md:items-center gap-2 text-sm text-gray-600">
+                      <span>📱 {lead.telefone}</span>
+                      <span>📍 {lead.origem}</span>
+                      <span>🕒 {format(new Date(lead.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</span>
+                    </div>
+                    {lead.mensagem && (
+                      <p className="text-sm text-gray-700 mt-2 line-clamp-2">
+                        💬 {lead.mensagem}
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        copyToClipboard(lead.telefone);
+                      }}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={() => setSelectedLead(lead)}
+                    >
+                      <MessageCircle className="h-4 w-4 mr-2" />
+                      Chat
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
+      </div>
+    </PageLayout>
   );
 };
 

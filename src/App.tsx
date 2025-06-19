@@ -1,29 +1,30 @@
-
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import Index from "@/pages/Index";
-import Plans from "@/pages/Plans";
-import SubscriptionSuccess from "@/pages/SubscriptionSuccess";
-import SubscriptionCancelled from "@/pages/SubscriptionCancelled";
+// Lazy imports das páginas
+const Index = lazy(() => import("@/pages/Index"));
+const Plans = lazy(() => import("@/pages/Plans"));
+const SubscriptionSuccess = lazy(() => import("@/pages/SubscriptionSuccess"));
+const SubscriptionCancelled = lazy(() => import("@/pages/SubscriptionCancelled"));
+const Leads = lazy(() => import("@/pages/Leads"));
+const LeadsPremium = lazy(() => import("@/pages/LeadsPremium"));
+const LeadNew = lazy(() => import("@/pages/LeadNew"));
+const LeadImport = lazy(() => import("@/pages/LeadImport"));
+const LeadsConfig = lazy(() => import("@/pages/LeadsConfig"));
+const LeadScheduling = lazy(() => import("@/pages/LeadScheduling"));
+const LeadsTrash = lazy(() => import("@/pages/LeadsTrash"));
+const Login = lazy(() => import("@/pages/Login"));
+const Sales = lazy(() => import("@/pages/Sales"));
+const Portability = lazy(() => import("@/pages/Portability"));
+const Reminders = lazy(() => import("@/pages/Reminders"));
+const RemindersCalendar = lazy(() => import("@/pages/RemindersCalendar"));
+const Commission = lazy(() => import("@/pages/Commission"));
+const CommissionSettings = lazy(() => import("@/pages/CommissionSettings"));
+const Settings = lazy(() => import("@/pages/Settings"));
+const Employees = lazy(() => import("@/pages/Employees"));
+const NotFound = lazy(() => import("@/pages/NotFound"));
 import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
-import Leads from "@/pages/Leads";
-import LeadsPremium from "@/pages/LeadsPremium";
-import LeadNew from "@/pages/LeadNew";
-import LeadImport from "@/pages/LeadImport";
-import LeadScheduling from "@/pages/LeadScheduling";
-import LeadsTrash from "@/pages/LeadsTrash";
-import Login from "@/pages/Login";
-import Sales from "@/pages/Sales";
-import Portability from "@/pages/Portability";
-import Reminders from "@/pages/Reminders";
-import RemindersCalendar from "@/pages/RemindersCalendar";
-import Commission from "@/pages/Commission";
-import CommissionSettings from "@/pages/CommissionSettings";
-import Settings from "@/pages/Settings";
-import Employees from "@/pages/Employees";
-import { SidebarProvider } from "@/components/ui/sidebar";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as SonnerToaster } from "sonner";
 
@@ -34,7 +35,7 @@ function App() {
         <AuthProvider>
           <ThemeProvider>
             <SubscriptionProvider>
-              <SidebarProvider>
+              <Suspense fallback={<div className="w-full min-h-screen flex items-center justify-center text-lg">Carregando...</div>}>
                 <Routes>
                   <Route path="/" element={<Index />} />
                   <Route path="/dashboard" element={<Index />} />
@@ -45,6 +46,7 @@ function App() {
                   <Route path="/leads-premium" element={<LeadsPremium />} />
                   <Route path="/leads/new" element={<LeadNew />} />
                   <Route path="/leads/import" element={<LeadImport />} />
+                  <Route path="/leads/config" element={<LeadsConfig />} />
                   <Route path="/leads/scheduled" element={<LeadScheduling />} />
                   <Route path="/leads/trash" element={<LeadsTrash />} />
                   <Route path="/login" element={<Login />} />
@@ -56,10 +58,11 @@ function App() {
                   <Route path="/commission/settings" element={<CommissionSettings />} />
                   <Route path="/settings" element={<Settings />} />
                   <Route path="/employees" element={<Employees />} />
+                  <Route path="*" element={<NotFound />} />
                 </Routes>
-                <Toaster />
-                <SonnerToaster />
-              </SidebarProvider>
+              </Suspense>
+              <Toaster />
+              <SonnerToaster />
             </SubscriptionProvider>
           </ThemeProvider>
         </AuthProvider>

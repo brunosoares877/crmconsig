@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import Header from "@/components/Header";
 import LeadList from "@/components/LeadList";
 import Filters from "@/components/Filters";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,7 +11,8 @@ import { Search, Trash2, Plus, Tag, X } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { AppSidebar } from "@/components/AppSidebar";
+import PageLayout from "@/components/PageLayout";
+import AddLeadButton from "@/components/leads/AddLeadButton";
 
 interface Tag {
   id: string;
@@ -39,6 +39,27 @@ const Leads = () => {
     "#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6",
     "#f97316", "#06b6d4", "#84cc16", "#ec4899", "#6b7280"
   ];
+
+  const headerActions = (
+    <div className="flex items-center gap-3">
+      <AddLeadButton />
+      <div className="relative">
+        <Search className="absolute left-3 top-2.5 h-4 w-4 text-blue-500" />
+        <Input 
+          placeholder="Buscar por nome, telefone ou CPF..." 
+          className="pl-10 py-2 border-blue-100 bg-blue-50/50 hover:bg-blue-50 focus:border-blue-200 focus:ring-1 focus:ring-blue-200 transition-all rounded-full w-full md:w-[280px]" 
+          value={searchQuery} 
+          onChange={e => setSearchQuery(e.target.value)} 
+        />
+      </div>
+      <Button asChild variant="outline" className="flex items-center gap-2">
+        <Link to="/leads/trash">
+          <Trash2 className="h-4 w-4" />
+          Lixeira
+        </Link>
+      </Button>
+    </div>
+  );
 
   useEffect(() => {
     const fetchLeadStats = async () => {
@@ -191,176 +212,156 @@ const Leads = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="flex w-full">
-        <AppSidebar />
-        <div className="flex-1 transition-all duration-300">
-          <Header />
-          <main className="w-full space-y-6 p-4 md:p-6 py-8">
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6">
-              <div>
-                <h1 className="text-3xl font-bold text-slate-900">Gestão de Leads</h1>
-                <p className="text-muted-foreground mt-1">Gerencie e acompanhe todos os seus leads em um só lugar</p>
+    <PageLayout 
+      title="Gestão de Leads" 
+      subtitle="Gerencie e acompanhe todos os seus leads em um só lugar"
+      headerActions={headerActions}
+    >
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-2xl">{isLoading ? "..." : leadStats.total}</CardTitle>
+              <CardDescription>Total de Leads</CardDescription>
+            </CardHeader>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-2xl text-blue-600">{isLoading ? "..." : leadStats.new}</CardTitle>
+              <CardDescription>Novos Leads</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-xs text-muted-foreground">
+                Aguardando primeiro contato
               </div>
-              <div className="flex items-center gap-3 mt-4 md:mt-0">
-                <div className="relative">
-                  <Search className="absolute left-3 top-2.5 h-4 w-4 text-blue-500" />
-                  <Input placeholder="Buscar por nome, telefone ou CPF..." className="pl-10 py-2 border-blue-100 bg-blue-50/50 hover:bg-blue-50 focus:border-blue-200 focus:ring-1 focus:ring-blue-200 transition-all rounded-full w-full md:w-[280px]" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
-                </div>
-                <Button asChild variant="outline" className="flex items-center gap-2">
-                  <Link to="/leads/trash">
-                    <Trash2 className="h-4 w-4" />
-                    Lixeira
-                  </Link>
-                </Button>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-2xl text-amber-600">{isLoading ? "..." : leadStats.qualified}</CardTitle>
+              <CardDescription>Leads Qualificados</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-xs text-muted-foreground">
+                Prontos para negociação
               </div>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-2xl">{isLoading ? "..." : leadStats.total}</CardTitle>
-                  <CardDescription>Total de Leads</CardDescription>
-                </CardHeader>
-              </Card>
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-2xl text-blue-600">{isLoading ? "..." : leadStats.new}</CardTitle>
-                  <CardDescription>Novos Leads</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-xs text-muted-foreground">
-                    Aguardando primeiro contato
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-2xl text-amber-600">{isLoading ? "..." : leadStats.qualified}</CardTitle>
-                  <CardDescription>Leads Qualificados</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-xs text-muted-foreground">
-                    Prontos para negociação
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-2xl text-green-600">{isLoading ? "..." : leadStats.converted}</CardTitle>
-                  <CardDescription>Conversões</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-xs text-muted-foreground">
-                    Este mês
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Tags Filter Section */}
-            <Card className="p-4">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <Tag className="h-5 w-5" />
-                  <h3 className="text-lg font-semibold">Filtrar por Etiquetas</h3>
-                  {selectedTags.length > 0 && (
-                    <Button variant="outline" size="sm" onClick={clearSelectedTags}>
-                      <X className="h-4 w-4 mr-2" />
-                      Limpar Filtros ({selectedTags.length})
-                    </Button>
-                  )}
-                </div>
-                <Dialog open={isTagDialogOpen} onOpenChange={setIsTagDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button variant="outline" size="sm">
-                      <Plus className="h-4 w-4 mr-2" />
-                      Nova Etiqueta
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Criar Nova Etiqueta</DialogTitle>
-                      <DialogDescription>
-                        Crie uma nova etiqueta para organizar seus leads.
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <div>
-                        <Label htmlFor="tagName">Nome da Etiqueta</Label>
-                        <Input
-                          id="tagName"
-                          value={newTagName}
-                          onChange={(e) => setNewTagName(e.target.value)}
-                          placeholder="Ex: Cliente VIP, Urgente, etc."
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="tagColor">Cor da Etiqueta</Label>
-                        <div className="flex gap-2 mt-2">
-                          {tagColors.map((color) => (
-                            <button
-                              key={color}
-                              className={`w-8 h-8 rounded-full border-2 ${
-                                newTagColor === color ? 'border-gray-900' : 'border-gray-300'
-                              }`}
-                              style={{ backgroundColor: color }}
-                              onClick={() => setNewTagColor(color)}
-                            />
-                          ))}
-                        </div>
-                      </div>
-                      <div className="flex justify-end gap-2">
-                        <Button variant="outline" onClick={() => setIsTagDialogOpen(false)}>
-                          Cancelar
-                        </Button>
-                        <Button onClick={createTag}>Criar Etiqueta</Button>
-                      </div>
-                    </div>
-                  </DialogContent>
-                </Dialog>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-2xl text-green-600">{isLoading ? "..." : leadStats.converted}</CardTitle>
+              <CardDescription>Conversões</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-xs text-muted-foreground">
+                Este mês
               </div>
-              
-              <div className="flex flex-wrap gap-2">
-                {tags.map((tag) => (
-                  <div key={tag.id} className="relative group">
-                    <Badge
-                      variant="outline"
-                      className={`cursor-pointer transition-all ${
-                        selectedTags.includes(tag.id)
-                          ? 'ring-2 ring-offset-1'
-                          : 'hover:scale-105'
-                      }`}
-                      style={{
-                        backgroundColor: selectedTags.includes(tag.id) ? tag.color : 'transparent',
-                        borderColor: tag.color,
-                        color: selectedTags.includes(tag.id) ? 'white' : tag.color
-                      }}
-                      onClick={() => toggleTag(tag.id)}
-                    >
-                      {tag.name}
-                    </Badge>
-                    <button
-                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 text-xs opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={() => deleteTag(tag.id)}
-                    >
-                      ×
-                    </button>
-                  </div>
-                ))}
-                {tags.length === 0 && (
-                  <p className="text-muted-foreground text-sm">
-                    Nenhuma etiqueta criada. Clique em "Nova Etiqueta" para começar.
-                  </p>
-                )}
-              </div>
-            </Card>
-
-            <LeadList searchQuery={searchQuery} selectedTags={selectedTags} />
-          </main>
+            </CardContent>
+          </Card>
         </div>
+
+        {/* Tags Filter Section */}
+        <Card className="p-4">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Tag className="h-5 w-5" />
+              <h3 className="text-lg font-semibold">Filtrar por Etiquetas</h3>
+              {selectedTags.length > 0 && (
+                <Button variant="outline" size="sm" onClick={clearSelectedTags}>
+                  <X className="h-4 w-4 mr-2" />
+                  Limpar Filtros ({selectedTags.length})
+                </Button>
+              )}
+            </div>
+            <Dialog open={isTagDialogOpen} onOpenChange={setIsTagDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Nova Etiqueta
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Criar Nova Etiqueta</DialogTitle>
+                  <DialogDescription>
+                    Crie uma nova etiqueta para organizar seus leads.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="tagName">Nome da Etiqueta</Label>
+                    <Input
+                      id="tagName"
+                      value={newTagName}
+                      onChange={(e) => setNewTagName(e.target.value)}
+                      placeholder="Ex: Cliente VIP, Urgente, etc."
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="tagColor">Cor da Etiqueta</Label>
+                    <div className="flex gap-2 mt-2">
+                      {tagColors.map((color) => (
+                        <button
+                          key={color}
+                          className={`w-8 h-8 rounded-full border-2 ${
+                            newTagColor === color ? 'border-gray-900' : 'border-gray-300'
+                          }`}
+                          style={{ backgroundColor: color }}
+                          onClick={() => setNewTagColor(color)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    <Button variant="outline" onClick={() => setIsTagDialogOpen(false)}>
+                      Cancelar
+                    </Button>
+                    <Button onClick={createTag}>Criar Etiqueta</Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+          
+          <div className="flex flex-wrap gap-2">
+            {tags.map((tag) => (
+              <div key={tag.id} className="relative group">
+                <Badge
+                  variant="outline"
+                  className={`cursor-pointer transition-all ${
+                    selectedTags.includes(tag.id)
+                      ? 'ring-2 ring-offset-1'
+                      : 'hover:scale-105'
+                  }`}
+                  style={{
+                    backgroundColor: selectedTags.includes(tag.id) ? tag.color : 'transparent',
+                    borderColor: tag.color,
+                    color: selectedTags.includes(tag.id) ? 'white' : tag.color
+                  }}
+                  onClick={() => toggleTag(tag.id)}
+                >
+                  {tag.name}
+                </Badge>
+                <button
+                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                  onClick={() => deleteTag(tag.id)}
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+            {tags.length === 0 && (
+              <p className="text-muted-foreground text-sm">
+                Nenhuma etiqueta criada. Clique em "Nova Etiqueta" para começar.
+              </p>
+            )}
+          </div>
+        </Card>
+
+        <LeadList searchQuery={searchQuery} selectedTags={selectedTags} />
       </div>
-    </div>
+    </PageLayout>
   );
 };
+
 export default Leads;

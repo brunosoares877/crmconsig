@@ -9,6 +9,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
+import ReCAPTCHA from "react-google-recaptcha";
+
 const phoneRegex = /^\(\d{2}\) \d{5}-\d{4}$/;
 const LoginSchema = z.object({
   email: z.string().email("Email inválido"),
@@ -25,6 +27,9 @@ const SignupSchema = z.object({
   message: "As senhas não coincidem",
   path: ["confirmPassword"]
 });
+
+const RECAPTCHA_SITE_KEY = "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"; // Chave de teste Google
+
 const Login = () => {
   const navigate = useNavigate();
   const {
@@ -44,6 +49,9 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
+  const [recaptchaError, setRecaptchaError] = useState<string | null>(null);
+
   const maskPhone = (value: string) => {
     const digits = value.replace(/\D/g, '');
     if (digits.length <= 2) {
@@ -122,15 +130,23 @@ const Login = () => {
     if (!validateForm()) {
       return;
     }
+    if (!isLogin) {
+      if (!recaptchaToken) {
+        setRecaptchaError("Por favor, confirme que você não é um robô.");
+        return;
+      }
+      setRecaptchaError(null);
+    }
     setIsLoading(true);
     try {
       if (isLogin) {
         await signIn(email, password);
         toast.success("Login realizado com sucesso");
       } else {
-        const {
-          error
-        } = await supabase.auth.signUp({
+        // Aqui você pode enviar o recaptchaToken para o backend para validação real
+        // Exemplo: await fetch('/api/validate-recaptcha', { method: 'POST', body: JSON.stringify({ token: recaptchaToken }) })
+        // ... cadastro de usuário ...
+        const { data: authData, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
@@ -142,15 +158,20 @@ const Login = () => {
           }
         });
         if (error) throw error;
-        const {
-          error: profileError
-        } = await supabase.from('profiles').update({
-          company_name: company,
-          first_name: fullName.split(' ')[0],
-          last_name: fullName.split(' ').slice(1).join(' ')
-        }).eq('id', (await supabase.auth.getUser()).data.user?.id);
-        if (profileError) {
-          console.error("Error updating profile:", profileError);
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        if (authData.user) {
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .update({
+              company_name: company,
+              first_name: fullName.split(' ')[0],
+              last_name: fullName.split(' ').slice(1).join(' '),
+              whatsapp: whatsapp
+            })
+            .eq('id', authData.user.id);
+          if (profileError) {
+            console.error("Error updating profile:", profileError);
+          }
         }
         startTrial();
         toast.success("Conta criada com sucesso! Seu período de teste de 7 dias começou.");
@@ -259,6 +280,20 @@ const Login = () => {
                   </div>
                   {errors.confirmPassword && <p className="text-xs text-red-500">{errors.confirmPassword}</p>}
                 </div>}
+
+              {!isLogin && (
+                <div className="flex flex-col items-center space-y-2">
+                  <ReCAPTCHA
+                    sitekey={RECAPTCHA_SITE_KEY}
+                    onChange={token => setRecaptchaToken(token)}
+                    onExpired={() => setRecaptchaToken(null)}
+                    theme="light"
+                  />
+                  {recaptchaError && (
+                    <span className="text-red-500 text-xs mt-1">{recaptchaError}</span>
+                  )}
+                </div>
+              )}
 
               <Button type="submit" className="w-full h-10 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-lg text-sm" disabled={isLoading}>
                 {isLoading ? <>

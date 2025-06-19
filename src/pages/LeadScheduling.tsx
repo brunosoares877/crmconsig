@@ -34,8 +34,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Lead, Appointment } from "@/types/models";
-import Header from "@/components/Header";
-import { AppSidebar } from "@/components/AppSidebar";
+import PageLayout from "@/components/PageLayout";
 import {
   Tabs,
   TabsContent,
@@ -305,273 +304,268 @@ const LeadScheduling = () => {
     }
   };
 
-  return (
-    <div className="min-h-screen bg-background">
-      <AppSidebar />
-      <div className="ml-0 md:ml-64">
-        <Header />
-        <main className="w-full p-4 md:p-6 py-8 space-y-8">
-          <div className="flex items-center justify-between">
-            <div className="space-y-2">
-              <h1 className="text-3xl font-bold">Agendamentos</h1>
-              <p className="text-muted-foreground text-lg">Gerencie os agendamentos com seus clientes</p>
-            </div>
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogTrigger asChild>
-                <Button size="lg" className="bg-blue-600 hover:bg-blue-700" onClick={openNewAppointmentDialog}>
-                  <Plus className="mr-2 h-5 w-5" />
-                  Novo Agendamento
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-lg">
-                <DialogHeader className="space-y-3">
-                  <DialogTitle className="text-xl">{editingAppointment ? "Editar Agendamento" : "Criar Novo Agendamento"}</DialogTitle>
-                  <DialogDescription className="text-base">
-                    {editingAppointment 
-                      ? "Atualize os detalhes do agendamento." 
-                      : "Agende uma visita ou reunião com o cliente."}
-                  </DialogDescription>
-                </DialogHeader>
-                
-                <div className="space-y-6 py-6">
-                  <div className="space-y-3">
-                    <Label htmlFor="title" className="text-sm font-medium">Título*</Label>
-                    <Input
-                      id="title"
-                      value={title}
-                      onChange={(e) => setTitle(e.target.value)}
-                      placeholder="Título do agendamento"
-                      className="h-11"
-                    />
-                  </div>
-                  
-                  <div className="space-y-3">
-                    <Label htmlFor="lead" className="text-sm font-medium">Cliente*</Label>
-                    <Select value={leadId} onValueChange={setLeadId}>
-                      <SelectTrigger className="h-11">
-                        <SelectValue placeholder="Selecione um cliente" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {leads.map((lead) => (
-                          <SelectItem key={lead.id} value={lead.id}>
-                            {lead.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-3">
-                      <Label htmlFor="date" className="text-sm font-medium">Data*</Label>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            className="w-full justify-start text-left font-normal h-11"
-                          >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {date ? format(date, "PPP", { locale: ptBR }) : "Selecione uma data"}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={date}
-                            onSelect={setDate}
-                            initialFocus
-                            className={cn("p-3 pointer-events-auto")}
-                          />
-                        </PopoverContent>
-                      </Popover>
-                    </div>
-                    
-                    <div className="space-y-3">
-                      <Label htmlFor="time" className="text-sm font-medium">Horário*</Label>
-                      <Input
-                        id="time"
-                        type="time"
-                        value={time}
-                        onChange={(e) => setTime(e.target.value)}
-                        className="h-11"
-                      />
-                    </div>
-                  </div>
-                  
-                  {editingAppointment && (
-                    <div className="space-y-3">
-                      <Label htmlFor="status" className="text-sm font-medium">Status</Label>
-                      <Select value={status} onValueChange={(value: "scheduled" | "completed" | "cancelled") => setStatus(value)}>
-                        <SelectTrigger className="h-11">
-                          <SelectValue placeholder="Selecione o status" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="scheduled">Agendado</SelectItem>
-                          <SelectItem value="completed">Concluído</SelectItem>
-                          <SelectItem value="cancelled">Cancelado</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-                  
-                  <div className="space-y-3">
-                    <Label htmlFor="notes" className="text-sm font-medium">Observações</Label>
-                    <Textarea
-                      id="notes"
-                      value={notes}
-                      onChange={(e) => setNotes(e.target.value)}
-                      placeholder="Detalhes adicionais sobre o agendamento..."
-                      rows={4}
-                      className="resize-none"
-                    />
-                  </div>
-                </div>
-                
-                <DialogFooter className="gap-3">
+  const headerActions = (
+    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <DialogTrigger asChild>
+        <Button size="lg" className="bg-blue-600 hover:bg-blue-700" onClick={openNewAppointmentDialog}>
+          <Plus className="mr-2 h-5 w-5" />
+          Novo Agendamento
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader className="space-y-3">
+          <DialogTitle className="text-xl">{editingAppointment ? "Editar Agendamento" : "Criar Novo Agendamento"}</DialogTitle>
+          <DialogDescription className="text-base">
+            {editingAppointment 
+              ? "Atualize os detalhes do agendamento." 
+              : "Agende uma visita ou reunião com o cliente."}
+          </DialogDescription>
+        </DialogHeader>
+        
+        <div className="space-y-6 py-6">
+          <div className="space-y-3">
+            <Label htmlFor="title" className="text-sm font-medium">Título*</Label>
+            <Input
+              id="title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Título do agendamento"
+              className="h-11"
+            />
+          </div>
+          
+          <div className="space-y-3">
+            <Label htmlFor="lead" className="text-sm font-medium">Cliente*</Label>
+            <Select value={leadId} onValueChange={setLeadId}>
+              <SelectTrigger className="h-11">
+                <SelectValue placeholder="Selecione um cliente" />
+              </SelectTrigger>
+              <SelectContent>
+                {leads.map((lead) => (
+                  <SelectItem key={lead.id} value={lead.id}>
+                    {lead.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-3">
+              <Label htmlFor="date" className="text-sm font-medium">Data*</Label>
+              <Popover>
+                <PopoverTrigger asChild>
                   <Button
                     variant="outline"
-                    onClick={closeDialog}
-                    disabled={isSubmitting}
+                    className="w-full justify-start text-left font-normal h-11"
                   >
-                    Cancelar
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {date ? format(date, "PPP", { locale: ptBR }) : "Selecione uma data"}
                   </Button>
-                  <Button
-                    onClick={handleSubmit}
-                    disabled={isSubmitting}
-                    className="bg-blue-600 hover:bg-blue-700"
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        {editingAppointment ? "Atualizando..." : "Salvando..."}
-                      </>
-                    ) : (
-                      editingAppointment ? "Atualizar" : "Salvar"
-                    )}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </div>
-
-          <Tabs defaultValue="all" className="mb-6" onValueChange={(value) => filterAppointments(value as AppointmentStatus)}>
-            <TabsList className="grid w-full grid-cols-4 md:w-auto">
-              <TabsTrigger value="all">Todos</TabsTrigger>
-              <TabsTrigger value="completed">Finalizados</TabsTrigger>
-              <TabsTrigger value="overdue">Atrasados</TabsTrigger>
-              <TabsTrigger value="pending">Pendentes</TabsTrigger>
-            </TabsList>
-          </Tabs>
-
-          {isLoading ? (
-            <div className="space-y-6">
-              {[1, 2, 3].map(i => (
-                <Card key={i} className="animate-pulse">
-                  <div className="h-32 bg-gray-100 rounded-md" />
-                </Card>
-              ))}
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={date}
+                    onSelect={setDate}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
-          ) : filteredAppointments.length > 0 ? (
-            <div className="space-y-6">
-              {filteredAppointments.map((appointment) => (
-                <Card
-                  key={appointment.id}
-                  className={cn(
-                    "transition-all hover:shadow-md",
-                    appointment.status === "cancelled" ? "bg-gray-50 opacity-80" : "bg-white"
-                  )}
-                >
-                  <CardHeader className="pb-4">
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1 space-y-3">
-                        <div className="flex items-center gap-3">
-                          <CardTitle className="text-xl">{appointment.title}</CardTitle>
-                          {getAppointmentStatusBadge(appointment)}
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <CardDescription className="flex items-center gap-2 text-base">
-                            <MapPin className="h-4 w-4" />
-                            Cliente: <span className="font-medium text-foreground">{getLeadName(appointment.lead_id)}</span>
-                          </CardDescription>
-                          <CardDescription className="flex items-center gap-2 text-base">
-                            <Clock className="h-4 w-4" />
-                            {formatDate(appointment.date)} às {appointment.time}
-                          </CardDescription>
-                        </div>
+            
+            <div className="space-y-3">
+              <Label htmlFor="time" className="text-sm font-medium">Horário*</Label>
+              <Input
+                id="time"
+                type="time"
+                value={time}
+                onChange={(e) => setTime(e.target.value)}
+                className="h-11"
+              />
+            </div>
+          </div>
+          
+          {editingAppointment && (
+            <div className="space-y-3">
+              <Label htmlFor="status" className="text-sm font-medium">Status</Label>
+              <Select value={status} onValueChange={(value: "scheduled" | "completed" | "cancelled") => setStatus(value)}>
+                <SelectTrigger className="h-11">
+                  <SelectValue placeholder="Selecione o status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="scheduled">Agendado</SelectItem>
+                  <SelectItem value="completed">Concluído</SelectItem>
+                  <SelectItem value="cancelled">Cancelado</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          
+          <div className="space-y-3">
+            <Label htmlFor="notes" className="text-sm font-medium">Observações</Label>
+            <Textarea
+              id="notes"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Detalhes adicionais sobre o agendamento..."
+              rows={4}
+              className="resize-none"
+            />
+          </div>
+        </div>
+        
+        <DialogFooter className="gap-3">
+          <Button
+            variant="outline"
+            onClick={closeDialog}
+            disabled={isSubmitting}
+          >
+            Cancelar
+          </Button>
+          <Button
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                {editingAppointment ? "Atualizando..." : "Salvando..."}
+              </>
+            ) : (
+              editingAppointment ? "Atualizar" : "Salvar"
+            )}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+
+  return (
+    <PageLayout
+      title="Agendamentos de Leads"
+      subtitle="Gerencie os agendamentos e visitas dos seus leads"
+    >
+      <div className="space-y-8">
+        <Tabs defaultValue="all" className="mb-6" onValueChange={(value) => filterAppointments(value as AppointmentStatus)}>
+          <TabsList className="grid w-full grid-cols-4 md:w-auto">
+            <TabsTrigger value="all">Todos</TabsTrigger>
+            <TabsTrigger value="completed">Finalizados</TabsTrigger>
+            <TabsTrigger value="overdue">Atrasados</TabsTrigger>
+            <TabsTrigger value="pending">Pendentes</TabsTrigger>
+          </TabsList>
+        </Tabs>
+
+        {isLoading ? (
+          <div className="space-y-6">
+            {[1, 2, 3].map(i => (
+              <Card key={i} className="animate-pulse">
+                <div className="h-32 bg-gray-100 rounded-md" />
+              </Card>
+            ))}
+          </div>
+        ) : filteredAppointments.length > 0 ? (
+          <div className="space-y-6">
+            {filteredAppointments.map((appointment) => (
+              <Card
+                key={appointment.id}
+                className={cn(
+                  "transition-all hover:shadow-md",
+                  appointment.status === "cancelled" ? "bg-gray-50 opacity-80" : "bg-white"
+                )}
+              >
+                <CardHeader className="pb-4">
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1 space-y-3">
+                      <div className="flex items-center gap-3">
+                        <CardTitle className="text-xl">{appointment.title}</CardTitle>
+                        {getAppointmentStatusBadge(appointment)}
                       </div>
                       
-                      <div className="flex space-x-2">
-                        {appointment.status === "scheduled" && (
-                          <>
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              className="h-10 w-10 text-green-600 hover:bg-green-50"
-                              title="Marcar como concluído"
-                              onClick={() => handleStatusChange(appointment, "completed")}
-                            >
-                              <Check className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              className="h-10 w-10 text-red-600 hover:bg-red-50"
-                              title="Cancelar agendamento"
-                              onClick={() => handleStatusChange(appointment, "cancelled")}
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </>
-                        )}
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-10 w-10"
-                          onClick={() => handleEditAppointment(appointment)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-10 w-10 text-red-600 hover:bg-red-50"
-                          onClick={() => handleDeleteAppointment(appointment.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                      <div className="space-y-2">
+                        <CardDescription className="flex items-center gap-2 text-base">
+                          <MapPin className="h-4 w-4" />
+                          Cliente: <span className="font-medium text-foreground">{getLeadName(appointment.lead_id)}</span>
+                        </CardDescription>
+                        <CardDescription className="flex items-center gap-2 text-base">
+                          <Clock className="h-4 w-4" />
+                          {formatDate(appointment.date)} às {appointment.time}
+                        </CardDescription>
                       </div>
                     </div>
-                  </CardHeader>
-                  
-                  {appointment.notes && (
-                    <CardContent className="pt-0">
-                      <div className="bg-gray-50 p-4 rounded-md">
-                        <div className="flex items-center gap-2 mb-2">
-                          <MapPin className="h-4 w-4 text-gray-600" />
-                          <span className="font-medium text-sm text-gray-700">Observações:</span>
-                        </div>
-                        <p className="text-gray-600">{appointment.notes}</p>
+                    
+                    <div className="flex space-x-2">
+                      {appointment.status === "scheduled" && (
+                        <>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-10 w-10 text-green-600 hover:bg-green-50"
+                            title="Marcar como concluído"
+                            onClick={() => handleStatusChange(appointment, "completed")}
+                          >
+                            <Check className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-10 w-10 text-red-600 hover:bg-red-50"
+                            title="Cancelar agendamento"
+                            onClick={() => handleStatusChange(appointment, "cancelled")}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </>
+                      )}
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-10 w-10"
+                        onClick={() => handleEditAppointment(appointment)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-10 w-10 text-red-600 hover:bg-red-50"
+                        onClick={() => handleDeleteAppointment(appointment.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </CardHeader>
+                
+                {appointment.notes && (
+                  <CardContent className="pt-0">
+                    <div className="bg-gray-50 p-4 rounded-md">
+                      <div className="flex items-center gap-2 mb-2">
+                        <MapPin className="h-4 w-4 text-gray-600" />
+                        <span className="font-medium text-sm text-gray-700">Observações:</span>
                       </div>
-                    </CardContent>
-                  )}
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <Card className="text-center py-16">
-              <CardContent>
-                <AlertCircle className="h-16 w-16 mx-auto text-gray-400 mb-4" />
-                <h3 className="text-xl font-medium text-gray-900 mb-2">Nenhum agendamento</h3>
-                <p className="text-gray-500 text-lg">
-                  Crie o seu primeiro agendamento com um cliente.
-                </p>
-              </CardContent>
-            </Card>
-          )}
-        </main>
+                      <p className="text-gray-600">{appointment.notes}</p>
+                    </div>
+                  </CardContent>
+                )}
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <Card className="text-center py-16">
+            <CardContent>
+              <AlertCircle className="h-16 w-16 mx-auto text-gray-400 mb-4" />
+              <h3 className="text-xl font-medium text-gray-900 mb-2">Nenhum agendamento</h3>
+              <p className="text-gray-500 text-lg">
+                Crie o seu primeiro agendamento com um cliente.
+              </p>
+            </CardContent>
+          </Card>
+        )}
       </div>
-    </div>
+    </PageLayout>
   );
 };
 

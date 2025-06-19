@@ -10,8 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { AppSidebar } from "@/components/AppSidebar";
-import Header from "@/components/Header";
+import PageLayout from "@/components/PageLayout";
 
 interface LeadPremium {
   id: string;
@@ -214,112 +213,102 @@ const LeadPremiumChat: React.FC<LeadPremiumChatProps> = ({ lead, onBack, onLeadU
     }
   }, [isLoading, mensagens.length, lead]);
 
+  const headerActions = (
+    <div className="flex items-center gap-4">
+      <Button variant="outline" size="sm" onClick={onBack}>
+        <ArrowLeft className="h-4 w-4" />
+      </Button>
+      <Select value={lead.status} onValueChange={atualizarStatus}>
+        <SelectTrigger className="w-48">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="Novo">Novo</SelectItem>
+          <SelectItem value="Em atendimento">Em atendimento</SelectItem>
+          <SelectItem value="Fechado">Fechado</SelectItem>
+          <SelectItem value="Perdido">Perdido</SelectItem>
+        </SelectContent>
+      </Select>
+    </div>
+  );
+
   return (
-    <div className="min-h-screen bg-background">
-      <div className="flex w-full">
-        <AppSidebar />
-        <div className="flex-1 transition-all duration-300">
-          <Header />
-          <main className="w-full h-[calc(100vh-64px)] flex flex-col p-4 md:p-6">
-            {/* Cabeçalho do Chat */}
-            <Card className="mb-4">
-              <CardHeader className="pb-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <Button variant="outline" size="sm" onClick={onBack}>
-                      <ArrowLeft className="h-4 w-4" />
-                    </Button>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h2 className="text-xl font-semibold">{lead.nome}</h2>
-                        <Badge className={getModalidadeBadgeColor(lead.modalidade)}>
-                          {lead.modalidade}
-                        </Badge>
+    <PageLayout 
+      title={`Chat com ${lead.nome}`}
+      subtitle={`📱 ${lead.telefone} • 📍 ${lead.origem}`}
+      headerActions={headerActions}
+      showTrialBanner={false}
+    >
+      <div className="flex flex-col gap-4">
+        {/* Badge da modalidade */}
+        <div className="flex items-center gap-2">
+          <Badge className={getModalidadeBadgeColor(lead.modalidade)}>
+            {lead.modalidade}
+          </Badge>
+        </div>
+
+        {/* Área de Mensagens */}
+        <Card className="flex-1 flex flex-col h-[calc(100vh-300px)]">
+          <CardContent className="flex-1 flex flex-col p-4">
+            <div className="flex-1 overflow-y-auto space-y-4 mb-4">
+              {isLoading ? (
+                <div className="text-center py-8">Carregando conversa...</div>
+              ) : mensagens.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <User className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+                  <p>Nenhuma mensagem ainda</p>
+                </div>
+              ) : (
+                mensagens.map((mensagem) => (
+                  <div
+                    key={mensagem.id}
+                    className={`flex ${mensagem.remetente === 'atendente' ? 'justify-end' : 'justify-start'}`}
+                  >
+                    <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                      mensagem.remetente === 'atendente'
+                        ? 'bg-blue-500 text-white'
+                        : 'bg-gray-100 text-gray-900'
+                    }`}>
+                      <div className="flex items-center gap-1 mb-1">
+                        {mensagem.remetente === 'atendente' ? (
+                          <Headphones className="h-3 w-3" />
+                        ) : (
+                          <User className="h-3 w-3" />
+                        )}
+                        <span className="text-xs opacity-75">
+                          {mensagem.remetente === 'atendente' ? 'Atendente' : lead.nome}
+                        </span>
                       </div>
-                      <p className="text-sm text-gray-600">
-                        📱 {lead.telefone} • 📍 {lead.origem}
+                      <p className="text-sm">{mensagem.conteudo}</p>
+                      <p className={`text-xs mt-1 ${
+                        mensagem.remetente === 'atendente' ? 'text-blue-100' : 'text-gray-500'
+                      }`}>
+                        {format(new Date(mensagem.created_at), "HH:mm", { locale: ptBR })}
                       </p>
                     </div>
                   </div>
-                  <Select value={lead.status} onValueChange={atualizarStatus}>
-                    <SelectTrigger className="w-48">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Novo">Novo</SelectItem>
-                      <SelectItem value="Em atendimento">Em atendimento</SelectItem>
-                      <SelectItem value="Fechado">Fechado</SelectItem>
-                      <SelectItem value="Perdido">Perdido</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </CardHeader>
-            </Card>
+                ))
+              )}
+              <div ref={messagesEndRef} />
+            </div>
 
-            {/* Área de Mensagens */}
-            <Card className="flex-1 flex flex-col">
-              <CardContent className="flex-1 flex flex-col p-4">
-                <div className="flex-1 overflow-y-auto space-y-4 mb-4">
-                  {isLoading ? (
-                    <div className="text-center py-8">Carregando conversa...</div>
-                  ) : mensagens.length === 0 ? (
-                    <div className="text-center py-8 text-gray-500">
-                      <User className="h-12 w-12 mx-auto mb-2 text-gray-300" />
-                      <p>Nenhuma mensagem ainda</p>
-                    </div>
-                  ) : (
-                    mensagens.map((mensagem) => (
-                      <div
-                        key={mensagem.id}
-                        className={`flex ${mensagem.remetente === 'atendente' ? 'justify-end' : 'justify-start'}`}
-                      >
-                        <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                          mensagem.remetente === 'atendente'
-                            ? 'bg-blue-500 text-white'
-                            : 'bg-gray-100 text-gray-900'
-                        }`}>
-                          <div className="flex items-center gap-1 mb-1">
-                            {mensagem.remetente === 'atendente' ? (
-                              <Headphones className="h-3 w-3" />
-                            ) : (
-                              <User className="h-3 w-3" />
-                            )}
-                            <span className="text-xs opacity-75">
-                              {mensagem.remetente === 'atendente' ? 'Atendente' : lead.nome}
-                            </span>
-                          </div>
-                          <p className="text-sm">{mensagem.conteudo}</p>
-                          <p className={`text-xs mt-1 ${
-                            mensagem.remetente === 'atendente' ? 'text-blue-100' : 'text-gray-500'
-                          }`}>
-                            {format(new Date(mensagem.created_at), "HH:mm", { locale: ptBR })}
-                          </p>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                  <div ref={messagesEndRef} />
-                </div>
-
-                {/* Campo de Envio */}
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Digite sua mensagem..."
-                    value={novaMensagem}
-                    onChange={(e) => setNovaMensagem(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && enviarMensagem()}
-                    disabled={isSending}
-                  />
-                  <Button onClick={enviarMensagem} disabled={!novaMensagem.trim() || isSending}>
-                    <Send className="h-4 w-4" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </main>
-        </div>
+            {/* Campo de Envio */}
+            <div className="flex gap-2">
+              <Input
+                placeholder="Digite sua mensagem..."
+                value={novaMensagem}
+                onChange={(e) => setNovaMensagem(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && enviarMensagem()}
+                disabled={isSending}
+              />
+              <Button onClick={enviarMensagem} disabled={!novaMensagem.trim() || isSending}>
+                <Send className="h-4 w-4" />
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
-    </div>
+    </PageLayout>
   );
 };
 

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -6,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { MoreHorizontal, Phone, Mail, DollarSign, Building, User, Edit, Trash2, Calendar, FileText, Tag } from "lucide-react";
+import { MoreHorizontal, Phone, Mail, DollarSign, Building, User, Edit, Trash2, Calendar, FileText, Tag, CheckCircle, Clock, AlertTriangle, X } from "lucide-react";
 import { Lead } from "@/types/models";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -42,10 +41,10 @@ const statusColors = {
 const statusLabels = {
   novo: "Novo",
   contatado: "Contatado",
-  qualificado: "Qualificado",
-  negociando: "Em andamento",
-  convertido: "Aprovado",
-  perdido: "Recusado"
+  qualificado: "Pendente",
+  negociando: "Em Andamento",
+  convertido: "Pago",
+  perdido: "Cancelado"
 };
 
 const bankLabels = {
@@ -243,6 +242,37 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete }) => {
     }
   };
 
+  const handleStatusChange = async (newStatus: string) => {
+    setIsUpdating(true);
+    try {
+      const { data, error } = await supabase
+        .from("leads")
+        .update({ status: newStatus })
+        .eq("id", lead.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const updatedLead = {
+        ...data,
+        createdAt: new Date(data.created_at).toLocaleDateString('pt-BR', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric'
+        })
+      } as Lead;
+
+      onUpdate(updatedLead);
+      toast.success(`Lead marcado como ${statusLabels[newStatus as keyof typeof statusLabels]}!`);
+    } catch (error: any) {
+      console.error("Error updating lead status:", error);
+      toast.error(`Erro ao atualizar status: ${error.message}`);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   const formatCurrency = (value: string) => {
     if (!value) return "Não informado";
     const numericValue = parseFloat(value.replace(/[^\d,]/g, '').replace(',', '.'));
@@ -267,34 +297,32 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete }) => {
       <Card className="hover:shadow-md transition-shadow">
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between">
-            <div className="space-y-1">
+            <div className="space-y-1 flex-1">
               <div className="flex flex-wrap items-center gap-2">
-                <CardTitle className="text-lg leading-none flex items-center gap-2">
+                <CardTitle className="text-lg leading-none">
                   {lead.name}
-                  {/* Exibe as etiquetas ao lado do nome */}
-                  {!tagsLoading && tags.length > 0 && (
-                    <div className="flex flex-wrap items-center gap-1">
-                      {tags.map(
-                        (tag) =>
-                          tag.lead_tags && (
-                            <Badge
-                              key={tag.lead_tags.id}
-                              variant="outline"
-                              className="px-2 py-0.5 rounded-full text-xs border"
-                              style={{
-                                background: tag.lead_tags.color,
-                                color: "#fff",
-                                borderColor: tag.lead_tags.color
-                              }}
-                            >
-                              <Tag className="h-3 w-3 mr-1 inline" style={{ strokeWidth: 2 }} />
-                              {tag.lead_tags.name}
-                            </Badge>
-                          )
-                      )}
-                    </div>
-                  )}
                 </CardTitle>
+                {/* Exibe as etiquetas ao lado do nome */}
+                {!tagsLoading && tags.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-1">
+                    {tags.map(
+                      (tag) =>
+                        tag.lead_tags && (
+                          <Badge
+                            key={tag.lead_tags.id}
+                            variant="outline"
+                            className="px-2 py-0.5 text-xs border-0"
+                            style={{
+                              backgroundColor: tag.lead_tags.color,
+                              color: "#fff"
+                            }}
+                          >
+                            {tag.lead_tags.name}
+                          </Badge>
+                        )
+                    )}
+                  </div>
+                )}
               </div>
               <CardDescription className="text-sm">
                 Cadastrado em {lead.createdAt}
@@ -311,6 +339,42 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete }) => {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
+                  {lead.amount && (
+                    <>
+                      <DropdownMenuItem 
+                        onClick={() => handleStatusChange('negociando')}
+                        disabled={isUpdating}
+                        className="text-blue-600"
+                      >
+                        <Clock className="mr-2 h-4 w-4" />
+                        Marcar como Em Andamento
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        onClick={() => handleStatusChange('qualificado')}
+                        disabled={isUpdating}
+                        className="text-yellow-600"
+                      >
+                        <AlertTriangle className="mr-2 h-4 w-4" />
+                        Marcar como Pendente
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        onClick={() => handleStatusChange('convertido')}
+                        disabled={isUpdating}
+                        className="text-green-600"
+                      >
+                        <CheckCircle className="mr-2 h-4 w-4" />
+                        Marcar como Pago
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        onClick={() => handleStatusChange('perdido')}
+                        disabled={isUpdating}
+                        className="text-red-600"
+                      >
+                        <X className="mr-2 h-4 w-4" />
+                        Marcar como Cancelado
+                      </DropdownMenuItem>
+                    </>
+                  )}
                   <DropdownMenuItem onClick={() => setIsEditDialogOpen(true)}>
                     <Edit className="mr-2 h-4 w-4" />
                     Editar
@@ -382,6 +446,17 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete }) => {
             )}
           </div>
 
+          {/* Observação do Lead */}
+          <div className="border-t pt-3">
+            <div className="flex items-center gap-2 mb-2">
+              <Tag className="h-4 w-4 text-gray-500" />
+              <span className="font-medium text-sm">Observação:</span>
+            </div>
+            <div className="text-gray-700 text-sm italic min-h-[20px]">
+              {lead.notes && lead.notes.trim() !== "" ? lead.notes : "Nenhuma observação."}
+            </div>
+          </div>
+
           <div className="border-t pt-3">
             <div className="flex items-center gap-2 mb-2">
               <Calendar className="h-4 w-4 text-gray-500" />
@@ -408,12 +483,26 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete }) => {
               Atualize as informações do lead abaixo.
             </DialogDescription>
           </DialogHeader>
-          <LeadForm
-            initialData={lead}
-            onSubmit={handleUpdateLead}
-            onCancel={() => setIsEditDialogOpen(false)}
-            isLoading={isUpdating}
-          />
+          <div className="flex flex-col items-center justify-center text-center w-full">
+            <h2 className="text-xl font-bold mb-2">Detalhes do Lead</h2>
+            {/* Responsável em destaque */}
+            <div className="flex flex-col items-center mb-4">
+              <span className="text-base font-semibold text-blue-800">Responsável</span>
+              <span className="text-2xl font-bold text-blue-900 bg-blue-100 rounded-full px-4 py-1 mt-1">
+                {lead.employee || 'Não informado'}
+              </span>
+              {/* Badge 100% deste responsável */}
+              {lead.employee && (
+                <span className="mt-2 inline-block bg-green-100 text-green-800 text-xs font-bold rounded-full px-3 py-0.5">100% deste responsável</span>
+              )}
+            </div>
+            <LeadForm
+              initialData={lead}
+              onSubmit={handleUpdateLead}
+              onCancel={() => setIsEditDialogOpen(false)}
+              isLoading={isUpdating}
+            />
+          </div>
         </DialogContent>
       </Dialog>
 
@@ -437,4 +526,4 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete }) => {
   );
 };
 
-export default LeadCard;
+export default React.memo(LeadCard);

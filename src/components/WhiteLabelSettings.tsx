@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useWhiteLabel } from '@/contexts/WhiteLabelContext';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -65,6 +64,7 @@ const WhiteLabelSettings = () => {
                       src={logoPreview} 
                       alt="Logo Preview" 
                       className="max-w-full max-h-full object-contain" 
+                      loading="lazy"
                     />
                   ) : (
                     <div className="text-gray-400 text-sm text-center">

@@ -3,21 +3,13 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Loader2, Upload } from "lucide-react";
+import { Loader2, Upload, AlertTriangle, CheckCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { downloadCsvTemplate } from "@/utils/csvTemplate";
-
-interface CsvLead {
-  name: string;
-  cpf: string;
-  phone: string;
-  bank: string;
-  product: string;
-  date: string;
-  amount: string;
-  employee: string;
-}
+import { CsvParser, CsvLead, CsvParseResult } from "./CsvParser";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const ImportLeads = ({
   onLeadsImported
@@ -27,7 +19,8 @@ const ImportLeads = ({
   const [open, setOpen] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-  const [preview, setPreview] = useState<CsvLead[]>([]);
+  const [parseResult, setParseResult] = useState<CsvParseResult | null>(null);
+  const [countInCurrentMonth, setCountInCurrentMonth] = useState(true);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -41,258 +34,101 @@ const ImportLeads = ({
     const reader = new FileReader();
     reader.onload = e => {
       const text = e.target?.result as string;
-      const lines = text.split("\n").filter(line => line.trim());
       
-      console.log("CSV lines:", lines);
-      
-      if (lines.length < 2) {
-        toast.error("Arquivo CSV deve conter pelo menos uma linha de cabeçalho e uma linha de dados");
-        setFile(null);
-        setPreview([]);
-        return;
-      }
-
-      // Parse header line more carefully
-      const headerLine = lines[0];
-      const headers = headerLine.split(",").map(h => h.trim().toLowerCase().replace(/"/g, ''));
-      
-      console.log("CSV headers:", headers);
-
-      // Find indices for required columns with more flexible matching
-      const nameIndex = headers.findIndex(h => h.includes("nome"));
-      const cpfIndex = headers.findIndex(h => h.includes("cpf"));
-      const phoneIndex = headers.findIndex(h => h.includes("telefone"));
-      const bankIndex = headers.findIndex(h => h.includes("banco"));
-      const productIndex = headers.findIndex(h => h.includes("produto"));
-      const dateIndex = headers.findIndex(h => h.includes("data"));
-      const amountIndex = headers.findIndex(h => h.includes("valor"));
-      const employeeIndex = headers.findIndex(h => h.includes("funcionario") || h.includes("funcionário"));
-
-      console.log("Column indices:", { nameIndex, cpfIndex, phoneIndex, bankIndex, productIndex, dateIndex, amountIndex, employeeIndex });
-
-      if (nameIndex === -1 || phoneIndex === -1 || bankIndex === -1 || productIndex === -1 || amountIndex === -1) {
-        toast.error("Formato CSV inválido. Os cabeçalhos devem incluir: Nome, Telefone, Banco, Produto, Valor", {
-          action: {
-            label: "Baixar Modelo",
-            onClick: downloadCsvTemplate
-          }
-        });
-        setFile(null);
-        setPreview([]);
-        return;
-      }
-
-      const parsedLeads: CsvLead[] = [];
-      
-      // Process data lines
-      for (let i = 1; i < lines.length; i++) {
-        const line = lines[i].trim();
-        if (!line) continue;
+      try {
+        const result = CsvParser.parseFile(text);
+        setParseResult(result);
         
-        // Handle CSV parsing with proper quote handling
-        const values = [];
-        let current = '';
-        let inQuotes = false;
-        
-        for (let j = 0; j < line.length; j++) {
-          const char = line[j];
-          
-          if (char === '"') {
-            inQuotes = !inQuotes;
-          } else if (char === ',' && !inQuotes) {
-            values.push(current.trim());
-            current = '';
-          } else {
-            current += char;
-          }
-        }
-        values.push(current.trim()); // Don't forget the last value
-        
-        console.log(`Row ${i} values:`, values);
-        
-        // Skip if essential fields are missing
-        if (!values[nameIndex] || !values[phoneIndex]) {
-          console.log(`Skipping row ${i} - missing required fields`);
-          continue;
+        if (result.errors.length > 0) {
+          console.warn("CSV parsing warnings:", result.errors);
         }
         
-        const leadData: CsvLead = {
-          name: values[nameIndex] || "",
-          cpf: cpfIndex !== -1 ? values[cpfIndex] || "" : "",
-          phone: values[phoneIndex] || "",
-          bank: values[bankIndex] || "",
-          product: values[productIndex] || "",
-          date: dateIndex !== -1 ? values[dateIndex] || "" : "",
-          amount: values[amountIndex] || "",
-          employee: employeeIndex !== -1 ? values[employeeIndex] || "" : ""
-        };
-        
-        console.log(`Adding lead to preview:`, leadData);
-        parsedLeads.push(leadData);
-        
-        if (parsedLeads.length >= 5) break; // Only show first 5 in preview
+        if (result.leads.length === 0) {
+          toast.error("Nenhum lead válido encontrado no arquivo", {
+            action: {
+              label: "Baixar Modelo",
+              onClick: downloadCsvTemplate
+            }
+          });
+        } else {
+          toast.success(`${result.leads.length} leads prontos para importação`);
+        }
+      } catch (error) {
+        console.error("Error parsing CSV:", error);
+        toast.error("Erro ao processar arquivo CSV");
+        setParseResult(null);
       }
-      
-      console.log("Final parsed leads for preview:", parsedLeads);
-      setPreview(parsedLeads);
     };
     
     reader.onerror = () => {
       console.error("Error reading file");
       toast.error("Erro ao ler o arquivo");
-      setFile(null);
-      setPreview([]);
+      setParseResult(null);
     };
     
     reader.readAsText(file, 'UTF-8');
   };
 
   const handleImport = async () => {
-    if (!file) return;
+    if (!file || !parseResult || parseResult.leads.length === 0) return;
     
     setIsUploading(true);
     
     try {
-      // Check authentication first
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
-      if (sessionError) {
-        console.error("Session error:", sessionError);
-        throw new Error("Erro de autenticação. Faça login novamente.");
-      }
-
-      if (!session || !session.user) {
+      if (sessionError || !session?.user) {
         throw new Error("Sessão expirada. Faça login novamente.");
       }
 
-      console.log("User authenticated, proceeding with import");
+      // Define a data de criação baseada na opção escolhida
+      const createdAt = countInCurrentMonth 
+        ? new Date().toISOString()
+        : new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1).toISOString();
 
-      const reader = new FileReader();
-      reader.onload = async e => {
-        try {
-          const text = e.target?.result as string;
-          const lines = text.split("\n").filter(line => line.trim());
-          
-          if (lines.length < 2) {
-            throw new Error("Arquivo CSV deve conter pelo menos uma linha de dados");
-          }
+      const leadsToInsert = parseResult.leads.map(lead => ({
+        name: lead.name,
+        cpf: lead.cpf,
+        phone: lead.phone,
+        bank: lead.bank,
+        product: lead.product,
+        amount: lead.amount,
+        employee: lead.employee,
+        status: "novo",
+        user_id: session.user.id,
+        created_at: createdAt,
+        updated_at: new Date().toISOString()
+      }));
 
-          const headerLine = lines[0];
-          const headers = headerLine.split(",").map(h => h.trim().toLowerCase().replace(/"/g, ''));
+      const { error } = await supabase
+        .from("leads")
+        .insert(leadsToInsert);
 
-          // Find indices for required columns
-          const nameIndex = headers.findIndex(h => h.includes("nome"));
-          const cpfIndex = headers.findIndex(h => h.includes("cpf"));
-          const phoneIndex = headers.findIndex(h => h.includes("telefone"));
-          const bankIndex = headers.findIndex(h => h.includes("banco"));
-          const productIndex = headers.findIndex(h => h.includes("produto"));
-          const dateIndex = headers.findIndex(h => h.includes("data"));
-          const amountIndex = headers.findIndex(h => h.includes("valor"));
-          const employeeIndex = headers.findIndex(h => h.includes("funcionario") || h.includes("funcionário"));
+      if (error) {
+        console.error("Database error:", error);
+        throw new Error(`Erro ao salvar leads: ${error.message}`);
+      }
 
-          if (nameIndex === -1 || phoneIndex === -1 || bankIndex === -1 || productIndex === -1 || amountIndex === -1) {
-            throw new Error("Formato CSV inválido");
-          }
-
-          const leads = [];
-          for (let i = 1; i < lines.length; i++) {
-            const line = lines[i].trim();
-            if (!line) continue;
-            
-            // Handle CSV parsing with proper quote handling
-            const values = [];
-            let current = '';
-            let inQuotes = false;
-            
-            for (let j = 0; j < line.length; j++) {
-              const char = line[j];
-              
-              if (char === '"') {
-                inQuotes = !inQuotes;
-              } else if (char === ',' && !inQuotes) {
-                values.push(current.trim());
-                current = '';
-              } else {
-                current += char;
-              }
-            }
-            values.push(current.trim());
-
-            // Skip empty rows
-            if (!values[nameIndex] || !values[phoneIndex]) continue;
-
-            // Map bank values to our system values
-            let bankValue = values[bankIndex].toLowerCase();
-            if (bankValue.includes("caixa")) bankValue = "caixa";
-            else if (bankValue.includes("brasil") || bankValue.includes("bb")) bankValue = "bb";
-            else if (bankValue.includes("itau")) bankValue = "itau";
-            else if (bankValue.includes("bradesco")) bankValue = "bradesco";
-            else if (bankValue.includes("santander")) bankValue = "santander";
-            else bankValue = "outro";
-
-            // Map product values to our system values
-            let productValue = values[productIndex].toLowerCase();
-            if (productValue.includes("novo")) productValue = "novo";
-            else if (productValue.includes("porta")) productValue = "portabilidade";
-            else if (productValue.includes("refin")) productValue = "refinanciamento";
-            else if (productValue.includes("fgts")) productValue = "fgts";
-            else if (productValue.includes("cart")) productValue = "cartao";
-            else productValue = "outro";
-
-            const leadData: any = {
-              name: values[nameIndex],
-              cpf: cpfIndex !== -1 ? values[cpfIndex] : "",
-              phone: values[phoneIndex],
-              bank: bankValue,
-              product: productValue,
-              amount: values[amountIndex],
-              employee: employeeIndex !== -1 ? values[employeeIndex] : "",
-              status: "novo",
-              user_id: session.user.id,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            };
-
-            leads.push(leadData);
-          }
-
-          if (leads.length === 0) {
-            throw new Error("Nenhum lead válido encontrado no arquivo");
-          }
-
-          console.log("Importing leads:", leads);
-
-          // Insert leads into the database
-          const { error } = await supabase
-            .from("leads")
-            .insert(leads);
-
-          if (error) {
-            console.error("Database error:", error);
-            throw new Error(`Erro ao salvar leads: ${error.message}`);
-          }
-
-          toast.success(`${leads.length} leads importados com sucesso!`);
-          setOpen(false);
-          setFile(null);
-          setPreview([]);
-          onLeadsImported();
-          
-        } catch (error: any) {
-          console.error("Import error:", error);
-          toast.error(`Erro ao importar leads: ${error.message}`);
-        } finally {
-          setIsUploading(false);
-        }
-      };
-      
-      reader.readAsText(file, 'UTF-8');
+      const monthText = countInCurrentMonth ? "no mês atual" : "no mês anterior";
+      toast.success(`${parseResult.leads.length} leads importados com sucesso ${monthText}!`);
+      setOpen(false);
+      setFile(null);
+      setParseResult(null);
+      setCountInCurrentMonth(true); // Reset to default
+      onLeadsImported();
       
     } catch (error: any) {
-      console.error("Authentication error:", error);
+      console.error("Import error:", error);
       toast.error(error.message);
+    } finally {
       setIsUploading(false);
     }
+  };
+
+  const resetForm = () => {
+    setFile(null);
+    setParseResult(null);
+    setCountInCurrentMonth(true);
   };
 
   return (
@@ -304,7 +140,10 @@ const ImportLeads = ({
         </Button>
       </div>
 
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={open} onOpenChange={(isOpen) => {
+        setOpen(isOpen);
+        if (!isOpen) resetForm();
+      }}>
         <DialogContent className="sm:max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Importar Leads via CSV</DialogTitle>
@@ -327,43 +166,91 @@ const ImportLeads = ({
               </p>
             </div>
 
-            {preview.length > 0 && (
-              <div>
-                <h3 className="font-medium mb-2">Pré-visualização ({preview.length} leads)</h3>
-                <div className="border rounded-md overflow-x-auto max-h-64">
-                  <table className="min-w-full text-sm">
-                    <thead className="bg-muted/50">
-                      <tr>
-                        <th className="px-3 py-2 text-left text-xs font-medium">Nome</th>
-                        <th className="px-3 py-2 text-left text-xs font-medium">CPF</th>
-                        <th className="px-3 py-2 text-left text-xs font-medium">Telefone</th>
-                        <th className="px-3 py-2 text-left text-xs font-medium">Banco</th>
-                        <th className="px-3 py-2 text-left text-xs font-medium">Produto</th>
-                        <th className="px-3 py-2 text-left text-xs font-medium">Data</th>
-                        <th className="px-3 py-2 text-left text-xs font-medium">Valor</th>
-                        <th className="px-3 py-2 text-left text-xs font-medium">Funcionário</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {preview.map((lead, index) => (
-                        <tr key={index} className="border-t">
-                          <td className="px-3 py-2 text-xs">{lead.name}</td>
-                          <td className="px-3 py-2 text-xs">{lead.cpf}</td>
-                          <td className="px-3 py-2 text-xs">{lead.phone}</td>
-                          <td className="px-3 py-2 text-xs">{lead.bank}</td>
-                          <td className="px-3 py-2 text-xs">{lead.product}</td>
-                          <td className="px-3 py-2 text-xs">{lead.date}</td>
-                          <td className="px-3 py-2 text-xs">{lead.amount}</td>
-                          <td className="px-3 py-2 text-xs">{lead.employee}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-                {preview.length >= 5 && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Mostrando apenas 5 primeiros registros
-                  </p>
+            <div className="flex items-center space-x-2 p-4 border rounded-lg bg-muted/30">
+              <Checkbox 
+                id="count-current-month" 
+                checked={countInCurrentMonth}
+                onCheckedChange={(checked) => setCountInCurrentMonth(checked as boolean)}
+              />
+              <label 
+                htmlFor="count-current-month" 
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              >
+                Contabilizar valores no mês atual
+              </label>
+            </div>
+            <p className="text-xs text-muted-foreground ml-6">
+              {countInCurrentMonth 
+                ? "Os leads importados serão contabilizados no mês atual para relatórios e métricas."
+                : "Os leads importados serão contabilizados no mês anterior."
+              }
+            </p>
+
+            {parseResult && (
+              <div className="space-y-3">
+                {parseResult.errors.length > 0 && (
+                  <Alert variant="destructive">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertDescription>
+                      <div className="font-medium mb-1">Problemas encontrados:</div>
+                      <ul className="text-sm space-y-1">
+                        {parseResult.errors.slice(0, 5).map((error, index) => (
+                          <li key={index}>• {error}</li>
+                        ))}
+                        {parseResult.errors.length > 5 && (
+                          <li>• ... e mais {parseResult.errors.length - 5} erros</li>
+                        )}
+                      </ul>
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                {parseResult.leads.length > 0 && (
+                  <Alert>
+                    <CheckCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      <strong>{parseResult.leads.length}</strong> leads válidos encontrados de <strong>{parseResult.totalRows}</strong> linhas processadas
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                {parseResult.leads.length > 0 && (
+                  <div>
+                    <h3 className="font-medium mb-2">Pré-visualização (primeiros 5 leads)</h3>
+                    <div className="border rounded-md overflow-x-auto max-h-64">
+                      <table className="min-w-full text-sm">
+                        <thead className="bg-muted/50">
+                          <tr>
+                            <th className="px-3 py-2 text-left text-xs font-medium">Nome</th>
+                            <th className="px-3 py-2 text-left text-xs font-medium">CPF</th>
+                            <th className="px-3 py-2 text-left text-xs font-medium">Telefone</th>
+                            <th className="px-3 py-2 text-left text-xs font-medium">Banco</th>
+                            <th className="px-3 py-2 text-left text-xs font-medium">Produto</th>
+                            <th className="px-3 py-2 text-left text-xs font-medium">Valor</th>
+                            <th className="px-3 py-2 text-left text-xs font-medium">Funcionário</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {parseResult.leads.slice(0, 5).map((lead, index) => (
+                            <tr key={index} className="border-t">
+                              <td className="px-3 py-2 text-xs">{lead.name}</td>
+                              <td className="px-3 py-2 text-xs">{lead.cpf}</td>
+                              <td className="px-3 py-2 text-xs">{lead.phone}</td>
+                              <td className="px-3 py-2 text-xs">{lead.bank}</td>
+                              <td className="px-3 py-2 text-xs">{lead.product}</td>
+                              <td className="px-3 py-2 text-xs">{lead.amount}</td>
+                              <td className="px-3 py-2 text-xs">{lead.employee}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    {parseResult.leads.length > 5 && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Mostrando apenas 5 primeiros registros
+                      </p>
+                    )}
+                  </div>
                 )}
               </div>
             )}
@@ -373,9 +260,12 @@ const ImportLeads = ({
             <Button variant="outline" onClick={() => setOpen(false)} disabled={isUploading}>
               Cancelar
             </Button>
-            <Button onClick={handleImport} disabled={!file || isUploading}>
+            <Button 
+              onClick={handleImport} 
+              disabled={!parseResult || parseResult.leads.length === 0 || isUploading}
+            >
               {isUploading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isUploading ? 'Importando...' : 'Importar Leads'}
+              {isUploading ? 'Importando...' : `Importar ${parseResult?.leads.length || 0} Leads`}
             </Button>
           </DialogFooter>
         </DialogContent>

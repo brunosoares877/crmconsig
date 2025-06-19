@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { format, parseISO, isSameDay } from "date-fns";
+import { format, parseISO, isSameDay, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Calendar as CalendarIcon, Loader2, Check, Clock, X } from "lucide-react";
+import { CalendarIcon, Loader2, Check } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
-import Header from "@/components/Header";
-import { AppSidebar } from "@/components/AppSidebar";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -21,6 +19,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import PageLayout from "@/components/PageLayout";
 
 interface Reminder {
   id: string;
@@ -39,17 +38,12 @@ interface Lead {
   bank?: string;
 }
 
-interface DayWithReminders {
-  date: Date;
-  reminders: Reminder[];
-}
-
 const RemindersCalendar = () => {
   const [reminders, setReminders] = useState<Reminder[]>([]);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedDay, setSelectedDay] = useState<Date | undefined>(new Date());
-  const [daysWithReminders, setDaysWithReminders] = useState<DayWithReminders[]>([]);
+  const [daysWithReminders, setDaysWithReminders] = useState<Date[]>([]);
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -83,28 +77,16 @@ const RemindersCalendar = () => {
   };
 
   const processReminders = (remindersList: Reminder[]) => {
-    const daysMap = new Map<string, Reminder[]>();
+    const uniqueDates = new Set<string>();
     
     remindersList.forEach(reminder => {
-      const dueDate = parseISO(reminder.due_date);
+      const dueDate = startOfDay(parseISO(reminder.due_date));
       const dateKey = format(dueDate, 'yyyy-MM-dd');
-      
-      if (!daysMap.has(dateKey)) {
-        daysMap.set(dateKey, []);
-      }
-      
-      daysMap.get(dateKey)?.push(reminder);
+      uniqueDates.add(dateKey);
     });
     
-    const days: DayWithReminders[] = [];
-    daysMap.forEach((dayReminders, dateKey) => {
-      days.push({
-        date: parseISO(dateKey),
-        reminders: dayReminders
-      });
-    });
-    
-    setDaysWithReminders(days);
+    const dates = Array.from(uniqueDates).map(dateKey => startOfDay(parseISO(dateKey)));
+    setDaysWithReminders(dates);
   };
 
   useEffect(() => {
@@ -193,164 +175,160 @@ const RemindersCalendar = () => {
   // Find reminders for the selected day
   const selectedDayReminders = selectedDay 
     ? reminders.filter(reminder => 
-        isSameDay(new Date(reminder.due_date), selectedDay)
+        isSameDay(startOfDay(new Date(reminder.due_date)), startOfDay(selectedDay))
       )
     : [];
 
   return (
-    <div className="min-h-screen bg-background">
-      <AppSidebar />
-      <div className="md:ml-64">
-        <Header />
-        <main className="container mx-auto p-4 py-8">
-          <div className="flex items-center justify-between mb-6">
-            <h1 className="text-2xl font-bold">Calendário de Lembretes</h1>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <Card className="lg:col-span-1">
-              <CardHeader>
-                <CardTitle className="text-lg">Selecione uma data</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex justify-center">
-                  {isLoading ? (
-                    <div className="flex items-center justify-center p-8">
-                      <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-                    </div>
-                  ) : (
-                    <Calendar
-                      mode="single"
-                      selected={selectedDay}
-                      onSelect={setSelectedDay}
-                      className="pointer-events-auto"
-                      modifiers={{
-                        highlighted: daysWithReminders.map(day => day.date)
-                      }}
-                      modifiersStyles={{
-                        highlighted: { 
-                          backgroundColor: "#E5DEFF",
-                          fontWeight: "bold"
-                        }
-                      }}
-                      disabled={date => {
-                        const now = new Date();
-                        return date < new Date(now.getFullYear() - 1, 0, 1);
-                      }}
-                    />
-                  )}
-                </div>
-                <div className="mt-4 flex flex-col space-y-2">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-4 h-4 rounded-full bg-green-500"></div>
-                    <span className="text-sm">Finalizado</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <div className="w-4 h-4 rounded-full bg-red-500"></div>
-                    <span className="text-sm">Atrasado</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <div className="w-4 h-4 rounded-full bg-blue-500"></div>
-                    <span className="text-sm">Pendente</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="lg:col-span-2">
-              <CardHeader>
-                <CardTitle>
-                  {selectedDay 
-                    ? `Lembretes para ${format(selectedDay, 'dd/MM/yyyy', { locale: ptBR })}`
-                    : "Selecione uma data para ver os lembretes"
-                  }
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
+    <PageLayout
+      title="Calendário de Lembretes"
+      subtitle="Visualize e gerencie seus lembretes por data"
+    >
+      <div className="space-y-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <Card className="lg:col-span-1">
+            <CardHeader>
+              <CardTitle className="text-lg">Selecione uma data</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex justify-center">
                 {isLoading ? (
                   <div className="flex items-center justify-center p-8">
                     <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
                   </div>
-                ) : selectedDayReminders.length > 0 ? (
-                  <div className="space-y-4">
-                    {selectedDayReminders.map((reminder) => (
-                      <div
-                        key={reminder.id}
-                        className={cn(
-                          "flex items-center justify-between p-4 rounded-md border",
-                          reminder.is_completed ? "bg-gray-50 opacity-70" : "bg-white",
-                          isPastDue(reminder.due_date, reminder.is_completed) ? "border-red-300" : "border-gray-200"
-                        )}
-                      >
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <h3 className={cn(
-                              "font-medium",
-                              reminder.is_completed && "line-through text-gray-500"
-                            )}>
-                              {reminder.title}
-                            </h3>
-                            {getReminderStatusBadge(reminder)}
-                          </div>
-                          <p className="text-sm text-gray-500 mt-1">
-                            Cliente: {getLeadName(reminder.lead_id)}
-                          </p>
-                          {reminder.bank && (
-                            <p className="text-sm text-gray-500">
-                              Banco: {getBankName(reminder.bank)}
-                            </p>
-                          )}
-                          <div className="flex items-center mt-1 text-sm text-gray-500">
-                            <CalendarIcon className="h-4 w-4 mr-1" />
-                            <span>{formatDate(reminder.due_date)} às {formatTime(reminder.due_date)}</span>
-                          </div>
-                          {reminder.notes && (
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <Button variant="link" className="p-0 h-auto text-sm text-blue-600">
-                                  Ver detalhes
-                                </Button>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-80">
-                                <div className="space-y-2">
-                                  <h4 className="font-medium">Observações:</h4>
-                                  <p className="text-sm">{reminder.notes}</p>
-                                </div>
-                              </PopoverContent>
-                            </Popover>
-                          )}
-                        </div>
-                        
-                        <div className="flex space-x-2">
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className={cn(
-                              "h-8 w-8",
-                              reminder.is_completed ? "text-green-600" : ""
-                            )}
-                            onClick={() => handleToggleComplete(reminder)}
-                          >
-                            <Check className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
                 ) : (
-                  <div className="text-center py-10 border rounded-md">
-                    <h3 className="text-lg font-medium text-gray-900">Nenhum lembrete para esta data</h3>
-                    <p className="mt-1 text-sm text-gray-500">
-                      Selecione outra data ou crie um novo lembrete.
-                    </p>
-                  </div>
+                  <Calendar
+                    mode="single"
+                    selected={selectedDay}
+                    onSelect={setSelectedDay}
+                    className="pointer-events-auto"
+                    modifiers={{
+                      hasReminders: (date) => {
+                        return daysWithReminders.some(reminderDate => 
+                          isSameDay(startOfDay(date), startOfDay(reminderDate))
+                        );
+                      }
+                    }}
+                    modifiersClassNames={{
+                      hasReminders: "bg-purple-100 font-bold text-purple-800"
+                    }}
+                    disabled={date => {
+                      const now = new Date();
+                      return date < new Date(now.getFullYear() - 1, 0, 1);
+                    }}
+                  />
                 )}
-              </CardContent>
-            </Card>
-          </div>
-        </main>
+              </div>
+              <div className="mt-4 flex flex-col space-y-2">
+                <div className="flex items-center space-x-2">
+                  <div className="w-4 h-4 rounded-full bg-green-500"></div>
+                  <span className="text-sm">Finalizado</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-4 h-4 rounded-full bg-red-500"></div>
+                  <span className="text-sm">Atrasado</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-4 h-4 rounded-full bg-blue-500"></div>
+                  <span className="text-sm">Pendente</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="lg:col-span-2">
+            <CardHeader>
+              <CardTitle>
+                {selectedDay 
+                  ? `Lembretes para ${format(selectedDay, 'dd/MM/yyyy', { locale: ptBR })}`
+                  : "Selecione uma data para ver os lembretes"
+                }
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <div className="flex items-center justify-center p-8">
+                  <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+                </div>
+              ) : selectedDayReminders.length > 0 ? (
+                <div className="space-y-4">
+                  {selectedDayReminders.map((reminder) => (
+                    <div
+                      key={reminder.id}
+                      className={cn(
+                        "flex items-center justify-between p-4 rounded-md border",
+                        reminder.is_completed ? "bg-gray-50 opacity-70" : "bg-white",
+                        isPastDue(reminder.due_date, reminder.is_completed) ? "border-red-300" : "border-gray-200"
+                      )}
+                    >
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <h3 className={cn(
+                            "font-medium",
+                            reminder.is_completed && "line-through text-gray-500"
+                          )}>
+                            {reminder.title}
+                          </h3>
+                          {getReminderStatusBadge(reminder)}
+                        </div>
+                        <p className="text-sm text-gray-500 mt-1">
+                          Cliente: {getLeadName(reminder.lead_id)}
+                        </p>
+                        {reminder.bank && (
+                          <p className="text-sm text-gray-500">
+                            Banco: {getBankName(reminder.bank)}
+                          </p>
+                        )}
+                        <div className="flex items-center mt-1 text-sm text-gray-500">
+                          <CalendarIcon className="h-4 w-4 mr-1" />
+                          <span>{formatDate(reminder.due_date)} às {formatTime(reminder.due_date)}</span>
+                        </div>
+                        {reminder.notes && (
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button variant="link" className="p-0 h-auto text-sm text-blue-600">
+                                Ver detalhes
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-80">
+                              <div className="space-y-2">
+                                <h4 className="font-medium">Observações:</h4>
+                                <p className="text-sm">{reminder.notes}</p>
+                              </div>
+                            </PopoverContent>
+                          </Popover>
+                        )}
+                      </div>
+                      
+                      <div className="flex space-x-2">
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className={cn(
+                            "h-8 w-8",
+                            reminder.is_completed ? "text-green-600" : ""
+                          )}
+                          onClick={() => handleToggleComplete(reminder)}
+                        >
+                          <Check className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-10 border rounded-md">
+                  <h3 className="text-lg font-medium text-gray-900">Nenhum lembrete para esta data</h3>
+                  <p className="mt-1 text-sm text-gray-500">
+                    Selecione outra data ou crie um novo lembrete.
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
-    </div>
+    </PageLayout>
   );
 };
 

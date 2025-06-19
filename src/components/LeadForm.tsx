@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -8,11 +7,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { X } from "lucide-react";
+import BenefitTypeSelect from "@/components/forms/BenefitTypeSelect";
+import BankSelect from "@/components/forms/BankSelect";
+import ProductSelect from "@/components/forms/ProductSelect";
+import EmployeeSelect from "@/components/EmployeeSelect";
+import { useAuth } from "@/contexts/AuthContext";
 
 const formSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
@@ -30,7 +33,8 @@ const formSchema = z.object({
   representative_mode: z.string().optional(),
   representative_name: z.string().optional(),
   representative_cpf: z.string().optional(),
-  selectedTags: z.array(z.string()).optional()
+  selectedTags: z.array(z.string()).optional(),
+  date: z.string().optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -49,7 +53,29 @@ interface Tag {
   color: string;
 }
 
+// Função para formatar CPF
+function formatCPF(value: string) {
+  return value
+    .replace(/\D/g, "")
+    .replace(/(\d{3})(\d)/, "$1.$2")
+    .replace(/(\d{3})(\d)/, "$1.$2")
+    .replace(/(\d{3})(\d{1,2})$/, "$1-$2")
+    .slice(0, 14);
+}
+
+// Função para formatar moeda brasileira
+function formatBRL(value: string) {
+  let v = value.replace(/\D/g, "");
+  v = (parseInt(v, 10) || 0).toString();
+  v = v.padStart(3, "0");
+  let cents = v.slice(-2);
+  let reais = v.slice(0, -2);
+  reais = reais.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  return reais + "," + cents;
+}
+
 const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, isEditing = false, isLoading = false }) => {
+  const { user } = useAuth ? useAuth() : { user: null };
   const [tags, setTags] = useState<Tag[]>([]);
   const [selectedTags, setSelectedTags] = useState<string[]>(initialData?.selectedTags || []);
 
@@ -71,7 +97,8 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
       representative_mode: initialData?.representative_mode || "nao",
       representative_name: initialData?.representative_name || "",
       representative_cpf: initialData?.representative_cpf || "",
-      selectedTags: initialData?.selectedTags || []
+      selectedTags: initialData?.selectedTags || [],
+      date: initialData?.date || new Date().toISOString().slice(0, 10),
     }
   });
 
@@ -158,6 +185,10 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
     });
   };
 
+  if (!user) {
+    return <div className="p-4 text-center text-red-600 font-semibold">Você precisa estar logado para cadastrar um lead.</div>;
+  }
+
   return (
     <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -169,7 +200,11 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
 
         <div>
           <Label htmlFor="cpf">CPF</Label>
-          <Input id="cpf" {...register("cpf")} placeholder="000.000.000-00" />
+          <Input id="cpf" {...register("cpf")}
+            placeholder="000.000.000-00"
+            maxLength={14}
+            onChange={e => setValue("cpf", formatCPF(e.target.value))}
+          />
         </div>
 
         <div>
@@ -193,84 +228,44 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
           {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>}
         </div>
 
-        <div>
-          <Label htmlFor="bank">Banco</Label>
-          <Select onValueChange={(value) => setValue("bank", value)} defaultValue={initialData?.bank}>
-            <SelectTrigger>
-              <SelectValue placeholder="Selecione o banco" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="nubank">Nubank</SelectItem>
-              <SelectItem value="itau">Itaú</SelectItem>
-              <SelectItem value="bradesco">Bradesco</SelectItem>
-              <SelectItem value="santander">Santander</SelectItem>
-              <SelectItem value="bb">Banco do Brasil</SelectItem>
-              <SelectItem value="caixa">Caixa Econômica</SelectItem>
-              <SelectItem value="outros">Outros</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        <BankSelect
+          value={watch("bank") || ""}
+          onValueChange={(value) => setValue("bank", value)}
+          defaultValue={initialData?.bank || ""}
+        />
 
-        <div>
-          <Label htmlFor="product">Produto</Label>
-          <Select onValueChange={(value) => setValue("product", value)} defaultValue={initialData?.product}>
-            <SelectTrigger>
-              <SelectValue placeholder="Selecione o produto" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="CREDITO PIX/CARTAO">CREDITO PIX/CARTAO</SelectItem>
-              <SelectItem value="EMPRESTIMO CONSIGNADO">EMPRESTIMO CONSIGNADO</SelectItem>
-              <SelectItem value="CARTAO CONSIGNADO">CARTAO CONSIGNADO</SelectItem>
-              <SelectItem value="PORTABILIDADE">PORTABILIDADE</SelectItem>
-              <SelectItem value="REFINANCIAMENTO">REFINANCIAMENTO</SelectItem>
-              <SelectItem value="SAQUE ANIVERSARIO">SAQUE ANIVERSARIO</SelectItem>
-              <SelectItem value="ANTECIPACAO 13º">ANTECIPACAO 13º</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        <ProductSelect
+          value={watch("product") || ""}
+          onValueChange={(value) => setValue("product", value)}
+          defaultValue={initialData?.product || ""}
+        />
 
         <div>
           <Label htmlFor="amount">Valor</Label>
-          <Input id="amount" {...register("amount")} placeholder="R$ 0,00" />
+          <Input id="amount" {...register("amount")}
+            placeholder="R$ 0,00"
+            onChange={e => setValue("amount", formatBRL(e.target.value))}
+          />
         </div>
 
         <div>
           <Label htmlFor="employee">Funcionário</Label>
-          <Select onValueChange={(value) => setValue("employee", value)} defaultValue={initialData?.employee}>
-            <SelectTrigger>
-              <SelectValue placeholder="Selecione o funcionário" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="JANE">JANE</SelectItem>
-              <SelectItem value="JOÃO">JOÃO</SelectItem>
-              <SelectItem value="MARIA">MARIA</SelectItem>
-              <SelectItem value="PEDRO">PEDRO</SelectItem>
-            </SelectContent>
-          </Select>
+          <EmployeeSelect
+            value={watch("employee") || ""}
+            onValueChange={(value) => setValue("employee", value)}
+            placeholder="Selecione o funcionário"
+          />
         </div>
 
-        <div>
-          <Label htmlFor="benefit_type">Tipo de Benefício</Label>
-          <Select onValueChange={(value) => setValue("benefit_type", value)} defaultValue={initialData?.benefit_type}>
-            <SelectTrigger>
-              <SelectValue placeholder="Selecione o tipo" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="87">87 - Aposentadoria por Idade</SelectItem>
-              <SelectItem value="88">88 - Aposentadoria por Invalidez</SelectItem>
-              <SelectItem value="89">89 - Pensão por Morte</SelectItem>
-              <SelectItem value="21">21 - Auxílio-Doença</SelectItem>
-              <SelectItem value="25">25 - Auxílio-Reclusão</SelectItem>
-              <SelectItem value="32">32 - Aposentadoria por Tempo de Contribuição</SelectItem>
-              <SelectItem value="42">42 - Aposentadoria Especial</SelectItem>
-              <SelectItem value="46">46 - Auxílio-Acidente</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        <BenefitTypeSelect
+          value={watch("benefit_type") || ""}
+          onValueChange={(value) => setValue("benefit_type", value)}
+          defaultValue={initialData?.benefit_type || ""}
+        />
 
         <div>
           <Label htmlFor="representative_mode">Modo Representante</Label>
-          <Select onValueChange={(value) => setValue("representative_mode", value)} defaultValue={representativeMode}>
+          <Select onValueChange={(value) => setValue("representative_mode", value)} defaultValue={representativeMode || "nao"} value={representativeMode || "nao"}>
             <SelectTrigger>
               <SelectValue placeholder="Selecione" />
             </SelectTrigger>
@@ -279,6 +274,11 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
               <SelectItem value="sim">Sim</SelectItem>
             </SelectContent>
           </Select>
+        </div>
+
+        <div>
+          <Label htmlFor="date">Data do Lead</Label>
+          <Input id="date" type="date" {...register("date")} />
         </div>
       </div>
 
@@ -295,7 +295,6 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
         </div>
       )}
 
-      {/* Tags Section */}
       <div>
         <Label>Etiquetas</Label>
         <div className="mt-2 space-y-2">
@@ -337,12 +336,8 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
       </div>
 
       <div className="flex gap-2 justify-end">
-        <Button type="button" variant="outline" onClick={onCancel} disabled={isLoading}>
-          Cancelar
-        </Button>
-        <Button type="submit" disabled={isLoading}>
-          {isLoading ? "Salvando..." : (isEditing ? "Atualizar Lead" : "Salvar Lead")}
-        </Button>
+        <Button type="button" variant="outline" onClick={onCancel} disabled={isLoading}>Cancelar</Button>
+        <Button type="submit" disabled={isLoading}>{isLoading ? "Salvando..." : (isEditing ? "Atualizar Lead" : "Salvar Lead")}</Button>
       </div>
     </form>
   );

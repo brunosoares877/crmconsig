@@ -12,9 +12,17 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem,
 
 const Header = () => {
   const navigate = useNavigate();
-  const sidebar = useSidebar();
   const isMobile = useIsMobile();
   const { user, signOut } = useAuth();
+
+  // Safely try to use sidebar context
+  let sidebar = null;
+  try {
+    sidebar = useSidebar();
+  } catch (error) {
+    // useSidebar is not available, component is being used outside SidebarProvider
+    console.log("Header used outside SidebarProvider context");
+  }
 
   const handleLogout = async () => {
     try {
@@ -33,7 +41,7 @@ const Header = () => {
   return (
     <header className="border-b py-2 px-3 md:py-3 md:px-4 flex justify-between items-center bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 w-full">
       <div className="flex items-center gap-2">
-        {isMobile && (
+        {isMobile && sidebar && (
           <Button 
             variant="ghost" 
             size="icon" 
@@ -43,6 +51,14 @@ const Header = () => {
             <Menu className="h-4 w-4 md:h-5 md:w-5" />
           </Button>
         )}
+        
+        {/* Logo aumentada com cores brancas elegantes */}
+        <div className="flex items-center">
+          <div className="w-10 h-10 md:w-12 md:h-12 bg-white border-2 border-gray-200 rounded-xl flex items-center justify-center mr-3 md:mr-4 shadow-md">
+            <div className="w-5 h-5 md:w-6 md:h-6 bg-blue-600 rounded-md"></div>
+          </div>
+          <h1 className="text-2xl md:text-3xl font-bold text-slate-900">LeadConsig</h1>
+        </div>
       </div>
 
       <div className="flex items-center gap-1 md:gap-2">

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import LeadCard from "./LeadCard";
 import EmptyState from "./EmptyState";
@@ -11,6 +10,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import LeadForm from "./LeadForm";
+import { Link } from "react-router-dom";
+import LeadImportButton from "@/components/leads/LeadImportButton";
 
 interface LeadListProps {
   searchQuery?: string;
@@ -242,12 +243,7 @@ const LeadList: React.FC<LeadListProps> = ({
           <span className="text-sm text-muted-foreground mr-2">
             Mostrando {filteredLeads.length} leads
           </span>
-          <Button variant="outline" className="gap-1" onClick={() => {
-          window.location.href = "/leads/import";
-        }}>
-            <Plus className="h-3.5 w-3.5" />
-            <span>Importar</span>
-          </Button>
+          <LeadImportButton />
         </div>
       </div>
       
@@ -264,24 +260,6 @@ const LeadList: React.FC<LeadListProps> = ({
                   onChange={e => setInternalSearchQuery(e.target.value)} 
                 />
               </div>
-              
-              <Sheet open={isOpenSheet} onOpenChange={setIsOpenSheet}>
-                <SheetTrigger asChild>
-                  <Button className="h-10 gap-1 bg-blue-600 hover:bg-blue-700">
-                    <Plus className="h-3.5 w-3.5" />
-                    <span>Novo Lead</span>
-                  </Button>
-                </SheetTrigger>
-                <SheetContent className="w-full sm:max-w-[540px] overflow-y-auto">
-                  <SheetHeader className="mb-4">
-                    <SheetTitle>Adicionar Novo Lead</SheetTitle>
-                    <SheetDescription>
-                      Preencha os dados do novo lead no formulário abaixo.
-                    </SheetDescription>
-                  </SheetHeader>
-                  <LeadForm onSubmit={handleLeadSubmit} onCancel={() => setIsOpenSheet(false)} />
-                </SheetContent>
-              </Sheet>
             </div>
           </div>
           
@@ -328,4 +306,4 @@ const LeadList: React.FC<LeadListProps> = ({
   );
 };
 
-export default LeadList;
+export default React.memo(LeadList);
