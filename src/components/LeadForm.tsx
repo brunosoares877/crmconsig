@@ -78,6 +78,9 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
   const { user } = useAuth ? useAuth() : { user: null };
   const [tags, setTags] = useState<Tag[]>([]);
   const [selectedTags, setSelectedTags] = useState<string[]>(initialData?.selectedTags || []);
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  console.log("LeadForm rendering - user:", user, "isEditing:", isEditing);
 
   const { register, handleSubmit, formState: { errors }, setValue, watch } = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -105,14 +108,26 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
   const representativeMode = watch("representative_mode");
 
   useEffect(() => {
-    fetchTags();
-    if (isEditing && initialData?.selectedTags) {
-      setSelectedTags(initialData.selectedTags);
-    }
+    console.log("LeadForm useEffect - fetching tags");
+    const initializeForm = async () => {
+      try {
+        await fetchTags();
+        if (isEditing && initialData?.selectedTags) {
+          setSelectedTags(initialData.selectedTags);
+        }
+        setIsInitialized(true);
+      } catch (error) {
+        console.error("Error initializing form:", error);
+        setIsInitialized(true); // Set to true even on error to prevent infinite loading
+      }
+    };
+    
+    initializeForm();
   }, [isEditing, initialData]);
 
   const fetchTags = async () => {
     try {
+      console.log("Fetching tags...");
       const { data: userData, error: userError } = await supabase.auth.getUser();
       if (userError) throw userError;
 
@@ -123,9 +138,12 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
         .order('name');
 
       if (error) throw error;
+      console.log("Tags fetched successfully:", data?.length || 0);
       setTags(data || []);
     } catch (error) {
       console.error('Error fetching tags:', error);
+      // Don't throw error, just set empty array
+      setTags([]);
     }
   };
 
@@ -187,6 +205,15 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
 
   if (!user) {
     return <div className="p-4 text-center text-red-600 font-semibold">Você precisa estar logado para cadastrar um lead.</div>;
+  }
+
+  if (!isInitialized) {
+    return (
+      <div className="p-8 text-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+        <p className="text-gray-600">Carregando formulário...</p>
+      </div>
+    );
   }
 
   return (
