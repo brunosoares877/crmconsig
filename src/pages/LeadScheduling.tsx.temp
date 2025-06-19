@@ -254,7 +254,7 @@ const LeadScheduling = () => {
   };
 
   const formatDate = (dateString: string) => {
-    return format(new Date(dateString), "PPP", { locale: ptBR });
+    return format(new Date(dateString), "dd/MM/yyyy");
   };
 
   const getStatusText = (status: string) => {
@@ -281,27 +281,32 @@ const LeadScheduling = () => {
   };
 
   const closeDialog = () => {
-    setIsDialogOpen(false);
     resetForm();
+    setIsDialogOpen(false);
   };
 
   const isPastDue = (dateString: string, timeString: string, appointmentStatus: string) => {
-    if (appointmentStatus === "completed") return false;
+    if (appointmentStatus !== "scheduled") return false;
     const appointmentDate = new Date(`${dateString} ${timeString}`);
-    const now = new Date();
-    return appointmentDate < now && appointmentStatus === "scheduled";
+    return appointmentDate < new Date();
   };
 
   const getAppointmentStatusBadge = (appointment: Appointment) => {
-    if (appointment.status === "completed") {
-      return <Badge className="bg-green-100 text-green-800 hover:bg-green-200 px-3 py-1 text-sm">Finalizado</Badge>;
-    } else if (appointment.status === "cancelled") {
-      return <Badge className="bg-red-100 text-red-800 hover:bg-red-200 px-3 py-1 text-sm">Cancelado</Badge>;
-    } else if (isPastDue(appointment.date, appointment.time, appointment.status)) {
-      return <Badge className="bg-red-100 text-red-800 hover:bg-red-200 px-3 py-1 text-sm">Atrasado</Badge>;
-    } else {
-      return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-200 px-3 py-1 text-sm">Pendente</Badge>;
+    const isPast = isPastDue(appointment.date, appointment.time, appointment.status);
+    
+    if (isPast) {
+      return (
+        <Badge variant="outline" className="bg-yellow-100 text-yellow-800">
+          Atrasado
+        </Badge>
+      );
     }
+    
+    return (
+      <Badge variant="outline" className={getStatusColor(appointment.status)}>
+        {getStatusText(appointment.status)}
+      </Badge>
+    );
   };
 
   return (
@@ -545,4 +550,4 @@ const LeadScheduling = () => {
   );
 };
 
-export default LeadScheduling;
+export default LeadScheduling; 
