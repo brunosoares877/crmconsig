@@ -1,12 +1,11 @@
-
 import React from "react";
 import Header from "@/components/Header";
-import Sidebar from "@/components/Sidebar";
+import { AppSidebar } from "@/components/AppSidebar";
 
 const CookiePolicy = () => {
   return (
     <div className="min-h-screen bg-background">
-      <Sidebar />
+      <AppSidebar />
       <div className="md:ml-64">
         <Header />
         <main className="container mx-auto p-4 py-8 space-y-6">

@@ -30,7 +30,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import Header from "@/components/Header";
-import Sidebar from "@/components/Sidebar";
+import { AppSidebar } from "@/components/AppSidebar";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -245,7 +245,7 @@ const Reminders = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Sidebar />
+      <AppSidebar />
       <div className="md:ml-64">
         <Header />
         <main className="container mx-auto p-6 py-8 space-y-8">

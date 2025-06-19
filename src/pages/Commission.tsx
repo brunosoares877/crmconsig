@@ -36,7 +36,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
-import Sidebar from "@/components/Sidebar";
+import { AppSidebar } from "@/components/AppSidebar";
 import Header from "@/components/Header";
 
 const Commission = () => {
@@ -324,7 +324,7 @@ const Commission = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Sidebar />
+      <AppSidebar />
       <div className="md:ml-64 transition-all duration-300">
         <Header />
         <main className="container mx-auto space-y-8 p-4 py-8">

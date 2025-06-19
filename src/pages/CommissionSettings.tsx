@@ -35,7 +35,7 @@ import { toast } from "sonner";
 import CommissionRateForm from "@/components/commission/CommissionRateForm";
 import CommissionTierForm from "@/components/commission/CommissionTierForm";
 import DefaultCommissionsButton from "@/components/commission/DefaultCommissionsButton";
-import Sidebar from "@/components/Sidebar";
+import { AppSidebar } from "@/components/AppSidebar";
 import Header from "@/components/Header";
 
 const CommissionSettings = () => {
@@ -365,7 +365,7 @@ const CommissionSettings = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Sidebar />
+      <AppSidebar />
       <div className="md:ml-64 transition-all duration-300">
         <Header />
         <main className="container mx-auto p-4 py-8">

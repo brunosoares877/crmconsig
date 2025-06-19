@@ -1,7 +1,6 @@
-
 import React from "react";
 import Header from "@/components/Header";
-import Sidebar from "@/components/Sidebar";
+import { AppSidebar } from "@/components/AppSidebar";
 import LeadForm from "@/components/LeadForm";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
@@ -60,7 +59,7 @@ const LeadNew = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Sidebar />
+      <AppSidebar />
       <div className="md:ml-64 transition-all duration-300">
         <Header />
         <main className="container mx-auto space-y-6 p-4 py-8">

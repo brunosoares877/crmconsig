@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Separator } from "@/components/ui/separator";
 import AccountSection from "@/components/settings/AccountSection";
@@ -9,14 +8,14 @@ import LogoutButton from "@/components/settings/LogoutButton";
 import SettingsSidebar from "@/components/settings/SettingsSidebar";
 import SubscriptionPlans from "@/components/sales/SubscriptionPlans";
 import Header from "@/components/Header";
-import Sidebar from "@/components/Sidebar";
+import { AppSidebar } from "@/components/AppSidebar";
 
 export default function Settings() {
   const [activeTab, setActiveTab] = useState("account");
 
   return (
     <div className="min-h-screen bg-background">
-      <Sidebar />
+      <AppSidebar />
       <div className="md:ml-64 transition-all duration-300">
         <Header />
         <main className="container mx-auto py-10">

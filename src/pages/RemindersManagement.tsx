@@ -1,9 +1,8 @@
-
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Check, Clock, X } from "lucide-react";
 import Header from "@/components/Header";
-import Sidebar from "@/components/Sidebar";
+import { AppSidebar } from "@/components/AppSidebar";
 import {
   Table,
   TableBody,
@@ -35,7 +34,7 @@ const RemindersManagement = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Sidebar />
+      <AppSidebar />
       <div className="md:ml-64">
         <Header />
         <main className="container mx-auto p-4 py-8">

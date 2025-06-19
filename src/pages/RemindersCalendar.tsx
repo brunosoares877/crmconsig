@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { format, parseISO, isSameDay } from "date-fns";
@@ -6,7 +5,7 @@ import { ptBR } from "date-fns/locale";
 import { Calendar as CalendarIcon, Loader2, Check, Clock, X } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import Header from "@/components/Header";
-import Sidebar from "@/components/Sidebar";
+import { AppSidebar } from "@/components/AppSidebar";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -200,7 +199,7 @@ const RemindersCalendar = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Sidebar />
+      <AppSidebar />
       <div className="md:ml-64">
         <Header />
         <main className="container mx-auto p-4 py-8">

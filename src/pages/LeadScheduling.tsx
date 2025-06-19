@@ -35,7 +35,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Lead, Appointment } from "@/types/models";
 import Header from "@/components/Header";
-import Sidebar from "@/components/Sidebar";
+import { AppSidebar } from "@/components/AppSidebar";
 import {
   Tabs,
   TabsContent,
@@ -307,7 +307,7 @@ const LeadScheduling = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Sidebar />
+      <AppSidebar />
       <div className="ml-0 md:ml-64">
         <Header />
         <main className="w-full p-4 md:p-6 py-8 space-y-8">
