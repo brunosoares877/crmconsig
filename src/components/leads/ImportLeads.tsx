@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -10,6 +9,7 @@ import { downloadCsvTemplate } from "@/utils/csvTemplate";
 import { CsvParser, CsvLead, CsvParseResult } from "./CsvParser";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
+import { getBankName } from "@/utils/bankUtils";
 
 const ImportLeads = ({
   onLeadsImported
@@ -236,7 +236,7 @@ const ImportLeads = ({
                               <td className="px-3 py-2 text-xs">{lead.name}</td>
                               <td className="px-3 py-2 text-xs">{lead.cpf}</td>
                               <td className="px-3 py-2 text-xs">{lead.phone}</td>
-                              <td className="px-3 py-2 text-xs">{lead.bank}</td>
+                              <td className="px-3 py-2 text-xs">{getBankName(lead.bank) || "-"}</td>
                               <td className="px-3 py-2 text-xs">{lead.product}</td>
                               <td className="px-3 py-2 text-xs">{lead.amount}</td>
                               <td className="px-3 py-2 text-xs">{lead.employee}</td>

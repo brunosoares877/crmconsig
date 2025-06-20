@@ -110,9 +110,12 @@ const LeadScheduling = () => {
     }
     
     const now = new Date();
+    // Remover os segundos e milissegundos para comparação mais precisa
+    now.setSeconds(0, 0);
     
     const filtered = appointments.filter(appointment => {
       const appointmentDate = new Date(`${appointment.date} ${appointment.time}`);
+      appointmentDate.setSeconds(0, 0);
       
       if (status === "completed") {
         return appointment.status === "completed";
@@ -122,7 +125,7 @@ const LeadScheduling = () => {
         return appointment.status === "scheduled" && appointmentDate >= now;
       }
       
-      return true;
+      return false;
     });
     
     setFilteredAppointments(filtered);
@@ -227,9 +230,14 @@ const LeadScheduling = () => {
         
       if (error) throw error;
       
-      setAppointments(appointments.map(a => 
+      // Atualizar o estado local
+      const updatedAppointments = appointments.map(a => 
         a.id === appointment.id ? { ...a, status: newStatus } : a
-      ));
+      );
+      setAppointments(updatedAppointments);
+      
+      // Recarregar os dados para garantir que tudo esteja sincronizado
+      await fetchData();
       
       toast.success(`Status atualizado para ${getStatusText(newStatus)}`);
     } catch (error: any) {
@@ -286,15 +294,18 @@ const LeadScheduling = () => {
   };
 
   const isPastDue = (dateString: string, timeString: string, appointmentStatus: string) => {
-    if (appointmentStatus === "completed") return false;
+    if (appointmentStatus !== "scheduled") return false;
     const appointmentDate = new Date(`${dateString} ${timeString}`);
     const now = new Date();
-    return appointmentDate < now && appointmentStatus === "scheduled";
+    // Remover os segundos e milissegundos para comparação mais precisa
+    appointmentDate.setSeconds(0, 0);
+    now.setSeconds(0, 0);
+    return appointmentDate < now;
   };
 
   const getAppointmentStatusBadge = (appointment: Appointment) => {
     if (appointment.status === "completed") {
-      return <Badge className="bg-green-100 text-green-800 hover:bg-green-200 px-3 py-1 text-sm">Finalizado</Badge>;
+      return <Badge className="bg-green-100 text-green-800 hover:bg-green-200 px-3 py-1 text-sm">Concluído</Badge>;
     } else if (appointment.status === "cancelled") {
       return <Badge className="bg-red-100 text-red-800 hover:bg-red-200 px-3 py-1 text-sm">Cancelado</Badge>;
     } else if (isPastDue(appointment.date, appointment.time, appointment.status)) {
@@ -347,84 +358,307 @@ const LeadScheduling = () => {
                   </Card>
                 </div>
               ) : (
-                filteredAppointments.map((appointment) => {
-                  const lead = leads.find((l) => l.id === appointment.lead_id);
-                  return (
-                    <Card key={appointment.id}>
-                      <CardHeader className="relative">
-                        <div className="absolute right-6 top-6">
-                          {getAppointmentStatusBadge(appointment)}
+                filteredAppointments.map((appointment) => (
+                  <Card key={appointment.id}>
+                    <CardHeader className="relative">
+                      <div className="absolute right-6 top-6">
+                        {getAppointmentStatusBadge(appointment)}
+                      </div>
+                      <CardTitle>{appointment.title}</CardTitle>
+                      <CardDescription>
+                        Cliente: {getLeadName(appointment.lead_id)}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div className="flex items-center space-x-2 text-sm">
+                          <CalendarIcon className="h-4 w-4" />
+                          <span>{formatDate(appointment.date)}</span>
+                          <Clock className="h-4 w-4 ml-2" />
+                          <span>{appointment.time}</span>
                         </div>
-                        <CardTitle>{appointment.title}</CardTitle>
-                        <CardDescription>
-                          Cliente: {lead?.name || "Cliente não encontrado"}
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-4">
-                          <div className="flex items-center space-x-2 text-sm">
-                            <CalendarIcon className="h-4 w-4" />
-                            <span>{formatDate(appointment.date)}</span>
-                            <Clock className="h-4 w-4 ml-2" />
-                            <span>{appointment.time}</span>
+                        
+                        {appointment.notes && (
+                          <div className="text-sm text-muted-foreground">
+                            {appointment.notes}
                           </div>
-                          
-                          {appointment.notes && (
-                            <div className="text-sm text-muted-foreground">
-                              {appointment.notes}
-                            </div>
-                          )}
+                        )}
 
-                          <div className="flex items-center space-x-2">
+                        <div className="flex items-center space-x-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEditAppointment(appointment)}
+                          >
+                            <Edit className="h-4 w-4 mr-1" />
+                            Editar
+                          </Button>
+                          
+                          {appointment.status !== "completed" && (
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => handleEditAppointment(appointment)}
+                              onClick={() => handleStatusChange(appointment, "completed")}
                             >
-                              <Edit className="h-4 w-4 mr-1" />
-                              Editar
+                              <Check className="h-4 w-4 mr-1" />
+                              Concluir
                             </Button>
-                            
-                            {appointment.status !== "completed" && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleStatusChange(appointment, "completed")}
-                              >
-                                <Check className="h-4 w-4 mr-1" />
-                                Concluir
-                              </Button>
-                            )}
-                            
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="text-destructive"
-                              onClick={() => handleDeleteAppointment(appointment.id)}
-                            >
-                              <Trash2 className="h-4 w-4 mr-1" />
-                              Excluir
-                            </Button>
-                          </div>
+                          )}
+                          
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-destructive"
+                            onClick={() => handleDeleteAppointment(appointment.id)}
+                          >
+                            <Trash2 className="h-4 w-4 mr-1" />
+                            Excluir
+                          </Button>
                         </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
               )}
             </div>
           </TabsContent>
 
           <TabsContent value="pending" className="mt-4">
-            {/* Content will be filtered by the useEffect */}
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {isLoading ? (
+                <div className="col-span-full flex justify-center">
+                  <Loader2 className="h-8 w-8 animate-spin" />
+                </div>
+              ) : filteredAppointments.length === 0 ? (
+                <div className="col-span-full">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Nenhum agendamento pendente</CardTitle>
+                      <CardDescription>
+                        Todos os agendamentos estão em dia
+                      </CardDescription>
+                    </CardHeader>
+                  </Card>
+                </div>
+              ) : (
+                filteredAppointments.map((appointment) => (
+                  <Card key={appointment.id}>
+                    <CardHeader className="relative">
+                      <div className="absolute right-6 top-6">
+                        {getAppointmentStatusBadge(appointment)}
+                      </div>
+                      <CardTitle>{appointment.title}</CardTitle>
+                      <CardDescription>
+                        Cliente: {getLeadName(appointment.lead_id)}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div className="flex items-center space-x-2 text-sm">
+                          <CalendarIcon className="h-4 w-4" />
+                          <span>{formatDate(appointment.date)}</span>
+                          <Clock className="h-4 w-4 ml-2" />
+                          <span>{appointment.time}</span>
+                        </div>
+                        
+                        {appointment.notes && (
+                          <div className="text-sm text-muted-foreground">
+                            {appointment.notes}
+                          </div>
+                        )}
+
+                        <div className="flex items-center space-x-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEditAppointment(appointment)}
+                          >
+                            <Edit className="h-4 w-4 mr-1" />
+                            Editar
+                          </Button>
+                          
+                          {appointment.status !== "completed" && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleStatusChange(appointment, "completed")}
+                            >
+                              <Check className="h-4 w-4 mr-1" />
+                              Concluir
+                            </Button>
+                          )}
+                          
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-destructive"
+                            onClick={() => handleDeleteAppointment(appointment.id)}
+                          >
+                            <Trash2 className="h-4 w-4 mr-1" />
+                            Excluir
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </div>
           </TabsContent>
 
           <TabsContent value="completed" className="mt-4">
-            {/* Content will be filtered by the useEffect */}
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {isLoading ? (
+                <div className="col-span-full flex justify-center">
+                  <Loader2 className="h-8 w-8 animate-spin" />
+                </div>
+              ) : filteredAppointments.length === 0 ? (
+                <div className="col-span-full">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Nenhum agendamento concluído</CardTitle>
+                      <CardDescription>
+                        Não há agendamentos concluídos
+                      </CardDescription>
+                    </CardHeader>
+                  </Card>
+                </div>
+              ) : (
+                filteredAppointments.map((appointment) => (
+                  <Card key={appointment.id}>
+                    <CardHeader className="relative">
+                      <div className="absolute right-6 top-6">
+                        {getAppointmentStatusBadge(appointment)}
+                      </div>
+                      <CardTitle>{appointment.title}</CardTitle>
+                      <CardDescription>
+                        Cliente: {getLeadName(appointment.lead_id)}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div className="flex items-center space-x-2 text-sm">
+                          <CalendarIcon className="h-4 w-4" />
+                          <span>{formatDate(appointment.date)}</span>
+                          <Clock className="h-4 w-4 ml-2" />
+                          <span>{appointment.time}</span>
+                        </div>
+                        
+                        {appointment.notes && (
+                          <div className="text-sm text-muted-foreground">
+                            {appointment.notes}
+                          </div>
+                        )}
+
+                        <div className="flex items-center space-x-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEditAppointment(appointment)}
+                          >
+                            <Edit className="h-4 w-4 mr-1" />
+                            Editar
+                          </Button>
+                          
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-destructive"
+                            onClick={() => handleDeleteAppointment(appointment.id)}
+                          >
+                            <Trash2 className="h-4 w-4 mr-1" />
+                            Excluir
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </div>
           </TabsContent>
 
           <TabsContent value="overdue" className="mt-4">
-            {/* Content will be filtered by the useEffect */}
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {isLoading ? (
+                <div className="col-span-full flex justify-center">
+                  <Loader2 className="h-8 w-8 animate-spin" />
+                </div>
+              ) : filteredAppointments.length === 0 ? (
+                <div className="col-span-full">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Nenhum agendamento atrasado</CardTitle>
+                      <CardDescription>
+                        Todos os agendamentos estão em dia
+                      </CardDescription>
+                    </CardHeader>
+                  </Card>
+                </div>
+              ) : (
+                filteredAppointments.map((appointment) => (
+                  <Card key={appointment.id}>
+                    <CardHeader className="relative">
+                      <div className="absolute right-6 top-6">
+                        {getAppointmentStatusBadge(appointment)}
+                      </div>
+                      <CardTitle>{appointment.title}</CardTitle>
+                      <CardDescription>
+                        Cliente: {getLeadName(appointment.lead_id)}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div className="flex items-center space-x-2 text-sm">
+                          <CalendarIcon className="h-4 w-4" />
+                          <span>{formatDate(appointment.date)}</span>
+                          <Clock className="h-4 w-4 ml-2" />
+                          <span>{appointment.time}</span>
+                        </div>
+                        
+                        {appointment.notes && (
+                          <div className="text-sm text-muted-foreground">
+                            {appointment.notes}
+                          </div>
+                        )}
+
+                        <div className="flex items-center space-x-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEditAppointment(appointment)}
+                          >
+                            <Edit className="h-4 w-4 mr-1" />
+                            Editar
+                          </Button>
+                          
+                          {appointment.status !== "completed" && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleStatusChange(appointment, "completed")}
+                            >
+                              <Check className="h-4 w-4 mr-1" />
+                              Concluir
+                            </Button>
+                          )}
+                          
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-destructive"
+                            onClick={() => handleDeleteAppointment(appointment.id)}
+                          >
+                            <Trash2 className="h-4 w-4 mr-1" />
+                            Excluir
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </div>
           </TabsContent>
         </Tabs>
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, PhoneCall, CalendarCheck, TrendingUp, TrendingDown, User, Search, BarChart3, DollarSign, Calendar, FileText, CheckCircle, Clock, AlertTriangle, X } from "lucide-react";
+import { Users, PhoneCall, CalendarCheck, TrendingUp, TrendingDown, User, Search, BarChart3, DollarSign, Calendar, FileText, Clock, AlertTriangle, CheckCircle, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { format, startOfToday, endOfToday, startOfMonth, endOfMonth, differenceInMinutes, startOfWeek, endOfWeek } from "date-fns";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -22,12 +22,12 @@ const Dashboard = () => {
     weeklyConversionRate: 0,
     proposalsDigitatedToday: 0,
     emAndamento: 0,
-    pendente: 0,
-    pago: 0,
-    cancelado: 0,
     emAndamentoValue: 0,
+    pendente: 0,
     pendenteValue: 0,
+    pago: 0,
     pagoValue: 0,
+    cancelado: 0,
     canceladoValue: 0
   });
   const [isLoading, setIsLoading] = useState(true);
@@ -342,12 +342,12 @@ const Dashboard = () => {
           weeklyConversionRate: weeklyConversionRate,
           proposalsDigitatedToday: proposalsDigitatedToday || 0,
           emAndamento: emAndamento || 0,
-          pendente: pendente || 0,
-          pago: pago || 0,
-          cancelado: cancelado || 0,
           emAndamentoValue: statusSums.emAndamentoValue,
+          pendente: pendente || 0,
           pendenteValue: statusSums.pendenteValue,
+          pago: pago || 0,
           pagoValue: statusSums.pagoValue,
+          cancelado: cancelado || 0,
           canceladoValue: statusSums.canceladoValue
         });
 
@@ -360,12 +360,12 @@ const Dashboard = () => {
           weeklyConversionRate: weeklyConversionRate,
           proposalsDigitatedToday: proposalsDigitatedToday || 0,
           emAndamento: emAndamento || 0,
-          pendente: pendente || 0,
-          pago: pago || 0,
-          cancelado: cancelado || 0,
           emAndamentoValue: statusSums.emAndamentoValue,
+          pendente: pendente || 0,
           pendenteValue: statusSums.pendenteValue,
+          pago: pago || 0,
           pagoValue: statusSums.pagoValue,
+          cancelado: cancelado || 0,
           canceladoValue: statusSums.canceladoValue
         });
 
@@ -428,42 +428,46 @@ const Dashboard = () => {
       title: "Em Andamento",
       value: metrics.emAndamento.toString(),
       valueTotal: metrics.emAndamentoValue,
-      change: calculateChange(metrics.emAndamento, metrics.emAndamento - 1),
-      subtitle: `Negociações em curso`,
+      subtitle: "",
       positive: true,
       icon: <Clock className="h-4 w-4 lg:h-5 lg:w-5" />,
       iconBg: "bg-blue-500",
-      iconColor: "text-white"
+      iconColor: "text-white",
+      statusFilter: "negociando",
+      clickable: true
     }, {
       title: "Pendente",
       value: metrics.pendente.toString(),
       valueTotal: metrics.pendenteValue,
-      change: calculateChange(metrics.pendente, metrics.pendente - 1),
-      subtitle: `Aguardando aprovação`,
+      subtitle: "",
       positive: true,
       icon: <AlertTriangle className="h-4 w-4 lg:h-5 lg:w-5" />,
       iconBg: "bg-yellow-400",
-      iconColor: "text-white"
+      iconColor: "text-white",
+      statusFilter: "qualificado",
+      clickable: true
     }, {
       title: "Pago",
       value: metrics.pago.toString(),
       valueTotal: metrics.pagoValue,
-      change: calculateChange(metrics.pago, metrics.pago - 1),
-      subtitle: `Comissões pagas`,
+      subtitle: "",
       positive: true,
       icon: <CheckCircle className="h-4 w-4 lg:h-5 lg:w-5" />,
       iconBg: "bg-green-500",
-      iconColor: "text-white"
+      iconColor: "text-white",
+      statusFilter: "convertido",
+      clickable: true
     }, {
       title: "Cancelado",
       value: metrics.cancelado.toString(),
       valueTotal: metrics.canceladoValue,
-      change: calculateChange(metrics.cancelado, metrics.cancelado - 1),
-      subtitle: `Negócios cancelados`,
+      subtitle: "",
       positive: false,
       icon: <X className="h-4 w-4 lg:h-5 lg:w-5" />,
       iconBg: "bg-red-500",
-      iconColor: "text-white"
+      iconColor: "text-white",
+      statusFilter: "perdido",
+      clickable: true
     }
   ];
 

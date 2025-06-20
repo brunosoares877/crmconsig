@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { MoreHorizontal, Phone, Mail, DollarSign, Building, User, Edit, Trash2, Calendar, FileText, Tag, CheckCircle, Clock, AlertTriangle, X } from "lucide-react";
+import { MoreHorizontal, Phone, Mail, DollarSign, Building, User, Edit, Trash2, Calendar, FileText, Tag, CheckCircle, Clock, AlertTriangle, X, Building2 } from "lucide-react";
 import { Lead } from "@/types/models";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -13,6 +13,8 @@ import LeadForm from "./LeadForm";
 import ClientVisits from "./leads/ClientVisits";
 import DocumentUpload from "./leads/DocumentUpload";
 import WhatsAppButton from "./WhatsAppButton";
+import { cn } from "@/lib/utils";
+import { getBankName } from "@/utils/bankUtils";
 
 interface LeadTag {
   tag_id: string;
@@ -214,13 +216,19 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete }) => {
         created_at: lead.created_at
       };
 
+      // Calculate expiration date (30 days from now)
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 30);
+
       // Move lead to trash instead of deleting permanently
       const { error: trashError } = await supabase
         .from("deleted_leads")
         .insert({
           original_lead_id: lead.id,
           user_id: userData.user.id,
-          original_lead_data: leadData
+          original_lead_data: leadData,
+          deleted_at: new Date().toISOString(),
+          expires_at: expiresAt.toISOString()
         });
 
       if (trashError) throw trashError;
@@ -420,10 +428,9 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete }) => {
             )}
             
             {(lead as any).bank && (
-              <div className="flex items-center gap-2">
-                <Building className="h-4 w-4 text-purple-500" />
-                <span className="font-medium">Banco:</span>
-                <span>{bankLabels[(lead as any).bank as keyof typeof bankLabels] || (lead as any).bank}</span>
+              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                <Building2 className="h-3 w-3" />
+                <span>{getBankName((lead as any).bank)}</span>
               </div>
             )}
             
@@ -511,7 +518,7 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete }) => {
           <AlertDialogHeader>
             <AlertDialogTitle>Mover para Lixeira</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja mover o lead "{lead.name}" para a lixeira? O lead ficará disponível por 30 dias na lixeira antes de ser excluído permanentemente.
+              Tem certeza que deseja mover o lead "{lead.name}" para a lixeira? O lead ficará disponível por 30 dias na lixeira antes de ser excluído automaticamente.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

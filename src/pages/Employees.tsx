@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,6 +25,7 @@ import {
 import { Edit } from "lucide-react";
 import { getEmployees, createEmployee, updateEmployee, deleteEmployee, Employee } from "@/utils/employees";
 import PageLayout from "@/components/PageLayout";
+import { getBankName } from "@/utils/bankUtils";
 
 const Employees = () => {
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -276,7 +276,7 @@ const Employees = () => {
               {employees.map((employee) => (
                 <TableRow key={employee.id}>
                   <TableCell className="font-medium">{employee.name}</TableCell>
-                  <TableCell>{employee.bank || "-"}</TableCell>
+                  <TableCell>{getBankName(employee.bank) || "-"}</TableCell>
                   <TableCell>{employee.pix_key_main || "-"}</TableCell>
                   <TableCell>{employee.pix_key_2 || "-"}</TableCell>
                   <TableCell>{employee.pix_key_3 || "-"}</TableCell>

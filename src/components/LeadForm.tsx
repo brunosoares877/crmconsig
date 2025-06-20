@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { X } from "lucide-react";
 import BenefitTypeSelect from "@/components/forms/BenefitTypeSelect";
-import BankSelect from "@/components/forms/BankSelect";
+import { BankSelect } from "@/components/forms/BankSelect";
 import ProductSelect from "@/components/forms/ProductSelect";
 import EmployeeSelect from "@/components/EmployeeSelect";
 import { useAuth } from "@/contexts/AuthContext";
@@ -256,9 +256,11 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
         </div>
 
         <BankSelect
-          value={watch("bank") || ""}
+          value={watch("bank") || "none"}
           onValueChange={(value) => setValue("bank", value)}
-          defaultValue={initialData?.bank || ""}
+          label="Banco"
+          placeholder="Selecione o banco"
+          showNoneOption={true}
         />
 
         <ProductSelect

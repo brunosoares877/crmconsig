@@ -1,19 +1,15 @@
-
 import React, { useState, useEffect } from "react";
-import Header from "@/components/Header";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
-import { Search, Trash2, RotateCcw, AlertTriangle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Search, Trash2, RotateCcw, AlertTriangle, User, Phone, Mail, Calendar, Clock } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { AppSidebar } from "@/components/AppSidebar";
-import { SidebarTrigger } from "@/components/ui/sidebar";
+import PageLayout from "@/components/PageLayout";
 
 interface DeletedLead {
   id: string;
@@ -21,6 +17,7 @@ interface DeletedLead {
   original_lead_data: any;
   deleted_at: string;
   expires_at: string;
+  user_id: string;
 }
 
 const LeadsTrash = () => {
@@ -37,9 +34,13 @@ const LeadsTrash = () => {
   const fetchDeletedLeads = async () => {
     setIsLoading(true);
     try {
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (userError) throw userError;
+
       const { data, error } = await supabase
         .from("deleted_leads")
         .select("*")
+        .eq("user_id", userData.user.id)
         .order("deleted_at", { ascending: false });
 
       if (error) throw error;
@@ -142,177 +143,196 @@ const LeadsTrash = () => {
     return diffDays;
   };
 
+  const headerActions = (
+    <div className="relative">
+      <Search className="absolute left-3 top-2.5 h-4 w-4 text-blue-500" />
+      <Input 
+        placeholder="Buscar por nome, telefone ou CPF..." 
+        className="pl-10 py-2 border-blue-100 bg-blue-50/50 hover:bg-blue-50 focus:border-blue-200 focus:ring-1 focus:ring-blue-200 transition-all rounded-full w-full md:w-[280px]" 
+        value={searchQuery} 
+        onChange={e => setSearchQuery(e.target.value)} 
+      />
+    </div>
+  );
+
   return (
-    <div className="min-h-screen bg-slate-50/30 w-full flex">
-      <AppSidebar />
-      <div className="flex-1 w-full transition-all duration-300">
-        <Header />
-        <main className="w-full p-4 md:p-6 py-8">
-          <div className="flex items-center gap-4 mb-6">
-            <SidebarTrigger />
-            <div>
-              <h1 className="text-3xl font-bold text-slate-900">Lixeira de Leads</h1>
-              <p className="text-muted-foreground mt-1">Gerencie leads excluídos que podem ser recuperados</p>
-            </div>
+    <PageLayout 
+      title="Lixeira de Leads" 
+      subtitle="Leads excluídos ficam disponíveis por 30 dias para restauração"
+      headerActions={headerActions}
+    >
+      <div className="space-y-6">
+        {isLoading ? (
+          <div className="space-y-4">
+            {[1, 2, 3].map(i => (
+              <Card key={i} className="animate-pulse">
+                <CardHeader>
+                  <div className="h-6 bg-gray-200 rounded w-1/3 mb-2"></div>
+                  <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <div className="h-4 bg-gray-200 rounded w-1/4"></div>
+                    <div className="h-4 bg-gray-200 rounded w-1/3"></div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
+        ) : filteredLeads.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {filteredLeads.map((deletedLead) => {
+              const leadData = deletedLead.original_lead_data;
+              const daysLeft = getDaysUntilExpiry(deletedLead.expires_at);
+              const isExpiringSoon = daysLeft <= 3;
 
-          <div className="mb-6">
-            <div className="relative w-full md:w-[280px]">
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-blue-500" />
-              <Input
-                placeholder="Buscar por nome, telefone ou email..."
-                className="pl-10 py-2 border-blue-100 bg-blue-50/50 hover:bg-blue-50 focus:border-blue-200 focus:ring-1 focus:ring-blue-200 transition-all rounded-full"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-          </div>
-
-          {isLoading ? (
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {[1, 2, 3].map(i => (
-                <div key={i} className="h-56 animate-pulse rounded-md bg-gray-100"></div>
-              ))}
-            </div>
-          ) : filteredLeads.length > 0 ? (
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {filteredLeads.map(deletedLead => {
-                const leadData = deletedLead.original_lead_data;
-                const daysLeft = getDaysUntilExpiry(deletedLead.expires_at);
-                const isExpiringSoon = daysLeft <= 7;
-
-                return (
-                  <Card key={deletedLead.id} className="hover:shadow-md transition-shadow">
-                    <CardHeader className="pb-3">
+              return (
+                <Card key={deletedLead.id} className="transition-all hover:shadow-md h-fit">
+                  <CardHeader className="pb-3">
+                    <div className="space-y-2">
                       <div className="flex items-start justify-between">
-                        <div className="space-y-1">
-                          <CardTitle className="text-lg leading-none">{leadData.name}</CardTitle>
-                          <CardDescription className="text-sm">
-                            Excluído em {format(new Date(deletedLead.deleted_at), "dd 'de' MMM 'de' yyyy", { locale: ptBR })}
-                          </CardDescription>
-                        </div>
-                        <div className="flex flex-col items-end gap-2">
+                        <CardTitle className="text-lg leading-tight line-clamp-2 flex-1">{leadData.name}</CardTitle>
+                        <div className="flex flex-col items-end gap-1 ml-2">
                           {isExpiringSoon && (
                             <Badge variant="destructive" className="text-xs">
                               <AlertTriangle className="h-3 w-3 mr-1" />
-                              {daysLeft} dia{daysLeft !== 1 ? 's' : ''}
+                              {daysLeft}d
                             </Badge>
                           )}
                           {!isExpiringSoon && (
                             <Badge variant="secondary" className="text-xs">
-                              {daysLeft} dia{daysLeft !== 1 ? 's' : ''} restante{daysLeft !== 1 ? 's' : ''}
+                              {daysLeft}d
                             </Badge>
                           )}
                         </div>
                       </div>
-                    </CardHeader>
-                    
-                    <CardContent className="space-y-4">
-                      <div className="grid grid-cols-1 gap-3 text-sm">
-                        {leadData.phone && (
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium">Telefone:</span>
-                            <span>{leadData.phone}</span>
-                          </div>
-                        )}
-                        
-                        {leadData.email && (
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium">E-mail:</span>
-                            <span className="truncate">{leadData.email}</span>
-                          </div>
-                        )}
-                        
-                        {leadData.amount && (
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium">Valor:</span>
-                            <span className="font-semibold text-green-600">
-                              {leadData.amount}
-                            </span>
-                          </div>
-                        )}
-                      </div>
+                      <CardDescription className="text-xs">
+                        Excluído em {format(new Date(deletedLead.deleted_at), "dd/MM/yyyy", { locale: ptBR })}
+                      </CardDescription>
+                    </div>
+                  </CardHeader>
+                  
+                  <CardContent className="pt-0">
+                    <div className="space-y-2 mb-4">
+                      {leadData.phone && (
+                        <div className="flex items-center gap-2">
+                          <Phone className="h-3 w-3 text-blue-500 flex-shrink-0" />
+                          <span className="text-xs truncate">{leadData.phone}</span>
+                        </div>
+                      )}
+                      
+                      {leadData.email && (
+                        <div className="flex items-center gap-2">
+                          <Mail className="h-3 w-3 text-green-500 flex-shrink-0" />
+                          <span className="text-xs truncate">{leadData.email}</span>
+                        </div>
+                      )}
+                      
+                      {leadData.amount && (
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-medium">Valor:</span>
+                          <span className="font-semibold text-green-600 text-xs">
+                            {leadData.amount}
+                          </span>
+                        </div>
+                      )}
 
-                      <div className="flex gap-2 pt-3 border-t">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="flex-1"
-                          onClick={() => {
-                            setSelectedLead(deletedLead);
-                            setActionType('restore');
-                          }}
-                        >
-                          <RotateCcw className="h-4 w-4 mr-2" />
-                          Restaurar
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          className="flex-1"
-                          onClick={() => {
-                            setSelectedLead(deletedLead);
-                            setActionType('delete');
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          Excluir
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="text-center py-12">
+                      {leadData.status && (
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="text-xs">
+                            {leadData.status}
+                          </Badge>
+                        </div>
+                      )}
+
+                      {leadData.notes && (
+                        <div className="text-xs text-gray-600 line-clamp-2">
+                          {leadData.notes}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex gap-2 pt-3 border-t">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 text-xs h-8"
+                        onClick={() => {
+                          setSelectedLead(deletedLead);
+                          setActionType('restore');
+                        }}
+                      >
+                        <RotateCcw className="h-3 w-3 mr-1" />
+                        Restaurar
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        className="flex-1 text-xs h-8"
+                        onClick={() => {
+                          setSelectedLead(deletedLead);
+                          setActionType('delete');
+                        }}
+                      >
+                        <Trash2 className="h-3 w-3 mr-1" />
+                        Excluir
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        ) : (
+          <Card className="text-center py-12 max-w-2xl mx-auto">
+            <CardContent>
               <Trash2 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhum lead na lixeira</h3>
               <p className="text-gray-500">
                 {searchQuery ? "Nenhum lead encontrado com os termos de busca." : "A lixeira está vazia."}
               </p>
-            </div>
-          )}
+            </CardContent>
+          </Card>
+        )}
 
-          <AlertDialog open={!!selectedLead && !!actionType} onOpenChange={() => {
-            setSelectedLead(null);
-            setActionType(null);
-          }}>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>
-                  {actionType === 'restore' ? 'Restaurar Lead' : 'Excluir Permanentemente'}
-                </AlertDialogTitle>
-                <AlertDialogDescription>
-                  {actionType === 'restore' 
-                    ? `Tem certeza que deseja restaurar o lead "${selectedLead?.original_lead_data?.name}"? Ele voltará para a lista ativa de leads.`
-                    : `Tem certeza que deseja excluir permanentemente o lead "${selectedLead?.original_lead_data?.name}"? Esta ação não pode ser desfeita.`
-                  }
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={() => {
-                    if (selectedLead) {
-                      if (actionType === 'restore') {
-                        handleRestore(selectedLead);
-                      } else {
-                        handlePermanentDelete(selectedLead);
-                      }
+        <AlertDialog open={!!selectedLead} onOpenChange={() => {
+          setSelectedLead(null);
+          setActionType(null);
+        }}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                {actionType === 'restore' ? 'Restaurar Lead' : 'Excluir Permanentemente'}
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                {actionType === 'restore' 
+                  ? `Tem certeza que deseja restaurar o lead "${selectedLead?.original_lead_data?.name}"? Ele voltará para a lista ativa de leads.`
+                  : `Tem certeza que deseja excluir permanentemente o lead "${selectedLead?.original_lead_data?.name}"? Esta ação não pode ser desfeita.`
+                }
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  if (selectedLead) {
+                    if (actionType === 'restore') {
+                      handleRestore(selectedLead);
+                    } else {
+                      handlePermanentDelete(selectedLead);
                     }
-                  }}
-                  className={actionType === 'restore' ? "bg-green-600 hover:bg-green-700" : "bg-red-600 hover:bg-red-700"}
-                >
-                  {actionType === 'restore' ? 'Restaurar' : 'Excluir Permanentemente'}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </main>
+                  }
+                }}
+                className={actionType === 'restore' ? "bg-green-600 hover:bg-green-700" : "bg-red-600 hover:bg-red-700"}
+              >
+                {actionType === 'restore' ? 'Restaurar' : 'Excluir Permanentemente'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
-    </div>
+    </PageLayout>
   );
 };
 
-export default LeadsTrash;
+export default LeadsTrash; 

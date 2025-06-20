@@ -341,6 +341,9 @@ const LeadsConfig = () => {
     const userBanks = updatedBanks.filter(bank => !bank.id.startsWith('default-'));
     localStorage.setItem('configBanks', JSON.stringify(userBanks));
     
+    // Disparar evento para notificar outros componentes
+    window.dispatchEvent(new CustomEvent('configDataChanged'));
+    
     setNewBankName("");
     setNewBankCode("");
     toast.success("Banco adicionado com sucesso!");
@@ -362,6 +365,9 @@ const LeadsConfig = () => {
       const userBanks = updatedBanks.filter(bank => !bank.id.startsWith('default-'));
       localStorage.setItem('configBanks', JSON.stringify(userBanks));
     }
+    
+    // Disparar evento para notificar outros componentes
+    window.dispatchEvent(new CustomEvent('configDataChanged'));
     
     toast.success("Banco removido com sucesso!");
   };
@@ -385,6 +391,9 @@ const LeadsConfig = () => {
     const userProducts = updatedProducts.filter(product => !product.id.startsWith('default-'));
     localStorage.setItem('configProducts', JSON.stringify(userProducts));
     
+    // Disparar evento para notificar outros componentes
+    window.dispatchEvent(new CustomEvent('configDataChanged'));
+    
     setNewProductName("");
     setNewProductCode("");
     toast.success("Produto adicionado com sucesso!");
@@ -403,6 +412,10 @@ const LeadsConfig = () => {
       const userProducts = updatedProducts.filter(product => !product.id.startsWith('default-'));
       localStorage.setItem('configProducts', JSON.stringify(userProducts));
     }
+    
+    // Disparar evento para notificar outros componentes
+    window.dispatchEvent(new CustomEvent('configDataChanged'));
+    
     toast.success("Produto removido com sucesso!");
   };
 
@@ -424,6 +437,10 @@ const LeadsConfig = () => {
     } else {
       localStorage.setItem('configBanks', JSON.stringify(updatedBanks.filter(b => !b.id.startsWith('default-'))));
     }
+    
+    // Disparar evento para notificar outros componentes
+    window.dispatchEvent(new CustomEvent('configDataChanged'));
+    
     toast.success('Banco editado com sucesso!');
   };
 
@@ -444,6 +461,10 @@ const LeadsConfig = () => {
     } else {
       localStorage.setItem('configProducts', JSON.stringify(updatedProducts.filter(p => !p.id.startsWith('default-'))));
     }
+    
+    // Disparar evento para notificar outros componentes
+    window.dispatchEvent(new CustomEvent('configDataChanged'));
+    
     toast.success('Produto editado com sucesso!');
   };
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import LeadList from "@/components/LeadList";
 import Filters from "@/components/Filters";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,6 +21,7 @@ interface Tag {
 }
 
 const Leads = () => {
+  const [searchParams] = useSearchParams();
   const [leadStats, setLeadStats] = useState({
     total: 0,
     new: 0,
@@ -34,6 +35,7 @@ const Leads = () => {
   const [isTagDialogOpen, setIsTagDialogOpen] = useState(false);
   const [newTagName, setNewTagName] = useState("");
   const [newTagColor, setNewTagColor] = useState("#3b82f6");
+  const [statusFilter, setStatusFilter] = useState<string>("");
 
   const tagColors = [
     "#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6",
@@ -65,63 +67,27 @@ const Leads = () => {
     const fetchLeadStats = async () => {
       setIsLoading(true);
       try {
-        // Total leads count
-        const {
-          count: totalCount,
-          error: totalError
-        } = await supabase.from('leads').select('*', {
-          count: 'exact',
-          head: true
-        });
-        if (totalError) {
-          console.error('Error fetching total leads:', totalError);
-          throw totalError;
-        }
+        // Optimized single query to get all stats at once
+        const { data: userData, error: userError } = await supabase.auth.getUser();
+        if (userError) throw userError;
 
-        // New leads count
-        const {
-          count: newCount,
-          error: newError
-        } = await supabase.from('leads').select('*', {
-          count: 'exact',
-          head: true
-        }).eq('status', 'novo');
-        if (newError) {
-          console.error('Error fetching new leads:', newError);
-          throw newError;
-        }
+        const { data: allLeads, error: leadsError } = await supabase
+          .from('leads')
+          .select('status')
+          .eq('user_id', userData.user.id);
 
-        // Qualified leads count
-        const {
-          count: qualifiedCount,
-          error: qualifiedError
-        } = await supabase.from('leads').select('*', {
-          count: 'exact',
-          head: true
-        }).eq('status', 'qualificado');
-        if (qualifiedError) {
-          console.error('Error fetching qualified leads:', qualifiedError);
-          throw qualifiedError;
-        }
+        if (leadsError) throw leadsError;
 
-        // Converted leads count
-        const {
-          count: convertedCount,
-          error: convertedError
-        } = await supabase.from('leads').select('*', {
-          count: 'exact',
-          head: true
-        }).eq('status', 'convertido');
-        if (convertedError) {
-          console.error('Error fetching converted leads:', convertedError);
-          throw convertedError;
-        }
-        setLeadStats({
-          total: totalCount || 0,
-          new: newCount || 0,
-          qualified: qualifiedCount || 0,
-          converted: convertedCount || 0
-        });
+        // Calculate stats from the single query result
+        const stats = allLeads.reduce((acc, lead) => {
+          acc.total++;
+          if (lead.status === 'novo') acc.new++;
+          if (lead.status === 'qualificado') acc.qualified++;
+          if (lead.status === 'convertido') acc.converted++;
+          return acc;
+        }, { total: 0, new: 0, qualified: 0, converted: 0 });
+
+        setLeadStats(stats);
       } catch (error) {
         console.error('Error fetching lead statistics:', error);
         toast.error("Erro ao carregar estatísticas de leads");
@@ -132,6 +98,20 @@ const Leads = () => {
     fetchLeadStats();
     fetchTags();
   }, []);
+
+  useEffect(() => {
+    const statusFromUrl = searchParams.get('status');
+    if (statusFromUrl) {
+      setStatusFilter(statusFromUrl);
+      const statusLabels = {
+        'negociando': 'Em Andamento',
+        'qualificado': 'Pendente',
+        'convertido': 'Pago',
+        'perdido': 'Cancelado'
+      };
+      toast.success(`Filtro aplicado: ${statusLabels[statusFromUrl as keyof typeof statusLabels] || statusFromUrl}`);
+    }
+  }, [searchParams]);
 
   const fetchTags = async () => {
     try {
@@ -260,6 +240,34 @@ const Leads = () => {
           </Card>
         </div>
 
+        {/* Status Filter Indicator */}
+        {statusFilter && (
+          <Card className="p-4 bg-blue-50 border-blue-200">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                <span className="text-sm font-medium text-blue-800">
+                  Filtro ativo: {
+                    statusFilter === 'negociando' ? 'Em Andamento' :
+                    statusFilter === 'qualificado' ? 'Pendente' :
+                    statusFilter === 'convertido' ? 'Pago' :
+                    statusFilter === 'perdido' ? 'Cancelado' : statusFilter
+                  }
+                </span>
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setStatusFilter("")}
+                className="text-blue-600 border-blue-300 hover:bg-blue-100"
+              >
+                <X className="h-4 w-4 mr-1" />
+                Remover Filtro
+              </Button>
+            </div>
+          </Card>
+        )}
+
         {/* Tags Filter Section */}
         <Card className="p-4">
           <div className="flex items-center justify-between mb-4">
@@ -358,7 +366,7 @@ const Leads = () => {
           </div>
         </Card>
 
-        <LeadList searchQuery={searchQuery} selectedTags={selectedTags} />
+        <LeadList searchQuery={searchQuery} selectedTags={selectedTags} statusFilter={statusFilter} />
       </div>
     </PageLayout>
   );

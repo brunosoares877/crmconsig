@@ -1,12 +1,13 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingUp, TrendingDown } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface MetricsCardProps {
   title: string;
   value: string;
   valueTotal?: number;
-  change: {
+  change?: {
     value: string;
     positive: boolean;
   };
@@ -14,9 +15,24 @@ interface MetricsCardProps {
   icon: React.ReactNode;
   iconBg: string;
   iconColor: string;
+  statusFilter?: string;
+  clickable?: boolean;
 }
 
-const MetricsCard = ({ title, value, valueTotal, change, subtitle, icon, iconBg, iconColor }: MetricsCardProps) => {
+const MetricsCard = ({ 
+  title, 
+  value, 
+  valueTotal, 
+  change, 
+  subtitle, 
+  icon, 
+  iconBg, 
+  iconColor,
+  statusFilter,
+  clickable = false
+}: MetricsCardProps) => {
+  const navigate = useNavigate();
+  
   // Definir cor de fundo especial para status (tons mais vivos)
   const statusBg = [
     'bg-yellow-400', // pendente
@@ -27,8 +43,19 @@ const MetricsCard = ({ title, value, valueTotal, change, subtitle, icon, iconBg,
   // Se o iconBg for uma dessas, aplica no card
   const cardBg = statusBg.includes(iconBg) ? iconBg : 'bg-gradient-to-br from-white via-white to-blue-50/30';
 
+  const handleCardClick = () => {
+    if (clickable && statusFilter) {
+      navigate(`/leads?status=${statusFilter}`);
+    }
+  };
+
   return (
-    <Card className={`relative overflow-hidden border-0 shadow-lg ${cardBg} hover:shadow-xl transition-all duration-500 group hover:scale-[1.02]`}>
+    <Card 
+      className={`relative overflow-hidden border-0 shadow-lg ${cardBg} hover:shadow-xl transition-all duration-500 group hover:scale-[1.02] ${
+        clickable ? 'cursor-pointer' : ''
+      }`}
+      onClick={handleCardClick}
+    >
       {/* Background decoration */}
       <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-blue-50 to-transparent opacity-50 rounded-full transform translate-x-8 -translate-y-8"></div>
       
@@ -53,18 +80,20 @@ const MetricsCard = ({ title, value, valueTotal, change, subtitle, icon, iconBg,
           </span>
         </div>
         <div className="flex items-center gap-2 text-sm">
-          <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold ${
-            change.positive 
-              ? 'text-emerald-700 bg-emerald-50 border border-emerald-200' 
-              : 'text-red-700 bg-red-50 border border-red-200'
-          }`}>
-            {change.value}
-            {change.positive ? (
-              <TrendingUp className="h-3 w-3" />
-            ) : (
-              <TrendingDown className="h-3 w-3" />
-            )}
-          </span>
+          {change && (
+            <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold ${
+              change.positive 
+                ? 'text-emerald-700 bg-emerald-50 border border-emerald-200' 
+                : 'text-red-700 bg-red-50 border border-red-200'
+            }`}>
+              {change.value}
+              {change.positive ? (
+                <TrendingUp className="h-3 w-3" />
+              ) : (
+                <TrendingDown className="h-3 w-3" />
+              )}
+            </span>
+          )}
           <span className="text-slate-500 text-xs truncate">{subtitle}</span>
         </div>
       </CardContent>

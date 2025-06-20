@@ -47,7 +47,7 @@ const RemindersManagement = () => {
               <CardHeader className="bg-green-50">
                 <CardTitle className="flex items-center text-green-700">
                   <Check className="mr-2 h-5 w-5" />
-                  Finalizados
+                  Concluídos
                 </CardTitle>
                 <CardDescription>Lembretes concluídos</CardDescription>
               </CardHeader>

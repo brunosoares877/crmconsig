@@ -4,11 +4,12 @@ import EmptyState from "./EmptyState";
 import { Lead } from "@/types/models";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Search, Plus, Filter, X } from "lucide-react";
+import { Search, Plus, Filter, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import LeadForm from "./LeadForm";
 import { Link } from "react-router-dom";
 import LeadImportButton from "@/components/leads/LeadImportButton";
@@ -16,11 +17,15 @@ import LeadImportButton from "@/components/leads/LeadImportButton";
 interface LeadListProps {
   searchQuery?: string;
   selectedTags?: string[];
+  statusFilter?: string;
 }
+
+const LEADS_PER_PAGE = 20;
 
 const LeadList: React.FC<LeadListProps> = ({
   searchQuery = "",
-  selectedTags = []
+  selectedTags = [],
+  statusFilter = ""
 }) => {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [filteredLeads, setFilteredLeads] = useState<Lead[]>([]);
@@ -31,13 +36,36 @@ const LeadList: React.FC<LeadListProps> = ({
     id: string;
     label: string;
   }>>([]);
+  
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalLeads, setTotalLeads] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
 
-  const fetchLeads = async () => {
+  const fetchLeads = async (page = 1) => {
     setIsLoading(true);
     try {
-      let query = supabase.from("leads").select("*");
+      // Get total count first
+      const { count, error: countError } = await supabase
+        .from("leads")
+        .select("*", { count: 'exact', head: true });
+      
+      if (countError) throw countError;
+      
+      setTotalLeads(count || 0);
+      setTotalPages(Math.ceil((count || 0) / LEADS_PER_PAGE));
 
-      const { data, error } = await query.order("created_at", { ascending: false });
+      // Get paginated leads
+      const from = (page - 1) * LEADS_PER_PAGE;
+      const to = from + LEADS_PER_PAGE - 1;
+
+      let query = supabase
+        .from("leads")
+        .select("*")
+        .range(from, to)
+        .order("created_at", { ascending: false });
+
+      const { data, error } = await query;
       
       if (error) throw error;
 
@@ -61,9 +89,9 @@ const LeadList: React.FC<LeadListProps> = ({
     }
   };
 
-  const fetchLeadsWithTags = async () => {
+  const fetchLeadsWithTags = async (page = 1) => {
     if (selectedTags.length === 0) {
-      fetchLeads();
+      fetchLeads(page);
       return;
     }
 
@@ -82,15 +110,32 @@ const LeadList: React.FC<LeadListProps> = ({
       if (leadIds.length === 0) {
         setLeads([]);
         setFilteredLeads([]);
+        setTotalLeads(0);
+        setTotalPages(0);
         setIsLoading(false);
         return;
       }
 
-      // Then get the actual leads
+      // Get total count for filtered leads
+      const { count, error: countError } = await supabase
+        .from("leads")
+        .select("*", { count: 'exact', head: true })
+        .in('id', leadIds);
+      
+      if (countError) throw countError;
+      
+      setTotalLeads(count || 0);
+      setTotalPages(Math.ceil((count || 0) / LEADS_PER_PAGE));
+
+      // Get paginated filtered leads
+      const from = (page - 1) * LEADS_PER_PAGE;
+      const to = from + LEADS_PER_PAGE - 1;
+
       const { data, error } = await supabase
         .from("leads")
         .select("*")
         .in('id', leadIds)
+        .range(from, to)
         .order("created_at", { ascending: false });
       
       if (error) throw error;
@@ -116,10 +161,11 @@ const LeadList: React.FC<LeadListProps> = ({
   };
 
   useEffect(() => {
+    setCurrentPage(1); // Reset to first page when filters change
     if (selectedTags.length > 0) {
-      fetchLeadsWithTags();
+      fetchLeadsWithTags(1);
     } else {
-      fetchLeads();
+      fetchLeads(1);
     }
   }, [selectedTags]);
 
@@ -143,6 +189,11 @@ const LeadList: React.FC<LeadListProps> = ({
       );
     }
 
+    // Aplicar filtro de status
+    if (statusFilter) {
+      result = result.filter(lead => lead.status === statusFilter);
+    }
+
     activeFilters.forEach(filter => {
       if (filter.id === "novos") {
         result = result.filter(lead => lead.status === "novo");
@@ -157,7 +208,18 @@ const LeadList: React.FC<LeadListProps> = ({
     });
 
     setFilteredLeads(result);
-  }, [leads, searchQuery, internalSearchQuery, activeFilters]);
+  }, [leads, searchQuery, internalSearchQuery, activeFilters, statusFilter]);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    
+    if (selectedTags.length > 0) {
+      fetchLeadsWithTags(page);
+    } else {
+      fetchLeads(page);
+    }
+  };
 
   const handleLeadSubmit = async (values: any) => {
     console.log("New lead submission:", values);
@@ -203,9 +265,9 @@ const LeadList: React.FC<LeadListProps> = ({
       
       // Refresh leads based on current filters
       if (selectedTags.length > 0) {
-        fetchLeadsWithTags();
+        fetchLeadsWithTags(currentPage);
       } else {
-        fetchLeads();
+        fetchLeads(currentPage);
       }
       
     } catch (error: any) {
@@ -241,7 +303,7 @@ const LeadList: React.FC<LeadListProps> = ({
         <h2 className="text-2xl font-bold">Leads</h2>
         <div className="flex items-center gap-2">
           <span className="text-sm text-muted-foreground mr-2">
-            Mostrando {filteredLeads.length} leads
+            Mostrando {filteredLeads.length} de {totalLeads} leads
           </span>
           <LeadImportButton />
         </div>
@@ -289,16 +351,67 @@ const LeadList: React.FC<LeadListProps> = ({
           ))}
         </div>
       ) : filteredLeads.length > 0 ? (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {filteredLeads.map(lead => (
-            <LeadCard 
-              key={lead.id} 
-              lead={lead} 
-              onUpdate={handleLeadUpdate} 
-              onDelete={handleLeadDelete} 
-            />
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {filteredLeads.map(lead => (
+              <LeadCard 
+                key={lead.id} 
+                lead={lead} 
+                onUpdate={handleLeadUpdate} 
+                onDelete={handleLeadDelete} 
+              />
+            ))}
+          </div>
+          
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center space-x-6 py-4">
+              <div className="flex items-center space-x-2">
+                <p className="text-sm font-medium">
+                  Página {currentPage} de {totalPages}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  ({totalLeads} leads no total)
+                </p>
+              </div>
+              
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious 
+                      onClick={() => currentPage > 1 && handlePageChange(currentPage - 1)}
+                      className={currentPage <= 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                    />
+                  </PaginationItem>
+                  
+                  {[...Array(Math.min(5, totalPages))].map((_, index) => {
+                    const pageNumber = Math.max(1, currentPage - 2) + index;
+                    if (pageNumber > totalPages) return null;
+                    
+                    return (
+                      <PaginationItem key={pageNumber}>
+                        <PaginationLink
+                          onClick={() => handlePageChange(pageNumber)}
+                          isActive={pageNumber === currentPage}
+                          className="cursor-pointer"
+                        >
+                          {pageNumber}
+                        </PaginationLink>
+                      </PaginationItem>
+                    );
+                  })}
+                  
+                  <PaginationItem>
+                    <PaginationNext 
+                      onClick={() => currentPage < totalPages && handlePageChange(currentPage + 1)}
+                      className={currentPage >= totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+          )}
+        </>
       ) : (
         <EmptyState />
       )}

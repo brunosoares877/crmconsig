@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -24,25 +23,76 @@ interface ProductSelectProps {
 const ProductSelect: React.FC<ProductSelectProps> = ({ value, onValueChange, defaultValue }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [configProducts, setConfigProducts] = useState([]);
+  const [removedProducts, setRemovedProducts] = useState([]);
+  const [editedProducts, setEditedProducts] = useState([]);
+
+  // Função para carregar dados do localStorage
+  const loadConfigData = () => {
+    try {
+      // Carregar produtos configurados
+      const savedProducts = localStorage.getItem('configProducts');
+      if (savedProducts) {
+        setConfigProducts(JSON.parse(savedProducts));
+      }
+
+      // Carregar produtos removidos
+      const savedRemoved = localStorage.getItem('removedProducts');
+      if (savedRemoved) {
+        setRemovedProducts(JSON.parse(savedRemoved));
+      }
+
+      // Carregar produtos editados
+      const savedEdited = localStorage.getItem('editedProducts');
+      if (savedEdited) {
+        setEditedProducts(JSON.parse(savedEdited));
+      }
+    } catch (error) {
+      console.error('Error loading config data:', error);
+    }
+  };
 
   useEffect(() => {
-    // Get products from localStorage (from config page)
-    const savedProducts = localStorage.getItem('configProducts');
-    if (savedProducts) {
-      try {
-        setConfigProducts(JSON.parse(savedProducts));
-      } catch (error) {
-        console.error('Error parsing saved products:', error);
+    loadConfigData();
+
+    // Listener para mudanças no localStorage
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'configProducts' || e.key === 'removedProducts' || e.key === 'editedProducts') {
+        loadConfigData();
       }
-    }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+
+    // Listener customizado para mudanças na mesma aba
+    const handleCustomStorageChange = () => {
+      loadConfigData();
+    };
+
+    window.addEventListener('configDataChanged', handleCustomStorageChange);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('configDataChanged', handleCustomStorageChange);
+    };
   }, []);
 
   const allProducts = useMemo(() => {
     // Combine default products with configured products
     const combined = [...DEFAULT_PRODUCTS];
     
+    // Aplicar edições aos produtos padrão
+    editedProducts.forEach((editedProduct: any) => {
+      const defaultIndex = combined.findIndex(product => product.code === editedProduct.code);
+      if (defaultIndex !== -1) {
+        combined[defaultIndex] = {
+          code: editedProduct.code,
+          name: editedProduct.name
+        };
+      }
+    });
+    
+    // Adicionar produtos configurados pelo usuário
     configProducts.forEach((configProduct: any) => {
-      // Check if product already exists
       const exists = combined.find(product => product.code === configProduct.code);
       if (!exists) {
         combined.push({
@@ -52,8 +102,14 @@ const ProductSelect: React.FC<ProductSelectProps> = ({ value, onValueChange, def
       }
     });
     
-    return combined.sort((a, b) => a.name.localeCompare(b.name));
-  }, [configProducts]);
+    // Remover produtos que foram excluídos
+    const filtered = combined.filter(product => {
+      const removedId = `default-${product.code}`;
+      return !removedProducts.includes(removedId);
+    });
+    
+    return filtered.sort((a, b) => a.name.localeCompare(b.name));
+  }, [configProducts, removedProducts, editedProducts]);
 
   const filteredProducts = useMemo(() => {
     if (!searchTerm) return allProducts;

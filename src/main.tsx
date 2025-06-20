@@ -1,7 +1,8 @@
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import App from './App.tsx';
-import './index.css';
+import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
+import App from "./App.tsx";
+import "./index.css";
+import ErrorBoundary from "./components/ErrorBoundary.tsx";
 
 // Sistema de versionamento para forçar atualização do cache
 const APP_VERSION = '1.0.1'; // Incrementar quando houver mudanças importantes
@@ -24,7 +25,7 @@ if (currentVersion !== APP_VERSION) {
   
   // Forçar reload se não for a primeira visita
   if (currentVersion) {
-    window.location.reload();
+    // window.location.reload(); // Comentado para evitar loop de recarregamento
   }
 }
 
@@ -37,8 +38,10 @@ if (!rootElement) {
 }
 
 // Create root and render App
-ReactDOM.createRoot(rootElement).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>,
+createRoot(rootElement).render(
+  <StrictMode>
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
+  </StrictMode>
 );

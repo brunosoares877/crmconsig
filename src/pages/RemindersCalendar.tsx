@@ -164,7 +164,7 @@ const RemindersCalendar = () => {
 
   const getReminderStatusBadge = (reminder: Reminder) => {
     if (reminder.is_completed) {
-      return <Badge className="bg-green-500 hover:bg-green-600">Finalizado</Badge>;
+      return <Badge className="bg-green-500 hover:bg-green-600">Concluído</Badge>;
     } else if (isPastDue(reminder.due_date, reminder.is_completed)) {
       return <Badge className="bg-red-500 hover:bg-red-600">Atrasado</Badge>;
     } else {
@@ -222,7 +222,7 @@ const RemindersCalendar = () => {
               <div className="mt-4 flex flex-col space-y-2">
                 <div className="flex items-center space-x-2">
                   <div className="w-4 h-4 rounded-full bg-green-500"></div>
-                  <span className="text-sm">Finalizado</span>
+                  <span className="text-sm">Concluído</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <div className="w-4 h-4 rounded-full bg-red-500"></div>
