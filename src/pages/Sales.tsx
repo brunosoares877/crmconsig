@@ -54,7 +54,7 @@ const Sales = () => {
                   <img 
                     alt="CRM Dashboard Preview" 
                     className="rounded-lg shadow-xl w-full h-auto" 
-                    src="/lovable-uploads/406aa32b-8872-4e79-b7e3-681a3c81491b.png" 
+                    src="/lovable-uploads/f0e5ee00-1480-4e39-83b6-0cbb29b8f5a4.png" 
                     loading="lazy"
                   />
                   <div className="absolute -top-2 -right-2 md:-top-4 md:-right-4 bg-blue-600 text-white font-bold py-2 px-3 md:px-4 rounded-lg transform rotate-12 shadow-lg text-sm md:text-base">
