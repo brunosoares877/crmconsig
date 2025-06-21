@@ -9,6 +9,8 @@
       }
     }
   ],
+  "installCommand": "npm install --legacy-peer-deps --force",
+  "buildCommand": "npm run build",
   "routes": [
     {
       "handle": "filesystem"
