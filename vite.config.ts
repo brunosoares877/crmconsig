@@ -15,12 +15,14 @@ export default defineConfig(({ mode }) => ({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
       manifest: {
-        name: 'CRM Profissional - Gerencie Leads e Vendas',
-        short_name: 'CRM Pro',
-        description: 'Sistema completo para gestão de leads, vendas e equipe comercial',
-        theme_color: '#3b82f6',
+        name: 'LeadConsig - CRM Inteligente para Crédito Consignado',
+        short_name: 'LeadConsig',
+        description: 'Sistema CRM completo para gestão de leads e vendas de crédito consignado. Aumente suas conversões e organize seu negócio.',
+        theme_color: '#1e40af',
         background_color: '#ffffff',
         display: 'standalone',
+        start_url: '/',
+        scope: '/',
         icons: [
           {
             src: '/favicon.ico',

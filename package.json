@@ -1,7 +1,9 @@
 {
-  "name": "vite_react_shadcn_ts",
+  "name": "leadconsig-crm",
+  "description": "Sistema CRM completo para gestão de leads e vendas de crédito consignado",
+  "version": "1.0.0",
+  "author": "LeadConsig",
   "private": true,
-  "version": "0.0.0",
   "type": "module",
   "engines": {
     "node": ">=18.0.0"
