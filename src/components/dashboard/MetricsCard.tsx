@@ -40,8 +40,11 @@ const MetricsCard = ({
     'bg-green-500', // pago
     'bg-red-500'    // cancelado
   ];
-  // Se o iconBg for uma dessas, aplica no card
-  const cardBg = statusBg.includes(iconBg) ? iconBg : 'bg-gradient-to-br from-white via-white to-blue-50/30';
+  
+  // Se o iconBg for uma dessas, aplica gradiente suave no card
+  const cardBg = statusBg.includes(iconBg) 
+    ? `bg-gradient-to-br from-white via-white to-${iconBg.split('-')[1]}-50/20`
+    : 'bg-gradient-to-br from-white via-white to-blue-50/30';
 
   const handleCardClick = () => {
     if (clickable && statusFilter) {
@@ -51,51 +54,61 @@ const MetricsCard = ({
 
   return (
     <Card 
-      className={`metrics-card relative overflow-hidden border-0 shadow-lg ${cardBg} hover:shadow-xl transition-all duration-500 group hover:scale-[1.02] ${
+      className={`metrics-card relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-500 group hover:scale-[1.02] ${
         clickable ? 'cursor-pointer' : ''
-      } min-h-[140px] sm:min-h-[160px] md:min-h-[180px]`}
+      } min-h-[160px] sm:min-h-[180px] md:min-h-[200px] bg-gradient-to-br from-white via-white to-blue-50/20`}
       onClick={handleCardClick}
     >
       {/* Background decoration */}
-      <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-blue-50 to-transparent opacity-50 rounded-full transform translate-x-8 -translate-y-8"></div>
+      <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-blue-50 to-transparent opacity-30 rounded-full transform translate-x-8 -translate-y-8"></div>
       
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-3 sm:px-4 md:px-6 pt-3 sm:pt-4 md:pt-6">
-        <CardTitle className="text-xs sm:text-sm font-medium text-slate-600 truncate pr-2">
-          {title}
-        </CardTitle>
-        <div className={`p-1.5 sm:p-2 md:p-2.5 ${iconBg} rounded-xl text-white shrink-0 group-hover:scale-110 transition-transform duration-300 shadow-sm`}>
-          {icon}
+      <CardHeader className="flex flex-col space-y-3 pb-3 px-4 sm:px-5 md:px-6 pt-4 sm:pt-5 md:pt-6">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-sm sm:text-base font-semibold text-slate-700 leading-tight line-clamp-2">
+            {title}
+          </CardTitle>
+          <div className={`p-2 sm:p-2.5 md:p-3 ${iconBg} rounded-xl text-white shrink-0 group-hover:scale-110 transition-transform duration-300 shadow-lg`}>
+            {icon}
+          </div>
         </div>
       </CardHeader>
-      <CardContent className="px-3 sm:px-4 md:px-6 pb-3 sm:pb-4 md:pb-6">
-        <div className="flex flex-col items-start w-full">
-          {typeof valueTotal === 'number' && (
-            <span className="metrics-value text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl font-extrabold text-slate-900 leading-none tracking-tight break-all word-break-all overflow-wrap-anywhere">
+      
+      <CardContent className="px-4 sm:px-5 md:px-6 pb-4 sm:pb-5 md:pb-6">
+        <div className="flex flex-col items-start w-full space-y-2">
+          {typeof valueTotal === 'number' && valueTotal > 0 && (
+            <span className="metrics-value text-xl sm:text-2xl md:text-3xl lg:text-4xl font-extrabold text-slate-900 leading-none tracking-tight">
               {valueTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
             </span>
           )}
-          <span className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-slate-700 mt-1">
-            {value}
-            <span className="ml-1 text-sm font-normal text-slate-500">contratos</span>
-          </span>
-        </div>
-        <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm flex-wrap mt-2">
-          {change && (
-            <span className={`inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-xs font-semibold ${
-              change.positive 
-                ? 'text-emerald-700 bg-emerald-50 border border-emerald-200' 
-                : 'text-red-700 bg-red-50 border border-red-200'
-            }`}>
-              {change.value}
-              {change.positive ? (
-                <TrendingUp className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
-              ) : (
-                <TrendingDown className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
-              )}
+          <div className="flex items-baseline gap-2">
+            <span className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-slate-800">
+              {value}
             </span>
-          )}
-          <span className="text-slate-500 text-xs truncate flex-1 min-w-0">{subtitle}</span>
+            <span className="text-sm font-medium text-slate-500">contratos</span>
+          </div>
         </div>
+        
+        {(change || subtitle) && (
+          <div className="flex items-center gap-2 text-xs sm:text-sm flex-wrap mt-3 pt-3 border-t border-slate-100">
+            {change && change.value !== "+0%" && change.value !== "0%" && (
+              <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold ${
+                change.positive 
+                  ? 'text-emerald-700 bg-emerald-50 border border-emerald-200' 
+                  : 'text-red-700 bg-red-50 border border-red-200'
+              }`}>
+                {change.value}
+                {change.positive ? (
+                  <TrendingUp className="h-3 w-3" />
+                ) : (
+                  <TrendingDown className="h-3 w-3" />
+                )}
+              </span>
+            )}
+            {subtitle && (
+              <span className="text-slate-500 text-xs font-medium">{subtitle}</span>
+            )}
+          </div>
+        )}
       </CardContent>
       
       {/* Hover effect gradient */}
