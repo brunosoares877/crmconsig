@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { MoreHorizontal, Phone, Mail, DollarSign, Building, User, Edit, Trash2, Calendar, FileText, Tag, CheckCircle, Clock, AlertTriangle, X, Building2 } from "lucide-react";
+import { MoreHorizontal, Phone, Mail, DollarSign, Building, User, Edit, Trash2, Calendar, FileText, Tag, CheckCircle, Clock, AlertTriangle, X, Building2, Copy } from "lucide-react";
 import { Lead } from "@/types/models";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -302,6 +302,23 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete }) => {
     return phone;
   };
 
+  const formatCPF = (cpf: string) => {
+    if (!cpf) return "";
+    const cleaned = cpf.replace(/\D/g, '');
+    if (cleaned.length === 11) {
+      return `${cleaned.slice(0, 3)}.${cleaned.slice(3, 6)}.${cleaned.slice(6, 9)}-${cleaned.slice(9)}`;
+    }
+    return cpf;
+  };
+
+  const copyToClipboard = (text: string, label: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+      toast.success(`${label} copiado para a área de transferência!`);
+    }).catch(() => {
+      toast.error(`Erro ao copiar ${label}`);
+    });
+  };
+
   return (
     <>
       <Card className="hover:shadow-md transition-shadow">
@@ -418,6 +435,25 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete }) => {
                   label="WhatsApp"
                   className="h-8 text-xs px-2"
                 />
+              </div>
+            )}
+
+            {lead.cpf && (
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <User className="h-4 w-4 text-purple-500" />
+                  <span className="font-medium">CPF:</span>
+                  <span className="font-mono text-sm">{formatCPF(lead.cpf)}</span>
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => copyToClipboard(lead.cpf, "CPF")}
+                  className="h-7 text-xs px-2 flex items-center gap-1"
+                >
+                  <Copy className="h-3 w-3" />
+                  Copiar
+                </Button>
               </div>
             )}
             
