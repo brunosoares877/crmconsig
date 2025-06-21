@@ -1,24 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import LeadList from "@/components/LeadList";
-import Filters from "@/components/Filters";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
-import { Search, Trash2, Plus, Tag, X } from "lucide-react";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
+import { Search, Trash2, Filter, X } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import PageLayout from "@/components/PageLayout";
 import AddLeadButton from "@/components/leads/AddLeadButton";
-
-interface Tag {
-  id: string;
-  name: string;
-  color: string;
-}
 
 const Leads = () => {
   const [searchParams] = useSearchParams();
@@ -30,16 +22,20 @@ const Leads = () => {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [tags, setTags] = useState<Tag[]>([]);
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [isTagDialogOpen, setIsTagDialogOpen] = useState(false);
-  const [newTagName, setNewTagName] = useState("");
-  const [newTagColor, setNewTagColor] = useState("#3b82f6");
   const [statusFilter, setStatusFilter] = useState<string>("");
+  const [employeeFilter, setEmployeeFilter] = useState<string>("");
+  const [productFilter, setProductFilter] = useState<string>("");
+  const [bankFilter, setBankFilter] = useState<string>("");
+  const [employees, setEmployees] = useState<string[]>([]);
+  const [products, setProducts] = useState<string[]>([]);
+  const [banks, setBanks] = useState<string[]>([]);
 
-  const tagColors = [
-    "#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6",
-    "#f97316", "#06b6d4", "#84cc16", "#ec4899", "#6b7280"
+  const statusOptions = [
+    { value: "novo", label: "Novo" },
+    { value: "qualificado", label: "Qualificado" },
+    { value: "negociando", label: "Em Negociação" },
+    { value: "convertido", label: "Convertido" },
+    { value: "perdido", label: "Perdido" }
   ];
 
   const headerActions = (
@@ -96,7 +92,7 @@ const Leads = () => {
       }
     };
     fetchLeadStats();
-    fetchTags();
+    fetchFilterOptions();
   }, []);
 
   useEffect(() => {
@@ -113,83 +109,71 @@ const Leads = () => {
     }
   }, [searchParams]);
 
-  const fetchTags = async () => {
+  const fetchFilterOptions = async () => {
     try {
       const { data: userData, error: userError } = await supabase.auth.getUser();
       if (userError) throw userError;
 
-      const { data, error } = await (supabase as any)
-        .from('lead_tags')
-        .select('*')
+      // Buscar funcionários únicos
+      const { data: employeeData, error: employeeError } = await supabase
+        .from('leads')
+        .select('employee')
         .eq('user_id', userData.user.id)
-        .order('name');
+        .not('employee', 'is', null)
+        .neq('employee', '');
 
-      if (error) throw error;
-      setTags(data || []);
+      if (!employeeError && employeeData) {
+        const uniqueEmployees = [...new Set(employeeData.map(item => item.employee))];
+        setEmployees(uniqueEmployees);
+      }
+
+      // Buscar produtos únicos
+      const { data: productData, error: productError } = await supabase
+        .from('leads')
+        .select('product')
+        .eq('user_id', userData.user.id)
+        .not('product', 'is', null)
+        .neq('product', '');
+
+      if (!productError && productData) {
+        const uniqueProducts = [...new Set(productData.map(item => item.product))];
+        setProducts(uniqueProducts);
+      }
+
+      // Buscar bancos únicos
+      const { data: bankData, error: bankError } = await supabase
+        .from('leads')
+        .select('bank')
+        .eq('user_id', userData.user.id)
+        .not('bank', 'is', null)
+        .neq('bank', '');
+
+      if (!bankError && bankData) {
+        const uniqueBanks = [...new Set(bankData.map(item => item.bank))];
+        setBanks(uniqueBanks);
+      }
     } catch (error) {
-      console.error('Error fetching tags:', error);
+      console.error('Error fetching filter options:', error);
     }
   };
 
-  const createTag = async () => {
-    if (!newTagName.trim()) return;
-
-    try {
-      const { data: userData, error: userError } = await supabase.auth.getUser();
-      if (userError) throw userError;
-
-      const { data, error } = await (supabase as any)
-        .from('lead_tags')
-        .insert({
-          name: newTagName.trim(),
-          color: newTagColor,
-          user_id: userData.user.id
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      setTags([...tags, data as Tag]);
-      setNewTagName("");
-      setNewTagColor("#3b82f6");
-      setIsTagDialogOpen(false);
-      toast.success("Etiqueta criada com sucesso!");
-    } catch (error: any) {
-      console.error('Error creating tag:', error);
-      toast.error(`Erro ao criar etiqueta: ${error.message}`);
-    }
+  const clearAllFilters = () => {
+    setStatusFilter("");
+    setEmployeeFilter("");
+    setProductFilter("");
+    setBankFilter("");
   };
 
-  const deleteTag = async (tagId: string) => {
-    try {
-      const { error } = await (supabase as any)
-        .from('lead_tags')
-        .delete()
-        .eq('id', tagId);
-
-      if (error) throw error;
-
-      setTags(tags.filter(tag => tag.id !== tagId));
-      setSelectedTags(selectedTags.filter(id => id !== tagId));
-      toast.success("Etiqueta removida com sucesso!");
-    } catch (error: any) {
-      console.error('Error deleting tag:', error);
-      toast.error(`Erro ao remover etiqueta: ${error.message}`);
-    }
+  const getActiveFiltersCount = () => {
+    let count = 0;
+    if (statusFilter) count++;
+    if (employeeFilter) count++;
+    if (productFilter) count++;
+    if (bankFilter) count++;
+    return count;
   };
 
-  const toggleTag = (tagId: string) => {
-    setSelectedTags(prev => 
-      prev.includes(tagId) 
-        ? prev.filter(id => id !== tagId)
-        : [...prev, tagId]
-    );
-  };
-
-  const clearSelectedTags = () => {
-    setSelectedTags([]);
-  };
+  const activeFiltersCount = getActiveFiltersCount();
 
   return (
     <PageLayout 
@@ -240,133 +224,141 @@ const Leads = () => {
           </Card>
         </div>
 
-        {/* Status Filter Indicator */}
-        {statusFilter && (
-          <Card className="p-4 bg-blue-50 border-blue-200">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                <span className="text-sm font-medium text-blue-800">
-                  Filtro ativo: {
-                    statusFilter === 'negociando' ? 'Em Andamento' :
-                    statusFilter === 'qualificado' ? 'Pendente' :
-                    statusFilter === 'convertido' ? 'Pago' :
-                    statusFilter === 'perdido' ? 'Cancelado' : statusFilter
-                  }
-                </span>
-              </div>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => setStatusFilter("")}
-                className="text-blue-600 border-blue-300 hover:bg-blue-100"
-              >
-                <X className="h-4 w-4 mr-1" />
-                Remover Filtro
-              </Button>
-            </div>
-          </Card>
-        )}
-
-        {/* Tags Filter Section */}
+        {/* Filtros Funcionais */}
         <Card className="p-4">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <Tag className="h-5 w-5" />
-              <h3 className="text-lg font-semibold">Filtrar por Etiquetas</h3>
-              {selectedTags.length > 0 && (
-                <Button variant="outline" size="sm" onClick={clearSelectedTags}>
+              <Filter className="h-5 w-5" />
+              <h3 className="text-lg font-semibold">Filtros</h3>
+              {activeFiltersCount > 0 && (
+                <Button variant="outline" size="sm" onClick={clearAllFilters}>
                   <X className="h-4 w-4 mr-2" />
-                  Limpar Filtros ({selectedTags.length})
+                  Limpar Todos ({activeFiltersCount})
                 </Button>
               )}
             </div>
-            <Dialog open={isTagDialogOpen} onOpenChange={setIsTagDialogOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="sm">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Nova Etiqueta
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Criar Nova Etiqueta</DialogTitle>
-                  <DialogDescription>
-                    Crie uma nova etiqueta para organizar seus leads.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="tagName">Nome da Etiqueta</Label>
-                    <Input
-                      id="tagName"
-                      value={newTagName}
-                      onChange={(e) => setNewTagName(e.target.value)}
-                      placeholder="Ex: Cliente VIP, Urgente, etc."
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="tagColor">Cor da Etiqueta</Label>
-                    <div className="flex gap-2 mt-2">
-                      {tagColors.map((color) => (
-                        <button
-                          key={color}
-                          className={`w-8 h-8 rounded-full border-2 ${
-                            newTagColor === color ? 'border-gray-900' : 'border-gray-300'
-                          }`}
-                          style={{ backgroundColor: color }}
-                          onClick={() => setNewTagColor(color)}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                  <div className="flex justify-end gap-2">
-                    <Button variant="outline" onClick={() => setIsTagDialogOpen(false)}>
-                      Cancelar
-                    </Button>
-                    <Button onClick={createTag}>Criar Etiqueta</Button>
-                  </div>
-                </div>
-              </DialogContent>
-            </Dialog>
           </div>
           
-          <div className="flex flex-wrap gap-2">
-            {tags.map((tag) => (
-              <div key={tag.id} className="relative group">
-                <Badge
-                  variant="outline"
-                  className={`cursor-pointer transition-all ${
-                    selectedTags.includes(tag.id)
-                      ? 'ring-2 ring-offset-1'
-                      : 'hover:scale-105'
-                  }`}
-                  style={{
-                    backgroundColor: selectedTags.includes(tag.id) ? tag.color : 'transparent',
-                    borderColor: tag.color,
-                    color: selectedTags.includes(tag.id) ? 'white' : tag.color
-                  }}
-                  onClick={() => toggleTag(tag.id)}
-                >
-                  {tag.name}
-                </Badge>
-                <button
-                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 text-xs opacity-0 group-hover:opacity-100 transition-opacity"
-                  onClick={() => deleteTag(tag.id)}
-                >
-                  ×
-                </button>
-              </div>
-            ))}
-            {tags.length === 0 && (
-              <p className="text-muted-foreground text-sm">
-                Nenhuma etiqueta criada. Clique em "Nova Etiqueta" para começar.
-              </p>
-            )}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Filtro Status */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Status</label>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Todos os status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Todos os status</SelectItem>
+                  {statusOptions.map((status) => (
+                    <SelectItem key={status.value} value={status.value}>
+                      {status.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Filtro Funcionário */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Funcionário</label>
+              <Select value={employeeFilter} onValueChange={setEmployeeFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Todos os funcionários" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Todos os funcionários</SelectItem>
+                  {employees.map((employee) => (
+                    <SelectItem key={employee} value={employee}>
+                      {employee}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Filtro Produto */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Produto</label>
+              <Select value={productFilter} onValueChange={setProductFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Todos os produtos" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Todos os produtos</SelectItem>
+                  {products.map((product) => (
+                    <SelectItem key={product} value={product}>
+                      {product}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Filtro Banco */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Banco</label>
+              <Select value={bankFilter} onValueChange={setBankFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Todos os bancos" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Todos os bancos</SelectItem>
+                  {banks.map((bank) => (
+                    <SelectItem key={bank} value={bank}>
+                      {bank}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
+
+          {/* Filtros Ativos */}
+          {activeFiltersCount > 0 && (
+            <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t">
+              {statusFilter && (
+                <Badge variant="secondary" className="flex items-center gap-1">
+                  Status: {statusOptions.find(s => s.value === statusFilter)?.label}
+                  <button onClick={() => setStatusFilter("")} className="ml-1 hover:bg-gray-300 rounded-full p-0.5">
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
+              )}
+              {employeeFilter && (
+                <Badge variant="secondary" className="flex items-center gap-1">
+                  Funcionário: {employeeFilter}
+                  <button onClick={() => setEmployeeFilter("")} className="ml-1 hover:bg-gray-300 rounded-full p-0.5">
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
+              )}
+              {productFilter && (
+                <Badge variant="secondary" className="flex items-center gap-1">
+                  Produto: {productFilter}
+                  <button onClick={() => setProductFilter("")} className="ml-1 hover:bg-gray-300 rounded-full p-0.5">
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
+              )}
+              {bankFilter && (
+                <Badge variant="secondary" className="flex items-center gap-1">
+                  Banco: {bankFilter}
+                  <button onClick={() => setBankFilter("")} className="ml-1 hover:bg-gray-300 rounded-full p-0.5">
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
+              )}
+            </div>
+          )}
         </Card>
 
-        <LeadList searchQuery={searchQuery} selectedTags={selectedTags} statusFilter={statusFilter} />
+        <LeadList 
+          searchQuery={searchQuery} 
+          statusFilter={statusFilter}
+          employeeFilter={employeeFilter}
+          productFilter={productFilter}
+          bankFilter={bankFilter}
+        />
       </div>
     </PageLayout>
   );
