@@ -53,7 +53,7 @@ const MetricsCard = ({
     <Card 
       className={`metrics-card relative overflow-hidden border-0 shadow-lg ${cardBg} hover:shadow-xl transition-all duration-500 group hover:scale-[1.02] ${
         clickable ? 'cursor-pointer' : ''
-      } min-h-[120px] sm:min-h-[140px] md:min-h-[160px]`}
+      } min-h-[140px] sm:min-h-[160px] md:min-h-[180px]`}
       onClick={handleCardClick}
     >
       {/* Background decoration */}
@@ -67,19 +67,19 @@ const MetricsCard = ({
           {icon}
         </div>
       </CardHeader>
-      <CardContent className="space-y-2 sm:space-y-3 px-3 sm:px-4 md:px-6 pb-3 sm:pb-4 md:pb-6">
+      <CardContent className="px-3 sm:px-4 md:px-6 pb-3 sm:pb-4 md:pb-6">
         <div className="flex flex-col items-start w-full">
           {typeof valueTotal === 'number' && (
-            <span className="metrics-value text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl font-extrabold text-slate-900 leading-none tracking-tight break-all word-break-all overflow-wrap-anywhere">
+            <span className="metrics-value text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl font-extrabold text-slate-900 leading-none tracking-tight break-all word-break-all overflow-wrap-anywhere">
               {valueTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
             </span>
           )}
-          <span className="text-xs sm:text-sm md:text-base font-semibold text-slate-700 mt-1">
+          <span className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-slate-700 mt-1">
             {value}
-            <span className="ml-1 text-xs font-normal text-slate-500">contratos</span>
+            <span className="ml-1 text-sm font-normal text-slate-500">contratos</span>
           </span>
         </div>
-        <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm flex-wrap">
+        <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm flex-wrap mt-2">
           {change && (
             <span className={`inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-xs font-semibold ${
               change.positive 

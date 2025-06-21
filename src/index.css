@@ -365,7 +365,7 @@
 /* Responsividade para cards de métricas */
 @media (max-width: 480px) {
   .metrics-card {
-    min-height: 120px;
+    min-height: 140px;
   }
   
   .metrics-card .card-content {
@@ -373,9 +373,13 @@
   }
   
   .metrics-value {
-    font-size: 1rem !important;
+    font-size: 1.125rem !important; /* text-lg */
     line-height: 1.2 !important;
     word-break: break-all;
+  }
+  
+  .metrics-card .text-base {
+    font-size: 0.875rem !important; /* text-sm no mobile */
   }
 }
 
@@ -388,6 +392,7 @@
   .metrics-card {
     min-width: 140px;
     max-width: 100%;
+    min-height: 150px;
   }
 }
 
@@ -456,7 +461,7 @@
 /* Responsividade aprimorada para MetricsCard */
 @media (max-width: 640px) {
   .metrics-card .metrics-value {
-    font-size: 0.875rem !important; /* text-sm */
+    font-size: 1rem !important; /* text-base em tablets */
     line-height: 1.2 !important;
     word-break: break-all !important;
     overflow-wrap: anywhere !important;
@@ -466,18 +471,18 @@
 
 @media (max-width: 480px) {
   .metrics-card .metrics-value {
-    font-size: 0.75rem !important; /* text-xs */
+    font-size: 1.125rem !important; /* mantém text-lg no mobile */
     line-height: 1.1 !important;
   }
   
   .metrics-card {
-    min-height: 100px !important;
+    min-height: 140px !important;
   }
 }
 
 @media (max-width: 360px) {
   .metrics-card .metrics-value {
-    font-size: 0.6875rem !important; /* ainda menor */
+    font-size: 1rem !important; /* text-base em telas muito pequenas */
     line-height: 1 !important;
   }
 }
