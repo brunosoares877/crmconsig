@@ -38,10 +38,6 @@ const LeadList: React.FC<LeadListProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [isOpenSheet, setIsOpenSheet] = useState(false);
   const [internalSearchQuery, setInternalSearchQuery] = useState(searchQuery);
-  const [activeFilters, setActiveFilters] = useState<Array<{
-    id: string;
-    label: string;
-  }>>([]);
   
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -281,6 +277,7 @@ const LeadList: React.FC<LeadListProps> = ({
     }
   };
 
+  // CORRIGIDO: useEffect que causava loop infinito
   useEffect(() => {
     setCurrentPage(1); // Reset to first page when filters change
     if (selectedTags.length > 0) {
@@ -288,7 +285,7 @@ const LeadList: React.FC<LeadListProps> = ({
     } else {
       fetchLeads(1);
     }
-  }, [selectedTags, statusFilter, employeeFilter, productFilter, bankFilter]);
+  }, [statusFilter, employeeFilter, productFilter, bankFilter]); // Removido selectedTags para evitar loop
 
   useEffect(() => {
     setInternalSearchQuery(searchQuery);
@@ -310,21 +307,8 @@ const LeadList: React.FC<LeadListProps> = ({
       );
     }
 
-    activeFilters.forEach(filter => {
-      if (filter.id === "novos") {
-        result = result.filter(lead => lead.status === "novo");
-      } else if (filter.id === "ultimos30dias") {
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-        result = result.filter(lead => {
-          const leadDate = new Date(lead.createdAt || lead.created_at || '');
-          return leadDate >= thirtyDaysAgo;
-        });
-      }
-    });
-
     setFilteredLeads(result);
-  }, [leads, searchQuery, internalSearchQuery, activeFilters]);
+  }, [leads, searchQuery, internalSearchQuery]);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -400,19 +384,6 @@ const LeadList: React.FC<LeadListProps> = ({
     setLeads(leads.filter(lead => lead.id !== id));
   };
 
-  const addFilter = (id: string, label: string) => {
-    if (!activeFilters.some(filter => filter.id === id)) {
-      setActiveFilters([...activeFilters, {
-        id,
-        label
-      }]);
-    }
-  };
-
-  const removeFilter = (id: string) => {
-    setActiveFilters(activeFilters.filter(filter => filter.id !== id));
-  };
-
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between mb-4">
@@ -425,40 +396,7 @@ const LeadList: React.FC<LeadListProps> = ({
         </div>
       </div>
       
-      <div className="rounded-lg border bg-card p-4">
-        <div className="flex flex-col space-y-4">
-          <div className="flex flex-col space-y-2 md:flex-row md:items-center md:justify-between md:space-y-0">
-            <div className="flex w-full items-center space-x-2 md:w-auto">
-              <div className="relative w-full md:w-[280px]">
-                <Search className="absolute left-3 top-2.5 h-4 w-4 text-blue-500" />
-                <Input 
-                  placeholder="Buscar por nome, telefone ou CPF..." 
-                  className="pl-10 border-blue-100 bg-blue-50/50 hover:bg-blue-50 focus:border-blue-200 focus:ring-1 focus:ring-blue-200 transition-all rounded-full" 
-                  value={internalSearchQuery} 
-                  onChange={e => setInternalSearchQuery(e.target.value)} 
-                />
-              </div>
-            </div>
-          </div>
-          
-          <div className="flex items-center space-x-2">
-            <Button variant="outline" className="h-8 gap-1" onClick={() => addFilter("novos", "Novos")}>
-              <Filter className="h-3.5 w-3.5" />
-              <span>Filtros</span>
-            </Button>
-            <div className="flex flex-wrap gap-2">
-              {activeFilters.map(filter => 
-                <Badge key={filter.id} variant="outline" className="h-8 gap-1 pl-2 pr-1">
-                  {filter.label}
-                  <Button variant="ghost" className="h-5 w-5 p-0 hover:bg-transparent" onClick={() => removeFilter(filter.id)}>
-                    <X className="h-3.5 w-3.5" />
-                  </Button>
-                </Badge>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* REMOVIDO: Filtros antigos duplicados */}
       
       {isLoading ? (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">

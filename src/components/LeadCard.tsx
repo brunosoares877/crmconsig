@@ -35,18 +35,20 @@ const statusColors = {
   novo: "bg-blue-100 text-blue-800",
   contatado: "bg-yellow-100 text-yellow-800",
   qualificado: "bg-purple-100 text-purple-800",
+  pendente: "bg-amber-100 text-amber-800",
   negociando: "bg-orange-100 text-orange-800",
-  convertido: "bg-green-100 text-green-800",
-  perdido: "bg-red-100 text-red-800"
+  concluido: "bg-green-100 text-green-800",
+  cancelado: "bg-red-100 text-red-800"
 };
 
 const statusLabels = {
   novo: "Novo",
   contatado: "Contatado",
-  qualificado: "Pendente",
+  qualificado: "Qualificado",
+  pendente: "Pendente",
   negociando: "Em Andamento",
-  convertido: "Pago",
-  perdido: "Cancelado"
+  concluido: "Concluído",
+  cancelado: "Cancelado"
 };
 
 const bankLabels = {
@@ -358,7 +360,7 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete }) => {
                         Marcar como Em Andamento
                       </DropdownMenuItem>
                       <DropdownMenuItem 
-                        onClick={() => handleStatusChange('qualificado')}
+                        onClick={() => handleStatusChange('pendente')}
                         disabled={isUpdating}
                         className="text-yellow-600"
                       >
@@ -366,15 +368,15 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete }) => {
                         Marcar como Pendente
                       </DropdownMenuItem>
                       <DropdownMenuItem 
-                        onClick={() => handleStatusChange('convertido')}
+                        onClick={() => handleStatusChange('concluido')}
                         disabled={isUpdating}
                         className="text-green-600"
                       >
                         <CheckCircle className="mr-2 h-4 w-4" />
-                        Marcar como Pago
+                        Marcar como Concluído
                       </DropdownMenuItem>
                       <DropdownMenuItem 
-                        onClick={() => handleStatusChange('perdido')}
+                        onClick={() => handleStatusChange('cancelado')}
                         disabled={isUpdating}
                         className="text-red-600"
                       >

@@ -43,7 +43,15 @@ const LatestLeadsCard = ({ latestLeads, isLoading }: LatestLeadsCardProps) => {
         bg: 'bg-gradient-to-r from-red-50 to-red-100 text-red-800 border-red-200 shadow-red-100', 
         label: 'Perdido',
         icon: '❌'
-      }
+      },
+      'concluido': {
+        color: 'bg-green-100 text-green-800',
+        label: 'Concluído',
+      },
+      'cancelado': {
+        color: 'bg-red-100 text-red-800',
+        label: 'Cancelado',
+      },
     };
     
     const config = statusConfig[status] || statusConfig['novo'];

@@ -111,7 +111,7 @@ const Dashboard = () => {
           count: pago
         } = await supabase.from('leads')
           .select('*', { count: 'exact', head: true })
-          .eq('status', 'convertido')
+          .eq('status', 'concluido')
           .not('amount', 'is', null)
           .neq('amount', '')
           .gte('created_at', monthStart)
@@ -121,7 +121,7 @@ const Dashboard = () => {
           count: cancelado
         } = await supabase.from('leads')
           .select('*', { count: 'exact', head: true })
-          .eq('status', 'perdido')
+          .eq('status', 'cancelado')
           .not('amount', 'is', null)
           .neq('amount', '')
           .gte('created_at', monthStart)
@@ -199,7 +199,7 @@ const Dashboard = () => {
         } = await supabase.from('leads').select('*', {
           count: 'exact',
           head: true
-        }).eq('status', 'convertido').gte('created_at', weekStart).lte('created_at', weekEnd);
+        }).eq('status', 'concluido').gte('created_at', weekStart).lte('created_at', weekEnd);
 
         const weeklyConversionRate = weeklyLeadsCount && weeklyLeadsCount > 0 ? 
           ((weeklyConvertedCount || 0) / weeklyLeadsCount * 100) : 0;
@@ -263,7 +263,7 @@ const Dashboard = () => {
                 employeeSalesMap[lead.employee].totalLeadsWithAmount += 1;
                 employeeSalesMap[lead.employee].totalValue += amount;
                 
-                if (lead.status === 'convertido') {
+                if (lead.status === 'concluido') {
                   employeeSalesMap[lead.employee].convertedSales += 1;
                 }
               }
@@ -327,8 +327,8 @@ const Dashboard = () => {
             if (isNaN(amount)) return;
             if (lead.status === 'negociando') statusSums.emAndamentoValue += amount;
             if (lead.status === 'qualificado') statusSums.pendenteValue += amount;
-            if (lead.status === 'convertido') statusSums.pagoValue += amount;
-            if (lead.status === 'perdido') statusSums.canceladoValue += amount;
+            if (lead.status === 'concluido') statusSums.pagoValue += amount;
+            if (lead.status === 'cancelado') statusSums.canceladoValue += amount;
           });
         }
 
@@ -444,7 +444,7 @@ const Dashboard = () => {
       icon: <AlertTriangle className="h-4 w-4 lg:h-5 lg:w-5" />,
       iconBg: "bg-yellow-400",
       iconColor: "text-white",
-      statusFilter: "qualificado",
+      statusFilter: "pendente",
       clickable: true
     }, {
       title: "Pago",
@@ -455,7 +455,7 @@ const Dashboard = () => {
       icon: <CheckCircle className="h-4 w-4 lg:h-5 lg:w-5" />,
       iconBg: "bg-green-500",
       iconColor: "text-white",
-      statusFilter: "convertido",
+      statusFilter: "concluido",
       clickable: true
     }, {
       title: "Cancelado",
@@ -466,7 +466,7 @@ const Dashboard = () => {
       icon: <X className="h-4 w-4 lg:h-5 lg:w-5" />,
       iconBg: "bg-red-500",
       iconColor: "text-white",
-      statusFilter: "perdido",
+      statusFilter: "cancelado",
       clickable: true
     }
   ];

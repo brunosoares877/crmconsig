@@ -33,9 +33,10 @@ const Leads = () => {
   const statusOptions = [
     { value: "novo", label: "Novo" },
     { value: "qualificado", label: "Qualificado" },
-    { value: "negociando", label: "Em Negociação" },
-    { value: "convertido", label: "Convertido" },
-    { value: "perdido", label: "Perdido" }
+    { value: "pendente", label: "Pendente" },
+    { value: "negociando", label: "Em Andamento" },
+    { value: "concluido", label: "Concluído" },
+    { value: "cancelado", label: "Cancelado" }
   ];
 
   const headerActions = (
@@ -79,7 +80,7 @@ const Leads = () => {
           acc.total++;
           if (lead.status === 'novo') acc.new++;
           if (lead.status === 'qualificado') acc.qualified++;
-          if (lead.status === 'convertido') acc.converted++;
+          if (lead.status === 'concluido') acc.converted++;
           return acc;
         }, { total: 0, new: 0, qualified: 0, converted: 0 });
 
@@ -100,10 +101,12 @@ const Leads = () => {
     if (statusFromUrl) {
       setStatusFilter(statusFromUrl);
       const statusLabels = {
+        'novo': 'Novo',
+        'qualificado': 'Qualificado',
+        'pendente': 'Pendente',
         'negociando': 'Em Andamento',
-        'qualificado': 'Pendente',
-        'convertido': 'Pago',
-        'perdido': 'Cancelado'
+        'concluido': 'Concluído',
+        'cancelado': 'Cancelado'
       };
       toast.success(`Filtro aplicado: ${statusLabels[statusFromUrl as keyof typeof statusLabels] || statusFromUrl}`);
     }
@@ -214,7 +217,7 @@ const Leads = () => {
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-2xl text-green-600">{isLoading ? "..." : leadStats.converted}</CardTitle>
-              <CardDescription>Conversões</CardDescription>
+              <CardDescription>Concluídos</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="text-xs text-muted-foreground">
