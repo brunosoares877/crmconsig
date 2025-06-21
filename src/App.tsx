@@ -37,7 +37,7 @@ function App() {
             <SubscriptionProvider>
               <Suspense fallback={<div className="w-full min-h-screen flex items-center justify-center text-lg">Carregando...</div>}>
                 <Routes>
-                    <Route path="/" element={<Index />} />
+                    <Route path="/" element={<Sales />} />
                     <Route path="/dashboard" element={<Index />} />
                     <Route path="/plans" element={<Plans />} />
                     <Route path="/subscription-success" element={<SubscriptionSuccess />} />
