@@ -243,12 +243,12 @@ const Leads = () => {
             {/* Filtro Status */}
             <div className="space-y-2">
               <label className="text-sm font-medium">Status</label>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <Select value={statusFilter || "all"} onValueChange={(value) => setStatusFilter(value === "all" ? "" : value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Todos os status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos os status</SelectItem>
+                  <SelectItem value="all">Todos os status</SelectItem>
                   {statusOptions.map((status) => (
                     <SelectItem key={status.value} value={status.value}>
                       {status.label}
@@ -261,12 +261,12 @@ const Leads = () => {
             {/* Filtro Funcionário */}
             <div className="space-y-2">
               <label className="text-sm font-medium">Funcionário</label>
-              <Select value={employeeFilter} onValueChange={setEmployeeFilter}>
+              <Select value={employeeFilter || "all"} onValueChange={(value) => setEmployeeFilter(value === "all" ? "" : value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Todos os funcionários" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos os funcionários</SelectItem>
+                  <SelectItem value="all">Todos os funcionários</SelectItem>
                   {employees.map((employee) => (
                     <SelectItem key={employee} value={employee}>
                       {employee}
@@ -279,12 +279,12 @@ const Leads = () => {
             {/* Filtro Produto */}
             <div className="space-y-2">
               <label className="text-sm font-medium">Produto</label>
-              <Select value={productFilter} onValueChange={setProductFilter}>
+              <Select value={productFilter || "all"} onValueChange={(value) => setProductFilter(value === "all" ? "" : value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Todos os produtos" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos os produtos</SelectItem>
+                  <SelectItem value="all">Todos os produtos</SelectItem>
                   {products.map((product) => (
                     <SelectItem key={product} value={product}>
                       {product}
@@ -297,12 +297,12 @@ const Leads = () => {
             {/* Filtro Banco */}
             <div className="space-y-2">
               <label className="text-sm font-medium">Banco</label>
-              <Select value={bankFilter} onValueChange={setBankFilter}>
+              <Select value={bankFilter || "all"} onValueChange={(value) => setBankFilter(value === "all" ? "" : value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Todos os bancos" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos os bancos</SelectItem>
+                  <SelectItem value="all">Todos os bancos</SelectItem>
                   {banks.map((bank) => (
                     <SelectItem key={bank} value={bank}>
                       {bank}
