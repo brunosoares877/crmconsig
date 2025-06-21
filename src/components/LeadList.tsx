@@ -51,12 +51,18 @@ const LeadList: React.FC<LeadListProps> = ({
   const fetchLeads = async (page = 1) => {
     setIsLoading(true);
     try {
-      // Construir query para contagem
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (userError) throw userError;
+
+      // User authenticated, proceed with queries
+
+      // Get total count first - create separate query for count
       let countQuery = supabase
         .from("leads")
-        .select("*", { count: 'exact', head: true });
+        .select("*", { count: 'exact', head: true })
+        .eq('user_id', userData.user.id);
 
-      // Aplicar filtros na contagem
+      // Apply same filters to count query
       if (statusFilter) {
         countQuery = countQuery.eq('status', statusFilter);
       }
@@ -70,18 +76,21 @@ const LeadList: React.FC<LeadListProps> = ({
         countQuery = countQuery.eq('bank', bankFilter);
       }
 
-      // Get total count first
       const { count, error: countError } = await countQuery;
       
-      if (countError) throw countError;
+      if (countError) {
+        console.error('Count error:', countError);
+        throw countError;
+      }
       
       setTotalLeads(count || 0);
       setTotalPages(Math.ceil((count || 0) / LEADS_PER_PAGE));
 
-      // Get paginated leads with same filters
+      // Get actual data with same filters
       let dataQuery = supabase
         .from("leads")
-        .select("*");
+        .select("*")
+        .eq('user_id', userData.user.id);
 
       // Aplicar filtros nos dados
       if (statusFilter) {
@@ -100,15 +109,16 @@ const LeadList: React.FC<LeadListProps> = ({
       const from = (page - 1) * LEADS_PER_PAGE;
       const to = from + LEADS_PER_PAGE - 1;
 
-      dataQuery = dataQuery
+      const { data, error } = await dataQuery
         .range(from, to)
         .order("created_at", { ascending: false });
-
-      const { data, error } = await dataQuery;
       
-      if (error) throw error;
+      if (error) {
+        console.error('Data error:', error);
+        throw error;
+      }
 
-      const formattedLeads = data.map(lead => ({
+      const formattedLeads = (data || []).map(lead => ({
         ...lead,
         createdAt: new Date(lead.created_at).toLocaleDateString('pt-BR', {
           day: '2-digit',
@@ -122,7 +132,21 @@ const LeadList: React.FC<LeadListProps> = ({
       setFilteredLeads(formattedLeads);
     } catch (error: any) {
       console.error("Error fetching leads:", error);
-      toast.error(`Erro ao carregar leads: ${error.message}`);
+      
+      // Melhor tratamento de erro
+      if (error.message?.includes('Failed to fetch')) {
+        toast.error("Erro de conexão. Verifique sua internet e tente novamente.");
+      } else if (error.message?.includes('JWT')) {
+        toast.error("Sessão expirada. Faça login novamente.");
+      } else {
+        toast.error(`Erro ao carregar leads: ${error.message || 'Erro desconhecido'}`);
+      }
+      
+      // Em caso de erro, definir estados seguros
+      setLeads([]);
+      setFilteredLeads([]);
+      setTotalLeads(0);
+      setTotalPages(0);
     } finally {
       setIsLoading(false);
     }
@@ -136,6 +160,9 @@ const LeadList: React.FC<LeadListProps> = ({
 
     setIsLoading(true);
     try {
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (userError) throw userError;
+
       // First, get leads that have the selected tags
       const { data: tagAssignments, error: tagError } = await (supabase as any)
         .from('lead_tag_assignments')
@@ -155,13 +182,14 @@ const LeadList: React.FC<LeadListProps> = ({
         return;
       }
 
-      // Construir query para contagem
+      // Create count query
       let countQuery = supabase
         .from("leads")
         .select("*", { count: 'exact', head: true })
+        .eq('user_id', userData.user.id)
         .in('id', leadIds);
 
-      // Aplicar filtros na contagem
+      // Apply filters to count query
       if (statusFilter) {
         countQuery = countQuery.eq('status', statusFilter);
       }
@@ -178,18 +206,22 @@ const LeadList: React.FC<LeadListProps> = ({
       // Get total count for filtered leads
       const { count, error: countError } = await countQuery;
       
-      if (countError) throw countError;
+      if (countError) {
+        console.error('Count error:', countError);
+        throw countError;
+      }
       
       setTotalLeads(count || 0);
       setTotalPages(Math.ceil((count || 0) / LEADS_PER_PAGE));
 
-      // Get paginated filtered leads
+      // Get actual data
       let dataQuery = supabase
         .from("leads")
         .select("*")
+        .eq('user_id', userData.user.id)
         .in('id', leadIds);
 
-      // Aplicar filtros nos dados
+      // Apply filters to data query
       if (statusFilter) {
         dataQuery = dataQuery.eq('status', statusFilter);
       }
@@ -206,15 +238,16 @@ const LeadList: React.FC<LeadListProps> = ({
       const from = (page - 1) * LEADS_PER_PAGE;
       const to = from + LEADS_PER_PAGE - 1;
 
-      dataQuery = dataQuery
+      const { data, error } = await dataQuery
         .range(from, to)
         .order("created_at", { ascending: false });
-
-      const { data, error } = await dataQuery;
       
-      if (error) throw error;
+      if (error) {
+        console.error('Data error:', error);
+        throw error;
+      }
 
-      const formattedLeads = data.map(lead => ({
+      const formattedLeads = (data || []).map(lead => ({
         ...lead,
         createdAt: new Date(lead.created_at).toLocaleDateString('pt-BR', {
           day: '2-digit',
@@ -228,7 +261,21 @@ const LeadList: React.FC<LeadListProps> = ({
       setFilteredLeads(formattedLeads);
     } catch (error: any) {
       console.error("Error fetching leads with tags:", error);
-      toast.error(`Erro ao carregar leads: ${error.message}`);
+      
+      // Melhor tratamento de erro
+      if (error.message?.includes('Failed to fetch')) {
+        toast.error("Erro de conexão. Verifique sua internet e tente novamente.");
+      } else if (error.message?.includes('JWT')) {
+        toast.error("Sessão expirada. Faça login novamente.");
+      } else {
+        toast.error(`Erro ao carregar leads: ${error.message || 'Erro desconhecido'}`);
+      }
+      
+      // Em caso de erro, definir estados seguros
+      setLeads([]);
+      setFilteredLeads([]);
+      setTotalLeads(0);
+      setTotalPages(0);
     } finally {
       setIsLoading(false);
     }
