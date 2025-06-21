@@ -1,5 +1,7 @@
 # 🚀 CRM CONSIG - Sistema Completo de Gestão de Leads
 
+**🎉 SITE OFICIAL: https://leadconsig.com.br**
+
 ## 🌐 **CONFIGURAÇÃO DE DOMÍNIO PERSONALIZADO**
 
 ### **⚡ INÍCIO RÁPIDO - VERCEL (RECOMENDADO)**
