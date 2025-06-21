@@ -476,23 +476,23 @@ const Dashboard = () => {
   const otherMetrics = metricsData.slice(3);
 
   return (
-    <div className="w-full px-0 md:px-0 lg:px-0 space-y-6">
+    <div className="w-full px-2 sm:px-4 md:px-0 lg:px-0 space-y-4 sm:space-y-6">
       {/* Metrics Cards Grid (restantes no topo) */}
-      <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4 lg:gap-6">
+      <div className="w-full grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-1 sm:gap-2 md:gap-3 lg:gap-4">
         {otherMetrics.map((metric, index) => (
           <MetricsCard key={index} {...metric} />
         ))}
       </div>
 
       {/* Main Content Grid */}
-      <div className="w-full grid grid-cols-1 xl:grid-cols-2 gap-6">
-        <div className="flex flex-col gap-6">
+      <div className="w-full grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6">
+        <div className="flex flex-col gap-4 sm:gap-6">
           <ProductionCard 
             dailyProduction={dailyProduction}
             isLoading={isLoading}
           />
           {/* Apenas os três principais cards de métricas abaixo do ProductionCard */}
-          <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 lg:gap-6">
+          <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1 sm:gap-2 md:gap-3 lg:gap-4">
             {mainMetrics.map((metric, index) => (
               <MetricsCard key={index} {...metric} />
             ))}

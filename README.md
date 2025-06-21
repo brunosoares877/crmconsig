@@ -1,73 +1,174 @@
-# Welcome to your Lovable project
+# 🚀 CRM CONSIG - Sistema Completo de Gestão de Leads
 
-## Project info
+## 🌐 **CONFIGURAÇÃO DE DOMÍNIO PERSONALIZADO**
 
-**URL**: https://lovable.dev/projects/f50f09e0-81b1-4b44-ae32-ac362f089994
+### **⚡ INÍCIO RÁPIDO - VERCEL (RECOMENDADO)**
 
-## How can I edit this code?
+1. **Instale o Vercel CLI:**
+```bash
+npm install -g vercel
+```
 
-There are several ways of editing your application.
+2. **Deploy automático:**
+```bash
+# Windows
+PowerShell -ExecutionPolicy Bypass -File scripts/deploy.ps1
 
-**Use Lovable**
+# Linux/Mac
+chmod +x scripts/deploy.sh && ./scripts/deploy.sh
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/f50f09e0-81b1-4b44-ae32-ac362f089994) and start prompting.
+# Ou use o comando NPM
+npm run deploy
+```
 
-Changes made via Lovable will be committed automatically to this repo.
+3. **Configure seu domínio:**
+   - Acesse: https://vercel.com/dashboard
+   - Clique no seu projeto → Settings → Domains
+   - Adicione seu domínio personalizado
+   - Configure DNS conforme instruções
 
-**Use your preferred IDE**
+### **📋 CONFIGURAÇÃO DNS RÁPIDA**
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+No seu provedor de domínio (GoDaddy, Registro.br, etc.):
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+```
+Tipo: A
+Nome: @
+Valor: 76.76.19.61
 
-Follow these steps:
+Tipo: CNAME  
+Nome: www
+Valor: cname.vercel-dns.com
+```
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+---
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+## 🛠️ **INSTALAÇÃO LOCAL**
 
-# Step 3: Install the necessary dependencies.
-npm i
+```bash
+# Clone o projeto
+git clone [seu-repositorio]
+cd crmconsig
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Instale dependências
+npm install
+
+# Inicie o servidor de desenvolvimento
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+## 🔧 **CONFIGURAÇÃO**
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### **Variáveis de Ambiente**
+Crie um arquivo `.env` na raiz do projeto:
 
-**Use GitHub Codespaces**
+```env
+VITE_SUPABASE_URL=https://wjljrytblpsnzjwvugqg.supabase.co
+VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndqbGpyeXRibHBzbnpqd3Z1Z3FnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU1MzE1NjcsImV4cCI6MjA2MTEwNzU2N30.ChxEZH6UakGSRxQlfoQvhNxeb7s56xCIzXZwe9GnZrY
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## 📚 **FUNCIONALIDADES**
 
-## What technologies are used for this project?
+- ✅ **Dashboard Completo** - Métricas em tempo real
+- ✅ **Gestão de Leads** - CRUD completo com filtros
+- ✅ **Sistema de Agendamento** - Calendário integrado
+- ✅ **Lembretes Automáticos** - Notificações inteligentes
+- ✅ **Relatórios de Comissão** - Cálculos automáticos
+- ✅ **Gestão de Funcionários** - Controle de equipe
+- ✅ **Integração WhatsApp** - Comunicação direta
+- ✅ **Sistema de Portabilidade** - Gestão de contratos
+- ✅ **Upload de Documentos** - Armazenamento seguro
+- ✅ **Multi-tenant** - Suporte a múltiplas empresas
+- ✅ **PWA** - Funciona como app nativo
+- ✅ **Responsivo** - Mobile-first design
 
-This project is built with:
+## 🚀 **COMANDOS DISPONÍVEIS**
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+```bash
+# Desenvolvimento
+npm run dev              # Servidor local
+npm run build           # Build para produção
+npm run build:prod      # Build otimizado
+npm run preview         # Preview do build
+npm run lint           # Verificar código
 
-## How can I deploy this project?
+# Deploy
+npm run deploy         # Deploy produção Vercel
+npm run deploy:preview # Deploy preview Vercel
+```
 
-Simply open [Lovable](https://lovable.dev/projects/f50f09e0-81b1-4b44-ae32-ac362f089994) and click on Share -> Publish.
+## 📁 **ESTRUTURA DO PROJETO**
 
-## Can I connect a custom domain to my Lovable project?
+```
+src/
+├── components/         # Componentes reutilizáveis
+│   ├── ui/            # Componentes UI base
+│   ├── dashboard/     # Componentes do dashboard
+│   ├── leads/         # Componentes de leads
+│   └── settings/      # Componentes de configurações
+├── pages/             # Páginas da aplicação
+├── contexts/          # Contextos React
+├── hooks/             # Hooks customizados
+├── utils/             # Funções utilitárias
+├── types/             # Definições TypeScript
+└── integrations/      # Integrações externas
+    └── supabase/      # Cliente Supabase
+```
 
-Yes, you can!
+## 🔒 **SEGURANÇA**
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+- ✅ Autenticação JWT via Supabase
+- ✅ Row Level Security (RLS) no banco
+- ✅ Validação de dados com Zod
+- ✅ Sanitização de inputs
+- ✅ HTTPS obrigatório em produção
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+## 📱 **TECNOLOGIAS**
+
+- **Frontend:** React 18 + TypeScript + Vite
+- **UI:** Tailwind CSS + Shadcn/ui + Radix UI
+- **Backend:** Supabase (PostgreSQL + Auth + Storage)
+- **Deploy:** Vercel (recomendado)
+- **Monitoramento:** Sentry (opcional)
+
+## 🆘 **SUPORTE**
+
+### **Problemas Comuns:**
+
+1. **Site não carrega após deploy:**
+   - Aguarde propagação DNS (até 48h)
+   - Teste www.seudominio.com.br
+
+2. **Erro de Supabase:**
+   - Verifique variáveis de ambiente
+   - Confirme se Supabase está online
+
+3. **Páginas 404:**
+   - Configure SPA redirect (/* → /index.html)
+
+### **Logs Úteis:**
+```bash
+# Verificar DNS
+nslookup seudominio.com.br
+
+# Testar build local
+npm run build && npm run preview
+```
+
+## 📞 **CONTATO**
+
+Para configuração específica do seu domínio, me informe:
+1. **Qual domínio você comprou?**
+2. **Onde registrou o domínio?**
+3. **Prefere Vercel, Netlify ou outro?**
+
+## 📄 **ARQUIVOS DE CONFIGURAÇÃO**
+
+- `CONFIGURAR_DOMINIO.md` - Guia completo de domínio
+- `vercel.json` - Configuração Vercel
+- `scripts/deploy.ps1` - Script Windows
+- `scripts/deploy.sh` - Script Linux/Mac
+
+---
+
+**🎉 Seu CRM está pronto para produção!**

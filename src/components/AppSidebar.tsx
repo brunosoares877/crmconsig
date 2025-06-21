@@ -131,15 +131,52 @@ export function AppSidebar() {
       if (!user) return;
       
       try {
-        const { data } = supabase.storage
+        // Tentar buscar no bucket avatars primeiro
+        const avatarPath = `${user.id}/profile.jpg`;
+        const { data: avatarData } = supabase.storage
           .from('avatars')
-          .getPublicUrl(`profiles/${user.id}_profile.jpg`);
+          .getPublicUrl(avatarPath);
         
         // Check if image exists by making a HEAD request
-        const response = await fetch(data.publicUrl, { method: 'HEAD' });
-        if (response.ok) {
-          setProfileImage(data.publicUrl);
+        if (avatarData?.publicUrl) {
+          const response = await fetch(avatarData.publicUrl, { method: 'HEAD' });
+          if (response.ok) {
+            setProfileImage(avatarData.publicUrl);
+            return;
+          }
         }
+        
+        // Fallback: tentar buscar no lead-documents
+        const fallbackPath = `${user.id}/profile/profile.jpg`;
+        const { data: fallbackData } = supabase.storage
+          .from('lead-documents')
+          .getPublicUrl(fallbackPath);
+        
+        if (fallbackData?.publicUrl) {
+          const fallbackResponse = await fetch(fallbackData.publicUrl, { method: 'HEAD' });
+          if (fallbackResponse.ok) {
+            setProfileImage(fallbackData.publicUrl);
+            return;
+          }
+        }
+        
+        // Tentar outras extensões comuns
+        const extensions = ['png', 'gif', 'webp'];
+        for (const ext of extensions) {
+          const path = `${user.id}/profile.${ext}`;
+          const { data } = supabase.storage
+            .from('avatars')
+            .getPublicUrl(path);
+          
+          if (data?.publicUrl) {
+            const response = await fetch(data.publicUrl, { method: 'HEAD' });
+            if (response.ok) {
+              setProfileImage(data.publicUrl);
+              return;
+            }
+          }
+        }
+        
       } catch (error) {
         console.log('No existing profile image found');
       }
@@ -178,11 +215,13 @@ export function AppSidebar() {
       }
 
       const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
-      const fileName = `${user.id}_profile.${fileExt}`;
-      const filePath = `profiles/${fileName}`;
+      const fileName = `profile.${fileExt}`;
+      // Usar estrutura de pastas: userId/fileName
+      const filePath = `${user.id}/${fileName}`;
 
-      console.log('Uploading file:', { fileName, fileType: file.type, fileSize: file.size });
+      console.log('Uploading file:', { fileName, fileType: file.type, fileSize: file.size, filePath });
 
+      // Tentar fazer upload para o bucket avatars
       const { error: uploadError } = await supabase.storage
         .from('avatars')
         .upload(filePath, file, {
@@ -192,9 +231,37 @@ export function AppSidebar() {
 
       if (uploadError) {
         console.error('Upload error:', uploadError);
-        throw uploadError;
+        
+        // Se falhar no avatars, tentar no lead-documents como fallback
+        console.log('Trying fallback upload to lead-documents...');
+        const fallbackPath = `${user.id}/profile/${fileName}`;
+        
+        const { error: fallbackError } = await supabase.storage
+          .from('lead-documents')
+          .upload(fallbackPath, file, {
+            upsert: true,
+            contentType: file.type
+          });
+        
+        if (fallbackError) {
+          throw fallbackError;
+        }
+        
+        // Usar URL do fallback
+        const { data: fallbackData } = supabase.storage
+          .from('lead-documents')
+          .getPublicUrl(fallbackPath);
+        
+        if (fallbackData?.publicUrl) {
+          setProfileImage(fallbackData.publicUrl);
+          toast.success("Foto de perfil atualizada com sucesso!");
+          return;
+        }
+        
+        throw new Error("Erro ao obter URL da imagem");
       }
 
+      // Se upload no avatars funcionou
       const { data } = supabase.storage
         .from('avatars')
         .getPublicUrl(filePath);
@@ -211,8 +278,8 @@ export function AppSidebar() {
       
       if (error.message?.includes('Bucket not found')) {
         toast.error("Storage não configurado. Entre em contato com o suporte.");
-      } else if (error.message?.includes('new row violates row-level security')) {
-        toast.error("Permissão negada para upload. Verifique as configurações de segurança.");
+      } else if (error.message?.includes('new row violates row-level security') || error.message?.includes('policy')) {
+        toast.error("Sistema de upload temporariamente indisponível. Tente novamente em alguns minutos.");
       } else {
         toast.error(`Erro ao fazer upload da foto: ${error.message || 'Erro desconhecido'}`);
       }
@@ -241,13 +308,6 @@ export function AppSidebar() {
 
   return (
     <Sidebar>
-      <SidebarHeader>
-        <div className="flex items-center px-2 py-2">
-          <h1 className="text-lg font-bold text-sidebar-foreground">
-            LeadConsig
-          </h1>
-        </div>
-      </SidebarHeader>
       <SidebarContent className="flex-1">
         {Object.entries(groupedItems).map(([group, groupItems]) => (
           <SidebarGroup key={group}>
@@ -264,14 +324,14 @@ export function AppSidebar() {
                       className={
                         "w-full" +
                         (item.highlight
-                          ? " bg-yellow-100 text-yellow-800 border border-yellow-200 font-semibold hover:bg-yellow-200 hover:text-yellow-900 transition-colors"
+                          ? " bg-gradient-to-r from-orange-600 to-amber-600 text-white border border-orange-500 font-semibold hover:from-orange-700 hover:to-amber-700 shadow-lg transition-all duration-200"
                           : "")
                       }
                     >
                       <Link to={item.url} className="flex items-center gap-2">
                         <item.icon className={
                           "h-4 w-4" +
-                          (item.highlight ? " text-yellow-500" : "")
+                          (item.highlight ? " text-white" : "")
                         } />
                         <span>{item.title}</span>
                       </Link>
