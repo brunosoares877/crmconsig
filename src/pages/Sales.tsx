@@ -28,49 +28,35 @@ const Sales = () => {
       
       <main className="flex-1 w-full">
         {/* Hero Section */}
-        <section className="w-full px-4 py-16 lg:py-24 bg-gradient-to-b from-blue-50 to-white">
-          <div className="container mx-auto max-w-7xl">
-            <div className="flex flex-col lg:flex-row items-center gap-12">
-              <div className="w-full lg:w-1/2 text-center lg:text-left">
-                <div className="inline-flex items-center gap-2 bg-blue-100 text-blue-600 px-4 py-2 rounded-full text-sm font-medium mb-6">
-                  ⚡ 7 DIAS GRÁTIS!
-                </div>
-                <h1 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-6 leading-tight">
-                  CRM completo para corbans:{" "}
-                  <span className="text-blue-600">Aumente suas vendas</span> e{" "}
-                  <span className="text-blue-600">otimize sua gestão</span>
-                </h1>
-                <p className="text-xl text-gray-600 mb-8 leading-relaxed">
-                  Feito de corban para corban. Transforme leads em vendas com o 
-                  sistema mais completo do mercado.
-                </p>
-                <Button 
-                  onClick={handleStartTrial} 
-                  size="lg" 
-                  className="bg-blue-600 hover:bg-blue-700 text-white text-lg px-10 py-6 w-full sm:w-auto rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
-                >
-                  🚀 Começar Teste Gratuito <ArrowRight className="ml-2 h-5 w-5" />
-                </Button>
-                <div className="mt-6 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 text-sm text-gray-500">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span>Sem cartão de crédito</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span>Cancele quando quiser</span>
-                  </div>
-                </div>
+        <section className="w-full px-4 py-20 lg:py-32 bg-gradient-to-b from-blue-50 to-white">
+          <div className="container mx-auto max-w-4xl text-center">
+            <div className="inline-flex items-center gap-2 bg-blue-100 text-blue-600 px-4 py-2 rounded-full text-sm font-medium mb-8">
+              ⚡ 7 DIAS GRÁTIS!
+            </div>
+            <h1 className="text-4xl lg:text-6xl font-bold text-gray-900 mb-8 leading-tight">
+              CRM completo para corbans:{" "}
+              <span className="text-blue-600">Aumente suas vendas</span> e{" "}
+              <span className="text-blue-600">otimize sua gestão</span>
+            </h1>
+            <p className="text-xl lg:text-2xl text-gray-600 mb-12 leading-relaxed max-w-3xl mx-auto">
+              Feito de corban para corban. Transforme leads em vendas com o 
+              sistema mais completo do mercado.
+            </p>
+            <Button 
+              onClick={handleStartTrial} 
+              size="lg" 
+              className="bg-blue-600 hover:bg-blue-700 text-white text-xl px-12 py-6 rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 mb-8"
+            >
+              🚀 Começar Teste Gratuito <ArrowRight className="ml-2 h-6 w-6" />
+            </Button>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-6 text-base text-gray-500">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span>Sem cartão de crédito</span>
               </div>
-              <div className="w-full lg:w-1/2">
-                <div className="relative">
-                  <img 
-                    alt="CRM Dashboard Preview" 
-                    className="rounded-xl shadow-2xl w-full h-auto" 
-                    src="/lovable-uploads/f0e5ee00-1480-4e39-83b6-0cbb29b8f5a4.png" 
-                    loading="lazy"
-                  />
-                </div>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span>Cancele quando quiser</span>
               </div>
             </div>
           </div>
