@@ -229,23 +229,44 @@ const Dashboard = () => {
           data: employeeData,
           error: employeeError
         } = await supabase.from('leads')
-          .select('employee, amount, status')
+          .select('employee, amount, status, created_at')
+          .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
           .not('employee', 'is', null)
           .not('amount', 'is', null)
           .neq('amount', '')
           .gte('created_at', monthStart)
           .lte('created_at', monthEnd);
+          
+        // Debug: verificar leads com employee mas sem amount
+        const {
+          data: allEmployeeLeads,
+          error: allEmployeeError
+        } = await supabase.from('leads')
+          .select('employee, amount, status, created_at')
+          .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
+          .not('employee', 'is', null)
+          .gte('created_at', monthStart)
+          .lte('created_at', monthEnd);
+          
+        console.log("All employee leads (including without amount):", allEmployeeLeads?.length || 0);
+        console.log("Employee leads with amount:", employeeData?.length || 0);
         
         if (employeeError) {
           console.error('Error fetching employee sales:', employeeError);
           toast.error("Erro ao carregar vendas por funcionário");
         } else {
-          console.log("Employee data:", employeeData);
+          console.log("Employee data raw:", employeeData);
+          
+          // Vamos log todos os employees únicos encontrados
+          const uniqueEmployees = [...new Set(employeeData?.map(lead => lead.employee).filter(Boolean))];
+          console.log("Unique employees found:", uniqueEmployees);
+          
           // Process employee data to count total leads with amounts and converted sales per employee
           const employeeSalesMap = {};
 
           // Count all leads with amounts and converted sales per employee
           employeeData?.forEach(lead => {
+            console.log("Processing lead:", { employee: lead.employee, amount: lead.amount, status: lead.status });
             if (lead.employee && lead.amount) {
               if (!employeeSalesMap[lead.employee]) {
                 employeeSalesMap[lead.employee] = {
@@ -270,6 +291,8 @@ const Dashboard = () => {
             }
           });
 
+          console.log("Employee sales map:", employeeSalesMap);
+
           // Convert to array format for display
           const employeeSalesArray = Object.entries(employeeSalesMap).map(([employee, data]) => ({
             employee,
@@ -280,7 +303,7 @@ const Dashboard = () => {
 
           // Sort by total value (highest first)
           employeeSalesArray.sort((a, b) => b.totalValue - a.totalValue);
-          console.log("Employee sales array:", employeeSalesArray);
+          console.log("Employee sales array final:", employeeSalesArray);
           setEmployeeSales(employeeSalesArray);
         }
 
