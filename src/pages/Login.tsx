@@ -213,8 +213,8 @@ const Login = () => {
             
             {/* Header do formulário */}
             <div className="text-center mb-8">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-2xl mb-4 shadow-lg">
-                <Lock className="w-8 h-8 text-white" />
+              <div className="inline-flex items-center justify-center w-auto h-16 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-2xl mb-4 shadow-lg px-6">
+                <span className="text-white font-bold text-xl tracking-wide">LeadConsig</span>
               </div>
               <h2 className="text-2xl font-bold text-gray-900 mb-2">
                 {isLogin ? "Bem-vindo de volta" : "Criar sua conta"}
