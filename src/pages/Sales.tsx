@@ -100,8 +100,8 @@ const Sales = () => {
           </Badge>
           <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6 leading-tight">
             CRM completo para corbans:<br />
-            <span className="text-blue-600 font-bold">Aumente suas vendas</span> e<br />
-            <span className="text-blue-600 font-bold">otimize sua gestão</span>
+            <span style={{ color: '#2563eb', fontWeight: 'bold' }}>Aumente suas vendas</span> e<br />
+            <span style={{ color: '#2563eb', fontWeight: 'bold' }}>otimize sua gestão</span>
           </h1>
           <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
             Feito de corban para corban. Transforme leads em vendas com o sistema mais completo do mercado.
