@@ -1,7 +1,8 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowRight } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { ArrowRight, Play, Zap } from "lucide-react";
 import SalesHeader from "@/components/sales/SalesHeader";
 import SubscriptionPlans from "@/components/sales/SubscriptionPlans";
 import FeaturesList from "@/components/sales/FeaturesList";
@@ -28,37 +29,25 @@ const Sales = () => {
       
       <main className="flex-1 w-full">
         {/* Hero Section */}
-        <section className="w-full px-4 py-20 lg:py-32 bg-gradient-to-b from-blue-50 to-white">
-          <div className="container mx-auto max-w-4xl text-center">
-            <div className="inline-flex items-center gap-2 bg-blue-100 text-blue-600 px-4 py-2 rounded-full text-sm font-medium mb-8">
-              ⚡ 7 DIAS GRÁTIS!
-            </div>
-            <h1 className="text-4xl lg:text-6xl font-bold text-gray-900 mb-8 leading-tight">
-              CRM completo para corbans:{" "}
-              <span className="text-blue-600">Aumente suas vendas</span> e{" "}
+        <section className="py-20 px-4 bg-gradient-to-br from-blue-50 via-white to-indigo-50">
+          <div className="container mx-auto text-center">
+            <Badge className="mb-6 bg-blue-100 text-blue-800 hover:bg-blue-200">
+              <Zap className="w-4 h-4 mr-2" />
+              7 DIAS GRÁTIS!
+            </Badge>
+            <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6 leading-tight">
+              CRM completo para corbans:<br />
+              <span className="text-blue-600">Aumente suas vendas</span> e<br />
               <span className="text-blue-600">otimize sua gestão</span>
             </h1>
-            <p className="text-xl lg:text-2xl text-gray-600 mb-12 leading-relaxed max-w-3xl mx-auto">
-              Feito de corban para corban. Transforme leads em vendas com o 
-              sistema mais completo do mercado.
+            <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+              Feito de corban para corban. Transforme leads em vendas com o sistema mais completo do mercado.
             </p>
-            <Button 
-              onClick={handleStartTrial} 
-              size="lg" 
-              className="bg-blue-600 hover:bg-blue-700 text-white text-xl px-12 py-6 rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 mb-8"
-            >
-              🚀 Começar Teste Gratuito <ArrowRight className="ml-2 h-6 w-6" />
+            <Button onClick={handleStartTrial} size="lg" className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 text-lg">
+              <Play className="w-5 h-5 mr-2" />
+              Começar Teste Gratuito
             </Button>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-6 text-base text-gray-500">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span>Sem cartão de crédito</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span>Cancele quando quiser</span>
-              </div>
-            </div>
+            <p className="text-sm text-gray-500 mt-4">Sem cartão de crédito • Cancele quando quiser</p>
           </div>
         </section>
 
