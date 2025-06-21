@@ -51,27 +51,27 @@ const LeadList: React.FC<LeadListProps> = ({
   const fetchLeads = async (page = 1) => {
     setIsLoading(true);
     try {
-      // Construir query com filtros
-      let query = supabase
+      // Construir query para contagem
+      let countQuery = supabase
         .from("leads")
-        .select("*", { count: 'exact' });
+        .select("*", { count: 'exact', head: true });
 
-      // Aplicar filtros
+      // Aplicar filtros na contagem
       if (statusFilter) {
-        query = query.eq('status', statusFilter);
+        countQuery = countQuery.eq('status', statusFilter);
       }
       if (employeeFilter) {
-        query = query.eq('employee', employeeFilter);
+        countQuery = countQuery.eq('employee', employeeFilter);
       }
       if (productFilter) {
-        query = query.eq('product', productFilter);
+        countQuery = countQuery.eq('product', productFilter);
       }
       if (bankFilter) {
-        query = query.eq('bank', bankFilter);
+        countQuery = countQuery.eq('bank', bankFilter);
       }
 
       // Get total count first
-      const { count, error: countError } = await query;
+      const { count, error: countError } = await countQuery;
       
       if (countError) throw countError;
       
@@ -79,32 +79,32 @@ const LeadList: React.FC<LeadListProps> = ({
       setTotalPages(Math.ceil((count || 0) / LEADS_PER_PAGE));
 
       // Get paginated leads with same filters
-      query = supabase
+      let dataQuery = supabase
         .from("leads")
         .select("*");
 
-      // Aplicar filtros novamente
+      // Aplicar filtros nos dados
       if (statusFilter) {
-        query = query.eq('status', statusFilter);
+        dataQuery = dataQuery.eq('status', statusFilter);
       }
       if (employeeFilter) {
-        query = query.eq('employee', employeeFilter);
+        dataQuery = dataQuery.eq('employee', employeeFilter);
       }
       if (productFilter) {
-        query = query.eq('product', productFilter);
+        dataQuery = dataQuery.eq('product', productFilter);
       }
       if (bankFilter) {
-        query = query.eq('bank', bankFilter);
+        dataQuery = dataQuery.eq('bank', bankFilter);
       }
 
       const from = (page - 1) * LEADS_PER_PAGE;
       const to = from + LEADS_PER_PAGE - 1;
 
-      query = query
+      dataQuery = dataQuery
         .range(from, to)
         .order("created_at", { ascending: false });
 
-      const { data, error } = await query;
+      const { data, error } = await dataQuery;
       
       if (error) throw error;
 
@@ -155,28 +155,28 @@ const LeadList: React.FC<LeadListProps> = ({
         return;
       }
 
-      // Construir query com filtros
-      let query = supabase
+      // Construir query para contagem
+      let countQuery = supabase
         .from("leads")
-        .select("*", { count: 'exact' })
+        .select("*", { count: 'exact', head: true })
         .in('id', leadIds);
 
-      // Aplicar filtros
+      // Aplicar filtros na contagem
       if (statusFilter) {
-        query = query.eq('status', statusFilter);
+        countQuery = countQuery.eq('status', statusFilter);
       }
       if (employeeFilter) {
-        query = query.eq('employee', employeeFilter);
+        countQuery = countQuery.eq('employee', employeeFilter);
       }
       if (productFilter) {
-        query = query.eq('product', productFilter);
+        countQuery = countQuery.eq('product', productFilter);
       }
       if (bankFilter) {
-        query = query.eq('bank', bankFilter);
+        countQuery = countQuery.eq('bank', bankFilter);
       }
 
       // Get total count for filtered leads
-      const { count, error: countError } = await query;
+      const { count, error: countError } = await countQuery;
       
       if (countError) throw countError;
       
@@ -184,33 +184,33 @@ const LeadList: React.FC<LeadListProps> = ({
       setTotalPages(Math.ceil((count || 0) / LEADS_PER_PAGE));
 
       // Get paginated filtered leads
-      query = supabase
+      let dataQuery = supabase
         .from("leads")
         .select("*")
         .in('id', leadIds);
 
-      // Aplicar filtros novamente
+      // Aplicar filtros nos dados
       if (statusFilter) {
-        query = query.eq('status', statusFilter);
+        dataQuery = dataQuery.eq('status', statusFilter);
       }
       if (employeeFilter) {
-        query = query.eq('employee', employeeFilter);
+        dataQuery = dataQuery.eq('employee', employeeFilter);
       }
       if (productFilter) {
-        query = query.eq('product', productFilter);
+        dataQuery = dataQuery.eq('product', productFilter);
       }
       if (bankFilter) {
-        query = query.eq('bank', bankFilter);
+        dataQuery = dataQuery.eq('bank', bankFilter);
       }
 
       const from = (page - 1) * LEADS_PER_PAGE;
       const to = from + LEADS_PER_PAGE - 1;
 
-      query = query
+      dataQuery = dataQuery
         .range(from, to)
         .order("created_at", { ascending: false });
 
-      const { data, error } = await query;
+      const { data, error } = await dataQuery;
       
       if (error) throw error;
 
