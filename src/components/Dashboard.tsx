@@ -500,8 +500,8 @@ const Dashboard = () => {
 
   return (
     <div className="w-full px-2 sm:px-4 md:px-0 lg:px-0 space-y-4 sm:space-y-6">
-      {/* Metrics Cards Grid (restantes no topo) */}
-      <div className="w-full grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-1 sm:gap-2 md:gap-3 lg:gap-4">
+      {/* Metrics Cards Grid (status cards no topo) */}
+      <div className="w-full grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 md:gap-4 lg:gap-6">
         {otherMetrics.map((metric, index) => (
           <MetricsCard key={index} {...metric} />
         ))}
@@ -514,18 +514,21 @@ const Dashboard = () => {
             dailyProduction={dailyProduction}
             isLoading={isLoading}
           />
-          {/* Apenas os três principais cards de métricas abaixo do ProductionCard */}
-          <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1 sm:gap-2 md:gap-3 lg:gap-4">
+          
+          {/* Três principais cards de métricas abaixo do ProductionCard */}
+          <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 md:gap-4 lg:gap-6">
             {mainMetrics.map((metric, index) => (
               <MetricsCard key={index} {...metric} />
             ))}
           </div>
         </div>
+        
         <EmployeePerformanceCard 
           employeeSales={employeeSales}
           isLoading={isLoading}
         />
       </div>
+      
       {/* Latest Leads Full Width */}
       <div className="w-full">
         <LatestLeadsCard 

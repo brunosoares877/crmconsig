@@ -6,52 +6,31 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%; /* White */
-    --foreground: 240 10% 3.9%; /* Dark charcoal text */
-
-    --card: 0 0% 100%; /* White card background */
-    --card-foreground: 240 10% 3.9%; /* Dark charcoal text */
-
-    --popover: 0 0% 100%; /* White popover */
-    --popover-foreground: 240 10% 3.9%; /* Dark charcoal text */
-
-    --primary: 240 75% 60%; /* Modern blue */
-    --primary-foreground: 0 0% 98%; /* White text on primary */
-
-    --secondary: 240 4.8% 95.9%; /* Very light blue-gray */
-    --secondary-foreground: 240 5.9% 10%; /* Dark text */
-
-    --muted: 240 4.8% 95.9%; /* Light gray */
-    --muted-foreground: 240 3.8% 46.1%; /* Medium gray */
-
-    --accent: 240 75% 60%; /* Modern blue accent */
-    --accent-foreground: 240 5.9% 10%; /* White text on accent */
-
-    --destructive: 0 84.2% 60.2%; /* Modern red */
-    --destructive-foreground: 0 0% 98%; /* White on destructive */
-
-    --border: 240 5.9% 90%; /* Light border */
-    --input: 240 5.9% 90%; /* Light input */
-    --ring: 240 75% 60%; /* Modern blue ring */
-
-    --radius: 0.5rem;
-
-    --sidebar-background: 220 65% 18%; /* Azul marinho forte */
-    --sidebar-foreground: 0 0% 95%; /* Light text */
-    --sidebar-primary: 240 75% 60%; /* Modern blue primary */
-    --sidebar-primary-foreground: 0 0% 100%; /* White text */
-    --sidebar-accent: 240 30% 15%; /* Dark accent */
-    --sidebar-accent-foreground: 0 0% 95%; /* Light text */
-    --sidebar-border: 240 20% 15%; /* Dark border */
-    --sidebar-ring: 240 75% 60%; /* Modern blue ring */
-
-    
-
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+    --primary: 240 5.9% 10%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 240 10% 3.9%;
     --chart-1: 12 76% 61%;
     --chart-2: 173 58% 39%;
     --chart-3: 197 37% 24%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
+    --radius: 0.5rem;
   }
 
   * {
@@ -59,13 +38,7 @@
   }
 
   body {
-    @apply bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20 text-foreground;
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
-    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
-    overflow-x: hidden;
-    background-color: hsl(var(--background));
-    color: hsl(var(--foreground));
-    transition: all 0.3s ease;
+    @apply bg-background text-foreground;
   }
   
   h1, h2, h3, h4, h5, h6 {
@@ -113,6 +86,33 @@
   ::-webkit-scrollbar-thumb:hover {
     @apply bg-slate-400;
   }
+
+  .dark {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 240 5.9% 10%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 240 4.9% 83.9%;
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
+  }
 }
 
 @layer components {
@@ -154,15 +154,55 @@
   }
 }
 
+/* Classes para animações suaves */
 @keyframes float {
-  0%, 100% { transform: translateY(0px) rotate(0deg); }
-  33% { transform: translateY(-10px) rotate(1deg); }
-  66% { transform: translateY(-5px) rotate(-1deg); }
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
 }
 
-@keyframes shimmer {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
+@keyframes pulse-glow {
+  0%, 100% { 
+    box-shadow: 0 0 5px rgba(59, 130, 246, 0.5),
+                0 0 10px rgba(59, 130, 246, 0.3),
+                0 0 15px rgba(59, 130, 246, 0.1);
+  }
+  50% { 
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.8),
+                0 0 20px rgba(59, 130, 246, 0.6),
+                0 0 30px rgba(59, 130, 246, 0.4);
+  }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* Glass effect para cards */
+.glass-card {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Gradientes dinâmicos para hover */
+.hover-gradient-blue:hover {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8) !important;
+}
+
+.hover-gradient-green:hover {
+  background: linear-gradient(135deg, #10b981, #059669) !important;
+}
+
+.hover-gradient-yellow:hover {
+  background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+}
+
+.hover-gradient-red:hover {
+  background: linear-gradient(135deg, #ef4444, #dc2626) !important;
 }
 
 .animate-fade-in {
@@ -201,172 +241,13 @@
   @apply outline-none ring-2 ring-blue-500/50 ring-offset-2 ring-offset-white;
 }
 
-/* Dark theme */
-.dark {
-  --background: 240 10% 3.9%;
-  --foreground: 0 0% 98%;
-  --card: 240 10% 3.9%;
-  --card-foreground: 0 0% 98%;
-  --popover: 240 10% 3.9%;
-  --popover-foreground: 0 0% 98%;
-  --primary: 0 0% 98%;
-  --primary-foreground: 240 5.9% 10%;
-  --secondary: 240 3.7% 15.9%;
-  --secondary-foreground: 0 0% 98%;
-  --muted: 240 3.7% 15.9%;
-  --muted-foreground: 240 5% 64.9%;
-  --accent: 240 3.7% 15.9%;
-  --accent-foreground: 0 0% 98%;
-  --destructive: 0 62.8% 30.6%;
-  --destructive-foreground: 0 0% 98%;
-  --border: 240 3.7% 15.9%;
-  --input: 240 3.7% 15.9%;
-  --ring: 240 4.9% 83.9%;
-  --chart-1: 220 70% 50%;
-  --chart-2: 160 60% 45%;
-  --chart-3: 30 80% 55%;
-  --chart-4: 280 65% 60%;
-  --chart-5: 340 75% 55%;
-}
-
-
-
-* {
-  border-color: hsl(var(--border));
-}
-
-/* Loading animations */
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.loading-spinner {
-  animation: spin 1s linear infinite;
-}
-
-/* Modern card styles */
-.modern-card {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-}
-
-/* Sidebar enhancements */
-[data-sidebar="sidebar"] {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  background-color: hsl(var(--sidebar-background)) !important;
-  border-color: hsl(var(--sidebar-border)) !important;
-}
-
-/* Força a cor azul marinho da sidebar */
-.bg-sidebar {
-  background-color: hsl(220 65% 18%) !important;
-}
-
-.text-sidebar-foreground {
-  color: hsl(0 0% 95%) !important;
-}
-
-[data-sidebar="sidebar"][data-state="collapsed"] {
-  width: 3rem;
-}
-
-[data-sidebar="sidebar"][data-state="expanded"] {
-  width: 16rem;
-}
-
-/* Sidebar content styling */
-[data-sidebar="sidebar"] * {
-  color: hsl(var(--sidebar-foreground));
-}
-
-[data-sidebar="sidebar"] [data-sidebar-trigger] {
-  background-color: hsl(var(--sidebar-accent));
-  color: hsl(var(--sidebar-accent-foreground));
-  border-color: hsl(var(--sidebar-border));
-}
-
-[data-sidebar="sidebar"] [data-sidebar-trigger]:hover {
-  background-color: hsl(var(--sidebar-primary));
-  color: hsl(var(--sidebar-primary-foreground));
-}
-
-/* Sidebar menu items */
-[data-sidebar="sidebar"] .sidebar-menu-item {
-  color: hsl(var(--sidebar-foreground));
-  transition: all 0.2s ease;
-}
-
-[data-sidebar="sidebar"] .sidebar-menu-item:hover {
-  background-color: hsl(var(--sidebar-accent));
-  color: hsl(var(--sidebar-accent-foreground));
-}
-
-[data-sidebar="sidebar"] .sidebar-menu-item.active {
-  background-color: hsl(var(--sidebar-primary));
-  color: hsl(var(--sidebar-primary-foreground));
-}
-
-/* Forçar cores específicas da sidebar */
-[data-sidebar="sidebar"] h1,
-[data-sidebar="sidebar"] h2,
-[data-sidebar="sidebar"] h3,
-[data-sidebar="sidebar"] p,
-[data-sidebar="sidebar"] span,
-[data-sidebar="sidebar"] div {
-  color: hsl(0 0% 95%) !important;
-}
-
-[data-sidebar="sidebar"] [data-sidebar="group-label"] {
-  color: hsl(0 0% 75%) !important;
-}
-
-[data-sidebar="sidebar"] [data-sidebar="menu-button"] {
-  color: hsl(0 0% 95%) !important;
-}
-
-[data-sidebar="sidebar"] [data-sidebar="menu-button"]:hover {
-  background-color: hsl(240 30% 25%) !important;
-  color: hsl(0 0% 100%) !important;
-}
-
-[data-sidebar="sidebar"] [data-sidebar="menu-button"][data-active="true"] {
-  background-color: hsl(240 75% 60%) !important;
-  color: hsl(0 0% 100%) !important;
-}
-
-/* Estilo específico para Leads Premium */
-[data-sidebar="sidebar"] .bg-gradient-to-r {
-  background: linear-gradient(to right, #ea580c, #d97706) !important;
-  color: white !important;
-  border-color: #ea580c !important;
-  font-weight: 600 !important;
-  box-shadow: 0 4px 6px -1px rgba(234, 88, 12, 0.3) !important;
-}
-
-[data-sidebar="sidebar"] .bg-gradient-to-r:hover {
-  background: linear-gradient(to right, #c2410c, #b45309) !important;
-  color: white !important;
-  transform: translateY(-1px) !important;
-  box-shadow: 0 6px 8px -1px rgba(234, 88, 12, 0.4) !important;
-}
-
-[data-sidebar="sidebar"] .bg-gradient-to-r svg {
-  color: white !important;
-}
-
-[data-sidebar="sidebar"] .bg-gradient-to-r span {
-  color: white !important;
-}
-
-/* Button hover effects */
-.btn-hover-glow:hover {
-  box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
-  transform: translateY(-1px);
-  transition: all 0.2s ease;
+/* Estilo específico para textos azuis na página de vendas */
+.text-blue-span {
+  background: linear-gradient(to right, #2563eb, #9333ea) !important;
+  background-clip: text !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  color: transparent !important;
 }
 
 /* Responsividade para cards de métricas */
