@@ -8,75 +8,10 @@ import { Badge } from "@/components/ui/badge";
 const TrialBanner = () => {
   const { status, trialDaysLeft, isTrialActive, isSubscriptionActive } = useSubscription();
   const navigate = useNavigate();
-  const [showUpdateBanner, setShowUpdateBanner] = useState(false);
-  const [hasReloaded, setHasReloaded] = useState(false);
-
-  useEffect(() => {
-    // Mostrar banner de atualização se o usuário não recarregou ainda
-    const lastUpdate = localStorage.getItem('last_update_check');
-    const today = new Date().toDateString();
-    
-    if (lastUpdate !== today) {
-      setShowUpdateBanner(true);
-      localStorage.setItem('last_update_check', today);
-    }
-  }, []);
-
-  const handleReload = () => {
-    setHasReloaded(true);
-    window.location.reload();
-  };
-
-  const dismissUpdateBanner = () => {
-    setShowUpdateBanner(false);
-  };
 
   // Don't show any banner if subscription is active
   if (isSubscriptionActive) {
     return null;
-  }
-
-  // Banner de atualização
-  if (showUpdateBanner && !hasReloaded) {
-    return (
-      <div className="bg-blue-600 text-white px-4 py-3 relative">
-        <div className="flex items-center justify-between max-w-7xl mx-auto">
-          <div className="flex items-center gap-3">
-            <RefreshCw className="h-5 w-5 animate-spin" />
-            <div>
-              <div className="font-semibold flex items-center gap-2">
-                Atualização Disponível
-                <Badge variant="secondary" className="bg-green-500 text-white text-xs">
-                  v1.0.1
-                </Badge>
-              </div>
-              <p className="text-sm opacity-90">
-                Correções importantes foram aplicadas. Recarregue a página para obter a melhor experiência.
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button 
-              size="sm" 
-              variant="secondary" 
-              onClick={handleReload}
-              className="bg-white text-blue-600 hover:bg-gray-100"
-            >
-              <RefreshCw className="h-4 w-4 mr-1" />
-              Recarregar
-            </Button>
-            <Button 
-              size="sm" 
-              variant="ghost" 
-              onClick={dismissUpdateBanner}
-              className="text-white hover:bg-blue-700"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
   }
 
   if (isTrialActive) {
