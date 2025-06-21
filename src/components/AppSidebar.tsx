@@ -26,7 +26,8 @@ import {
   Camera,
   User,
   Edit,
-  Cog
+  Cog,
+  Briefcase
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -308,6 +309,22 @@ export function AppSidebar() {
 
   return (
     <Sidebar className="bg-gradient-to-br from-blue-900 via-blue-800 to-indigo-900 border-r border-blue-700/50">
+      <SidebarHeader className="border-b border-blue-700/50 bg-blue-900/30">
+        <div className="flex items-center gap-3 px-6 py-4">
+          <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl shadow-lg">
+            <Briefcase className="w-6 h-6 text-white" />
+          </div>
+          <div className="flex flex-col">
+            <h1 className="text-xl font-bold text-white tracking-tight">
+              LeadConsig
+            </h1>
+            <p className="text-xs text-blue-200/70 font-medium">
+              CRM Inteligente
+            </p>
+          </div>
+        </div>
+      </SidebarHeader>
+      
       <SidebarContent className="flex-1">
         {Object.entries(groupedItems).map(([group, groupItems]) => (
           <SidebarGroup key={group}>
