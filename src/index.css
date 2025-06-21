@@ -362,32 +362,24 @@
   transition: all 0.2s ease;
 }
 
-/* Responsividade para cards de métricas - VERSÃO MELHORADA */
+/* Responsividade para cards de métricas */
 @media (max-width: 480px) {
   .metrics-card {
-    min-height: 160px;
+    min-height: 140px;
   }
   
   .metrics-card .card-content {
-    padding: 1rem;
+    padding: 0.75rem;
   }
   
   .metrics-value {
-    font-size: 1.25rem !important; /* text-xl */
+    font-size: 1.125rem !important; /* text-lg */
     line-height: 1.2 !important;
     word-break: break-all;
   }
   
-  .metrics-card .text-2xl {
-    font-size: 1.5rem !important; /* responsivo */
-  }
-  
-  .metrics-card .line-clamp-2 {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    text-overflow: ellipsis;
+  .metrics-card .text-base {
+    font-size: 0.875rem !important; /* text-sm no mobile */
   }
 }
 
@@ -398,25 +390,9 @@
   }
   
   .metrics-card {
-    min-width: 150px;
+    min-width: 140px;
     max-width: 100%;
-    min-height: 170px;
-  }
-  
-  .metrics-card .text-3xl {
-    font-size: 1.875rem !important; /* lg:text-3xl em tablets */
-  }
-}
-
-@media (min-width: 768px) {
-  .metrics-card {
-    min-height: 180px;
-  }
-}
-
-@media (min-width: 1024px) {
-  .metrics-card {
-    min-height: 200px;
+    min-height: 150px;
   }
 }
 
@@ -482,24 +458,41 @@
   transform: translateX(100%);
 }
 
-/* Regras removidas - integradas na seção principal */
+/* Responsividade aprimorada para MetricsCard */
+@media (max-width: 640px) {
+  .metrics-card .metrics-value {
+    font-size: 1rem !important; /* text-base em tablets */
+    line-height: 1.2 !important;
+    word-break: break-all !important;
+    overflow-wrap: anywhere !important;
+    hyphens: auto !important;
+  }
+}
 
-/* Garantir que números longos sempre sejam visíveis - ATUALIZADO */
+@media (max-width: 480px) {
+  .metrics-card .metrics-value {
+    font-size: 1.125rem !important; /* mantém text-lg no mobile */
+    line-height: 1.1 !important;
+  }
+  
+  .metrics-card {
+    min-height: 140px !important;
+  }
+}
+
+@media (max-width: 360px) {
+  .metrics-card .metrics-value {
+    font-size: 1rem !important; /* text-base em telas muito pequenas */
+    line-height: 1 !important;
+  }
+}
+
+/* Garantir que números longos sempre sejam visíveis */
 .metrics-value {
-  word-break: break-word !important;
+  word-break: break-all !important;
   overflow-wrap: anywhere !important;
   white-space: normal !important;
   max-width: 100% !important;
-}
-
-/* Suporte para títulos de 2 linhas */
-.line-clamp-2 {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  line-height: 1.3;
 }
 
 /* Animações para a página de login */
