@@ -1,9 +1,7 @@
 
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { TrendingUp, Sparkles, Plus } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { useAddMockLeads } from "@/hooks/useAddMockLeads";
+import { TrendingUp, Sparkles } from "lucide-react";
 
 interface ProductionCardProps {
   dailyProduction: any[];
@@ -11,22 +9,12 @@ interface ProductionCardProps {
 }
 
 const ProductionCard = ({ dailyProduction, isLoading }: ProductionCardProps) => {
-  const { addProductionLeads } = useAddMockLeads();
-
   const calculateDailyTotal = () => {
     return dailyProduction.reduce((total, lead) => {
       const cleanAmount = lead.amount?.replace(/[^\d,]/g, '').replace(',', '.') || "0";
       const amount = parseFloat(cleanAmount);
       return isNaN(amount) ? total : total + amount;
     }, 0).toFixed(2);
-  };
-
-  const handleAddProduction = async () => {
-    await addProductionLeads();
-    // Recarregar página para ver os novos valores
-    setTimeout(() => {
-      window.location.reload();
-    }, 1000);
   };
 
   return (
@@ -53,16 +41,6 @@ const ProductionCard = ({ dailyProduction, isLoading }: ProductionCardProps) => 
             <TrendingUp className="h-3 w-3" />
             <span className="font-medium">Total hoje</span>
           </div>
-          {/* Botão temporário para adicionar produção */}
-          <Button
-            onClick={handleAddProduction}
-            size="sm"
-            variant="outline"
-            className="mt-2 bg-emerald-500 text-white border-emerald-500 hover:bg-emerald-600 hover:border-emerald-600"
-          >
-            <Plus className="h-3 w-3 mr-1" />
-            Aumentar Produção
-          </Button>
         </div>
       </CardHeader>
       <CardContent className="relative z-10">
