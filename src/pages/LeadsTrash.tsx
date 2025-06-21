@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Search, Trash2, RotateCcw, AlertTriangle, User, Phone, Mail, Calendar, Clock } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Search, Trash2, RotateCcw, AlertTriangle, User, Phone, Mail, Calendar, Clock, CheckSquare, Square } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import PageLayout from "@/components/PageLayout";
@@ -26,6 +27,8 @@ const LeadsTrash = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedLead, setSelectedLead] = useState<DeletedLead | null>(null);
   const [actionType, setActionType] = useState<'restore' | 'delete' | null>(null);
+  const [selectedLeads, setSelectedLeads] = useState<Set<string>>(new Set());
+  const [bulkActionType, setBulkActionType] = useState<'bulk_restore' | 'bulk_delete' | null>(null);
 
   useEffect(() => {
     fetchDeletedLeads();
@@ -124,6 +127,101 @@ const LeadsTrash = () => {
     }
   };
 
+  const handleBulkRestore = async () => {
+    try {
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (userError) throw userError;
+
+      const leadsToRestore = deletedLeads.filter(lead => selectedLeads.has(lead.id));
+      
+      for (const deletedLead of leadsToRestore) {
+        // Prepare lead data
+        const leadDataToRestore = {
+          id: deletedLead.original_lead_id,
+          user_id: userData.user.id,
+          name: deletedLead.original_lead_data.name || '',
+          email: deletedLead.original_lead_data.email || null,
+          phone: deletedLead.original_lead_data.phone || null,
+          phone2: deletedLead.original_lead_data.phone2 || null,
+          phone3: deletedLead.original_lead_data.phone3 || null,
+          cpf: deletedLead.original_lead_data.cpf || null,
+          status: deletedLead.original_lead_data.status || 'novo',
+          source: deletedLead.original_lead_data.source || null,
+          notes: deletedLead.original_lead_data.notes || null,
+          amount: deletedLead.original_lead_data.amount || null,
+          product: deletedLead.original_lead_data.product || null,
+          employee: deletedLead.original_lead_data.employee || null,
+          bank: deletedLead.original_lead_data.bank || null,
+          benefit_type: deletedLead.original_lead_data.benefit_type || null,
+          representative_name: deletedLead.original_lead_data.representative_name || null,
+          representative_cpf: deletedLead.original_lead_data.representative_cpf || null
+        };
+
+        // Restore lead
+        const { error: restoreError } = await supabase
+          .from("leads")
+          .insert(leadDataToRestore);
+
+        if (restoreError) throw restoreError;
+
+        // Remove from deleted leads
+        const { error: removeError } = await supabase
+          .from("deleted_leads")
+          .delete()
+          .eq("id", deletedLead.id);
+
+        if (removeError) throw removeError;
+      }
+
+      setDeletedLeads(deletedLeads.filter(lead => !selectedLeads.has(lead.id)));
+      setSelectedLeads(new Set());
+      toast.success(`${leadsToRestore.length} leads restaurados com sucesso!`);
+      setBulkActionType(null);
+    } catch (error: any) {
+      console.error("Error bulk restoring leads:", error);
+      toast.error(`Erro ao restaurar leads: ${error.message}`);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    try {
+      const selectedIds = Array.from(selectedLeads);
+      
+      const { error } = await supabase
+        .from("deleted_leads")
+        .delete()
+        .in("id", selectedIds);
+
+      if (error) throw error;
+
+      setDeletedLeads(deletedLeads.filter(lead => !selectedLeads.has(lead.id)));
+      setSelectedLeads(new Set());
+      toast.success(`${selectedIds.length} leads excluídos permanentemente!`);
+      setBulkActionType(null);
+    } catch (error: any) {
+      console.error("Error bulk deleting leads:", error);
+      toast.error(`Erro ao excluir leads: ${error.message}`);
+    }
+  };
+
+  const handleSelectAll = () => {
+    if (selectedLeads.size === filteredLeads.length) {
+      setSelectedLeads(new Set());
+    } else {
+      setSelectedLeads(new Set(filteredLeads.map(lead => lead.id)));
+    }
+  };
+
+  const handleSelectLead = (leadId: string) => {
+    const newSelected = new Set(selectedLeads);
+    if (newSelected.has(leadId)) {
+      newSelected.delete(leadId);
+    } else {
+      newSelected.add(leadId);
+    }
+    setSelectedLeads(newSelected);
+  };
+
   const filteredLeads = deletedLeads.filter(deletedLead => {
     const leadData = deletedLead.original_lead_data;
     const searchLower = searchQuery.toLowerCase();
@@ -144,14 +242,55 @@ const LeadsTrash = () => {
   };
 
   const headerActions = (
-    <div className="relative">
-      <Search className="absolute left-3 top-2.5 h-4 w-4 text-blue-500" />
-      <Input 
-        placeholder="Buscar por nome, telefone ou CPF..." 
-        className="pl-10 py-2 border-blue-100 bg-blue-50/50 hover:bg-blue-50 focus:border-blue-200 focus:ring-1 focus:ring-blue-200 transition-all rounded-full w-full md:w-[280px]" 
-        value={searchQuery} 
-        onChange={e => setSearchQuery(e.target.value)} 
-      />
+    <div className="flex items-center gap-3">
+      <div className="relative">
+        <Search className="absolute left-3 top-2.5 h-4 w-4 text-blue-500" />
+        <Input 
+          placeholder="Buscar por nome, telefone ou CPF..." 
+          className="pl-10 py-2 border-blue-100 bg-blue-50/50 hover:bg-blue-50 focus:border-blue-200 focus:ring-1 focus:ring-blue-200 transition-all rounded-full w-full md:w-[280px]" 
+          value={searchQuery} 
+          onChange={e => setSearchQuery(e.target.value)} 
+        />
+      </div>
+      
+      {filteredLeads.length > 0 && (
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleSelectAll}
+            className="flex items-center gap-2"
+          >
+            {selectedLeads.size === filteredLeads.length ? 
+              <CheckSquare className="h-4 w-4" /> : 
+              <Square className="h-4 w-4" />
+            }
+            {selectedLeads.size === filteredLeads.length ? 'Desmarcar Todos' : 'Selecionar Todos'}
+          </Button>
+          
+          {selectedLeads.size > 0 && (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setBulkActionType('bulk_restore')}
+                className="text-green-600 border-green-200 hover:bg-green-50"
+              >
+                <RotateCcw className="h-4 w-4 mr-1" />
+                Restaurar ({selectedLeads.size})
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => setBulkActionType('bulk_delete')}
+              >
+                <Trash2 className="h-4 w-4 mr-1" />
+                Excluir ({selectedLeads.size})
+              </Button>
+            </>
+          )}
+        </div>
+      )}
     </div>
   );
 
@@ -185,13 +324,21 @@ const LeadsTrash = () => {
               const leadData = deletedLead.original_lead_data;
               const daysLeft = getDaysUntilExpiry(deletedLead.expires_at);
               const isExpiringSoon = daysLeft <= 3;
+              const isSelected = selectedLeads.has(deletedLead.id);
 
               return (
-                <Card key={deletedLead.id} className="transition-all hover:shadow-md h-fit">
+                <Card key={deletedLead.id} className={`transition-all hover:shadow-md h-fit ${isSelected ? 'ring-2 ring-blue-500 bg-blue-50/30' : ''}`}>
                   <CardHeader className="pb-3">
                     <div className="space-y-2">
                       <div className="flex items-start justify-between">
-                        <CardTitle className="text-lg leading-tight line-clamp-2 flex-1">{leadData.name}</CardTitle>
+                        <div className="flex items-start gap-2 flex-1">
+                          <Checkbox
+                            checked={isSelected}
+                            onCheckedChange={() => handleSelectLead(deletedLead.id)}
+                            className="mt-1"
+                          />
+                          <CardTitle className="text-lg leading-tight line-clamp-2 flex-1">{leadData.name}</CardTitle>
+                        </div>
                         <div className="flex flex-col items-end gap-1 ml-2">
                           {isExpiringSoon && (
                             <Badge variant="destructive" className="text-xs">
@@ -206,14 +353,14 @@ const LeadsTrash = () => {
                           )}
                         </div>
                       </div>
-                      <CardDescription className="text-xs">
+                      <CardDescription className="text-xs ml-6">
                         Excluído em {format(new Date(deletedLead.deleted_at), "dd/MM/yyyy", { locale: ptBR })}
                       </CardDescription>
                     </div>
                   </CardHeader>
                   
                   <CardContent className="pt-0">
-                    <div className="space-y-2 mb-4">
+                    <div className="space-y-2 mb-4 ml-6">
                       {leadData.phone && (
                         <div className="flex items-center gap-2">
                           <Phone className="h-3 w-3 text-blue-500 flex-shrink-0" />
@@ -295,6 +442,7 @@ const LeadsTrash = () => {
           </Card>
         )}
 
+        {/* Dialog para ação individual */}
         <AlertDialog open={!!selectedLead} onOpenChange={() => {
           setSelectedLead(null);
           setActionType(null);
@@ -326,6 +474,38 @@ const LeadsTrash = () => {
                 className={actionType === 'restore' ? "bg-green-600 hover:bg-green-700" : "bg-red-600 hover:bg-red-700"}
               >
                 {actionType === 'restore' ? 'Restaurar' : 'Excluir Permanentemente'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Dialog para ações em massa */}
+        <AlertDialog open={!!bulkActionType} onOpenChange={() => setBulkActionType(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                {bulkActionType === 'bulk_restore' ? 'Restaurar Leads Selecionados' : 'Excluir Leads Selecionados'}
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                {bulkActionType === 'bulk_restore' 
+                  ? `Tem certeza que deseja restaurar ${selectedLeads.size} leads selecionados? Eles voltarão para a lista ativa de leads.`
+                  : `Tem certeza que deseja excluir permanentemente ${selectedLeads.size} leads selecionados? Esta ação não pode ser desfeita.`
+                }
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  if (bulkActionType === 'bulk_restore') {
+                    handleBulkRestore();
+                  } else {
+                    handleBulkDelete();
+                  }
+                }}
+                className={bulkActionType === 'bulk_restore' ? "bg-green-600 hover:bg-green-700" : "bg-red-600 hover:bg-red-700"}
+              >
+                {bulkActionType === 'bulk_restore' ? 'Restaurar Todos' : 'Excluir Todos'}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
