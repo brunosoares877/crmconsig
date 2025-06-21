@@ -101,7 +101,7 @@ const Dashboard = () => {
           count: pendente
         } = await supabase.from('leads')
           .select('*', { count: 'exact', head: true })
-          .eq('status', 'qualificado')
+          .eq('status', 'pendente')
           .not('amount', 'is', null)
           .neq('amount', '')
           .gte('created_at', monthStart)
@@ -326,7 +326,7 @@ const Dashboard = () => {
             const amount = parseFloat(cleanAmount);
             if (isNaN(amount)) return;
             if (lead.status === 'negociando') statusSums.emAndamentoValue += amount;
-            if (lead.status === 'qualificado') statusSums.pendenteValue += amount;
+            if (lead.status === 'pendente') statusSums.pendenteValue += amount;
             if (lead.status === 'concluido') statusSums.pagoValue += amount;
             if (lead.status === 'cancelado') statusSums.canceladoValue += amount;
           });
