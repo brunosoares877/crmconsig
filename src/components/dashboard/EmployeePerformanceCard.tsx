@@ -10,10 +10,10 @@ interface EmployeePerformanceCardProps {
 const EmployeePerformanceCard = ({ employeeSales, isLoading }: EmployeePerformanceCardProps) => {
   const getRankIcon = (index: number) => {
     switch (index) {
-      case 0: return <Crown className="h-4 w-4" />;
-      case 1: return <Trophy className="h-4 w-4" />;
-      case 2: return <Medal className="h-4 w-4" />;
-      default: return <Award className="h-4 w-4" />;
+      case 0: return <Crown className="h-3 w-3" />;
+      case 1: return <Trophy className="h-3 w-3" />;
+      case 2: return <Medal className="h-3 w-3" />;
+      default: return <Award className="h-3 w-3" />;
     }
   };
 
@@ -51,7 +51,7 @@ const EmployeePerformanceCard = ({ employeeSales, isLoading }: EmployeePerforman
             </div>
           </div>
         ) : (
-          <div className="space-y-3 max-h-48 overflow-y-auto">
+          <div className="space-y-2 max-h-96 overflow-y-auto">
             {employeeSales.length === 0 ? (
               <div className="text-center py-8 text-slate-500">
                 <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-sm">
@@ -61,10 +61,10 @@ const EmployeePerformanceCard = ({ employeeSales, isLoading }: EmployeePerforman
                 <p className="text-xs text-slate-400 mt-1">O ranking aparecerá aqui</p>
               </div>
             ) : (
-              employeeSales.slice(0, 5).map((employee, index) => (
-                <div key={employee.employee} className="flex items-center justify-between p-4 bg-white/80 backdrop-blur-sm rounded-2xl border border-blue-100/50 hover:bg-white hover:shadow-md transition-all duration-300 group/item">
-                  <div className="flex items-center gap-4 flex-1 min-w-0">
-                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg ${getRankColors(index)}`}>
+              employeeSales.map((employee, index) => (
+                <div key={employee.employee} className="flex items-center justify-between p-3 bg-white/80 backdrop-blur-sm rounded-2xl border border-blue-100/50 hover:bg-white hover:shadow-md transition-all duration-300 group/item">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shadow-lg ${getRankColors(index)}`}>
                       {getRankIcon(index)}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -83,8 +83,8 @@ const EmployeePerformanceCard = ({ employeeSales, isLoading }: EmployeePerforman
                       </div>
                     </div>
                   </div>
-                  <div className="text-right ml-4">
-                    <p className="font-bold text-blue-700 text-lg">
+                  <div className="text-right ml-3">
+                    <p className="font-bold text-blue-700 text-base">
                       {typeof employee.totalValue === 'number'
                         ? employee.totalValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
                         : 'R$ 0,00'}
