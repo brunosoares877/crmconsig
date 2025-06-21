@@ -81,6 +81,13 @@
     background-clip: text;
   }
   
+  /* Classe para spans dentro do h1 que devem ter cor azul */
+  h1 .text-blue-span {
+    -webkit-text-fill-color: #2563eb !important;
+    background: none !important;
+    color: #2563eb !important;
+  }
+  
   h2 {
     @apply text-2xl lg:text-3xl;
   }
