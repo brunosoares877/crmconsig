@@ -24,8 +24,19 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { CustomCalendar } from "@/components/ui/custom-calendar";
-import { CalendarIcon, Search } from "lucide-react";
+import { CalendarIcon, Search, Trash2, Settings, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -38,6 +49,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import PageLayout from "@/components/PageLayout";
 import { getEmployees, Employee } from "@/utils/employees";
+import { mapProductToCommissionConfig } from "@/utils/productMapping";
 
 const Commission = () => {
   const [loading, setLoading] = useState(false);
@@ -46,6 +58,7 @@ const Commission = () => {
   const [search, setSearch] = useState("");
   const [employeeFilter, setEmployeeFilter] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<string>("");
+  const [productFilter, setProductFilter] = useState<string>("");
   const [dateFrom, setDateFrom] = useState<Date>();
   const [dateTo, setDateTo] = useState<Date>();
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -53,7 +66,12 @@ const Commission = () => {
   const [totalCommissionsPending, setTotalCommissionsPending] = useState(0);
   const [totalCommissionsApproved, setTotalCommissionsApproved] = useState(0);
   const [totalCommissionsPaid, setTotalCommissionsPaid] = useState(0);
+  const [deletingCommission, setDeletingCommission] = useState<string | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
   const { isPrivilegedUser } = useAuth();
+
+  // Lista de produtos únicos para filtro
+  const [products, setProducts] = useState<string[]>([]);
 
   useEffect(() => {
     fetchCommissions();
@@ -99,6 +117,10 @@ const Commission = () => {
 
       if (statusFilter && statusFilter !== "all") {
         query = query.eq("status", statusFilter);
+      }
+
+      if (productFilter && productFilter !== "all") {
+        query = query.eq("product", productFilter);
       }
 
       query = query.order("created_at", { ascending: false });
@@ -188,6 +210,10 @@ const Commission = () => {
         
         setCommissions(processedCommissions);
         
+        // Extrair produtos únicos para filtro
+        const uniqueProducts = [...new Set(processedCommissions.map(c => c.product).filter(Boolean))];
+        setProducts(uniqueProducts);
+        
         const inProgressTotal = processedCommissions
           .filter(c => c.status === "in_progress")
           .reduce((acc, curr) => acc + (Number(curr.commission_value) || 0), 0);
@@ -216,6 +242,209 @@ const Commission = () => {
     }
   };
 
+  // Função para calcular valor da comissão com base nas configurações
+  const calculateCommissionValue = async (leadProduct: string, amount: number): Promise<number> => {
+    try {
+      // Mapear produto do lead para produto da configuração
+      const mappedProduct = mapProductToCommissionConfig(leadProduct);
+      
+      console.log(`Calculando comissão: ${leadProduct} → ${mappedProduct}, valor: R$ ${amount}`);
+
+      // Buscar taxa fixa primeiro
+      const { data: rates } = await supabase
+        .from('commission_rates')
+        .select('*')
+        .eq('product', mappedProduct)
+        .eq('active', true);
+
+      if (rates && rates.length > 0) {
+        const rate = rates[0] as any;
+        console.log(`Taxa fixa encontrada:`, rate);
+        
+        if (rate.commission_type === 'fixed') {
+          const commission = rate.fixed_value || 0;
+          console.log(`Comissão fixa: R$ ${commission}`);
+          return commission;
+        } else {
+          const commission = (amount * rate.percentage) / 100;
+          console.log(`Comissão percentual: ${rate.percentage}% = R$ ${commission}`);
+          return commission;
+        }
+      }
+
+      // Se não encontrou taxa fixa, buscar por faixas de valor
+      const { data: tiers } = await supabase
+        .from('commission_tiers')
+        .select('*')
+        .eq('product', mappedProduct)
+        .eq('active', true)
+        .lte('min_amount', amount)
+        .order('min_amount', { ascending: false });
+
+      if (tiers && tiers.length > 0) {
+        for (const tier of tiers) {
+          const tierData = tier as any;
+          if (tierData.max_amount === null || amount <= tierData.max_amount) {
+            console.log(`Faixa encontrada:`, tierData);
+            
+            if (tierData.commission_type === 'fixed') {
+              const commission = tierData.fixed_value || 0;
+              console.log(`Comissão fixa por faixa: R$ ${commission}`);
+              return commission;
+            } else {
+              const commission = (amount * tierData.percentage) / 100;
+              console.log(`Comissão percentual por faixa: ${tierData.percentage}% = R$ ${commission}`);
+              return commission;
+            }
+          }
+        }
+      }
+
+      // Taxa padrão de 5% se não encontrar configuração
+      const defaultCommission = (amount * 5) / 100;
+      console.log(`Taxa padrão aplicada: 5% = R$ ${defaultCommission}`);
+      return defaultCommission;
+    } catch (error) {
+      console.error("Error calculating commission:", error);
+      const defaultCommission = (amount * 5) / 100;
+      console.log(`Erro - usando taxa padrão: 5% = R$ ${defaultCommission}`);
+      return defaultCommission;
+    }
+  };
+
+
+
+  // Função para sincronizar comissões com valores atualizados dos leads
+  const syncCommissionsWithLeads = async () => {
+    try {
+      setIsGenerating(true);
+      
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) {
+        toast.error("Usuário não autenticado");
+        return;
+      }
+
+      // Buscar todas as comissões com seus leads
+      const { data: commissionsWithLeads, error: fetchError } = await supabase
+        .from('commissions')
+        .select(`
+          *,
+          lead:lead_id (
+            id, amount, product, name
+          )
+        `)
+        .eq('user_id', userData.user.id);
+
+      if (fetchError) {
+        console.error('Erro ao buscar comissões para sincronizar:', fetchError);
+        toast.error('Erro ao buscar comissões para sincronizar');
+        return;
+      }
+
+      if (!commissionsWithLeads || commissionsWithLeads.length === 0) {
+        toast.info('Não há comissões para sincronizar');
+        return;
+      }
+
+      console.log(`Sincronizando ${commissionsWithLeads.length} comissões com leads`);
+
+      let updated = 0;
+      let skipped = 0;
+
+      for (const commission of commissionsWithLeads) {
+        try {
+          const lead = commission.lead;
+          if (!lead) {
+            console.log(`Comissão ${commission.id} não tem lead associado`);
+            skipped++;
+            continue;
+          }
+
+          // Converter valor do lead para número
+          const leadAmountStr = lead.amount?.toString() || '0';
+          const cleanLeadAmount = leadAmountStr.replace(/[^\d,]/g, '').replace(',', '.');
+          const leadAmount = parseFloat(cleanLeadAmount) || 0;
+
+          // Converter valor da comissão para número
+          const commissionAmount = parseFloat(commission.amount?.toString() || '0');
+
+          // Verificar se produto ou valor mudaram
+          const productChanged = commission.product !== lead.product;
+          const amountChanged = Math.abs(commissionAmount - leadAmount) > 0.01; // Tolerância de 1 centavo
+
+          if (!productChanged && !amountChanged) {
+            console.log(`Comissão ${commission.id} já está sincronizada`);
+            skipped++;
+            continue;
+          }
+
+          console.log(`Sincronizando comissão ${commission.id}:`);
+          console.log(`  Lead: ${lead.name}`);
+          console.log(`  Produto: ${commission.product} → ${lead.product}`);
+          console.log(`  Valor: R$ ${commissionAmount} → R$ ${leadAmount}`);
+
+          // Calcular nova comissão
+          const newCommissionValue = await calculateCommissionValue(lead.product, leadAmount);
+          const newPercentage = leadAmount > 0 ? (newCommissionValue / leadAmount) * 100 : 0;
+
+          // Atualizar comissão
+          const { error: updateError } = await supabase
+            .from('commissions')
+            .update({
+              amount: leadAmount,
+              product: lead.product,
+              commission_value: newCommissionValue.toFixed(2),
+              percentage: newPercentage.toFixed(2)
+            } as any)
+            .eq('id', commission.id);
+
+          if (updateError) {
+            console.error(`Erro ao atualizar comissão ${commission.id}:`, updateError);
+            continue;
+          }
+
+          updated++;
+          console.log(`  ✅ Atualizada: R$ ${newCommissionValue.toFixed(2)} (${newPercentage.toFixed(2)}%)`);
+        } catch (error) {
+          console.error(`Erro ao processar comissão ${commission.id}:`, error);
+        }
+      }
+
+      await fetchCommissions();
+      
+      const message = `Sincronização concluída! ${updated} comissões atualizadas, ${skipped} já estavam sincronizadas.`;
+      toast.success(message);
+      
+    } catch (error) {
+      console.error('Erro ao sincronizar comissões:', error);
+      toast.error('Erro ao sincronizar comissões com leads');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleDeleteCommission = async (commissionId: string) => {
+    try {
+      setDeletingCommission(commissionId);
+      
+      const { error } = await supabase
+        .from("commissions")
+        .delete()
+        .eq("id", commissionId);
+
+      if (error) throw error;
+
+      toast.success("Comissão removida com sucesso!");
+      fetchCommissions(); // Recarregar dados
+    } catch (error: any) {
+      console.error("Error deleting commission:", error);
+      toast.error(`Erro ao remover comissão: ${error.message}`);
+    } finally {
+      setDeletingCommission(null);
+    }
+  };
+
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearch(e.target.value);
   };
@@ -229,7 +458,10 @@ const Commission = () => {
     setDateTo(undefined);
     setEmployeeFilter("");
     setStatusFilter("");
+    setProductFilter("");
     setSearch("");
+    // Recarregar dados após limpar filtros
+    setTimeout(() => fetchCommissions(), 100);
   };
 
   const filteredCommissions = commissions.filter((commission) => {
@@ -249,8 +481,6 @@ const Commission = () => {
       (commission.employee && commission.employee === employeeFilter) || 
       (commission.lead?.employee && commission.lead.employee === employeeFilter);
     
-    // Filtro por status já é aplicado na query do banco
-    
     return matchesSearch && matchesEmployee;
   });
 
@@ -266,9 +496,9 @@ const Commission = () => {
         return <Badge variant="outline" className="bg-red-100 text-red-800 border-red-300">Cancelado</Badge>;
       // Manter compatibilidade com status antigos
       case "approved":
-        return <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300">Concluído</Badge>;
+        return <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300">Aprovado</Badge>;
       case "paid":
-        return <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300">Concluído</Badge>;
+        return <Badge variant="outline" className="bg-purple-100 text-purple-800 border-purple-300">Pago</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -300,9 +530,9 @@ const Commission = () => {
     }
     
     return { 
-      inProgress: totalCommissionsPaid, // reutilizando a variável existente
+      inProgress: totalCommissionsPaid,
       pending: totalCommissionsPending,
-      completed: totalCommissionsApproved, // reutilizando a variável existente
+      completed: totalCommissionsApproved,
       cancelled: 0
     };
   };
@@ -324,7 +554,7 @@ const Commission = () => {
         .from("leads")
         .select("*")
         .eq("user_id", userData.user.id)
-        .eq("status", "sold"); // Apenas leads vendidos
+        .in("status", ["sold", "convertido"]); // Leads vendidos/convertidos
 
       if (leadsError) {
         throw leadsError;
@@ -368,33 +598,28 @@ const Commission = () => {
       // Criar comissões para os leads
       const commissionsToCreate = [];
 
-              for (const lead of leadsWithoutCommissions) {
-        // Buscar taxa de comissão para o produto do lead
-        const rate = commissionRates?.find(r => r.product === lead.product);
-        
+      for (const lead of leadsWithoutCommissions) {
         // Converter valor corretamente removendo caracteres não numéricos
         const cleanAmount = String(lead.amount).replace(/[^\d,]/g, '').replace(',', '.');
         const leadAmount = parseFloat(cleanAmount) || 0;
         
         let commissionValue = 0;
-        let percentage = 0;
+        let percentage = 5; // Default 5%
 
-        if (rate && rate.percentage) {
-          percentage = rate.percentage;
-          commissionValue = (leadAmount * rate.percentage) / 100;
-        } else {
-          // Taxa padrão de 5% se não encontrar configuração específica
-          percentage = 5;
-          commissionValue = (leadAmount * 5) / 100;
-        }
+        // Buscar configuração de comissão específica para o produto
+        const calculatedValue = await calculateCommissionValue(lead.product, leadAmount);
+        commissionValue = calculatedValue;
 
         commissionsToCreate.push({
           user_id: userData.user.id,
           lead_id: lead.id,
           amount: leadAmount,
+          commission_value: commissionValue,
+          percentage: percentage,
           product: lead.product,
           status: 'in_progress',
-          payment_period: 'monthly'
+          payment_period: 'monthly',
+          employee: lead.employee || 'Não informado'
         });
       }
 
@@ -421,70 +646,7 @@ const Commission = () => {
     }
   };
 
-  const createTestCommissions = async () => {
-    try {
-      setLoading(true);
-      
-      const { data: userData } = await supabase.auth.getUser();
-      if (!userData.user) {
-        toast.error("Usuário não autenticado");
-        return;
-      }
 
-      // Criar algumas comissões de teste com diferentes status
-      const testCommissions = [
-        {
-          user_id: userData.user.id,
-          lead_id: null, // Comissão sem lead vinculado
-          amount: 10000,
-          product: 'Crédito Consignado',
-          status: 'in_progress',
-          payment_period: 'monthly'
-        },
-        {
-          user_id: userData.user.id,
-          lead_id: null,
-          amount: 15000,
-          product: 'Cartão Consignado',
-          status: 'pending',
-          payment_period: 'monthly'
-        },
-        {
-          user_id: userData.user.id,
-          lead_id: null,
-          amount: 20000,
-          product: 'Crédito Pessoal',
-          status: 'completed',
-          payment_period: 'monthly'
-        },
-        {
-          user_id: userData.user.id,
-          lead_id: null,
-          amount: 8000,
-          product: 'Refinanciamento',
-          status: 'cancelled',
-          payment_period: 'monthly'
-        }
-      ];
-
-      const { data: createdCommissions, error: createError } = await supabase
-        .from("commissions")
-        .insert(testCommissions);
-
-      if (createError) {
-        throw createError;
-      }
-
-      toast.success("4 comissões de teste criadas com diferentes status!");
-      fetchCommissions();
-
-    } catch (error: any) {
-      console.error("Error creating test commissions:", error);
-      toast.error(`Erro ao criar comissões de teste: ${error.message}`);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const renderCommissionTable = () => {
     if (loading) {
@@ -504,16 +666,18 @@ const Commission = () => {
             <TableHead>Data do Lead</TableHead>
             <TableHead>Produto</TableHead>
             <TableHead>Valor da Venda</TableHead>
-            <TableHead>Comissão</TableHead>
-            <TableHead>Período de Pagamento</TableHead>
+            <TableHead>% Comissão</TableHead>
+            <TableHead>Valor Comissão</TableHead>
+            <TableHead>Período</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Funcionário</TableHead>
+            <TableHead className="text-right">Ações</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {filteredCommissions.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={8} className="text-center py-8">
+              <TableCell colSpan={10} className="text-center py-8">
                 Nenhuma comissão encontrada com os filtros aplicados.
               </TableCell>
             </TableRow>
@@ -526,14 +690,70 @@ const Commission = () => {
               
               return (
                 <TableRow key={commission.id}>
-                  <TableCell>{commission.lead?.name}</TableCell>
+                  <TableCell>{commission.lead?.name || 'Sem lead'}</TableCell>
                   <TableCell>{leadDateFormatted}</TableCell>
-                  <TableCell>{commission.product}</TableCell>
-                  <TableCell>R$ {commission.amount?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</TableCell>
-                  <TableCell>R$ {commission.commission_value?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</TableCell>
-                  <TableCell>{commission.payment_period}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className="bg-blue-50 text-blue-700">
+                      {commission.product}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <span className="font-medium">
+                      R$ {commission.amount?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-blue-600 font-medium">
+                      {commission.percentage?.toFixed(1)}%
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    <span className="font-bold text-green-600">
+                      R$ {commission.commission_value?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline">
+                      {commission.payment_period === 'monthly' ? 'Mensal' : commission.payment_period}
+                    </Badge>
+                  </TableCell>
                   <TableCell>{getStatusBadge(commission.status!)}</TableCell>
                   <TableCell>{commission.employee || commission.lead?.employee || "-"}</TableCell>
+                  <TableCell className="text-right">
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                          disabled={deletingCommission === commission.id}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Confirmar Remoção</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Tem certeza que deseja remover esta comissão? Esta ação não pode ser desfeita.
+                            <br />
+                            <strong>Produto:</strong> {commission.product}
+                            <br />
+                            <strong>Valor:</strong> R$ {commission.commission_value?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => handleDeleteCommission(commission.id)}
+                            className="bg-red-500 hover:bg-red-600"
+                          >
+                            Sim, Remover
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </TableCell>
                 </TableRow>
               );
             })
@@ -541,11 +761,29 @@ const Commission = () => {
         </TableBody>
         <TableFooter>
           <TableRow>
-            <TableCell colSpan={8}>
-              <div className="font-bold">Total Em Andamento: R$ {employeeTotals.inProgress.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
-              <div className="font-bold">Total Pendente: R$ {employeeTotals.pending.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
-              <div className="font-bold">Total Concluído: R$ {employeeTotals.completed.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
-              <div className="font-bold">Total Cancelado: R$ {employeeTotals.cancelled.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+            <TableCell colSpan={10}>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div>
+                  <span className="font-medium text-blue-600">Em Andamento:</span>
+                  <br />
+                  <span className="font-bold">R$ {employeeTotals.inProgress.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                </div>
+                <div>
+                  <span className="font-medium text-yellow-600">Pendente:</span>
+                  <br />
+                  <span className="font-bold">R$ {employeeTotals.pending.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                </div>
+                <div>
+                  <span className="font-medium text-green-600">Concluído:</span>
+                  <br />
+                  <span className="font-bold">R$ {employeeTotals.completed.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                </div>
+                <div>
+                  <span className="font-medium text-red-600">Cancelado:</span>
+                  <br />
+                  <span className="font-bold">R$ {employeeTotals.cancelled.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                </div>
+              </div>
             </TableCell>
           </TableRow>
         </TableFooter>
@@ -555,12 +793,12 @@ const Commission = () => {
 
   return (
     <PageLayout
-      title="Comissões"
+      title="💰 Comissões"
       subtitle="Acompanhe e gerencie as comissões do time"
     >
       <div className="space-y-8">
         <div className="mb-4 space-y-4">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-6">
             <div className="relative">
               <Search className="absolute left-3 top-2.5 h-4 w-4 text-blue-500" />
               <Input
@@ -574,10 +812,10 @@ const Commission = () => {
             <div>
               <Select value={employeeFilter} onValueChange={setEmployeeFilter}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Filtrar por funcionário" />
+                  <SelectValue placeholder="Funcionário" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todos os funcionários</SelectItem>
+                  <SelectItem value="all">Todos</SelectItem>
                   {employees.map(employee => (
                     <SelectItem key={employee} value={employee}>
                       {employee}
@@ -589,14 +827,31 @@ const Commission = () => {
             <div>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Filtrar por status" />
+                  <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todos os status</SelectItem>
+                  <SelectItem value="all">Todos</SelectItem>
                   <SelectItem value="in_progress">Em Andamento</SelectItem>
                   <SelectItem value="pending">Pendente</SelectItem>
                   <SelectItem value="completed">Concluído</SelectItem>
+                  <SelectItem value="approved">Aprovado</SelectItem>
+                  <SelectItem value="paid">Pago</SelectItem>
                   <SelectItem value="cancelled">Cancelado</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Select value={productFilter} onValueChange={setProductFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Produto" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  {products.map(product => (
+                    <SelectItem key={product} value={product}>
+                      {product}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -608,28 +863,50 @@ const Commission = () => {
             </div>
             <div>
               <Button onClick={clearFilters} variant="outline" className="w-full">
-                Limpar Filtros
+                Limpar
               </Button>
             </div>
           </div>
           
-          <div className="flex gap-2">
+          {/* Botões de ação */}
+          <div className="flex flex-wrap gap-2">
             <Button 
               onClick={generateCommissionsForLeads} 
               variant="default" 
               disabled={loading}
               className="bg-green-600 hover:bg-green-700"
             >
-              {loading ? "Gerando..." : "🎯 Gerar Comissões dos Leads"}
+              {loading ? "Gerando..." : (
+                <>
+                  <Settings className="h-4 w-4 mr-2" />
+                  Gerar Comissões dos Leads
+                </>
+              )}
+            </Button>
+            
+
+
+            <Button 
+              onClick={syncCommissionsWithLeads} 
+              variant="outline" 
+              disabled={isGenerating}
+              className="bg-orange-50 border-orange-300 text-orange-700 hover:bg-orange-100"
+            >
+              {isGenerating ? "Sincronizando..." : (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Sincronizar com Leads
+                </>
+              )}
             </Button>
             
             <Button 
-              onClick={createTestCommissions} 
-              variant="outline" 
-              disabled={loading}
-              className="bg-blue-50 border-blue-300 text-blue-700 hover:bg-blue-100"
+              onClick={() => window.location.href = '/commission/settings'} 
+              variant="outline"
+              className="bg-purple-50 border-purple-300 text-purple-700 hover:bg-purple-100"
             >
-              🧪 Criar Comissões de Teste
+              <Settings className="h-4 w-4 mr-2" />
+              Configurar Taxas
             </Button>
           </div>
           

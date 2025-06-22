@@ -672,6 +672,7 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete }) => {
               onSubmit={handleUpdateLead}
               onCancel={() => setIsEditDialogOpen(false)}
               isLoading={isUpdating}
+              isEditing={true}
             />
           </div>
         </DialogContent>

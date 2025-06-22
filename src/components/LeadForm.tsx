@@ -9,8 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
-import { X } from "lucide-react";
+
 import BenefitTypeSelect from "@/components/forms/BenefitTypeSelect";
 import { BankSelect } from "@/components/forms/BankSelect";
 import ProductSelect from "@/components/forms/ProductSelect";
@@ -33,7 +32,6 @@ const formSchema = z.object({
   representative_mode: z.string().optional(),
   representative_name: z.string().optional(),
   representative_cpf: z.string().optional(),
-  selectedTags: z.array(z.string()).optional(),
   date: z.string().optional(),
 });
 
@@ -47,11 +45,7 @@ interface LeadFormProps {
   isLoading?: boolean;
 }
 
-interface Tag {
-  id: string;
-  name: string;
-  color: string;
-}
+
 
 // Função para formatar CPF
 function formatCPF(value: string) {
@@ -74,106 +68,85 @@ function formatBRL(value: string) {
   return reais + "," + cents;
 }
 
+// Função para extrair data do lead
+const getInitialDate = (initialData: any, isEditing: boolean) => {
+  if (initialData?.date) return initialData.date;
+  if ((initialData as any)?.date) return (initialData as any).date;
+  if (isEditing && (initialData as any)?.created_at) {
+    // Se estamos editando mas não há data personalizada, usar created_at como referência
+    return new Date((initialData as any).created_at).toISOString().slice(0, 10);
+  }
+  return new Date().toISOString().slice(0, 10);
+};
+
 const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, isEditing = false, isLoading = false }) => {
   const { user } = useAuth ? useAuth() : { user: null };
-  const [tags, setTags] = useState<Tag[]>([]);
-  const [selectedTags, setSelectedTags] = useState<string[]>(initialData?.selectedTags || []);
   const [isInitialized, setIsInitialized] = useState(false);
 
   console.log("LeadForm rendering - user:", user, "isEditing:", isEditing);
   console.log("Initial data:", initialData);
   console.log("Initial date from data:", initialData?.date, (initialData as any)?.date);
 
-  // Função para extrair data do lead
-  const getInitialDate = () => {
-    if (initialData?.date) return initialData.date;
-    if ((initialData as any)?.date) return (initialData as any).date;
-    if (isEditing && (initialData as any)?.created_at) {
-      // Se estamos editando mas não há data personalizada, usar created_at como referência
-      return new Date((initialData as any).created_at).toISOString().slice(0, 10);
-    }
-    return new Date().toISOString().slice(0, 10);
-  };
-
-  const { register, handleSubmit, formState: { errors }, setValue, watch } = useForm<FormData>({
+  const { register, handleSubmit, formState: { errors }, setValue, watch, reset } = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: initialData?.name || "",
-      cpf: initialData?.cpf || "",
-      phone: initialData?.phone || "",
-      phone2: initialData?.phone2 || "",
-      phone3: initialData?.phone3 || "",
-      email: initialData?.email || "",
-      bank: initialData?.bank || "",
-      product: initialData?.product || "",
-      amount: initialData?.amount || "",
-      employee: initialData?.employee || "",
-      notes: initialData?.notes || "",
-      benefit_type: initialData?.benefit_type || "",
-      representative_mode: initialData?.representative_mode || "nao",
-      representative_name: initialData?.representative_name || "",
-      representative_cpf: initialData?.representative_cpf || "",
-      selectedTags: initialData?.selectedTags || [],
-      date: getInitialDate(),
+      name: "",
+      cpf: "",
+      phone: "",
+      phone2: "",
+      phone3: "",
+      email: "",
+      bank: "",
+      product: "",
+      amount: "",
+      employee: "",
+      notes: "",
+      benefit_type: "",
+      representative_mode: "nao",
+      representative_name: "",
+      representative_cpf: "",
+      date: new Date().toISOString().slice(0, 10),
     }
   });
 
   const representativeMode = watch("representative_mode");
 
+    // Effect para carregar dados iniciais quando estiver editando
   useEffect(() => {
-    console.log("LeadForm useEffect - fetching tags");
-    const initializeForm = async () => {
-      try {
-        await fetchTags();
-        if (isEditing && initialData?.selectedTags) {
-          setSelectedTags(initialData.selectedTags);
-        }
-        setIsInitialized(true);
-      } catch (error) {
-        console.error("Error initializing form:", error);
-        setIsInitialized(true); // Set to true even on error to prevent infinite loading
-      }
-    };
-    
-    initializeForm();
-  }, [isEditing, initialData]);
-
-  const fetchTags = async () => {
-    try {
-      console.log("Fetching tags...");
-      const { data: userData, error: userError } = await supabase.auth.getUser();
-      if (userError) throw userError;
-
-      const { data, error } = await (supabase as any)
-        .from('lead_tags')
-        .select('*')
-        .eq('user_id', userData.user.id)
-        .order('name');
-
-      if (error) throw error;
-      console.log("Tags fetched successfully:", data?.length || 0);
-      setTags(data || []);
-    } catch (error) {
-      console.error('Error fetching tags:', error);
-      // Don't throw error, just set empty array
-      setTags([]);
+    if (isEditing && initialData && isInitialized) {
+      console.log("Loading initial data for editing:", initialData);
+      
+      // Resetar o formulário com os dados existentes
+      const formData = {
+        name: initialData?.name || "",
+        cpf: initialData?.cpf || "",
+        phone: initialData?.phone || "",
+        phone2: initialData?.phone2 || "",
+        phone3: initialData?.phone3 || "",
+        email: initialData?.email || "",
+        bank: initialData?.bank || "",
+        product: initialData?.product || "",
+        amount: initialData?.amount || "",
+        employee: initialData?.employee || "",
+        notes: initialData?.notes || "",
+        benefit_type: initialData?.benefit_type || "",
+        representative_mode: initialData?.representative_mode || "nao",
+        representative_name: initialData?.representative_name || "",
+        representative_cpf: initialData?.representative_cpf || "",
+        date: getInitialDate(initialData, isEditing),
+      };
+      
+      console.log("Resetting form with data:", formData);
+      reset(formData);
     }
-  };
+  }, [isEditing, initialData, isInitialized, reset]);
 
-  const toggleTag = (tagId: string) => {
-    const newSelectedTags = selectedTags.includes(tagId)
-      ? selectedTags.filter(id => id !== tagId)
-      : [...selectedTags, tagId];
-    
-    setSelectedTags(newSelectedTags);
-    setValue('selectedTags', newSelectedTags);
-  };
+  useEffect(() => {
+    console.log("LeadForm useEffect - initializing form");
+    setIsInitialized(true);
+  }, []);
 
-  const removeTag = (tagId: string) => {
-    const newSelectedTags = selectedTags.filter(id => id !== tagId);
-    setSelectedTags(newSelectedTags);
-    setValue('selectedTags', newSelectedTags);
-  };
+
 
   const onFormSubmit = (data: FormData) => {
     console.log("Form submission started with values:", data);
@@ -185,37 +158,9 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
       return;
     }
 
-    const submitData = {
-      ...data,
-      selectedTags
-    };
-
-    console.log("Calling onSubmit with data:", submitData);
-    console.log("Final date field:", submitData.date);
-    onSubmit(submitData);
-  };
-
-  const getSelectedTagsDisplay = () => {
-    return selectedTags.map(tagId => {
-      const tag = tags.find(t => t.id === tagId);
-      return tag ? (
-        <Badge 
-          key={tagId} 
-          variant="outline" 
-          className="mr-1 mb-1"
-          style={{ borderColor: tag.color, color: tag.color }}
-        >
-          {tag.name}
-          <button
-            type="button"
-            className="ml-1 hover:bg-gray-200 rounded-full"
-            onClick={() => removeTag(tagId)}
-          >
-            <X className="h-3 w-3" />
-          </button>
-        </Badge>
-      ) : null;
-    });
+    console.log("Calling onSubmit with data:", data);
+    console.log("Final date field:", data.date);
+    onSubmit(data);
   };
 
   if (!user) {
@@ -339,40 +284,7 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
         </div>
       )}
 
-      <div>
-        <Label>Etiquetas</Label>
-        <div className="mt-2 space-y-2">
-          <div className="flex flex-wrap gap-2">
-            {tags.map((tag) => (
-              <Badge
-                key={tag.id}
-                variant="outline"
-                className={`cursor-pointer transition-all ${
-                  selectedTags.includes(tag.id) 
-                    ? 'ring-2 ring-offset-1' 
-                    : 'hover:scale-105'
-                }`}
-                style={{ 
-                  backgroundColor: selectedTags.includes(tag.id) ? tag.color : 'transparent',
-                  borderColor: tag.color,
-                  color: selectedTags.includes(tag.id) ? 'white' : tag.color
-                }}
-                onClick={() => toggleTag(tag.id)}
-              >
-                {tag.name}
-              </Badge>
-            ))}
-          </div>
-          {selectedTags.length > 0 && (
-            <div>
-              <Label className="text-sm text-muted-foreground">Etiquetas selecionadas:</Label>
-              <div className="flex flex-wrap gap-1 mt-1">
-                {getSelectedTagsDisplay()}
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
+
 
       <div>
         <Label htmlFor="notes">Observações</Label>

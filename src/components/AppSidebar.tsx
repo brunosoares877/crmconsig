@@ -93,12 +93,7 @@ const items = [
     icon: DollarSign,
     group: "NEGÓCIOS"
   },
-  {
-    title: "Config. Comissões",
-    url: "/commission/settings",
-    icon: Settings,
-    group: "NEGÓCIOS"
-  },
+
   {
     title: "Funcionários",
     url: "/employees",
