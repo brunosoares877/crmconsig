@@ -13,6 +13,7 @@ import { Pagination, PaginationContent, PaginationItem, PaginationLink, Paginati
 import LeadForm from "./LeadForm";
 import { Link } from "react-router-dom";
 import LeadImportButton from "@/components/leads/LeadImportButton";
+import { formatLeadDate } from "@/utils/dateUtils";
 
 interface LeadListProps {
   searchQuery?: string;
@@ -107,6 +108,7 @@ const LeadList: React.FC<LeadListProps> = ({
 
       const { data, error } = await dataQuery
         .range(from, to)
+        .order("date", { ascending: false })
         .order("created_at", { ascending: false });
       
       if (error) {
@@ -116,11 +118,7 @@ const LeadList: React.FC<LeadListProps> = ({
 
       const formattedLeads = (data || []).map(lead => ({
         ...lead,
-        createdAt: new Date(lead.created_at).toLocaleDateString('pt-BR', {
-          day: '2-digit',
-          month: 'short',
-          year: 'numeric'
-        }),
+        createdAt: formatLeadDate((lead as any).date ? (lead as any).date : lead.created_at),
         status: lead.status || "novo"
       })) as Lead[];
 
@@ -236,6 +234,7 @@ const LeadList: React.FC<LeadListProps> = ({
 
       const { data, error } = await dataQuery
         .range(from, to)
+        .order("date", { ascending: false })
         .order("created_at", { ascending: false });
       
       if (error) {
@@ -245,11 +244,7 @@ const LeadList: React.FC<LeadListProps> = ({
 
       const formattedLeads = (data || []).map(lead => ({
         ...lead,
-        createdAt: new Date(lead.created_at).toLocaleDateString('pt-BR', {
-          day: '2-digit',
-          month: 'short',
-          year: 'numeric'
-        }),
+        createdAt: formatLeadDate((lead as any).date ? (lead as any).date : lead.created_at),
         status: lead.status || "novo"
       })) as Lead[];
 
@@ -329,6 +324,10 @@ const LeadList: React.FC<LeadListProps> = ({
       if (userError) throw userError;
 
       const { selectedTags, ...leadData } = values;
+      
+      // Debug: verificar se o campo date está presente
+      console.log("Lead data to insert:", leadData);
+      console.log("Date field:", leadData.date);
 
       const { data: leadInsertData, error: leadError } = await supabase
         .from("leads")
@@ -339,7 +338,12 @@ const LeadList: React.FC<LeadListProps> = ({
         .select()
         .single();
 
-      if (leadError) throw leadError;
+      if (leadError) {
+        console.error("Database insert error:", leadError);
+        throw leadError;
+      }
+
+      console.log("Lead inserted successfully:", leadInsertData);
 
       // Save tag assignments if any tags were selected
       if (selectedTags && selectedTags.length > 0) {

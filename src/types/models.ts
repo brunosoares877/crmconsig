@@ -1,4 +1,3 @@
-
 // Add the missing 'name' property to CommissionRate and CommissionTier interfaces
 
 export interface CommissionRate {
@@ -7,6 +6,8 @@ export interface CommissionRate {
   product: string;
   name: string | null; // Ensure this property exists
   percentage: number;
+  fixed_value?: number; // Valor fixo da comissão
+  commission_type: 'percentage' | 'fixed'; // Tipo de comissão: percentual ou fixa
   active: boolean;
   created_at: string;
   updated_at: string;
@@ -20,6 +21,8 @@ export interface CommissionTier {
   min_amount: number;
   max_amount: number;
   percentage: number;
+  fixed_value?: number; // Valor fixo da comissão
+  commission_type: 'percentage' | 'fixed'; // Tipo de comissão: percentual ou fixa
   active: boolean;
   created_at: string;
   updated_at: string;
@@ -39,6 +42,7 @@ export interface Lead {
   source?: string;
   notes?: string;
   amount?: string;
+  date?: string; // Data personalizada do lead
   createdAt: string;
   updatedAt?: string;
   scheduledAt?: string;
@@ -71,7 +75,7 @@ export interface Commission {
   commission_value: number;
   product: string;
   payment_period?: string;
-  status: 'pending' | 'approved' | 'paid' | 'cancelled';
+  status: 'in_progress' | 'pending' | 'completed' | 'cancelled' | 'approved' | 'paid';
   payment_date?: string;
   created_at: string;
   updated_at: string;

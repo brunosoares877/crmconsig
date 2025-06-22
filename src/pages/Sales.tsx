@@ -112,8 +112,8 @@ const Sales = () => {
           <div className="mb-6 sm:mb-8">
             <Button size="lg" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 sm:px-10 py-3 sm:py-4 text-base sm:text-lg shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300 w-full sm:w-auto" onClick={handleStartTrial}>
               <Play className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-              Começar Teste Gratuito
-            </Button>
+            Começar Teste Gratuito
+          </Button>
           </div>
           <div className="flex flex-col sm:flex-row flex-wrap justify-center items-center gap-4 sm:gap-8 text-xs sm:text-sm text-gray-500">
             <div className="flex items-center">

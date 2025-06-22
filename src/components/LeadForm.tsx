@@ -81,6 +81,19 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
   const [isInitialized, setIsInitialized] = useState(false);
 
   console.log("LeadForm rendering - user:", user, "isEditing:", isEditing);
+  console.log("Initial data:", initialData);
+  console.log("Initial date from data:", initialData?.date, (initialData as any)?.date);
+
+  // Função para extrair data do lead
+  const getInitialDate = () => {
+    if (initialData?.date) return initialData.date;
+    if ((initialData as any)?.date) return (initialData as any).date;
+    if (isEditing && (initialData as any)?.created_at) {
+      // Se estamos editando mas não há data personalizada, usar created_at como referência
+      return new Date((initialData as any).created_at).toISOString().slice(0, 10);
+    }
+    return new Date().toISOString().slice(0, 10);
+  };
 
   const { register, handleSubmit, formState: { errors }, setValue, watch } = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -101,7 +114,7 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
       representative_name: initialData?.representative_name || "",
       representative_cpf: initialData?.representative_cpf || "",
       selectedTags: initialData?.selectedTags || [],
-      date: initialData?.date || new Date().toISOString().slice(0, 10),
+      date: getInitialDate(),
     }
   });
 
@@ -164,6 +177,7 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
 
   const onFormSubmit = (data: FormData) => {
     console.log("Form submission started with values:", data);
+    console.log("Date field being submitted:", data.date);
     
     if (!data.name || data.name.trim() === "") {
       console.error("Validation failed: Name is required");
@@ -177,6 +191,7 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
     };
 
     console.log("Calling onSubmit with data:", submitData);
+    console.log("Final date field:", submitData.date);
     onSubmit(submitData);
   };
 

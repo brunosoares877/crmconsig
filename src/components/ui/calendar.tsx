@@ -1,6 +1,7 @@
 import * as React from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { DayPicker } from "react-day-picker";
+import { ptBR } from "date-fns/locale";
 
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
@@ -16,59 +17,35 @@ function Calendar({
   return (
     <DayPicker
       showOutsideDays={showOutsideDays}
-      className={cn("p-4 sm:p-5 lg:p-6 bg-white rounded-lg shadow-lg border max-w-full mx-auto", className)}
+      locale={ptBR}
+      className={cn("p-3", className)}
       classNames={{
         months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
-        month: "space-y-3 sm:space-y-4",
-        caption: "flex justify-center pt-1 relative items-center mb-3 sm:mb-4",
-        caption_label: "text-lg sm:text-xl lg:text-2xl font-semibold text-gray-900",
+        month: "space-y-4",
+        caption: "flex justify-center pt-1 relative items-center",
+        caption_label: "text-sm font-medium",
         nav: "space-x-1 flex items-center",
         nav_button: cn(
           buttonVariants({ variant: "outline" }),
-          "h-8 w-8 sm:h-9 sm:w-9 lg:h-10 lg:w-10 bg-white border-gray-200 p-0 hover:bg-blue-50 hover:border-blue-300 transition-colors duration-200"
+          "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100"
         ),
-        nav_button_previous: "absolute left-1 hover:bg-blue-50",
-        nav_button_next: "absolute right-1 hover:bg-blue-50",
-        table: "w-full border-collapse space-y-1 mt-4",
-        head_row: "flex mb-2",
-        head_cell:
-          "text-gray-500 rounded-md w-9 h-9 sm:w-11 sm:h-11 lg:w-12 lg:h-12 font-medium text-sm sm:text-base lg:text-lg flex items-center justify-center",
-        row: "flex w-full mt-1",
-        cell: cn(
-          "h-9 w-9 sm:h-11 sm:w-11 lg:h-12 lg:w-12 text-center text-sm sm:text-base lg:text-lg p-0 relative",
-          "focus-within:relative focus-within:z-20",
-          "[&:has([aria-selected].day-range-end)]:rounded-r-md",
-          "[&:has([aria-selected].day-outside)]:bg-blue-50/50",
-          "[&:has([aria-selected])]:bg-blue-50",
-          "first:[&:has([aria-selected])]:rounded-l-md",
-          "last:[&:has([aria-selected])]:rounded-r-md"
-        ),
+        nav_button_previous: "absolute left-1",
+        nav_button_next: "absolute right-1",
+        table: "w-full border-collapse",
+        head_row: "grid grid-cols-7 w-full",
+        head_cell: "text-muted-foreground font-normal text-xs p-2 text-center flex items-center justify-center",
+        row: "grid grid-cols-7 w-full",
+        cell: "p-0 text-center relative",
         day: cn(
           buttonVariants({ variant: "ghost" }),
-          "h-9 w-9 sm:h-11 sm:w-11 lg:h-12 lg:w-12 p-0 font-normal aria-selected:opacity-100",
-          "hover:bg-blue-50 hover:text-blue-700 transition-colors duration-200",
-          "rounded-md text-sm sm:text-base lg:text-lg"
+          "h-9 w-full p-0 font-normal aria-selected:opacity-100 text-sm"
         ),
         day_range_end: "day-range-end",
-        day_selected: cn(
-          "bg-gradient-to-br from-blue-600 to-blue-700 text-white",
-          "hover:bg-gradient-to-br hover:from-blue-700 hover:to-blue-800",
-          "focus:bg-gradient-to-br focus:from-blue-700 focus:to-blue-800",
-          "shadow-md font-semibold"
-        ),
-        day_today: cn(
-          "bg-gradient-to-br from-orange-400 to-orange-500 text-white font-semibold",
-          "hover:from-orange-500 hover:to-orange-600",
-          "shadow-md"
-        ),
-        day_outside: cn(
-          "day-outside text-gray-300 opacity-50",
-          "aria-selected:bg-blue-50/50 aria-selected:text-gray-400 aria-selected:opacity-30"
-        ),
-        day_disabled: "text-gray-300 opacity-30 cursor-not-allowed",
-        day_range_middle: cn(
-          "aria-selected:bg-blue-50 aria-selected:text-blue-700"
-        ),
+        day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
+        day_today: "bg-accent text-accent-foreground",
+        day_outside: "day-outside text-muted-foreground opacity-50 aria-selected:bg-accent/50 aria-selected:text-muted-foreground aria-selected:opacity-30",
+        day_disabled: "text-muted-foreground opacity-50",
+        day_range_middle: "aria-selected:bg-accent aria-selected:text-accent-foreground",
         day_hidden: "invisible",
         ...classNames,
       }}

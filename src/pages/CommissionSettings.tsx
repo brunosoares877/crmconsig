@@ -61,8 +61,21 @@ const CommissionSettings = () => {
       
       if (tiersError) throw tiersError;
       
-      setRates(ratesData || []);
-      setTiers(tiersData || []);
+      // Add default values for backward compatibility
+      const processedRates = (ratesData || []).map((rate: any) => ({
+        ...rate,
+        commission_type: rate.commission_type || 'percentage',
+        fixed_value: rate.fixed_value || null
+      })) as CommissionRate[];
+
+      const processedTiers = (tiersData || []).map((tier: any) => ({
+        ...tier,
+        commission_type: tier.commission_type || 'percentage',
+        fixed_value: tier.fixed_value || null
+      })) as CommissionTier[];
+      
+      setRates(processedRates);
+      setTiers(processedTiers);
     } catch (error: any) {
       console.error("Error fetching commission data:", error);
       toast.error("Erro ao carregar dados de comissões");
@@ -189,7 +202,8 @@ const CommissionSettings = () => {
           <TableRow>
             <TableHead className="w-[180px]">Produto</TableHead>
             <TableHead>Nome</TableHead>
-            <TableHead>Percentagem</TableHead>
+            <TableHead>Tipo</TableHead>
+            <TableHead>Valor</TableHead>
             <TableHead>Ativo</TableHead>
             <TableHead className="text-right">Ações</TableHead>
           </TableRow>
@@ -197,18 +211,38 @@ const CommissionSettings = () => {
         <TableBody>
           {loading ? (
             <TableRow>
-              <TableCell colSpan={5} className="text-center py-8">Carregando taxas de comissão...</TableCell>
+              <TableCell colSpan={6} className="text-center py-8">Carregando taxas de comissão...</TableCell>
             </TableRow>
           ) : rates.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={5} className="text-center py-8">Nenhuma taxa de comissão encontrada.</TableCell>
+              <TableCell colSpan={6} className="text-center py-8">Nenhuma taxa de comissão encontrada.</TableCell>
             </TableRow>
           ) : (
             rates.map((rate) => (
               <TableRow key={rate.id} className={!rate.active ? "opacity-60" : ""}>
                 <TableCell className="font-medium">{rate.product}</TableCell>
                 <TableCell>{rate.name || "-"}</TableCell>
-                <TableCell>{rate.percentage}%</TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    {rate.commission_type === 'percentage' ? (
+                      <>
+                        <span className="text-lg">📊</span>
+                        <span className="text-sm font-medium text-blue-600">Percentual</span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-lg">💰</span>
+                        <span className="text-sm font-medium text-green-600">Valor Fixo</span>
+                      </>
+                    )}
+                  </div>
+                </TableCell>
+                <TableCell>
+                  {rate.commission_type === 'percentage' 
+                    ? `${rate.percentage}%`
+                    : `R$ ${rate.fixed_value?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}`
+                  }
+                </TableCell>
                 <TableCell>
                   <Switch
                     id={`rate-active-${rate.id}`}
@@ -285,7 +319,8 @@ const CommissionSettings = () => {
             <TableHead>Nome</TableHead>
             <TableHead>Valor Mínimo</TableHead>
             <TableHead>Valor Máximo</TableHead>
-            <TableHead>Percentagem</TableHead>
+            <TableHead>Tipo</TableHead>
+            <TableHead>Valor</TableHead>
             <TableHead>Ativo</TableHead>
             <TableHead className="text-right">Ações</TableHead>
           </TableRow>
@@ -293,11 +328,11 @@ const CommissionSettings = () => {
         <TableBody>
           {loading ? (
             <TableRow>
-              <TableCell colSpan={7} className="text-center py-8">Carregando taxas de comissão...</TableCell>
+              <TableCell colSpan={8} className="text-center py-8">Carregando taxas de comissão...</TableCell>
             </TableRow>
           ) : tiers.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={7} className="text-center py-8">Nenhuma taxa de comissão encontrada.</TableCell>
+              <TableCell colSpan={8} className="text-center py-8">Nenhuma taxa de comissão encontrada.</TableCell>
             </TableRow>
           ) : (
             tiers.map((tier) => (
@@ -310,7 +345,27 @@ const CommissionSettings = () => {
                     ? `R$ ${tier.max_amount.toLocaleString('pt-BR')}` 
                     : "Sem limite"}
                 </TableCell>
-                <TableCell>{tier.percentage}%</TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    {tier.commission_type === 'percentage' ? (
+                      <>
+                        <span className="text-lg">📊</span>
+                        <span className="text-sm font-medium text-blue-600">Percentual</span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-lg">💰</span>
+                        <span className="text-sm font-medium text-green-600">Valor Fixo</span>
+                      </>
+                    )}
+                  </div>
+                </TableCell>
+                <TableCell>
+                  {tier.commission_type === 'percentage' 
+                    ? `${tier.percentage}%`
+                    : `R$ ${tier.fixed_value?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}`
+                  }
+                </TableCell>
                 <TableCell>
                   <Switch
                     id={`tier-active-${tier.id}`}

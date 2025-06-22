@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { format, setHours, setMinutes } from "date-fns";
+import { format, setHours, setMinutes, isPast, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,10 +15,12 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { Plus, Check, Trash2, Clock, User, FileText, CalendarIcon, AlertCircle, Loader2, Edit3 } from "lucide-react";
+import { Plus, Check, Trash2, Clock, User, FileText, CalendarIcon, AlertCircle, Loader2, Edit3, ChevronDown } from "lucide-react";
 import PageLayout from "@/components/PageLayout";
 import { BankSelect } from "@/components/forms/BankSelect";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
+import { CustomCalendar } from "@/components/ui/custom-calendar";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 
 const getBankName = (bankCode: string | null | undefined) => {
   if (!bankCode) return "Não informado";
@@ -59,18 +61,19 @@ interface Reminder {
   is_completed: boolean;
   created_at: string;
   bank?: string | null;
-  priority?: string;
+  priority: string;
 }
 
 interface Lead {
   id: string;
   name: string;
   bank?: string;
+  cpf?: string;
 }
 
 type ReminderStatus = "all" | "completed" | "overdue" | "pending";
 
-const REMINDERS_PER_PAGE = 15;
+const REMINDERS_PER_PAGE = 10;
 
 const Reminders = () => {
   console.log("🚀 === LEMBRETES COMPLETO ===");
@@ -80,63 +83,73 @@ const Reminders = () => {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [currentStatus, setCurrentStatus] = useState<ReminderStatus>("all");
-  
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalReminders, setTotalReminders] = useState(0);
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+
+  // Form state
   const [title, setTitle] = useState("");
-  const [leadId, setLeadId] = useState<string>("none");
-  const [date, setDate] = useState<Date | undefined>(new Date());
+  const [leadId, setLeadId] = useState("none");
+  const [date, setDate] = useState<Date>(new Date());
   const [time, setTime] = useState("09:00");
   const [notes, setNotes] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [bank, setBank] = useState<string>("none");
-  const [priority, setPriority] = useState("media");
+  const [bank, setBank] = useState("none");
+  const [priority, setPriority] = useState<string>("media");
   const [category, setCategory] = useState("");
 
-  // Pagination states
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalReminders, setTotalReminders] = useState(0);
-  const [totalPages, setTotalPages] = useState(0);
+  // Client search state
+  const [clientSearch, setClientSearch] = useState("");
+  const [filteredLeads, setFilteredLeads] = useState<Lead[]>([]);
 
-  const fetchData = async () => {
-    try {
-      console.log("🔄 Carregando dados...");
-      setIsLoading(true);
-      
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        console.error("❌ Usuário não autenticado");
+  // Filter clients based on search
+  const handleClientSearch = (searchValue: string) => {
+    setClientSearch(searchValue);
+    if (!searchValue.trim()) {
+      setFilteredLeads(leads);
         return;
       }
 
-      // Buscar lembretes
-      const { data: remindersData, error: remindersError } = await supabase
-        .from('reminders')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('due_date', { ascending: true });
+    const filtered = leads.filter(lead => 
+      lead.name.toLowerCase().includes(searchValue.toLowerCase()) ||
+      (lead.cpf && lead.cpf.includes(searchValue.replace(/\D/g, '')))
+    );
+    setFilteredLeads(filtered);
+  };
 
-      if (remindersError) throw remindersError;
-      
-      const validReminders = Array.isArray(remindersData) ? remindersData : [];
-      console.log("📋 Lembretes carregados:", validReminders.length, "lembretes");
-      setReminders(validReminders);
+  // Format client display with name and CPF
+  const formatClientDisplay = (lead: Lead) => {
+    if (lead.cpf) {
+      const formattedCpf = lead.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+      return `${lead.name} - ${formattedCpf}`;
+    }
+    return lead.name;
+  };
 
-      // Buscar leads
+  const fetchData = async () => {
+    try {
+      setIsLoading(true);
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (userError) throw userError;
+
+      // Fetch leads with cpf
       const { data: leadsData, error: leadsError } = await supabase
-        .from('leads')
-        .select('*')
-        .eq('user_id', user.id);
+        .from("leads")
+        .select("id, name, bank, cpf")
+        .eq("user_id", userData.user.id)
+        .order("name");
 
       if (leadsError) throw leadsError;
       
-      const validLeads = Array.isArray(leadsData) ? leadsData : [];
-      setLeads(validLeads);
+      const leadsWithCpf = (leadsData || []) as Lead[];
+      setLeads(leadsWithCpf);
+      setFilteredLeads(leadsWithCpf);
       
-      filterReminders("all", validReminders);
-      
-    } catch (error) {
-      console.error("❌ Erro ao carregar dados:", error);
-      toast.error("Não foi possível carregar os dados.");
+    } catch (error: any) {
+      console.error("Erro ao buscar dados:", error);
+      toast.error(`Erro ao carregar dados: ${error.message}`);
     } finally {
       setIsLoading(false);
     }
@@ -160,6 +173,11 @@ const Reminders = () => {
       }
     }
   }, [leadId, leads]);
+
+  // Update filtered leads when leads change
+  useEffect(() => {
+    setFilteredLeads(leads);
+  }, [leads]);
 
   const filterReminders = (status: ReminderStatus, remindersToFilter = reminders) => {
     setCurrentStatus(status);
@@ -354,21 +372,12 @@ const Reminders = () => {
     }
   };
 
-  // Função para obter prioridade do lembrete (com fallback)
-  const getPriorityFromReminder = (reminder: any): string => {
-    return ('priority' in reminder && reminder.priority) ? reminder.priority : 'media';
+  // Função para obter prioridade do lembrete
+  const getPriorityFromReminder = (reminder: Reminder): string => {
+    return reminder.priority || 'media';
   };
 
-  const handleChangePriority = async (reminderId: string, currentPriority: string) => {
-    // Ciclo de prioridades: baixa -> media -> alta -> baixa
-    const priorityCycle = {
-      'baixa': 'media',
-      'media': 'alta', 
-      'alta': 'baixa'
-    };
-    
-    const newPriority = priorityCycle[currentPriority as keyof typeof priorityCycle] || 'media';
-    
+  const handleChangePriority = async (reminderId: string, newPriority: string) => {
     try {
       const { error } = await supabase
         .from("reminders")
@@ -413,44 +422,62 @@ const Reminders = () => {
     const priorityLevel = priority || "media";
     
     const baseClasses = "text-sm px-4 py-2 font-bold shadow-lg border-2 transition-all duration-200";
-    const clickableClasses = isClickable ? "cursor-pointer hover:scale-105 hover:shadow-xl active:scale-95" : "";
     
-    const onClick = isClickable && reminderId ? () => handleChangePriority(reminderId, priorityLevel) : undefined;
-    const title = isClickable ? "Clique para alterar a prioridade" : undefined;
-    
+    if (!isClickable || !reminderId) {
+      // Versão não clicável (apenas visual)
     switch (priorityLevel) {
       case "alta":
         return (
-          <Badge 
-            className={`bg-red-600 hover:bg-red-700 text-white border-red-700 ${baseClasses} ${clickableClasses}`}
-            onClick={onClick}
-            title={title}
-          >
-            🔴 PRIORIDADE ALTA {isClickable && <Edit3 className="ml-1 h-3 w-3" />}
+            <Badge className={`bg-red-600 text-white border-red-700 ${baseClasses}`}>
+              🔴 PRIORIDADE ALTA
           </Badge>
         );
       case "baixa":
         return (
-          <Badge 
-            className={`bg-green-600 hover:bg-green-700 text-white border-green-700 ${baseClasses} ${clickableClasses}`}
-            onClick={onClick}
-            title={title}
-          >
-            🟢 PRIORIDADE BAIXA {isClickable && <Edit3 className="ml-1 h-3 w-3" />}
+            <Badge className={`bg-green-600 text-white border-green-700 ${baseClasses}`}>
+              🟢 PRIORIDADE BAIXA
           </Badge>
         );
       case "media":
       default:
         return (
-          <Badge 
-            className={`bg-yellow-600 hover:bg-yellow-700 text-white border-yellow-700 ${baseClasses} ${clickableClasses}`}
-            onClick={onClick}
-            title={title}
-          >
-            🟡 PRIORIDADE MÉDIA {isClickable && <Edit3 className="ml-1 h-3 w-3" />}
+            <Badge className={`bg-yellow-600 text-white border-yellow-700 ${baseClasses}`}>
+              🟡 PRIORIDADE MÉDIA
           </Badge>
         );
     }
+    }
+
+    // Versão clicável com dropdown
+    return (
+      <Select value={priorityLevel} onValueChange={(newPriority) => handleChangePriority(reminderId, newPriority)}>
+        <SelectTrigger className={cn(
+          "w-auto h-auto p-0 border-0 bg-transparent hover:bg-transparent focus:ring-0",
+          baseClasses,
+          priorityLevel === "alta" && "bg-red-600 hover:bg-red-700 text-white",
+          priorityLevel === "media" && "bg-yellow-600 hover:bg-yellow-700 text-white",
+          priorityLevel === "baixa" && "bg-green-600 hover:bg-green-700 text-white"
+        )}>
+          <SelectValue className="flex items-center gap-2">
+            {priorityLevel === "alta" && "🔴 PRIORIDADE ALTA"}
+            {priorityLevel === "media" && "🟡 PRIORIDADE MÉDIA"}
+            {priorityLevel === "baixa" && "🟢 PRIORIDADE BAIXA"}
+            <span className="ml-2">▼</span>
+          </SelectValue>
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="alta" className="text-red-700 font-semibold">
+            🔴 PRIORIDADE ALTA
+          </SelectItem>
+          <SelectItem value="media" className="text-yellow-700 font-semibold">
+            🟡 PRIORIDADE MÉDIA
+          </SelectItem>
+          <SelectItem value="baixa" className="text-green-700 font-semibold">
+            🟢 PRIORIDADE BAIXA
+          </SelectItem>
+        </SelectContent>
+      </Select>
+    );
   };
 
   const resetForm = () => {
@@ -493,19 +520,81 @@ const Reminders = () => {
           
           <div className="space-y-3">
             <Label className="text-sm font-medium">Cliente</Label>
-            <Select value={leadId} onValueChange={setLeadId}>
-              <SelectTrigger className="h-11">
-                <SelectValue placeholder="Selecione um cliente (opcional)" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">Nenhum cliente</SelectItem>
-                {Array.isArray(leads) && leads.length > 0 ? leads.map((lead) => (
-                  <SelectItem key={lead.id} value={lead.id}>
-                    {lead.name}
-                  </SelectItem>
-                )) : null}
-              </SelectContent>
-            </Select>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  className={cn(
+                    "w-full h-11 justify-between text-left font-normal",
+                    !leadId || leadId === "none" ? "text-muted-foreground" : ""
+                  )}
+                >
+                  {leadId && leadId !== "none" 
+                    ? (() => {
+                        const selectedLead = leads.find(lead => lead.id === leadId);
+                        return selectedLead ? formatClientDisplay(selectedLead) : "Cliente não encontrado";
+                      })()
+                    : "Selecione um cliente (opcional)"
+                  }
+                  <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-full p-0" align="start">
+                <Command>
+                  <CommandInput 
+                    placeholder="Buscar por nome ou CPF..." 
+                    value={clientSearch}
+                    onValueChange={handleClientSearch}
+                  />
+                  <CommandList>
+                    <CommandEmpty>Nenhum cliente encontrado.</CommandEmpty>
+                    <CommandGroup>
+                      <CommandItem
+                        value="none"
+                        onSelect={() => {
+                          setLeadId("none");
+                          setClientSearch("");
+                        }}
+                      >
+                        <Check
+                          className={cn(
+                            "mr-2 h-4 w-4",
+                            leadId === "none" ? "opacity-100" : "opacity-0"
+                          )}
+                        />
+                        Nenhum cliente
+                      </CommandItem>
+                      {filteredLeads.map((lead) => (
+                        <CommandItem
+                          key={lead.id}
+                          value={formatClientDisplay(lead)}
+                          onSelect={() => {
+                            setLeadId(lead.id);
+                            setClientSearch("");
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              leadId === lead.id ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          <div className="flex flex-col">
+                            <span className="font-medium">{lead.name}</span>
+                            {lead.cpf && (
+                              <span className="text-sm text-gray-500">
+                                CPF: {lead.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4')}
+                              </span>
+                            )}
+                          </div>
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
           </div>
           
           <BankSelect
@@ -536,12 +625,13 @@ const Reminders = () => {
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
+                    <CustomCalendar
                       selected={date}
                       onSelect={setDate}
-                      initialFocus
-                      disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                      currentMonth={currentMonth}
+                      onMonthChange={setCurrentMonth}
+                      size="sm"
+                      className="p-4"
                     />
                   </PopoverContent>
                 </Popover>
@@ -559,18 +649,125 @@ const Reminders = () => {
             </div>
           </div>
 
-          <div className="space-y-3">
-            <Label className="text-sm font-medium">Prioridade</Label>
-            <Select value={priority} onValueChange={setPriority}>
-              <SelectTrigger className="h-11">
-                <SelectValue placeholder="Selecione a prioridade" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="baixa" className="text-green-700 font-semibold">🟢 PRIORIDADE BAIXA</SelectItem>
-                <SelectItem value="media" className="text-yellow-700 font-semibold">🟡 PRIORIDADE MÉDIA</SelectItem>
-                <SelectItem value="alta" className="text-red-700 font-semibold">🔴 PRIORIDADE ALTA</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="space-y-4">
+            <Label className="text-sm font-medium text-gray-700">Prioridade</Label>
+            <div className="grid grid-cols-3 gap-4">
+              <Button
+                type="button"
+                variant="outline" 
+                className={cn(
+                  "h-12 relative overflow-hidden flex flex-col items-center justify-center space-y-1 transition-all duration-300 transform border-2 rounded-lg",
+                  priority === "baixa" 
+                    ? "bg-gradient-to-br from-emerald-400 via-green-500 to-teal-600 text-white border-emerald-400 shadow-lg shadow-emerald-500/30 scale-105 ring-2 ring-emerald-300" 
+                    : "border-emerald-300 text-emerald-700 bg-gradient-to-br from-emerald-50 to-green-100 hover:from-emerald-100 hover:to-green-200 hover:border-emerald-400 hover:shadow-md hover:scale-102"
+                )}
+                onClick={() => setPriority("baixa")}
+              >
+                <div className={cn(
+                  "absolute inset-0 opacity-0 bg-gradient-to-r from-emerald-600 to-green-600 transition-opacity duration-300",
+                  priority === "baixa" && "opacity-100"
+                )} />
+                <div className="relative z-10 flex flex-col items-center">
+                  <div className={cn(
+                    "w-4 h-4 rounded-full flex items-center justify-center transition-transform duration-300",
+                    priority === "baixa" ? "bg-white/20 scale-110" : "bg-emerald-500"
+                  )}>
+                    <span className={cn(
+                      "text-xs transition-colors duration-300",
+                      priority === "baixa" ? "text-white" : "text-white"
+                    )}>●</span>
+                  </div>
+                  <span className={cn(
+                    "text-xs font-bold tracking-wider transition-colors duration-300",
+                    priority === "baixa" ? "text-white" : "text-emerald-700"
+                  )}>BAIXA</span>
+                </div>
+                {priority === "baixa" && (
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-pulse" />
+                )}
+              </Button>
+              
+              <Button
+                type="button"
+                variant="outline"
+                className={cn(
+                  "h-12 relative overflow-hidden flex flex-col items-center justify-center space-y-1 transition-all duration-300 transform border-2 rounded-lg",
+                  priority === "media" 
+                    ? "bg-gradient-to-br from-amber-400 via-yellow-500 to-orange-500 text-white border-amber-400 shadow-lg shadow-amber-500/30 scale-105 ring-2 ring-amber-300" 
+                    : "border-amber-300 text-amber-700 bg-gradient-to-br from-amber-50 to-yellow-100 hover:from-amber-100 hover:to-yellow-200 hover:border-amber-400 hover:shadow-md hover:scale-102"
+                )}
+                onClick={() => setPriority("media")}
+              >
+                <div className={cn(
+                  "absolute inset-0 opacity-0 bg-gradient-to-r from-amber-600 to-orange-600 transition-opacity duration-300",
+                  priority === "media" && "opacity-100"
+                )} />
+                <div className="relative z-10 flex flex-col items-center">
+                  <div className={cn(
+                    "w-4 h-4 rounded-full flex items-center justify-center transition-transform duration-300",
+                    priority === "media" ? "bg-white/20 scale-110" : "bg-amber-500"
+                  )}>
+                    <span className={cn(
+                      "text-xs transition-colors duration-300",
+                      priority === "media" ? "text-white" : "text-white"
+                    )}>●</span>
+                  </div>
+                  <span className={cn(
+                    "text-xs font-bold tracking-wider transition-colors duration-300",
+                    priority === "media" ? "text-white" : "text-amber-700"
+                  )}>MÉDIA</span>
+                </div>
+                {priority === "media" && (
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-pulse" />
+                )}
+              </Button>
+              
+              <Button
+                type="button"
+                variant="outline"
+                className={cn(
+                  "h-12 relative overflow-hidden flex flex-col items-center justify-center space-y-1 transition-all duration-300 transform border-2 rounded-lg",
+                  priority === "alta" 
+                    ? "bg-gradient-to-br from-red-400 via-rose-500 to-pink-600 text-white border-red-400 shadow-lg shadow-red-500/30 scale-105 ring-2 ring-red-300" 
+                    : "border-red-300 text-red-700 bg-gradient-to-br from-red-50 to-rose-100 hover:from-red-100 hover:to-rose-200 hover:border-red-400 hover:shadow-md hover:scale-102"
+                )}
+                onClick={() => setPriority("alta")}
+              >
+                <div className={cn(
+                  "absolute inset-0 opacity-0 bg-gradient-to-r from-red-600 to-rose-600 transition-opacity duration-300",
+                  priority === "alta" && "opacity-100"
+                )} />
+                <div className="relative z-10 flex flex-col items-center">
+                  <div className={cn(
+                    "w-4 h-4 rounded-full flex items-center justify-center transition-transform duration-300",
+                    priority === "alta" ? "bg-white/20 scale-110" : "bg-red-500"
+                  )}>
+                    <span className={cn(
+                      "text-xs transition-colors duration-300",
+                      priority === "alta" ? "text-white" : "text-white"
+                    )}>●</span>
+                  </div>
+                  <span className={cn(
+                    "text-xs font-bold tracking-wider transition-colors duration-300",
+                    priority === "alta" ? "text-white" : "text-red-700"
+                  )}>ALTA</span>
+                </div>
+                {priority === "alta" && (
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-pulse" />
+                )}
+              </Button>
+            </div>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+              <div className="flex items-start space-x-2">
+                <div className="w-5 h-5 rounded-full bg-blue-500 flex-shrink-0 flex items-center justify-center mt-0.5">
+                  <span className="text-white text-xs">i</span>
+                </div>
+                <p className="text-sm text-blue-800 leading-relaxed">
+                  <span className="font-semibold">Dica:</span> Selecione a urgência do lembrete. 
+                  <span className="font-medium text-red-600"> Alta prioridade</span> aparece primeiro na lista e tem destaque visual especial.
+                </p>
+              </div>
+            </div>
           </div>
 
           <div className="space-y-3">
@@ -665,9 +862,9 @@ const Reminders = () => {
       const { data, error } = await query;
       if (error) throw error;
 
-      const processedReminders = (data || []).map(reminder => ({
+      const processedReminders = (data || []).map((reminder: any) => ({
         ...reminder,
-        priority: reminder.priority || 'baixa'
+        priority: reminder.priority || 'media'
       }));
 
       setReminders(processedReminders);
@@ -688,6 +885,8 @@ const Reminders = () => {
   useEffect(() => {
     fetchReminders(1);
   }, []);
+
+
 
   return (
     <PageLayout

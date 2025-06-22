@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Calendar as CalendarIcon, Loader2, Plus, Trash2, Edit, Check, X, Clock, MapPin, AlertCircle } from "lucide-react";
+import { Calendar as CalendarIcon, Loader2, Plus, Trash2, Edit, Check, X, Clock, MapPin, AlertCircle, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -41,40 +41,48 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
+import { CustomCalendar } from "@/components/ui/custom-calendar";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 
 type AppointmentStatus = "all" | "completed" | "overdue" | "pending";
 
 const LeadScheduling = () => {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [filteredAppointments, setFilteredAppointments] = useState<Appointment[]>([]);
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [filteredAppointments, setFilteredAppointments] = useState<Appointment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentStatus, setCurrentStatus] = useState<AppointmentStatus>("all");
 
   // Form state
   const [title, setTitle] = useState("");
   const [leadId, setLeadId] = useState("");
-  const [date, setDate] = useState<Date | undefined>(new Date());
-  const [time, setTime] = useState("09:00");
+  const [date, setDate] = useState<Date>();
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [time, setTime] = useState("");
   const [notes, setNotes] = useState("");
   const [status, setStatus] = useState<"scheduled" | "completed" | "cancelled">("scheduled");
+
+  // Client search state
+  const [clientSearch, setClientSearch] = useState("");
+  const [filteredLeads, setFilteredLeads] = useState<Lead[]>([]);
 
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      // Fetch leads for the dropdown - only fetch id and name for efficiency
+      // Fetch leads with cpf for the dropdown
       const { data: leadsData, error: leadsError } = await supabase
         .from("leads")
-        .select("id, name")
+        .select("id, name, cpf")
         .order("name");
       
       if (leadsError) throw leadsError;
       
-      // We need to type-assert here since we're only selecting certain fields
-      setLeads(leadsData as Lead[]);
+      const leadsWithCpf = leadsData as Lead[];
+      setLeads(leadsWithCpf);
+      setFilteredLeads(leadsWithCpf);
       
       // Fetch appointments
       const { data: appointmentsData, error: appointmentsError } = await supabase
@@ -100,6 +108,35 @@ const LeadScheduling = () => {
   useEffect(() => {
     filterAppointments(currentStatus);
   }, [appointments, currentStatus]);
+
+  // Update filtered leads when leads change
+  useEffect(() => {
+    setFilteredLeads(leads);
+  }, [leads]);
+
+  // Filter clients based on search
+  const handleClientSearch = (searchValue: string) => {
+    setClientSearch(searchValue);
+    if (!searchValue.trim()) {
+      setFilteredLeads(leads);
+      return;
+    }
+    
+    const filtered = leads.filter(lead => 
+      lead.name.toLowerCase().includes(searchValue.toLowerCase()) ||
+      (lead.cpf && lead.cpf.includes(searchValue.replace(/\D/g, '')))
+    );
+    setFilteredLeads(filtered);
+  };
+
+  // Format client display with name and CPF
+  const formatClientDisplay = (lead: Lead) => {
+    if (lead.cpf) {
+      const formattedCpf = lead.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+      return `${lead.name} - ${formattedCpf}`;
+    }
+    return lead.name;
+  };
 
   const filterAppointments = (status: AppointmentStatus) => {
     setCurrentStatus(status);
@@ -686,18 +723,66 @@ const LeadScheduling = () => {
 
               <div className="grid gap-2">
                 <Label htmlFor="lead">Cliente</Label>
-                <Select value={leadId} onValueChange={setLeadId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione um cliente" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {leads.map((lead) => (
-                      <SelectItem key={lead.id} value={lead.id}>
-                        {lead.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      className={cn(
+                        "w-full justify-between text-left font-normal",
+                        !leadId ? "text-muted-foreground" : ""
+                      )}
+                    >
+                      {leadId 
+                        ? (() => {
+                            const selectedLead = leads.find(lead => lead.id === leadId);
+                            return selectedLead ? formatClientDisplay(selectedLead) : "Cliente não encontrado";
+                          })()
+                        : "Selecione um cliente"
+                      }
+                      <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-full p-0" align="start">
+                    <Command>
+                      <CommandInput 
+                        placeholder="Buscar por nome ou CPF..." 
+                        value={clientSearch}
+                        onValueChange={handleClientSearch}
+                      />
+                      <CommandList>
+                        <CommandEmpty>Nenhum cliente encontrado.</CommandEmpty>
+                        <CommandGroup>
+                          {filteredLeads.map((lead) => (
+                            <CommandItem
+                              key={lead.id}
+                              value={formatClientDisplay(lead)}
+                              onSelect={() => {
+                                setLeadId(lead.id);
+                                setClientSearch("");
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  leadId === lead.id ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              <div className="flex flex-col">
+                                <span className="font-medium">{lead.name}</span>
+                                {lead.cpf && (
+                                  <span className="text-sm text-gray-500">
+                                    CPF: {lead.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4')}
+                                  </span>
+                                )}
+                              </div>
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </div>
 
               <div className="grid gap-2">
@@ -716,11 +801,13 @@ const LeadScheduling = () => {
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0">
-                    <Calendar
-                      mode="single"
+                    <CustomCalendar
                       selected={date}
                       onSelect={setDate}
-                      locale={ptBR}
+                      currentMonth={currentMonth}
+                      onMonthChange={setCurrentMonth}
+                      size="sm"
+                      className="p-4"
                     />
                   </PopoverContent>
                 </Popover>

@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { format, parseISO, isSameDay, startOfDay } from "date-fns";
+import { format, parseISO, isSameDay, startOfDay, getDaysInMonth, startOfMonth, getDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CalendarIcon, Loader2, Check } from "lucide-react";
-import { Calendar } from "@/components/ui/calendar";
+import { CalendarIcon, Loader2, Check, ChevronLeft, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -20,6 +19,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import PageLayout from "@/components/PageLayout";
+import { CustomCalendar } from "@/components/ui/custom-calendar";
 
 interface Reminder {
   id: string;
@@ -43,6 +43,7 @@ const RemindersCalendar = () => {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedDay, setSelectedDay] = useState<Date | undefined>(new Date());
+  const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
   const [daysWithReminders, setDaysWithReminders] = useState<Date[]>([]);
 
   const fetchData = async () => {
@@ -184,7 +185,7 @@ const RemindersCalendar = () => {
       title="Calendário de Lembretes"
       subtitle="Visualize e gerencie seus lembretes por data"
     >
-      <div className="space-y-8">
+      <div className="space-y-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <Card className="lg:col-span-1">
             <CardHeader>
@@ -197,40 +198,35 @@ const RemindersCalendar = () => {
                     <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
                   </div>
                 ) : (
-                  <Calendar
-                    mode="single"
+                  <CustomCalendar
                     selected={selectedDay}
                     onSelect={setSelectedDay}
-                    className="pointer-events-auto"
-                    modifiers={{
-                      hasReminders: (date) => {
-                        return daysWithReminders.some(reminderDate => 
-                          isSameDay(startOfDay(date), startOfDay(reminderDate))
-                        );
-                      }
-                    }}
-                    modifiersClassNames={{
-                      hasReminders: "bg-purple-100 font-bold text-purple-800"
-                    }}
-                    disabled={date => {
-                      const now = new Date();
-                      return date < new Date(now.getFullYear() - 1, 0, 1);
-                    }}
+                    currentMonth={currentMonth}
+                    onMonthChange={setCurrentMonth}
+                    highlightedDates={daysWithReminders}
+                    size="md"
                   />
                 )}
               </div>
-              <div className="mt-4 flex flex-col space-y-2">
-                <div className="flex items-center space-x-2">
-                  <div className="w-4 h-4 rounded-full bg-green-500"></div>
-                  <span className="text-sm">Concluído</span>
+              <div className="mt-6 space-y-3">
+                <h4 className="text-sm font-semibold text-gray-700 mb-3">Legenda do Calendário:</h4>
+                <div className="grid grid-cols-1 gap-3">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-6 h-6 rounded-full bg-blue-600 shadow-md"></div>
+                    <span className="text-sm font-medium">Data Selecionada</span>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <div className="w-6 h-6 rounded-full bg-orange-500 shadow-md"></div>
+                    <span className="text-sm font-medium">Hoje</span>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <div className="w-6 h-6 rounded-full bg-purple-500 shadow-md"></div>
+                    <span className="text-sm font-medium">Com Lembretes</span>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-4 h-4 rounded-full bg-red-500"></div>
-                  <span className="text-sm">Atrasado</span>
+                  <div className="flex items-center space-x-3">
+                    <div className="w-6 h-6 rounded-full bg-white border border-gray-200 shadow-sm"></div>
+                    <span className="text-sm font-medium">Dias Normais</span>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-4 h-4 rounded-full bg-blue-500"></div>
-                  <span className="text-sm">Pendente</span>
                 </div>
               </div>
             </CardContent>

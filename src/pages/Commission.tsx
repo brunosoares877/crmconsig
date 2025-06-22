@@ -24,7 +24,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
+import { CustomCalendar } from "@/components/ui/custom-calendar";
 import { CalendarIcon, Search } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -48,6 +48,7 @@ const Commission = () => {
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [dateFrom, setDateFrom] = useState<Date>();
   const [dateTo, setDateTo] = useState<Date>();
+  const [currentMonth, setCurrentMonth] = useState(new Date());
   const [employees, setEmployees] = useState<string[]>([]);
   const [totalCommissionsPending, setTotalCommissionsPending] = useState(0);
   const [totalCommissionsApproved, setTotalCommissionsApproved] = useState(0);
@@ -91,19 +92,10 @@ const Commission = () => {
         .select(`
           *,
           lead:lead_id (
-            id, name, product, amount, status, employee
+            id, name, product, amount, status, employee, date, created_at
           )
         `)
         .eq("user_id", userData.user.id);
-
-      if (dateFrom) {
-        query = query.gte("created_at", dateFrom.toISOString());
-      }
-      if (dateTo) {
-        const endDate = new Date(dateTo);
-        endDate.setHours(23, 59, 59, 999);
-        query = query.lte("created_at", endDate.toISOString());
-      }
 
       if (statusFilter && statusFilter !== "all") {
         query = query.eq("status", statusFilter);
@@ -113,10 +105,12 @@ const Commission = () => {
       
       const { data, error } = await query;
       
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
       
       if (data) {
-        const processedCommissions = data.map(item => {
+        let processedCommissions = data.map(item => {
           const commission = item as any;
           
           const amount = typeof commission.amount === 'number' ? commission.amount : 0;
@@ -124,13 +118,19 @@ const Commission = () => {
           let commissionValue = 0;
           let percentageValue = 0;
           
-          if ('commission_value' in commission) {
+          // Se existir commission_value na base, usar ele
+          if (commission.commission_value !== undefined && commission.commission_value !== null) {
             commissionValue = Number(commission.commission_value) || 0;
           } else {
-            if ('percentage' in commission) {
-              percentageValue = Number(commission.percentage) || 0;
-              commissionValue = amount * (percentageValue / 100);
-            }
+            // Calcular comissão padrão (5% se não tiver configuração específica)
+            commissionValue = amount * 0.05; // 5% padrão
+          }
+          
+          // Se existir percentage na base, usar ele
+          if (commission.percentage !== undefined && commission.percentage !== null) {
+            percentageValue = Number(commission.percentage) || 0;
+          } else {
+            percentageValue = 5; // 5% padrão
           }
           
           let leadData = commission.lead;
@@ -145,27 +145,68 @@ const Commission = () => {
             ...commission,
             commission_value: commissionValue,
             percentage: percentageValue,
-            lead: leadData
+            lead: leadData,
+            employee: commission.employee || leadData?.employee || 'Não informado'
           } as CommissionType;
         });
+
+        // Filtrar por data do lead (não da comissão)
+        if (dateFrom || dateTo) {
+          processedCommissions = processedCommissions.filter(commission => {
+            if (!commission.lead) return false;
+            
+            // Usar a data personalizada do lead, ou created_at como fallback
+            const leadDateStr = commission.lead.date || commission.lead.created_at;
+            if (!leadDateStr) return false;
+            
+            // Converter para data local sem problemas de timezone
+            let leadDate;
+            if (commission.lead.date) {
+              // Se é uma data personalizada (formato YYYY-MM-DD), fazer parse manual
+              const [year, month, day] = commission.lead.date.split('-');
+              leadDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+            } else {
+              // Se é created_at, usar Date normal
+              leadDate = new Date(leadDateStr);
+            }
+            
+            if (dateFrom && leadDate < dateFrom) {
+              return false;
+            }
+            
+            if (dateTo) {
+              const endDate = new Date(dateTo);
+              endDate.setHours(23, 59, 59, 999);
+              if (leadDate > endDate) {
+                return false;
+              }
+            }
+            
+            return true;
+          });
+        }
         
         setCommissions(processedCommissions);
         
+        const inProgressTotal = processedCommissions
+          .filter(c => c.status === "in_progress")
+          .reduce((acc, curr) => acc + (Number(curr.commission_value) || 0), 0);
+
         const pendingTotal = processedCommissions
           .filter(c => c.status === "pending")
           .reduce((acc, curr) => acc + (Number(curr.commission_value) || 0), 0);
           
-        const approvedTotal = processedCommissions
-          .filter(c => c.status === "approved")
+        const completedTotal = processedCommissions
+          .filter(c => c.status === "completed" || c.status === "approved" || c.status === "paid")
           .reduce((acc, curr) => acc + (Number(curr.commission_value) || 0), 0);
           
-        const paidTotal = processedCommissions
-          .filter(c => c.status === "paid")
+        const cancelledTotal = processedCommissions
+          .filter(c => c.status === "cancelled")
           .reduce((acc, curr) => acc + (Number(curr.commission_value) || 0), 0);
         
         setTotalCommissionsPending(pendingTotal);
-        setTotalCommissionsApproved(approvedTotal);
-        setTotalCommissionsPaid(paidTotal);
+        setTotalCommissionsApproved(completedTotal);
+        setTotalCommissionsPaid(inProgressTotal);
       }
     } catch (error: any) {
       console.error("Error fetching commissions:", error);
@@ -203,23 +244,31 @@ const Commission = () => {
       String(commission.amount).toLowerCase().includes(searchTerm) ||
       String(commission.commission_value).toLowerCase().includes(searchTerm);
     
+    // Filtro por funcionário/responsável
     const matchesEmployee = employeeFilter === "" || employeeFilter === "all" || 
-      commission.employee === employeeFilter || 
-      commission.lead?.employee === employeeFilter;
+      (commission.employee && commission.employee === employeeFilter) || 
+      (commission.lead?.employee && commission.lead.employee === employeeFilter);
+    
+    // Filtro por status já é aplicado na query do banco
     
     return matchesSearch && matchesEmployee;
   });
 
   const getStatusBadge = (status: string) => {
     switch (status) {
+      case "in_progress":
+        return <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-300">Em Andamento</Badge>;
       case "pending":
         return <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-300">Pendente</Badge>;
-      case "approved":
-        return <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300">Aprovado</Badge>;
-      case "paid":
-        return <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-300">Pago</Badge>;
+      case "completed":
+        return <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300">Concluído</Badge>;
       case "cancelled":
         return <Badge variant="outline" className="bg-red-100 text-red-800 border-red-300">Cancelado</Badge>;
+      // Manter compatibilidade com status antigos
+      case "approved":
+        return <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300">Concluído</Badge>;
+      case "paid":
+        return <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300">Concluído</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -231,29 +280,211 @@ const Commission = () => {
         commission => commission.employee === employeeFilter || commission.lead?.employee === employeeFilter
       );
       
+      const inProgress = filteredByEmployee
+        .filter(c => c.status === "in_progress")
+        .reduce((acc, curr) => acc + (Number(curr.commission_value) || 0), 0);
+
       const pending = filteredByEmployee
         .filter(c => c.status === "pending")
         .reduce((acc, curr) => acc + (Number(curr.commission_value) || 0), 0);
         
-      const approved = filteredByEmployee
-        .filter(c => c.status === "approved")
+      const completed = filteredByEmployee
+        .filter(c => c.status === "completed" || c.status === "approved" || c.status === "paid")
         .reduce((acc, curr) => acc + (Number(curr.commission_value) || 0), 0);
         
-      const paid = filteredByEmployee
-        .filter(c => c.status === "paid")
+      const cancelled = filteredByEmployee
+        .filter(c => c.status === "cancelled")
         .reduce((acc, curr) => acc + (Number(curr.commission_value) || 0), 0);
       
-      return { pending, approved, paid };
+      return { inProgress, pending, completed, cancelled };
     }
     
     return { 
+      inProgress: totalCommissionsPaid, // reutilizando a variável existente
       pending: totalCommissionsPending,
-      approved: totalCommissionsApproved,
-      paid: totalCommissionsPaid
+      completed: totalCommissionsApproved, // reutilizando a variável existente
+      cancelled: 0
     };
   };
 
   const employeeTotals = calculateEmployeeTotals();
+
+  const generateCommissionsForLeads = async () => {
+    try {
+      setLoading(true);
+      
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) {
+        toast.error("Usuário não autenticado");
+        return;
+      }
+
+      // Buscar todos os leads do usuário
+      const { data: leadsData, error: leadsError } = await supabase
+        .from("leads")
+        .select("*")
+        .eq("user_id", userData.user.id)
+        .eq("status", "sold"); // Apenas leads vendidos
+
+      if (leadsError) {
+        throw leadsError;
+      }
+
+      if (!leadsData || leadsData.length === 0) {
+        toast.info("Nenhum lead vendido encontrado para gerar comissões.");
+        return;
+      }
+
+      // Buscar comissões existentes
+      const { data: existingCommissions, error: commissionsError } = await supabase
+        .from("commissions")
+        .select("lead_id")
+        .eq("user_id", userData.user.id);
+
+      if (commissionsError) {
+        throw commissionsError;
+      }
+
+      const existingLeadIds = new Set(existingCommissions?.map(c => c.lead_id) || []);
+
+      // Filtrar leads que não possuem comissões
+      const leadsWithoutCommissions = leadsData.filter(lead => !existingLeadIds.has(lead.id));
+
+      if (leadsWithoutCommissions.length === 0) {
+        toast.info("Todos os leads vendidos já possuem comissões.");
+        return;
+      }
+
+      // Buscar taxas de comissão padrão
+      const { data: commissionRates, error: ratesError } = await supabase
+        .from("commission_rates")
+        .select("*")
+        .eq("active", true);
+
+      if (ratesError) {
+        throw ratesError;
+      }
+
+      // Criar comissões para os leads
+      const commissionsToCreate = [];
+
+              for (const lead of leadsWithoutCommissions) {
+        // Buscar taxa de comissão para o produto do lead
+        const rate = commissionRates?.find(r => r.product === lead.product);
+        
+        // Converter valor corretamente removendo caracteres não numéricos
+        const cleanAmount = String(lead.amount).replace(/[^\d,]/g, '').replace(',', '.');
+        const leadAmount = parseFloat(cleanAmount) || 0;
+        
+        let commissionValue = 0;
+        let percentage = 0;
+
+        if (rate && rate.percentage) {
+          percentage = rate.percentage;
+          commissionValue = (leadAmount * rate.percentage) / 100;
+        } else {
+          // Taxa padrão de 5% se não encontrar configuração específica
+          percentage = 5;
+          commissionValue = (leadAmount * 5) / 100;
+        }
+
+        commissionsToCreate.push({
+          user_id: userData.user.id,
+          lead_id: lead.id,
+          amount: leadAmount,
+          product: lead.product,
+          status: 'in_progress',
+          payment_period: 'monthly'
+        });
+      }
+
+      if (commissionsToCreate.length > 0) {
+        const { data: createdCommissions, error: createError } = await supabase
+          .from("commissions")
+          .insert(commissionsToCreate);
+
+        if (createError) {
+          throw createError;
+        }
+
+        toast.success(`${commissionsToCreate.length} comissões geradas com sucesso!`);
+        
+        // Recarregar dados
+        fetchCommissions();
+      }
+
+    } catch (error: any) {
+      console.error("Error generating commissions:", error);
+      toast.error(`Erro ao gerar comissões: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const createTestCommissions = async () => {
+    try {
+      setLoading(true);
+      
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) {
+        toast.error("Usuário não autenticado");
+        return;
+      }
+
+      // Criar algumas comissões de teste com diferentes status
+      const testCommissions = [
+        {
+          user_id: userData.user.id,
+          lead_id: null, // Comissão sem lead vinculado
+          amount: 10000,
+          product: 'Crédito Consignado',
+          status: 'in_progress',
+          payment_period: 'monthly'
+        },
+        {
+          user_id: userData.user.id,
+          lead_id: null,
+          amount: 15000,
+          product: 'Cartão Consignado',
+          status: 'pending',
+          payment_period: 'monthly'
+        },
+        {
+          user_id: userData.user.id,
+          lead_id: null,
+          amount: 20000,
+          product: 'Crédito Pessoal',
+          status: 'completed',
+          payment_period: 'monthly'
+        },
+        {
+          user_id: userData.user.id,
+          lead_id: null,
+          amount: 8000,
+          product: 'Refinanciamento',
+          status: 'cancelled',
+          payment_period: 'monthly'
+        }
+      ];
+
+      const { data: createdCommissions, error: createError } = await supabase
+        .from("commissions")
+        .insert(testCommissions);
+
+      if (createError) {
+        throw createError;
+      }
+
+      toast.success("4 comissões de teste criadas com diferentes status!");
+      fetchCommissions();
+
+    } catch (error: any) {
+      console.error("Error creating test commissions:", error);
+      toast.error(`Erro ao criar comissões de teste: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const renderCommissionTable = () => {
     if (loading) {
@@ -270,6 +501,7 @@ const Commission = () => {
         <TableHeader>
           <TableRow>
             <TableHead>Lead</TableHead>
+            <TableHead>Data do Lead</TableHead>
             <TableHead>Produto</TableHead>
             <TableHead>Valor da Venda</TableHead>
             <TableHead>Comissão</TableHead>
@@ -281,30 +513,39 @@ const Commission = () => {
         <TableBody>
           {filteredCommissions.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={7} className="text-center py-8">
+              <TableCell colSpan={8} className="text-center py-8">
                 Nenhuma comissão encontrada com os filtros aplicados.
               </TableCell>
             </TableRow>
           ) : (
-            filteredCommissions.map((commission) => (
-              <TableRow key={commission.id}>
-                <TableCell>{commission.lead?.name}</TableCell>
-                <TableCell>{commission.product}</TableCell>
-                <TableCell>R$ {commission.amount?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</TableCell>
-                <TableCell>R$ {commission.commission_value?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</TableCell>
-                <TableCell>{commission.payment_period}</TableCell>
-                <TableCell>{getStatusBadge(commission.status!)}</TableCell>
-                <TableCell>{commission.employee || commission.lead?.employee || "-"}</TableCell>
-              </TableRow>
-            ))
+            filteredCommissions.map((commission) => {
+              // Formatear a data do lead
+              const leadDateStr = commission.lead?.date || commission.lead?.created_at;
+              const leadDateFormatted = leadDateStr ? 
+                new Date(leadDateStr).toLocaleDateString('pt-BR') : '-';
+              
+              return (
+                <TableRow key={commission.id}>
+                  <TableCell>{commission.lead?.name}</TableCell>
+                  <TableCell>{leadDateFormatted}</TableCell>
+                  <TableCell>{commission.product}</TableCell>
+                  <TableCell>R$ {commission.amount?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</TableCell>
+                  <TableCell>R$ {commission.commission_value?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</TableCell>
+                  <TableCell>{commission.payment_period}</TableCell>
+                  <TableCell>{getStatusBadge(commission.status!)}</TableCell>
+                  <TableCell>{commission.employee || commission.lead?.employee || "-"}</TableCell>
+                </TableRow>
+              );
+            })
           )}
         </TableBody>
         <TableFooter>
           <TableRow>
-            <TableCell colSpan={7}>
+            <TableCell colSpan={8}>
+              <div className="font-bold">Total Em Andamento: R$ {employeeTotals.inProgress.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
               <div className="font-bold">Total Pendente: R$ {employeeTotals.pending.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
-              <div className="font-bold">Total Aprovado: R$ {employeeTotals.approved.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
-              <div className="font-bold">Total Pago: R$ {employeeTotals.paid.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+              <div className="font-bold">Total Concluído: R$ {employeeTotals.completed.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+              <div className="font-bold">Total Cancelado: R$ {employeeTotals.cancelled.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
             </TableCell>
           </TableRow>
         </TableFooter>
@@ -352,9 +593,9 @@ const Commission = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos os status</SelectItem>
+                  <SelectItem value="in_progress">Em Andamento</SelectItem>
                   <SelectItem value="pending">Pendente</SelectItem>
-                  <SelectItem value="approved">Aprovado</SelectItem>
-                  <SelectItem value="paid">Pago</SelectItem>
+                  <SelectItem value="completed">Concluído</SelectItem>
                   <SelectItem value="cancelled">Cancelado</SelectItem>
                 </SelectContent>
               </Select>
@@ -372,9 +613,32 @@ const Commission = () => {
             </div>
           </div>
           
+          <div className="flex gap-2">
+            <Button 
+              onClick={generateCommissionsForLeads} 
+              variant="default" 
+              disabled={loading}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {loading ? "Gerando..." : "🎯 Gerar Comissões dos Leads"}
+            </Button>
+            
+            <Button 
+              onClick={createTestCommissions} 
+              variant="outline" 
+              disabled={loading}
+              className="bg-blue-50 border-blue-300 text-blue-700 hover:bg-blue-100"
+            >
+              🧪 Criar Comissões de Teste
+            </Button>
+          </div>
+          
           <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <label className="block text-sm font-medium mb-2">Data Inicial</label>
+              <label className="block text-sm font-medium mb-2">
+                Data Inicial do Lead
+                <span className="text-xs text-gray-500 block">Filtra pela data do lead, não da comissão</span>
+              </label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
@@ -389,19 +653,23 @@ const Commission = () => {
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
+                  <CustomCalendar
                     selected={dateFrom}
                     onSelect={setDateFrom}
-                    initialFocus
-                    className={cn("p-3 pointer-events-auto")}
+                    currentMonth={currentMonth}
+                    onMonthChange={setCurrentMonth}
+                    size="sm"
+                    className="p-4"
                   />
                 </PopoverContent>
               </Popover>
             </div>
             
             <div>
-              <label className="block text-sm font-medium mb-2">Data Final</label>
+              <label className="block text-sm font-medium mb-2">
+                Data Final do Lead
+                <span className="text-xs text-gray-500 block">Filtra pela data do lead, não da comissão</span>
+              </label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
@@ -416,12 +684,13 @@ const Commission = () => {
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
+                  <CustomCalendar
                     selected={dateTo}
                     onSelect={setDateTo}
-                    initialFocus
-                    className={cn("p-3 pointer-events-auto")}
+                    currentMonth={currentMonth}
+                    onMonthChange={setCurrentMonth}
+                    size="sm"
+                    className="p-4"
                   />
                 </PopoverContent>
               </Popover>

@@ -3,9 +3,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { MoreHorizontal, Phone, Mail, DollarSign, Building, User, Edit, Trash2, Calendar, FileText, Tag, CheckCircle, Clock, AlertTriangle, X, Building2, Copy } from "lucide-react";
+import { MoreHorizontal, Phone, Mail, DollarSign, Building, User, Edit, Trash2, Calendar, FileText, Tag, CheckCircle, Clock, AlertTriangle, X, Building2, Copy, Calculator } from "lucide-react";
 import { Lead } from "@/types/models";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -15,6 +15,7 @@ import DocumentUpload from "./leads/DocumentUpload";
 import WhatsAppButton from "./WhatsAppButton";
 import { cn } from "@/lib/utils";
 import { getBankName } from "@/utils/bankUtils";
+import { formatLeadDate } from "@/utils/dateUtils";
 
 interface LeadTag {
   tag_id: string;
@@ -38,6 +39,7 @@ const statusColors = {
   pendente: "bg-amber-100 text-amber-800",
   negociando: "bg-orange-100 text-orange-800",
   concluido: "bg-green-100 text-green-800",
+  sold: "bg-green-100 text-green-800",
   cancelado: "bg-red-100 text-red-800"
 };
 
@@ -48,6 +50,7 @@ const statusLabels = {
   pendente: "Pendente",
   negociando: "Em Andamento",
   concluido: "Concluído",
+  sold: "Concluído",
   cancelado: "Cancelado"
 };
 
@@ -81,6 +84,12 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete }) => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [tags, setTags] = useState<LeadTag[]>([]);
   const [tagsLoading, setTagsLoading] = useState(true);
+  const [isCommissionDialogOpen, setIsCommissionDialogOpen] = useState(false);
+  const [calculatedCommission, setCalculatedCommission] = useState<{
+    value: number;
+    percentage: number;
+    amount: number;
+  } | null>(null);
 
   useEffect(() => {
     // Buscar as tags atribuídas ao lead
@@ -132,6 +141,7 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete }) => {
       const { selectedTags, ...leadData } = values;
 
       console.log("Updating lead with data:", leadData);
+      console.log("Date field in update:", leadData.date);
       console.log("Selected tags:", selectedTags);
 
       // Update the lead data (without selectedTags)
@@ -142,7 +152,12 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete }) => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Database update error:", error);
+        throw error;
+      }
+
+      console.log("Lead updated successfully:", data);
 
       // Handle tag assignments separately
       if (selectedTags) {
@@ -173,11 +188,7 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete }) => {
 
       const updatedLead = {
         ...data,
-        createdAt: new Date(data.created_at).toLocaleDateString('pt-BR', {
-          day: '2-digit',
-          month: 'short',
-          year: 'numeric'
-        })
+        createdAt: (data as any).date ? formatLeadDate((data as any).date) : formatLeadDate(data.created_at)
       } as Lead;
 
       onUpdate(updatedLead);
@@ -253,6 +264,87 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete }) => {
   };
 
   const handleStatusChange = async (newStatus: string) => {
+    // Se o status for "concluido" e o lead tiver valor, mostrar modal de comissão
+    if (newStatus === 'concluido' && lead.amount) {
+      // Mapear "concluido" para "sold" no banco de dados
+      await calculateAndShowCommission('sold');
+      return;
+    }
+
+    // Para outros status, atualizar normalmente
+    await updateLeadStatus(newStatus);
+  };
+
+  const calculateAndShowCommission = async (newStatus: string) => {
+    setIsUpdating(true);
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) {
+        toast.error("Usuário não autenticado");
+        return;
+      }
+
+      // Verificar se já existe comissão para este lead
+      const { data: existingCommission } = await supabase
+        .from("commissions")
+        .select("id")
+        .eq("lead_id", lead.id)
+        .eq("user_id", userData.user.id)
+        .single();
+
+      if (existingCommission) {
+        // Se já existe comissão, apenas atualizar o status sem mostrar modal
+        await updateLeadStatus(newStatus);
+        toast.info("Lead já possui comissão gerada anteriormente.");
+        return;
+      }
+
+      // Buscar taxa de comissão configurada para o produto
+      const { data: commissionRates } = await supabase
+        .from("commission_rates")
+        .select("percentage")
+        .eq("product", lead.product)
+        .eq("active", true)
+        .single();
+
+      // Converter valor corretamente removendo caracteres não numéricos
+      const cleanAmount = lead.amount.replace(/[^\d,]/g, '').replace(',', '.');
+      const leadAmount = parseFloat(cleanAmount) || 0;
+      
+      let commissionValue = 0;
+      let percentage = 5; // Padrão
+
+      if (commissionRates?.percentage) {
+        percentage = commissionRates.percentage;
+        commissionValue = (leadAmount * percentage) / 100;
+      } else {
+        // Taxa padrão de 5%
+        commissionValue = (leadAmount * 5) / 100;
+      }
+
+      setCalculatedCommission({
+        value: commissionValue,
+        percentage: percentage,
+        amount: leadAmount
+      });
+
+      // Primeiro atualizar o status do lead
+      await updateLeadStatus(newStatus);
+      
+      // Depois mostrar o modal de comissão
+      setIsCommissionDialogOpen(true);
+
+    } catch (error: any) {
+      console.error("Error calculating commission:", error);
+      toast.error(`Erro ao calcular comissão: ${error.message}`);
+      // Em caso de erro, atualizar o status mesmo assim
+      await updateLeadStatus(newStatus);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const updateLeadStatus = async (newStatus: string) => {
     setIsUpdating(true);
     try {
       const { data, error } = await supabase
@@ -266,18 +358,52 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete }) => {
 
       const updatedLead = {
         ...data,
-        createdAt: new Date(data.created_at).toLocaleDateString('pt-BR', {
-          day: '2-digit',
-          month: 'short',
-          year: 'numeric'
-        })
+        createdAt: (data as any).date ? formatLeadDate((data as any).date) : formatLeadDate(data.created_at)
       } as Lead;
 
       onUpdate(updatedLead);
-      toast.success(`Lead marcado como ${statusLabels[newStatus as keyof typeof statusLabels]}!`);
+      const statusLabel = statusLabels[newStatus as keyof typeof statusLabels] || newStatus;
+      toast.success(`Lead marcado como ${statusLabel}!`);
     } catch (error: any) {
       console.error("Error updating lead status:", error);
       toast.error(`Erro ao atualizar status: ${error.message}`);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleCreateCommission = async () => {
+    if (!calculatedCommission) return;
+
+    setIsUpdating(true);
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) {
+        toast.error("Usuário não autenticado");
+        return;
+      }
+
+      // Inserir apenas campos básicos enquanto cache do Supabase atualiza
+      const { error } = await supabase
+        .from("commissions")
+        .insert({
+          user_id: userData.user.id,
+          lead_id: lead.id,
+          amount: calculatedCommission.amount,
+          product: lead.product,
+          status: 'in_progress',
+          payment_period: 'monthly'
+        });
+
+      if (error) throw error;
+
+      toast.success(`Comissão de R$ ${calculatedCommission.value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} gerada com sucesso!`);
+      setIsCommissionDialogOpen(false);
+      setCalculatedCommission(null);
+
+    } catch (error: any) {
+      console.error("Error creating commission:", error);
+      toast.error(`Erro ao gerar comissão: ${error.message}`);
     } finally {
       setIsUpdating(false);
     }
@@ -567,6 +693,80 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete }) => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Modal de Geração de Comissão */}
+      <Dialog open={isCommissionDialogOpen} onOpenChange={setIsCommissionDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Calculator className="h-5 w-5 text-green-600" />
+              Gerar Comissão?
+            </DialogTitle>
+            <DialogDescription>
+              O lead foi marcado como <strong>Concluído</strong>. Deseja gerar a comissão automaticamente?
+            </DialogDescription>
+          </DialogHeader>
+          
+          {calculatedCommission && (
+            <div className="space-y-4 py-4">
+              <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium text-gray-600">Cliente:</span>
+                  <span className="font-semibold">{lead.name}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium text-gray-600">Produto:</span>
+                  <span>{lead.product}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium text-gray-600">Valor da Venda:</span>
+                  <span className="font-semibold text-green-600">
+                    {calculatedCommission.amount.toLocaleString('pt-BR', {
+                      style: 'currency',
+                      currency: 'BRL'
+                    })}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium text-gray-600">Percentual:</span>
+                  <span className="font-semibold text-blue-600">{calculatedCommission.percentage}%</span>
+                </div>
+                <div className="border-t pt-2 mt-2">
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium text-gray-800">Comissão:</span>
+                    <span className="text-lg font-bold text-green-600">
+                      {calculatedCommission.value.toLocaleString('pt-BR', {
+                        style: 'currency',
+                        currency: 'BRL'
+                      })}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setIsCommissionDialogOpen(false);
+                setCalculatedCommission(null);
+              }}
+              disabled={isUpdating}
+            >
+              Agora Não
+            </Button>
+            <Button 
+              onClick={handleCreateCommission}
+              disabled={isUpdating}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {isUpdating ? "Gerando..." : "✓ Gerar Comissão"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };

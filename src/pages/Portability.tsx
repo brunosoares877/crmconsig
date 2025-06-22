@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Calendar } from "@/components/ui/calendar";
+import { CustomCalendar } from "@/components/ui/custom-calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -48,6 +48,7 @@ const Portability = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingReminder, setEditingReminder] = useState<Reminder | null>(null);
   const [activeTab, setActiveTab] = useState("all");
+  const [currentMonth, setCurrentMonth] = useState(new Date());
 
   const initialFormState = {
     title: "",
@@ -387,7 +388,14 @@ const Portability = () => {
                       </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0">
-                      <Calendar mode="single" selected={formData.due_date} onSelect={(date) => handleInputChange('due_date', date)} initialFocus />
+                      <CustomCalendar 
+                        selected={formData.due_date} 
+                        onSelect={(date) => handleInputChange('due_date', date)} 
+                        currentMonth={currentMonth}
+                        onMonthChange={setCurrentMonth}
+                        size="sm"
+                        className="p-4"
+                      />
                   </PopoverContent>
               </Popover>
             </div>

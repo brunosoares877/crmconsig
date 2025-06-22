@@ -37,9 +37,13 @@ CREATE TABLE IF NOT EXISTS leads (
     commission_amount DECIMAL(10,2),
     status TEXT DEFAULT 'novo' CHECK (status IN ('novo', 'qualificado', 'convertido', 'perdido')),
     notes TEXT,
+    date DATE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- Garantir que a coluna date existe em tabelas existentes
+ALTER TABLE public.leads ADD COLUMN IF NOT EXISTS date DATE;
 
 -- Tabela REMINDERS (Lembretes) - CORRIGIDA
 CREATE TABLE IF NOT EXISTS reminders (

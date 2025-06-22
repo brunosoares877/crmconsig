@@ -11,6 +11,7 @@ import MetricsCard from "@/components/dashboard/MetricsCard";
 import ProductionCard from "@/components/dashboard/ProductionCard";
 import EmployeePerformanceCard from "@/components/dashboard/EmployeePerformanceCard";
 import LatestLeadsCard from "@/components/dashboard/LatestLeadsCard";
+import { formatLeadDate } from "@/utils/dateUtils";
 
 const Dashboard = () => {
   const [metrics, setMetrics] = useState({
@@ -311,20 +312,17 @@ const Dashboard = () => {
         const {
           data: latestLeadsData,
           error: latestLeadsError
-        } = await supabase.from('leads').select('*').order('created_at', {
-          ascending: false
-        }).limit(6);
+        } = await supabase.from('leads').select('*')
+          .order('date', { ascending: false })
+          .order('created_at', { ascending: false })
+          .limit(6);
         if (latestLeadsError) {
           console.error('Error fetching latest leads:', latestLeadsError);
           toast.error("Erro ao carregar leads recentes");
         } else {
           const formattedLatestLeads = latestLeadsData?.map(lead => ({
             ...lead,
-            createdAt: new Date(lead.created_at).toLocaleDateString('pt-BR', {
-              day: '2-digit',
-              month: 'short',
-              year: 'numeric'
-            })
+            createdAt: formatLeadDate((lead as any).date ? (lead as any).date : lead.created_at)
           })) || [];
           console.log("Latest leads:", formattedLatestLeads);
           setLatestLeads(formattedLatestLeads);

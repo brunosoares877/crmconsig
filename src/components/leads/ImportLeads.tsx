@@ -96,6 +96,9 @@ const ImportLeads = ({
         employee: lead.employee,
         status: "novo",
         user_id: session.user.id,
+        date: countInCurrentMonth 
+          ? new Date().toISOString().slice(0, 10)
+          : new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1).toISOString().slice(0, 10),
         created_at: createdAt,
         updated_at: new Date().toISOString()
       }));
