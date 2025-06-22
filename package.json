@@ -17,7 +17,8 @@
     "preview": "vite preview",
     "go-live": "vite",
     "deploy": "npm run build:prod && vercel --prod",
-    "deploy:preview": "npm run build && vercel"
+    "deploy:preview": "npm run build && vercel",
+    "deploy:netlify": "npm run build && netlify deploy --prod --dir=dist"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
