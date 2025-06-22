@@ -16,26 +16,26 @@ function Calendar({
   return (
     <DayPicker
       showOutsideDays={showOutsideDays}
-      className={cn("p-4 bg-white rounded-lg shadow-lg border", className)}
+      className={cn("p-3 sm:p-4 bg-white rounded-lg shadow-lg border max-w-full", className)}
       classNames={{
         months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
-        month: "space-y-4",
-        caption: "flex justify-center pt-1 relative items-center mb-4",
-        caption_label: "text-lg font-semibold text-gray-900",
+        month: "space-y-3 sm:space-y-4",
+        caption: "flex justify-center pt-1 relative items-center mb-3 sm:mb-4",
+        caption_label: "text-base sm:text-lg font-semibold text-gray-900",
         nav: "space-x-1 flex items-center",
         nav_button: cn(
           buttonVariants({ variant: "outline" }),
-          "h-8 w-8 bg-white border-gray-200 p-0 hover:bg-blue-50 hover:border-blue-300 transition-colors duration-200"
+          "h-7 w-7 sm:h-8 sm:w-8 bg-white border-gray-200 p-0 hover:bg-blue-50 hover:border-blue-300 transition-colors duration-200"
         ),
         nav_button_previous: "absolute left-1 hover:bg-blue-50",
         nav_button_next: "absolute right-1 hover:bg-blue-50",
-        table: "w-full border-collapse space-y-1 mt-4",
-        head_row: "flex mb-2",
+        table: "w-full border-collapse space-y-1 mt-3 sm:mt-4",
+        head_row: "flex mb-1 sm:mb-2",
         head_cell:
-          "text-gray-500 rounded-md w-10 h-10 font-medium text-sm flex items-center justify-center",
+          "text-gray-500 rounded-md w-8 h-8 sm:w-10 sm:h-10 font-medium text-xs sm:text-sm flex items-center justify-center",
         row: "flex w-full mt-1",
         cell: cn(
-          "h-10 w-10 text-center text-sm p-0 relative",
+          "h-8 w-8 sm:h-10 sm:w-10 text-center text-xs sm:text-sm p-0 relative",
           "focus-within:relative focus-within:z-20",
           "[&:has([aria-selected].day-range-end)]:rounded-r-md",
           "[&:has([aria-selected].day-outside)]:bg-blue-50/50",
@@ -45,9 +45,9 @@ function Calendar({
         ),
         day: cn(
           buttonVariants({ variant: "ghost" }),
-          "h-10 w-10 p-0 font-normal aria-selected:opacity-100",
+          "h-8 w-8 sm:h-10 sm:w-10 p-0 font-normal aria-selected:opacity-100",
           "hover:bg-blue-50 hover:text-blue-700 transition-colors duration-200",
-          "rounded-md"
+          "rounded-md text-xs sm:text-sm"
         ),
         day_range_end: "day-range-end",
         day_selected: cn(
