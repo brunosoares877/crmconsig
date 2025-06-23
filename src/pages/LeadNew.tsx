@@ -19,6 +19,10 @@ const LeadNew = () => {
 
       const { selectedTags, ...leadData } = values;
 
+      // Log para debug
+      console.log("Inserting lead data:", leadData);
+      console.log("Payment period value:", leadData.payment_period, typeof leadData.payment_period);
+
       const { data: leadInsertData, error: leadError } = await supabase
         .from("leads")
         .insert({
@@ -28,7 +32,10 @@ const LeadNew = () => {
         .select()
         .single();
 
-      if (leadError) throw leadError;
+      if (leadError) {
+        console.error("Database error:", leadError);
+        throw leadError;
+      }
 
       // Save tag assignments if any tags were selected
       if (selectedTags && selectedTags.length > 0) {
@@ -51,6 +58,7 @@ const LeadNew = () => {
       toast.success("Lead cadastrado com sucesso!");
       navigate("/leads");
     } catch (error: any) {
+      console.error("Error creating lead:", error);
       toast.error(`Erro ao cadastrar lead: ${error.message}`);
     } finally {
       setIsLoading(false);

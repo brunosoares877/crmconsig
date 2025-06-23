@@ -52,7 +52,7 @@ const EmployeeSelect = ({ value, onValueChange, disabled, placeholder = "Selecio
       </SelectTrigger>
       <SelectContent>
         {employees.length === 0 ? (
-          <SelectItem value="" disabled>
+          <SelectItem value="none" disabled>
             Nenhum funcionário cadastrado
           </SelectItem>
         ) : (

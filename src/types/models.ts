@@ -20,6 +20,9 @@ export interface CommissionTier {
   name: string | null; // Ensure this property exists
   min_amount: number;
   max_amount: number;
+  min_period?: number; // Período mínimo em parcelas
+  max_period?: number; // Período máximo em parcelas
+  tier_type?: 'value' | 'period'; // Tipo da faixa: por valor ou por prazo
   percentage: number;
   fixed_value?: number; // Valor fixo da comissão
   commission_type: 'percentage' | 'fixed'; // Tipo de comissão: percentual ou fixa
@@ -42,6 +45,7 @@ export interface Lead {
   source?: string;
   notes?: string;
   amount?: string;
+  payment_period?: number; // Número de parcelas (6 a 96)
   date?: string; // Data personalizada do lead
   createdAt: string;
   updatedAt?: string;

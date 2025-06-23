@@ -26,6 +26,7 @@ const formSchema = z.object({
   bank: z.string().optional(),
   product: z.string().optional(),
   amount: z.string().optional(),
+  payment_period: z.string().optional(),
   employee: z.string().optional(),
   notes: z.string().optional(),
   benefit_type: z.string().optional(),
@@ -37,15 +38,18 @@ const formSchema = z.object({
 
 type FormData = z.infer<typeof formSchema>;
 
+// Tipo para dados processados com payment_period como number
+type ProcessedFormData = Omit<FormData, 'payment_period'> & {
+  payment_period?: number;
+};
+
 interface LeadFormProps {
-  onSubmit: (data: FormData) => void;
+  onSubmit: (data: ProcessedFormData) => void;
   onCancel: () => void;
   initialData?: Partial<FormData>;
   isEditing?: boolean;
   isLoading?: boolean;
 }
-
-
 
 // Função para formatar CPF
 function formatCPF(value: string) {
@@ -99,6 +103,7 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
       bank: "",
       product: "",
       amount: "",
+      payment_period: "",
       employee: "",
       notes: "",
       benefit_type: "",
@@ -111,7 +116,7 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
 
   const representativeMode = watch("representative_mode");
 
-    // Effect para carregar dados iniciais quando estiver editando
+  // Effect para carregar dados iniciais quando estiver editando
   useEffect(() => {
     if (isEditing && initialData && isInitialized) {
       console.log("Loading initial data for editing:", initialData);
@@ -127,6 +132,7 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
         bank: initialData?.bank || "",
         product: initialData?.product || "",
         amount: initialData?.amount || "",
+        payment_period: initialData?.payment_period?.toString() || "",
         employee: initialData?.employee || "",
         notes: initialData?.notes || "",
         benefit_type: initialData?.benefit_type || "",
@@ -146,8 +152,6 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
     setIsInitialized(true);
   }, []);
 
-
-
   const onFormSubmit = (data: FormData) => {
     console.log("Form submission started with values:", data);
     console.log("Date field being submitted:", data.date);
@@ -158,9 +162,22 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
       return;
     }
 
-    console.log("Calling onSubmit with data:", data);
-    console.log("Final date field:", data.date);
-    onSubmit(data);
+    // Converter payment_period de string para integer ou null
+    const processedData = {
+      ...data,
+      payment_period: data.payment_period && data.payment_period !== "" && data.payment_period !== "none" 
+        ? parseInt(data.payment_period) 
+        : undefined // undefined será removido pelo spread, evitando enviar para o banco
+    };
+
+    console.log("Original data:", data);
+    console.log("Processed data for submission:", processedData);
+    console.log("Payment period converted:", {
+      original: data.payment_period,
+      converted: processedData.payment_period
+    });
+
+    onSubmit(processedData);
   };
 
   if (!user) {
@@ -238,6 +255,23 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
         </div>
 
         <div>
+          <Label htmlFor="payment_period">Prazo de Pagamento</Label>
+          <Select onValueChange={(value) => setValue("payment_period", value === "none" ? "" : value)} value={watch("payment_period") || "none"}>
+            <SelectTrigger>
+              <SelectValue placeholder="Selecione o prazo" />
+            </SelectTrigger>
+            <SelectContent className="max-h-60">
+              <SelectItem value="none">Não informado</SelectItem>
+              {Array.from({ length: 91 }, (_, i) => i + 6).map((months) => (
+                <SelectItem key={months} value={months.toString()}>
+                  {months}x ({months} parcelas)
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div>
           <Label htmlFor="employee">Funcionário</Label>
           <EmployeeSelect
             value={watch("employee") || ""}
@@ -283,8 +317,6 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
           </div>
         </div>
       )}
-
-
 
       <div>
         <Label htmlFor="notes">Observações</Label>

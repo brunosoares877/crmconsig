@@ -17,11 +17,16 @@ interface VariableRateFormProps {
 const VariableRateForm: React.FC<VariableRateFormProps> = ({ onCancel, onSave, initialData }) => {
   const [product, setProduct] = useState(initialData?.product || "");
   const [name, setName] = useState(initialData?.name || "");
+  const [tierType, setTierType] = useState<'value' | 'period'>(
+    initialData?.tier_type || 'value'
+  );
   const [commissionType, setCommissionType] = useState<'percentage' | 'fixed'>(
     initialData?.commission_type || 'percentage'
   );
   const [minAmount, setMinAmount] = useState(initialData?.min_amount?.toString() || "");
   const [maxAmount, setMaxAmount] = useState(initialData?.max_amount?.toString() || "");
+  const [minPeriod, setMinPeriod] = useState(initialData?.min_period?.toString() || "");
+  const [maxPeriod, setMaxPeriod] = useState(initialData?.max_period?.toString() || "");
   const [percentage, setPercentage] = useState(initialData?.percentage?.toString() || "");
   const [fixedValue, setFixedValue] = useState(initialData?.fixed_value?.toString() || "");
   const [loading, setLoading] = useState(false);
@@ -29,8 +34,18 @@ const VariableRateForm: React.FC<VariableRateFormProps> = ({ onCancel, onSave, i
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!product || !name || !minAmount) {
-      toast.error("Produto, nome e valor mínimo são obrigatórios");
+    if (!product || !name) {
+      toast.error("Produto e nome são obrigatórios");
+      return;
+    }
+
+    if (tierType === 'value' && !minAmount) {
+      toast.error("Valor mínimo é obrigatório para faixa por valor");
+      return;
+    }
+
+    if (tierType === 'period' && !minPeriod) {
+      toast.error("Período mínimo é obrigatório para faixa por prazo");
       return;
     }
 
@@ -52,9 +67,12 @@ const VariableRateForm: React.FC<VariableRateFormProps> = ({ onCancel, onSave, i
       const tierData = {
         product,
         name,
+        tier_type: tierType,
         commission_type: commissionType,
-        min_amount: parseFloat(minAmount),
-        max_amount: maxAmount ? parseFloat(maxAmount) : null,
+        min_amount: tierType === 'value' ? parseFloat(minAmount) : 0,
+        max_amount: tierType === 'value' && maxAmount ? parseFloat(maxAmount) : null,
+        min_period: tierType === 'period' ? parseInt(minPeriod) : null,
+        max_period: tierType === 'period' && maxPeriod ? parseInt(maxPeriod) : null,
         percentage: commissionType === 'percentage' ? parseFloat(percentage) : 0,
         fixed_value: commissionType === 'fixed' ? parseFloat(fixedValue) : null,
         user_id: user.id,
@@ -117,36 +135,105 @@ const VariableRateForm: React.FC<VariableRateFormProps> = ({ onCancel, onSave, i
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="min-amount">Valor Mínimo (R$) *</Label>
-          <Input
-            id="min-amount"
-            type="number"
-            step="0.01"
-            min="0"
-            value={minAmount}
-            onChange={(e) => setMinAmount(e.target.value)}
-            placeholder="Ex: 1000.00"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="max-amount">Valor Máximo (R$)</Label>
-          <Input
-            id="max-amount"
-            type="number"
-            step="0.01"
-            min="0"
-            value={maxAmount}
-            onChange={(e) => setMaxAmount(e.target.value)}
-            placeholder="Ex: 5000.00 (vazio = sem limite)"
-          />
-          <p className="text-sm text-gray-500">
-            Deixe vazio para indicar "sem limite máximo"
-          </p>
-        </div>
+      <div className="space-y-4">
+        <Label>Tipo de Faixa *</Label>
+        <RadioGroup 
+          value={tierType} 
+          onValueChange={(value: 'value' | 'period') => setTierType(value)}
+          className="flex flex-col space-y-3"
+        >
+          <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-gray-50">
+            <RadioGroupItem value="value" id="tier-value" />
+            <div className="flex-1">
+              <Label htmlFor="tier-value" className="font-medium cursor-pointer">
+                💰 Por Valor da Venda
+              </Label>
+              <p className="text-sm text-gray-500">
+                Comissão baseada na faixa do valor da venda (ex: R$ 1.000 a R$ 5.000)
+              </p>
+            </div>
+          </div>
+          
+          <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-gray-50">
+            <RadioGroupItem value="period" id="tier-period" />
+            <div className="flex-1">
+              <Label htmlFor="tier-period" className="font-medium cursor-pointer">
+                📅 Por Prazo de Pagamento
+              </Label>
+              <p className="text-sm text-gray-500">
+                Comissão baseada no número de parcelas (ex: 8x a 12x, 13x a 24x)
+              </p>
+            </div>
+          </div>
+        </RadioGroup>
       </div>
+
+      {tierType === 'value' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="min-amount">Valor Mínimo (R$) *</Label>
+            <Input
+              id="min-amount"
+              type="number"
+              step="0.01"
+              min="0"
+              value={minAmount}
+              onChange={(e) => setMinAmount(e.target.value)}
+              placeholder="Ex: 1000.00"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="max-amount">Valor Máximo (R$)</Label>
+            <Input
+              id="max-amount"
+              type="number"
+              step="0.01"
+              min="0"
+              value={maxAmount}
+              onChange={(e) => setMaxAmount(e.target.value)}
+              placeholder="Ex: 5000.00 (vazio = sem limite)"
+            />
+            <p className="text-sm text-gray-500">
+              Deixe vazio para indicar "sem limite máximo"
+            </p>
+          </div>
+        </div>
+      )}
+
+      {tierType === 'period' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="min-period">Período Mínimo (parcelas) *</Label>
+            <Input
+              id="min-period"
+              type="number"
+              min="1"
+              value={minPeriod}
+              onChange={(e) => setMinPeriod(e.target.value)}
+              placeholder="Ex: 8"
+            />
+            <p className="text-sm text-gray-500">
+              Número mínimo de parcelas (ex: 8 para 8x)
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="max-period">Período Máximo (parcelas)</Label>
+            <Input
+              id="max-period"
+              type="number"
+              min="1"
+              value={maxPeriod}
+              onChange={(e) => setMaxPeriod(e.target.value)}
+              placeholder="Ex: 12 (vazio = sem limite)"
+            />
+            <p className="text-sm text-gray-500">
+              Número máximo de parcelas (deixe vazio para sem limite)
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="space-y-4">
         <Label>Tipo de Comissão *</Label>

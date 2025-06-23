@@ -25,16 +25,33 @@ const AddLeadButton = ({ onLeadAdded }: { onLeadAdded?: () => void }) => {
 
       const { selectedTags, ...leadData } = values;
 
+      // Processar payment_period para evitar erro de integer
+      const processedLeadData = {
+        ...leadData,
+        payment_period: leadData.payment_period && leadData.payment_period !== "" && leadData.payment_period !== "none" 
+          ? parseInt(leadData.payment_period) 
+          : undefined
+      };
+
+      console.log("AddLeadButton - Lead data to insert:", processedLeadData);
+      console.log("AddLeadButton - Payment period:", {
+        original: leadData.payment_period,
+        processed: processedLeadData.payment_period
+      });
+
       const { data: leadInsertData, error: leadError } = await supabase
         .from("leads")
         .insert({
-          ...leadData,
+          ...processedLeadData,
           user_id: userData.user.id,
         })
         .select()
         .single();
 
-      if (leadError) throw leadError;
+      if (leadError) {
+        console.error("AddLeadButton - Database error:", leadError);
+        throw leadError;
+      }
 
       // Save tag assignments if any tags were selected
       if (selectedTags && selectedTags.length > 0) {
@@ -58,6 +75,7 @@ const AddLeadButton = ({ onLeadAdded }: { onLeadAdded?: () => void }) => {
       setIsOpen(false);
       if (onLeadAdded) onLeadAdded();
     } catch (error: any) {
+      console.error("AddLeadButton - Error creating lead:", error);
       toast.error(`Erro ao cadastrar lead: ${error.message}`);
     } finally {
       setIsLoading(false);

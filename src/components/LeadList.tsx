@@ -325,14 +325,26 @@ const LeadList: React.FC<LeadListProps> = ({
 
       const { selectedTags, ...leadData } = values;
       
-      // Debug: verificar se o campo date está presente
-      console.log("Lead data to insert:", leadData);
-      console.log("Date field:", leadData.date);
+      // Processar payment_period para evitar erro de integer
+      const processedLeadData = {
+        ...leadData,
+        payment_period: leadData.payment_period && leadData.payment_period !== "" && leadData.payment_period !== "none" 
+          ? parseInt(leadData.payment_period) 
+          : undefined
+      };
+      
+      // Debug: verificar se o campo está sendo processado corretamente
+      console.log("Lead data to insert:", processedLeadData);
+      console.log("Payment period conversion:", {
+        original: leadData.payment_period,
+        processed: processedLeadData.payment_period,
+        type: typeof processedLeadData.payment_period
+      });
 
       const { data: leadInsertData, error: leadError } = await supabase
         .from("leads")
         .insert({
-          ...leadData,
+          ...processedLeadData,
           user_id: userData.user.id,
         })
         .select()
@@ -375,7 +387,7 @@ const LeadList: React.FC<LeadListProps> = ({
       }
       
     } catch (error: any) {
-      console.error("Error saving lead:", error);
+      console.error("Error creating lead:", error);
       toast.error(`Erro ao cadastrar lead: ${error.message}`);
     }
   };

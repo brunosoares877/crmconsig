@@ -239,8 +239,8 @@ const CommissionSettings = () => {
                 </TableCell>
                 <TableCell>
                   {rate.commission_type === 'percentage' 
-                    ? `${rate.percentage}%`
-                    : `R$ ${rate.fixed_value?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}`
+                    ? <span className="font-semibold text-blue-700 bg-blue-50 px-2 py-1 rounded">{rate.percentage}%</span>
+                    : <span className="font-semibold text-green-700 bg-green-50 px-2 py-1 rounded">R$ {rate.fixed_value?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}</span>
                   }
                 </TableCell>
                 <TableCell>
@@ -312,13 +312,14 @@ const CommissionSettings = () => {
       )}
 
       <Table>
-        <TableCaption>Lista de taxas de comissão variáveis por produto e valor.</TableCaption>
+        <TableCaption>Lista de taxas de comissão variáveis por produto, valor ou prazo.</TableCaption>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-[180px]">Produto</TableHead>
+            <TableHead className="w-[150px]">Produto</TableHead>
             <TableHead>Nome</TableHead>
-            <TableHead>Valor Mínimo</TableHead>
-            <TableHead>Valor Máximo</TableHead>
+            <TableHead>Faixa</TableHead>
+            <TableHead>Mínimo</TableHead>
+            <TableHead>Máximo</TableHead>
             <TableHead>Tipo</TableHead>
             <TableHead>Valor</TableHead>
             <TableHead>Ativo</TableHead>
@@ -339,11 +340,32 @@ const CommissionSettings = () => {
               <TableRow key={tier.id} className={!tier.active ? "opacity-60" : ""}>
                 <TableCell className="font-medium">{tier.product}</TableCell>
                 <TableCell>{tier.name || "-"}</TableCell>
-                <TableCell>R$ {tier.min_amount.toLocaleString('pt-BR')}</TableCell>
                 <TableCell>
-                  {tier.max_amount 
-                    ? `R$ ${tier.max_amount.toLocaleString('pt-BR')}` 
-                    : "Sem limite"}
+                  <div className="flex items-center gap-2">
+                    {(tier.tier_type || 'value') === 'value' ? (
+                      <>
+                        <span className="text-lg">💰</span>
+                        <span className="text-sm font-medium text-green-600">Valor</span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-lg">📅</span>
+                        <span className="text-sm font-medium text-purple-600">Prazo</span>
+                      </>
+                    )}
+                  </div>
+                </TableCell>
+                <TableCell>
+                  {(tier.tier_type || 'value') === 'value' 
+                    ? <span className="font-medium text-slate-700">R$ {tier.min_amount.toLocaleString('pt-BR')}</span>
+                    : <span className="font-medium text-purple-700 bg-purple-50 px-2 py-1 rounded">{tier.min_period || 0}x</span>
+                  }
+                </TableCell>
+                <TableCell>
+                  {(tier.tier_type || 'value') === 'value' 
+                    ? (tier.max_amount ? <span className="font-medium text-slate-700">R$ {tier.max_amount.toLocaleString('pt-BR')}</span> : <span className="text-gray-500 italic">Sem limite</span>)
+                    : (tier.max_period ? <span className="font-medium text-purple-700 bg-purple-50 px-2 py-1 rounded">{tier.max_period}x</span> : <span className="text-gray-500 italic">Sem limite</span>)
+                  }
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">
@@ -362,8 +384,8 @@ const CommissionSettings = () => {
                 </TableCell>
                 <TableCell>
                   {tier.commission_type === 'percentage' 
-                    ? `${tier.percentage}%`
-                    : `R$ ${tier.fixed_value?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}`
+                    ? <span className="font-semibold text-blue-700 bg-blue-50 px-2 py-1 rounded">{tier.percentage}%</span>
+                    : <span className="font-semibold text-green-700 bg-green-50 px-2 py-1 rounded">R$ {tier.fixed_value?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}</span>
                   }
                 </TableCell>
                 <TableCell>
@@ -417,7 +439,7 @@ const CommissionSettings = () => {
         <Tabs defaultValue="rates" className="w-full">
           <TabsList className="mb-6">
             <TabsTrigger value="rates">Taxas Fixas</TabsTrigger>
-            <TabsTrigger value="tiers">Taxas Variáveis (Por Faixa de Valor)</TabsTrigger>
+            <TabsTrigger value="tiers">Taxas Variáveis (Por Faixa de Valor ou Prazo)</TabsTrigger>
           </TabsList>
           <TabsContent value="rates">
             {renderRatesTable()}

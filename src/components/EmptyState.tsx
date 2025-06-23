@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { UsersRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -24,18 +23,36 @@ const EmptyState = () => {
       const { data: userData, error: userError } = await supabase.auth.getUser();
       if (userError) throw userError;
 
-      const { data, error } = await supabase.from("leads").insert({
+      // Processar payment_period para evitar erro de integer
+      const processedData = {
         ...values,
+        payment_period: values.payment_period && values.payment_period !== "" && values.payment_period !== "none" 
+          ? parseInt(values.payment_period) 
+          : undefined
+      };
+
+      console.log("EmptyState - Lead data to insert:", processedData);
+      console.log("EmptyState - Payment period:", {
+        original: values.payment_period,
+        processed: processedData.payment_period
+      });
+
+      const { data, error } = await supabase.from("leads").insert({
+        ...processedData,
         user_id: userData.user.id,
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("EmptyState - Database error:", error);
+        throw error;
+      }
       
       toast.success("Lead cadastrado com sucesso!");
       setIsOpenDialog(false);
       // Reload the page to show the new lead
       window.location.reload();
     } catch (error: any) {
+      console.error("EmptyState - Error creating lead:", error);
       toast.error(`Erro ao cadastrar lead: ${error.message}`);
     } finally {
       setIsLoading(false);
