@@ -94,8 +94,10 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete }) => {
   } | null>(null);
   const [editCommissionResult, setEditCommissionResult] = useState<CommissionCalculationResult | null>(null);
 
-  // Debug para funcionário
-  if (lead.employee) console.log("LeadCard - Employee:", lead.employee);
+  // Debug apenas quando necessário
+  if (lead.employee) {
+    console.log("LeadCard - Employee:", lead.employee);
+  }
 
   useEffect(() => {
     // Buscar as tags atribuídas ao lead
@@ -146,9 +148,10 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete }) => {
       // Separate selectedTags from lead data
       const { selectedTags, ...leadData } = values;
 
-      console.log("Updating lead with data:", leadData);
-      console.log("Date field in update:", leadData.date);
-      console.log("Selected tags:", selectedTags);
+      console.log("Updating lead:", {
+        employee: leadData.employee,
+        hasSelectedTags: selectedTags && selectedTags.length > 0
+      });
 
       // Update the lead data (without selectedTags)
       const { data, error } = await supabase
@@ -232,7 +235,14 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete }) => {
         scheduledAt: lead.scheduledAt,
         product: lead.product,
         employee: lead.employee,
-        created_at: lead.created_at
+        created_at: lead.created_at,
+        date: (lead as any).date, // Preservar data personalizada se existe
+        bank: (lead as any).bank,
+        benefit_type: (lead as any).benefit_type,
+        payment_period: (lead as any).payment_period,
+        representative_mode: (lead as any).representative_mode,
+        representative_name: (lead as any).representative_name,
+        representative_cpf: (lead as any).representative_cpf
       };
 
       // Calculate expiration date (30 days from now)
@@ -748,7 +758,7 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete }) => {
               initialData={{
                 ...lead,
                 payment_period: lead.payment_period?.toString() || "",
-                employee: lead.employee || "" // Garantir que employee está sendo passado
+                employee: lead.employee || "none"
               }}
               onSubmit={handleUpdateLead}
               onCancel={() => setIsEditDialogOpen(false)}

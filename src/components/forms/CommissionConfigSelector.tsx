@@ -140,7 +140,16 @@ const CommissionConfigSelector: React.FC<CommissionConfigSelectorProps> = ({
   };
 
   const handleOptionSelect = (option: CommissionConfigOption) => {
-    setSelectedOption(option);
+    // Se clicar na mesma opção já selecionada, desselecionar
+    if (selectedOption?.id === option.id) {
+      setSelectedOption(null);
+    } else {
+      setSelectedOption(option);
+    }
+  };
+
+  const handleClearSelection = () => {
+    setSelectedOption(null);
   };
 
   // Agora pode funcionar sem produto específico
@@ -180,6 +189,28 @@ const CommissionConfigSelector: React.FC<CommissionConfigSelectorProps> = ({
   const content = (
     <>
       <div className="space-y-4">
+        {/* Botão para limpar seleção */}
+        {selectedOption && (
+          <div className="flex justify-between items-center p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-blue-800">
+                ✅ {selectedOption.name} selecionado
+              </span>
+              <Badge variant="outline" className="text-blue-700 border-blue-300">
+                {selectedOption.product}
+              </Badge>
+            </div>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleClearSelection}
+              className="text-blue-700 border-blue-300 hover:bg-blue-100"
+            >
+              🗑️ Limpar
+            </Button>
+          </div>
+        )}
+
         {/* Produtos Agrupados */}
         {Object.entries(groupedByProduct).map(([productName, options]) => (
           <div key={productName} className="space-y-2">
@@ -210,16 +241,25 @@ const CommissionConfigSelector: React.FC<CommissionConfigSelectorProps> = ({
                       selectedOption?.id === option.id ? 'border-blue-500 bg-blue-50' : 'border-gray-200'
                     }`}
                     onClick={() => handleOptionSelect(option)}
+                    title={selectedOption?.id === option.id ? "Clique novamente para desselecionar" : "Clique para selecionar"}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
-                          <span className="font-medium">{option.name}</span>
+                          <span className="font-medium">
+                            {selectedOption?.id === option.id && "✅ "}
+                            {option.name}
+                          </span>
                           {getOptionBadge(option)}
                         </div>
                         {getOptionDescription(option) && (
                           <div className="text-xs text-gray-500">
                             {getOptionDescription(option)}
+                          </div>
+                        )}
+                        {selectedOption?.id === option.id && (
+                          <div className="text-xs text-blue-600 mt-1">
+                            💡 Clique novamente para desselecionar
                           </div>
                         )}
                       </div>
@@ -270,11 +310,45 @@ const CommissionConfigSelector: React.FC<CommissionConfigSelectorProps> = ({
         )}
         
         {numericAmount > 0 && !calculationResult && selectedOption && (
-          <Alert>
-            <TrendingUp className="h-4 w-4" />
-            <AlertDescription>
-              A configuração selecionada não se aplica aos valores informados. 
-              Verifique os critérios da faixa.
+          <Alert className="border-amber-200 bg-amber-50">
+            <TrendingUp className="h-4 w-4 text-amber-600" />
+            <AlertDescription className="text-amber-800">
+              <div className="space-y-2">
+                <div className="font-semibold">⚠️ Valores fora da faixa configurada</div>
+                <div className="text-sm">
+                  A configuração "<strong>{selectedOption.name}</strong>" não se aplica aos valores informados:
+                </div>
+                <div className="text-sm space-y-1 ml-4">
+                  <div>• Valor informado: <strong>{formatCurrency(numericAmount)}</strong></div>
+                  {numericPeriod && <div>• Prazo informado: <strong>{numericPeriod}x parcelas</strong></div>}
+                </div>
+                <div className="text-sm mt-2 p-2 bg-amber-100 rounded border">
+                  <strong>Critérios da configuração selecionada:</strong><br/>
+                  {getOptionDescription(selectedOption) || "Verifique as faixas de valor e prazo configuradas"}
+                </div>
+                <div className="text-sm text-amber-700 mt-2">
+                  💡 <em>Escolha outra configuração ou ajuste os valores para que se enquadrem na faixa.</em>
+                </div>
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Dica quando há valores mas nenhuma seleção */}
+        {numericAmount > 0 && !selectedOption && (
+          <Alert className="border-blue-200 bg-blue-50">
+            <Info className="h-4 w-4 text-blue-600" />
+            <AlertDescription className="text-blue-800">
+              <div className="space-y-2">
+                <div className="font-semibold">💡 Selecione uma configuração</div>
+                <div className="text-sm">
+                  Você informou um valor de <strong>{formatCurrency(numericAmount)}</strong>
+                  {numericPeriod && ` e prazo de ${numericPeriod}x parcelas`}.
+                </div>
+                <div className="text-sm">
+                  Clique em uma das configurações acima para definir o produto e calcular a comissão.
+                </div>
+              </div>
             </AlertDescription>
           </Alert>
         )}
@@ -294,7 +368,7 @@ const CommissionConfigSelector: React.FC<CommissionConfigSelectorProps> = ({
           Produtos
         </CardTitle>
         <CardDescription>
-          Clique na configuração desejada para definir o produto e comissão
+          Clique na configuração desejada para definir o produto e calcular a comissão
         </CardDescription>
       </CardHeader>
       <CardContent>

@@ -80,7 +80,12 @@ const LeadsTrash = () => {
         bank: deletedLead.original_lead_data.bank || null,
         benefit_type: deletedLead.original_lead_data.benefit_type || null,
         representative_name: deletedLead.original_lead_data.representative_name || null,
-        representative_cpf: deletedLead.original_lead_data.representative_cpf || null
+        representative_cpf: deletedLead.original_lead_data.representative_cpf || null,
+        representative_mode: deletedLead.original_lead_data.representative_mode || null,
+        payment_period: deletedLead.original_lead_data.payment_period || null,
+        // Preservar datas originais
+        created_at: deletedLead.original_lead_data.created_at || null,
+        date: deletedLead.original_lead_data.date || null
       };
 
       // Restore lead to active leads table
@@ -154,7 +159,12 @@ const LeadsTrash = () => {
           bank: deletedLead.original_lead_data.bank || null,
           benefit_type: deletedLead.original_lead_data.benefit_type || null,
           representative_name: deletedLead.original_lead_data.representative_name || null,
-          representative_cpf: deletedLead.original_lead_data.representative_cpf || null
+          representative_cpf: deletedLead.original_lead_data.representative_cpf || null,
+          representative_mode: deletedLead.original_lead_data.representative_mode || null,
+          payment_period: deletedLead.original_lead_data.payment_period || null,
+          // Preservar datas originais
+          created_at: deletedLead.original_lead_data.created_at || null,
+          date: deletedLead.original_lead_data.date || null
         };
 
         // Restore lead

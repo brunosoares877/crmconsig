@@ -29,7 +29,7 @@ const formSchema = z.object({
   product: z.string().optional(),
   amount: z.string().optional(),
   payment_period: z.string().optional(),
-  employee: z.string().optional().transform((val) => val?.trim() || ""),
+  employee: z.string().optional(),
   notes: z.string().optional(),
   benefit_type: z.string().optional(),
   representative_mode: z.string().optional(),
@@ -89,10 +89,10 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
   const { user } = useAuth ? useAuth() : { user: null };
   const [isInitialized, setIsInitialized] = useState(false);
   const [commissionResult, setCommissionResult] = useState<CommissionCalculationResult | null>(null);
+  const [customPeriod, setCustomPeriod] = useState("");
+  const [isCustomPeriod, setIsCustomPeriod] = useState(false);
 
-  console.log("LeadForm rendering - user:", user, "isEditing:", isEditing);
-  console.log("Initial data:", initialData);
-  console.log("Initial date from data:", initialData?.date, (initialData as any)?.date);
+  console.log("LeadForm rendering - isEditing:", isEditing, "employee:", initialData?.employee);
 
   const { register, handleSubmit, formState: { errors }, setValue, watch, reset } = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -107,7 +107,7 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
       product: "",
       amount: "",
       payment_period: "",
-      employee: "",
+      employee: "none",
       notes: "",
       benefit_type: "",
       representative_mode: "nao",
@@ -122,41 +122,77 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
   // Effect para carregar dados iniciais quando estiver editando
   useEffect(() => {
     if (isEditing && initialData && isInitialized) {
-      console.log("Loading initial data for editing:", initialData);
+      console.log("🔄 Loading initial data for editing...");
+      console.log("📋 Raw initialData.employee:", initialData.employee);
       
-      // Resetar o formulário com os dados existentes
-      const formData = {
-        name: initialData?.name || "",
-        cpf: initialData?.cpf || "",
-        phone: initialData?.phone || "",
-        phone2: initialData?.phone2 || "",
-        phone3: initialData?.phone3 || "",
-        email: initialData?.email || "",
-        bank: initialData?.bank || "",
-        product: initialData?.product || "",
-        amount: initialData?.amount || "",
-        payment_period: initialData?.payment_period?.toString() || "",
-        employee: initialData?.employee && initialData.employee.trim() !== "" ? initialData.employee.trim() : "",
-        notes: initialData?.notes || "",
-        benefit_type: initialData?.benefit_type || "",
-        representative_mode: initialData?.representative_mode || "nao",
-        representative_name: initialData?.representative_name || "",
-        representative_cpf: initialData?.representative_cpf || "",
-        date: getInitialDate(initialData, isEditing),
-      };
+      // Processar o valor do employee de forma mais robusta
+      let employeeValue = "none";
+      if (initialData.employee) {
+        if (typeof initialData.employee === 'string' && initialData.employee.trim() !== "") {
+          employeeValue = initialData.employee.trim();
+        }
+      }
       
-      console.log("Form data being loaded for editing:", formData);
-      console.log("Employee field specifically:", formData.employee);
+      console.log("🎯 Processing employee:", initialData.employee, "->", employeeValue);
       
-      console.log("Resetting form with data:", formData);
-      reset(formData);
+      // Usar setValue individual para garantir que funcione
+      setValue("name", initialData?.name || "");
+      setValue("cpf", initialData?.cpf || "");
+      setValue("phone", initialData?.phone || "");
+      setValue("phone2", initialData?.phone2 || "");
+      setValue("phone3", initialData?.phone3 || "");
+      setValue("email", initialData?.email || "");
+      setValue("bank", initialData?.bank || "");
+      setValue("product", initialData?.product || "");
+      setValue("amount", initialData?.amount || "");
+      
+      // Lógica especial para payment_period
+      const paymentPeriod = initialData?.payment_period?.toString() || "";
+      if (paymentPeriod && parseInt(paymentPeriod) > 96) {
+        // Se o valor for maior que 96, usar modo personalizado
+        setIsCustomPeriod(true);
+        setCustomPeriod(paymentPeriod);
+        setValue("payment_period", paymentPeriod);
+      } else {
+        setValue("payment_period", paymentPeriod);
+      }
+      
+      setValue("employee", employeeValue);
+      setValue("notes", initialData?.notes || "");
+      setValue("benefit_type", initialData?.benefit_type || "");
+      setValue("representative_mode", initialData?.representative_mode || "nao");
+      setValue("representative_name", initialData?.representative_name || "");
+      setValue("representative_cpf", initialData?.representative_cpf || "");
+      setValue("date", getInitialDate(initialData, isEditing));
+      
+      setTimeout(() => {
+        console.log("✅ After setValue - employee value:", watch("employee"));
+      }, 100);
     }
-  }, [isEditing, initialData, isInitialized, reset]);
+  }, [isEditing, initialData, isInitialized, setValue, watch]);
 
   useEffect(() => {
     console.log("LeadForm useEffect - initializing form");
     setIsInitialized(true);
   }, []);
+
+  // Reset custom period when form is reset or not editing
+  useEffect(() => {
+    if (!isEditing) {
+      setIsCustomPeriod(false);
+      setCustomPeriod("");
+    }
+  }, [isEditing]);
+
+  
+
+  // Monitorar mudanças no campo employee
+  useEffect(() => {
+    const currentEmployee = watch("employee");
+    if (currentEmployee) {
+      console.log("Employee field changed:", currentEmployee);
+    }
+  }, [watch("employee")]);
 
   const onFormSubmit = (data: FormData) => {
     console.log("Form submission started with values:", data);
@@ -168,22 +204,43 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
       return;
     }
 
+    // Validar se há produto selecionado quando há valor ou prazo
+    const hasValue = data.amount && parseFloat(data.amount.replace(/[^\d,]/g, '').replace(',', '.')) > 0;
+    const hasPeriod = data.payment_period && data.payment_period !== "" && data.payment_period !== "none";
+    
+    if ((hasValue || hasPeriod) && (!data.product || data.product.trim() === "")) {
+      toast.error("⚠️ Selecione uma configuração de produto quando informar valor ou prazo de pagamento");
+      return;
+    }
+
+    // Validar se a comissão foi calculada corretamente quando há produto selecionado
+    if (data.product && hasValue && !commissionResult) {
+      toast.error("⚠️ A configuração selecionada não se aplica aos valores informados. Verifique as faixas ou escolha outra configuração.");
+      return;
+    }
+
+    // Processar dados do formulário
+
     // Converter payment_period de string para integer ou null e limpar campos vazios
+    let finalPaymentPeriod = undefined;
+    if (data.payment_period && data.payment_period !== "" && data.payment_period !== "none") {
+      const periodValue = parseInt(data.payment_period);
+      if (!isNaN(periodValue) && periodValue > 0) {
+        finalPaymentPeriod = periodValue;
+      }
+    }
+    
     const processedData = {
       ...data,
-      payment_period: data.payment_period && data.payment_period !== "" && data.payment_period !== "none" 
-        ? parseInt(data.payment_period) 
-        : undefined, // undefined será removido pelo spread, evitando enviar para o banco
-      employee: data.employee && data.employee.trim() !== "" ? data.employee.trim() : null,
+      payment_period: finalPaymentPeriod,
+      employee: data.employee && data.employee !== "none" && data.employee.trim() !== "" ? data.employee.trim() : null,
       bank: data.bank === "none" ? undefined : data.bank,
       product: data.product && data.product.trim() !== "" ? data.product.trim() : undefined
     };
 
-    console.log("Original data:", data);
-    console.log("Processed data for submission:", processedData);
-    console.log("Payment period converted:", {
-      original: data.payment_period,
-      converted: processedData.payment_period
+    console.log("Form data processed for submission:", {
+      employee: processedData.employee,
+      hasProduct: !!processedData.product
     });
 
     onSubmit(processedData);
@@ -252,7 +309,7 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
         <div>
           <Label htmlFor="product">Produto</Label>
           <div className="text-sm text-gray-600 p-2 border rounded-md bg-gray-50">
-            {watch("product") || "Selecione uma configuração de comissão abaixo"}
+            {watch("product") || "👇 Escolha uma configuração de produto abaixo"}
           </div>
         </div>
 
@@ -266,31 +323,86 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
 
         <div>
           <Label htmlFor="payment_period">Prazo de Pagamento</Label>
-          <Select onValueChange={(value) => setValue("payment_period", value === "none" ? "" : value)} value={watch("payment_period") || "none"}>
-            <SelectTrigger>
-              <SelectValue placeholder="Selecione o prazo" />
-            </SelectTrigger>
-            <SelectContent className="max-h-60">
-              <SelectItem value="none">Não informado</SelectItem>
-              {Array.from({ length: 91 }, (_, i) => i + 6).map((months) => (
-                <SelectItem key={months} value={months.toString()}>
-                  {months}x ({months} parcelas)
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="space-y-2">
+            <Select 
+              onValueChange={(value) => {
+                if (value === "custom") {
+                  setIsCustomPeriod(true);
+                  setValue("payment_period", "");
+                } else {
+                  setIsCustomPeriod(false);
+                  setCustomPeriod("");
+                  setValue("payment_period", value === "none" ? "" : value);
+                }
+              }} 
+              value={isCustomPeriod ? "custom" : (watch("payment_period") || "none")}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione o prazo" />
+              </SelectTrigger>
+              <SelectContent className="max-h-60">
+                <SelectItem value="none">Não informado</SelectItem>
+                {/* Opções comuns de 1x a 96x */}
+                {Array.from({ length: 96 }, (_, i) => i + 1).map((months) => (
+                  <SelectItem key={months} value={months.toString()}>
+                    {months}x
+                  </SelectItem>
+                ))}
+                <SelectItem value="custom">📝 Personalizado</SelectItem>
+              </SelectContent>
+            </Select>
+            
+            {isCustomPeriod && (
+              <div className="flex gap-2 items-center">
+                <Input
+                  type="number"
+                  placeholder="Digite o prazo"
+                  value={customPeriod}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setCustomPeriod(value);
+                    setValue("payment_period", value);
+                  }}
+                  className="flex-1"
+                  min="1"
+                  max="999"
+                />
+                <span className="text-sm text-gray-500">parcelas</span>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setIsCustomPeriod(false);
+                    setCustomPeriod("");
+                    setValue("payment_period", "");
+                  }}
+                >
+                  ✕
+                </Button>
+              </div>
+            )}
+          </div>
         </div>
 
         <div>
           <Label htmlFor="employee">Funcionário</Label>
-          <EmployeeSelect
-            value={watch("employee") || ""}
-            onValueChange={(value) => {
-              console.log("Employee selected:", value);
-              setValue("employee", value === "" ? "" : value);
-            }}
-            placeholder="Selecione o funcionário"
-          />
+          <div className="space-y-2">
+            <EmployeeSelect
+              value={watch("employee") || "none"}
+              onValueChange={(value) => {
+                console.log("🎯 Employee selection changed:", value);
+                setValue("employee", value);
+                console.log("🔄 After setValue, watch value:", watch("employee"));
+              }}
+              placeholder="Selecione o funcionário"
+            />
+            {isEditing && (
+              <div className="text-xs text-amber-700 p-2 bg-amber-50 border border-amber-200 rounded">
+                💡 <strong>Importante:</strong> Leads que já possuem comissão gerada não devem ter o funcionário alterado para manter a integridade dos dados.
+              </div>
+            )}
+          </div>
         </div>
 
         <BenefitTypeSelect
@@ -318,6 +430,24 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
         </div>
       </div>
 
+      {/* Seção de Representante - aparece logo após os campos básicos */}
+      {representativeMode === "sim" && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 border rounded-lg bg-gray-50 mt-4">
+          <div>
+            <Label htmlFor="representative_name">Nome do Representante</Label>
+            <Input id="representative_name" {...register("representative_name")} />
+          </div>
+          <div>
+            <Label htmlFor="representative_cpf">CPF do Representante</Label>
+            <Input id="representative_cpf" {...register("representative_cpf")} 
+              placeholder="000.000.000-00"
+              maxLength={14}
+              onChange={e => setValue("representative_cpf", formatCPF(e.target.value))}
+            />
+          </div>
+        </div>
+      )}
+
       {/* Seletor de Configuração de Comissão */}
       <div className="mt-6">
         <CommissionConfigSelector
@@ -329,25 +459,15 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
             // Quando uma opção de comissão é selecionada, definir o produto automaticamente
             if (option?.product) {
               setValue("product", option.product);
+            } else {
+              // Quando opção é limpa, limpar o produto também
+              setValue("product", "");
             }
           }}
           showCard={true}
-          autoCalculate={true}
+          autoCalculate={false}
         />
       </div>
-
-      {representativeMode === "sim" && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 border rounded-lg bg-gray-50">
-          <div>
-            <Label htmlFor="representative_name">Nome do Representante</Label>
-            <Input id="representative_name" {...register("representative_name")} />
-          </div>
-          <div>
-            <Label htmlFor="representative_cpf">CPF do Representante</Label>
-            <Input id="representative_cpf" {...register("representative_cpf")} placeholder="000.000.000-00" />
-          </div>
-        </div>
-      )}
 
       <div>
         <Label htmlFor="notes">Observações</Label>

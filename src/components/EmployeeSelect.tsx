@@ -20,8 +20,10 @@ const EmployeeSelect = ({ value, onValueChange, disabled, placeholder = "Selecio
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Debug logs
-  if (value) console.log("EmployeeSelect - Current value:", value);
+  // Log apenas quando há valor específico para debug
+  if (value && value !== "none") {
+    console.log("EmployeeSelect - Employee value:", value);
+  }
 
   useEffect(() => {
     const fetchEmployees = async () => {
@@ -50,24 +52,38 @@ const EmployeeSelect = ({ value, onValueChange, disabled, placeholder = "Selecio
   }
 
   if (employees.length === 0) {
-    console.warn("EmployeeSelect - Nenhum funcionário encontrado");
+    console.warn("⚠️ EmployeeSelect - Nenhum funcionário encontrado");
+    console.warn("💡 Verifique se há funcionários cadastrados em: Menu → Funcionários");
   }
 
+  const handleValueChange = (newValue: string) => {
+    console.log("🔄 EmployeeSelect handleValueChange:", newValue);
+    onValueChange(newValue);
+  };
+
+  const currentValue = value || "none";
+  console.log("🎯 EmployeeSelect rendering with value:", currentValue);
+
   return (
-    <Select value={value || ""} onValueChange={onValueChange} disabled={disabled}>
+    <Select value={currentValue} onValueChange={handleValueChange} disabled={disabled}>
       <SelectTrigger>
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>
       <SelectContent>
-        <SelectItem value="">Nenhum funcionário</SelectItem>
+        <SelectItem value="none">Nenhum funcionário</SelectItem>
         {employees.length === 0 ? (
-          <SelectItem value="none" disabled>
-            Nenhum funcionário cadastrado
-          </SelectItem>
+          <>
+            <SelectItem value="no-employees" disabled className="text-red-600">
+              ⚠️ Nenhum funcionário cadastrado
+            </SelectItem>
+            <SelectItem value="help" disabled className="text-blue-600 text-xs">
+              💡 Vá em Menu → Funcionários para cadastrar
+            </SelectItem>
+          </>
         ) : (
           employees.map((employee) => (
             <SelectItem key={employee.id} value={employee.name}>
-              {employee.name} {value === employee.name && "✓"}
+              {employee.name} {currentValue === employee.name && "✓"}
             </SelectItem>
           ))
         )}
