@@ -4,6 +4,42 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Melhorias de responsividade para notebooks */
+@media (min-width: 640px) and (max-width: 1024px) {
+  .sidebar-responsive {
+    width: 14rem !important;
+  }
+  
+  .content-responsive {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+}
+
+/* Garantir que a sidebar mobile apareça corretamente */
+@media (max-width: 767px) {
+  [data-mobile="true"] {
+    z-index: 999 !important;
+    background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 50%, #3730a3 100%) !important;
+    color: white !important;
+  }
+  
+  [data-mobile="true"] > div {
+    background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 50%, #3730a3 100%) !important;
+    color: white !important;
+  }
+  
+  [data-mobile="true"] [data-sidebar="group-label"],
+  [data-mobile="true"] [data-sidebar="menu-button"] {
+    color: white !important;
+  }
+  
+  [data-mobile="true"] [data-sidebar="menu-button"]:hover {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+  }
+
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;

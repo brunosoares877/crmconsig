@@ -45,7 +45,7 @@ const Header = () => {
           <Button 
             variant="ghost" 
             size="icon" 
-            onClick={() => sidebar?.setOpen(true)}
+            onClick={() => sidebar?.setOpenMobile(true)}
             className="h-8 w-8 md:h-10 md:w-10"
           >
             <Menu className="h-4 w-4 md:h-5 md:w-5" />

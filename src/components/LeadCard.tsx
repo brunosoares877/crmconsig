@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { MoreHorizontal, Phone, Mail, DollarSign, Building, User, Edit, Trash2, Calendar, FileText, Tag, CheckCircle, Clock, AlertTriangle, X, Building2, Copy, Calculator } from "lucide-react";
+import { MoreHorizontal, Phone, Mail, DollarSign, Building, User, Edit, Trash2, Calendar, FileText, Tag, CheckCircle, Clock, AlertTriangle, X, Building2, Copy, Calculator, Package } from "lucide-react";
 import { Lead } from "@/types/models";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -16,6 +16,8 @@ import WhatsAppButton from "./WhatsAppButton";
 import { cn } from "@/lib/utils";
 import { getBankName } from "@/utils/bankUtils";
 import { formatLeadDate } from "@/utils/dateUtils";
+import CommissionConfigSelector from "@/components/forms/CommissionConfigSelector";
+import { CommissionCalculationResult } from "@/hooks/useCommissionConfig";
 
 interface LeadTag {
   tag_id: string;
@@ -90,6 +92,10 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete }) => {
     percentage: number;
     amount: number;
   } | null>(null);
+  const [editCommissionResult, setEditCommissionResult] = useState<CommissionCalculationResult | null>(null);
+
+  // Debug para funcionário
+  if (lead.employee) console.log("LeadCard - Employee:", lead.employee);
 
   useEffect(() => {
     // Buscar as tags atribuídas ao lead
@@ -299,27 +305,87 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete }) => {
         return;
       }
 
-      // Buscar taxa de comissão configurada para o produto
-      const { data: commissionRates } = await supabase
-        .from("commission_rates")
-        .select("percentage")
-        .eq("product", lead.product)
-        .eq("active", true)
-        .single();
-
       // Converter valor corretamente removendo caracteres não numéricos
       const cleanAmount = lead.amount.replace(/[^\d,]/g, '').replace(',', '.');
       const leadAmount = parseFloat(cleanAmount) || 0;
       
+      // Usar o novo sistema integrado de comissões
+      const { mapProductToCommissionConfig } = await import('@/utils/productMapping');
+      const mappedProduct = mapProductToCommissionConfig(lead.product || '');
+      
       let commissionValue = 0;
       let percentage = 5; // Padrão
 
-      if (commissionRates?.percentage) {
-        percentage = commissionRates.percentage;
-        commissionValue = (leadAmount * percentage) / 100;
+      // Buscar taxa fixa primeiro
+      const { data: rates } = await supabase
+        .from('commission_rates')
+        .select('*')
+        .eq('product', mappedProduct)
+        .eq('active', true);
+
+      if (rates && rates.length > 0) {
+        const rate = rates[0] as any;
+        if (rate.commission_type === 'fixed') {
+          commissionValue = rate.fixed_value || 0;
+          percentage = leadAmount > 0 ? (commissionValue / leadAmount) * 100 : 0;
+        } else {
+          percentage = rate.percentage;
+          commissionValue = (leadAmount * percentage) / 100;
+        }
       } else {
-        // Taxa padrão de 5%
-        commissionValue = (leadAmount * 5) / 100;
+        // Buscar por faixas de valor ou período
+        const { data: tiers } = await supabase
+          .from('commission_tiers')
+          .select('*')
+          .eq('product', mappedProduct)
+          .eq('active', true);
+
+        if (tiers && tiers.length > 0) {
+          // Tentar faixas de período primeiro se o lead tem período
+          if (lead.payment_period) {
+            const periodTiers = tiers.filter((t: any) => t.tier_type === 'period');
+            for (const tier of periodTiers) {
+              const tierData = tier as any;
+              const period = parseInt(lead.payment_period.toString());
+              if (tierData.min_period <= period && 
+                  (!tierData.max_period || period <= tierData.max_period)) {
+                if (tierData.commission_type === 'fixed') {
+                  commissionValue = tierData.fixed_value || 0;
+                  percentage = leadAmount > 0 ? (commissionValue / leadAmount) * 100 : 0;
+                } else {
+                  percentage = tierData.percentage;
+                  commissionValue = (leadAmount * percentage) / 100;
+                }
+                break;
+              }
+            }
+          }
+          
+          // Se não encontrou por período, tentar por valor
+          if (commissionValue === 0) {
+            const valueTiers = tiers.filter((t: any) => !t.tier_type || t.tier_type === 'value');
+            for (const tier of valueTiers) {
+              const tierData = tier as any;
+              if (tierData.min_amount <= leadAmount && 
+                  (!tierData.max_amount || leadAmount <= tierData.max_amount)) {
+                if (tierData.commission_type === 'fixed') {
+                  commissionValue = tierData.fixed_value || 0;
+                  percentage = leadAmount > 0 ? (commissionValue / leadAmount) * 100 : 0;
+                } else {
+                  percentage = tierData.percentage;
+                  commissionValue = (leadAmount * percentage) / 100;
+                }
+                break;
+              }
+            }
+          }
+        }
+        
+        // Taxa padrão se não encontrou nenhuma configuração
+        if (commissionValue === 0) {
+          commissionValue = (leadAmount * 5) / 100;
+          percentage = 5;
+        }
       }
 
       setCalculatedCommission({
@@ -383,14 +449,17 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete }) => {
         return;
       }
 
-      // Inserir apenas campos básicos enquanto cache do Supabase atualiza
+      // Inserir dados completos da comissão
       const { error } = await supabase
         .from("commissions")
         .insert({
           user_id: userData.user.id,
           lead_id: lead.id,
           amount: calculatedCommission.amount,
+          commission_value: calculatedCommission.value,
+          percentage: calculatedCommission.percentage,
           product: lead.product,
+          employee: lead.employee && lead.employee.trim() !== '' ? lead.employee.trim() : 'Não informado',
           status: 'in_progress',
           payment_period: 'monthly'
         });
@@ -598,6 +667,14 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete }) => {
               </div>
             )}
             
+            {lead.product && (
+              <div className="flex items-center gap-2">
+                <Package className="h-4 w-4 text-blue-500" />
+                <span className="font-medium text-sm text-gray-600">Produto:</span>
+                <span className="font-medium">{lead.product}</span>
+              </div>
+            )}
+            
             {lead.amount && (
               <div className="flex items-center gap-2">
                 <DollarSign className="h-4 w-4 text-green-600" />
@@ -668,12 +745,30 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete }) => {
               )}
             </div>
             <LeadForm
-              initialData={lead}
+              initialData={{
+                ...lead,
+                payment_period: lead.payment_period?.toString() || "",
+                employee: lead.employee || "" // Garantir que employee está sendo passado
+              }}
               onSubmit={handleUpdateLead}
               onCancel={() => setIsEditDialogOpen(false)}
               isLoading={isUpdating}
               isEditing={true}
             />
+            
+            {/* Seletor de Comissão na Edição */}
+            {lead.product && (
+              <div className="mt-6 w-full">
+                <CommissionConfigSelector
+                  productName={lead.product}
+                  amount={lead.amount}
+                  paymentPeriod={lead.payment_period?.toString()}
+                  onCommissionCalculated={setEditCommissionResult}
+                  showCard={true}
+                  autoCalculate={true}
+                />
+              </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>
@@ -717,7 +812,7 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete }) => {
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-medium text-gray-600">Produto:</span>
-                  <span>{lead.product}</span>
+                  <span className="font-medium">{lead.product || 'Não informado'}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-medium text-gray-600">Valor da Venda:</span>

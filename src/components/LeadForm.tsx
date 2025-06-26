@@ -12,9 +12,11 @@ import { toast } from "sonner";
 
 import BenefitTypeSelect from "@/components/forms/BenefitTypeSelect";
 import { BankSelect } from "@/components/forms/BankSelect";
-import ProductSelect from "@/components/forms/ProductSelect";
+// import ProductSelect from "@/components/forms/ProductSelect"; // Removido - integrado com CommissionConfigSelector
 import EmployeeSelect from "@/components/EmployeeSelect";
+import CommissionConfigSelector from "@/components/forms/CommissionConfigSelector";
 import { useAuth } from "@/contexts/AuthContext";
+import { CommissionCalculationResult } from "@/hooks/useCommissionConfig";
 
 const formSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
@@ -27,7 +29,7 @@ const formSchema = z.object({
   product: z.string().optional(),
   amount: z.string().optional(),
   payment_period: z.string().optional(),
-  employee: z.string().optional(),
+  employee: z.string().optional().transform((val) => val?.trim() || ""),
   notes: z.string().optional(),
   benefit_type: z.string().optional(),
   representative_mode: z.string().optional(),
@@ -86,6 +88,7 @@ const getInitialDate = (initialData: any, isEditing: boolean) => {
 const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, isEditing = false, isLoading = false }) => {
   const { user } = useAuth ? useAuth() : { user: null };
   const [isInitialized, setIsInitialized] = useState(false);
+  const [commissionResult, setCommissionResult] = useState<CommissionCalculationResult | null>(null);
 
   console.log("LeadForm rendering - user:", user, "isEditing:", isEditing);
   console.log("Initial data:", initialData);
@@ -133,7 +136,7 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
         product: initialData?.product || "",
         amount: initialData?.amount || "",
         payment_period: initialData?.payment_period?.toString() || "",
-        employee: initialData?.employee || "",
+        employee: initialData?.employee && initialData.employee.trim() !== "" ? initialData.employee.trim() : "",
         notes: initialData?.notes || "",
         benefit_type: initialData?.benefit_type || "",
         representative_mode: initialData?.representative_mode || "nao",
@@ -141,6 +144,9 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
         representative_cpf: initialData?.representative_cpf || "",
         date: getInitialDate(initialData, isEditing),
       };
+      
+      console.log("Form data being loaded for editing:", formData);
+      console.log("Employee field specifically:", formData.employee);
       
       console.log("Resetting form with data:", formData);
       reset(formData);
@@ -162,12 +168,15 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
       return;
     }
 
-    // Converter payment_period de string para integer ou null
+    // Converter payment_period de string para integer ou null e limpar campos vazios
     const processedData = {
       ...data,
       payment_period: data.payment_period && data.payment_period !== "" && data.payment_period !== "none" 
         ? parseInt(data.payment_period) 
-        : undefined // undefined será removido pelo spread, evitando enviar para o banco
+        : undefined, // undefined será removido pelo spread, evitando enviar para o banco
+      employee: data.employee && data.employee.trim() !== "" ? data.employee.trim() : null,
+      bank: data.bank === "none" ? undefined : data.bank,
+      product: data.product && data.product.trim() !== "" ? data.product.trim() : undefined
     };
 
     console.log("Original data:", data);
@@ -240,11 +249,12 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
           showNoneOption={true}
         />
 
-        <ProductSelect
-          value={watch("product") || ""}
-          onValueChange={(value) => setValue("product", value)}
-          defaultValue={initialData?.product || ""}
-        />
+        <div>
+          <Label htmlFor="product">Produto</Label>
+          <div className="text-sm text-gray-600 p-2 border rounded-md bg-gray-50">
+            {watch("product") || "Selecione uma configuração de comissão abaixo"}
+          </div>
+        </div>
 
         <div>
           <Label htmlFor="amount">Valor</Label>
@@ -275,7 +285,10 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
           <Label htmlFor="employee">Funcionário</Label>
           <EmployeeSelect
             value={watch("employee") || ""}
-            onValueChange={(value) => setValue("employee", value)}
+            onValueChange={(value) => {
+              console.log("Employee selected:", value);
+              setValue("employee", value === "" ? "" : value);
+            }}
             placeholder="Selecione o funcionário"
           />
         </div>
@@ -305,6 +318,24 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
         </div>
       </div>
 
+      {/* Seletor de Configuração de Comissão */}
+      <div className="mt-6">
+        <CommissionConfigSelector
+          productName={watch("product") || undefined}
+          amount={watch("amount") || undefined}
+          paymentPeriod={watch("payment_period") || undefined}
+          onCommissionCalculated={setCommissionResult}
+          onOptionSelected={(option) => {
+            // Quando uma opção de comissão é selecionada, definir o produto automaticamente
+            if (option?.product) {
+              setValue("product", option.product);
+            }
+          }}
+          showCard={true}
+          autoCalculate={true}
+        />
+      </div>
+
       {representativeMode === "sim" && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 border rounded-lg bg-gray-50">
           <div>
@@ -323,9 +354,31 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
         <Textarea id="notes" {...register("notes")} rows={3} />
       </div>
 
+      {/* Resumo da Comissão */}
+      {commissionResult && (
+        <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="flex items-center gap-2 text-blue-700">
+            <span className="text-sm font-medium">💰 Comissão calculada:</span>
+            <span className="font-bold">
+              R$ {commissionResult.calculatedValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+            </span>
+            <span className="text-xs">
+              ({commissionResult.percentage.toFixed(2)}%)
+            </span>
+          </div>
+        </div>
+      )}
+
       <div className="flex gap-2 justify-end">
         <Button type="button" variant="outline" onClick={onCancel} disabled={isLoading}>Cancelar</Button>
-        <Button type="submit" disabled={isLoading}>{isLoading ? "Salvando..." : (isEditing ? "Atualizar Lead" : "Salvar Lead")}</Button>
+        <Button type="submit" disabled={isLoading}>
+          {isLoading ? "Salvando..." : (isEditing ? "Atualizar Lead" : "Salvar Lead")}
+          {commissionResult && (
+            <span className="ml-2 text-xs opacity-75">
+              (Com comissão)
+            </span>
+          )}
+        </Button>
       </div>
     </form>
   );

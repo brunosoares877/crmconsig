@@ -16,14 +16,22 @@ export interface Employee {
 
 export const getEmployees = async (): Promise<Employee[]> => {
   try {
+    console.log("getEmployees - Iniciando busca de funcionários...");
+    
     const { data, error } = await supabase
       .from("employees")
       .select("*")
       .eq("active", true)
       .order("name");
 
-    if (error) throw error;
+    console.log("getEmployees - Resultado da query:", { data, error });
 
+    if (error) {
+      console.error("getEmployees - Erro na query:", error);
+      throw error;
+    }
+
+    console.log("getEmployees - Funcionários encontrados:", data?.length || 0);
     return data || [];
   } catch (error) {
     console.error("Error fetching employees:", error);

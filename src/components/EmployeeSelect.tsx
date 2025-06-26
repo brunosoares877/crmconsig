@@ -20,10 +20,14 @@ const EmployeeSelect = ({ value, onValueChange, disabled, placeholder = "Selecio
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Debug logs
+  if (value) console.log("EmployeeSelect - Current value:", value);
+
   useEffect(() => {
     const fetchEmployees = async () => {
       try {
         const data = await getEmployees();
+        console.log("EmployeeSelect - Fetched employees:", data);
         setEmployees(data);
       } catch (error) {
         console.error("Error fetching employees:", error);
@@ -45,12 +49,17 @@ const EmployeeSelect = ({ value, onValueChange, disabled, placeholder = "Selecio
     );
   }
 
+  if (employees.length === 0) {
+    console.warn("EmployeeSelect - Nenhum funcionário encontrado");
+  }
+
   return (
-    <Select value={value} onValueChange={onValueChange} disabled={disabled}>
+    <Select value={value || ""} onValueChange={onValueChange} disabled={disabled}>
       <SelectTrigger>
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>
       <SelectContent>
+        <SelectItem value="">Nenhum funcionário</SelectItem>
         {employees.length === 0 ? (
           <SelectItem value="none" disabled>
             Nenhum funcionário cadastrado
@@ -58,7 +67,7 @@ const EmployeeSelect = ({ value, onValueChange, disabled, placeholder = "Selecio
         ) : (
           employees.map((employee) => (
             <SelectItem key={employee.id} value={employee.name}>
-              {employee.name}
+              {employee.name} {value === employee.name && "✓"}
             </SelectItem>
           ))
         )}
