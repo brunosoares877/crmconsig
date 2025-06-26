@@ -151,7 +151,7 @@ const ImportLeads = ({
           <DialogHeader>
             <DialogTitle>Importar Leads via CSV</DialogTitle>
             <DialogDescription>
-              Faça upload de um arquivo CSV com os leads. Campos obrigatórios: Nome e Telefone. Campos opcionais: CPF, Banco, Produto, Data, Valor, Funcionário (serão preenchidos automaticamente se estiverem vazios).
+              Faça upload de um arquivo CSV com os leads. Todos os campos são opcionais! O sistema preencherá automaticamente dados em branco: Nome, CPF, Telefone, Banco, Produto, Data, Valor, Funcionário.
             </DialogDescription>
           </DialogHeader>
           
@@ -165,7 +165,7 @@ const ImportLeads = ({
                 disabled={isUploading} 
               />
               <p className="text-xs text-muted-foreground">
-                Obrigatório: Nome e Telefone. Opcionais: CPF, Banco, Produto, Data, Valor, Funcionário
+                Todos os campos são opcionais! Dados em branco serão preenchidos automaticamente
               </p>
             </div>
 

@@ -83,19 +83,9 @@ export class CsvParser {
 
   private static validateRequiredColumns(indices: Record<string, number>): string[] {
     const errors: string[] = [];
-    // Apenas Nome e Telefone são realmente obrigatórios
-    const required = ['name', 'phone'];
+    // Não há colunas obrigatórias - permite importar qualquer arquivo CSV
+    // O sistema vai preencher automaticamente os campos que faltarem
     
-    required.forEach(field => {
-      if (indices[field] === -1) {
-        const fieldNames = {
-          name: 'Nome',
-          phone: 'Telefone'
-        };
-        errors.push(`Coluna obrigatória não encontrada: ${fieldNames[field as keyof typeof fieldNames]}`);
-      }
-    });
-
     return errors;
   }
 
@@ -122,16 +112,8 @@ export class CsvParser {
   private static validateLeadData(lead: CsvLead, rowNumber: number): string[] {
     const errors: string[] = [];
 
-    // Apenas Nome e Telefone são obrigatórios
-    if (!lead.name || lead.name.trim().length < 2) {
-      errors.push(`Linha ${rowNumber}: Nome inválido ou muito curto`);
-    }
-
-    if (!lead.phone || lead.phone.trim().length < 8) {
-      errors.push(`Linha ${rowNumber}: Telefone inválido`);
-    }
-
-    // Outros campos são opcionais - não geram erro se estiverem vazios
+    // Removido todas as validações - aceita qualquer dado
+    // O sistema vai corrigir automaticamente os dados inválidos
 
     return errors;
   }
@@ -174,9 +156,9 @@ export class CsvParser {
 
       const values = this.parseCSVLine(line, separator);
       
-      // Skip rows with insufficient data
-      if (values.length < Math.max(...Object.values(indices).filter(idx => idx !== -1)) + 1) {
-        errors.push(`Linha ${i + 1}: Dados insuficientes`);
+      // Aceita qualquer linha que tenha pelo menos 1 campo preenchido
+      if (values.length === 0 || values.every(v => !v || v.trim() === '')) {
+        console.log(`Linha ${i + 1} completamente vazia, pulando...`);
         continue;
       }
 
@@ -191,14 +173,22 @@ export class CsvParser {
         employee: indices.employee !== -1 ? (values[indices.employee] || '').trim() : ''
       };
 
-      // Validate lead data (apenas campos obrigatórios)
+      // Sem validação - aceita todos os dados
       const leadErrors = this.validateLeadData(leadData, i + 1);
       if (leadErrors.length > 0) {
         errors.push(...leadErrors);
         continue;
       }
 
-      // Preencher campos vazios com valores padrão
+      // Preencher campos vazios ou inválidos com valores padrão
+      if (!leadData.name || leadData.name.length === 0) {
+        leadData.name = `Cliente ${i + 1}`;
+      }
+
+      if (!leadData.phone || leadData.phone.length === 0) {
+        leadData.phone = `(00) 00000-0000`;
+      }
+
       if (!leadData.bank) {
         leadData.bank = 'outro';
       } else {
