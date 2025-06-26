@@ -1709,8 +1709,17 @@ const Commission = () => {
         </div>
       </div>
       <div className="space-y-8">
-        <div className="mb-4 space-y-4">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-6">
+        {/* Painel de controles com design moderno */}
+        <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6 mb-8">
+          <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+            <svg className="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4" />
+            </svg>
+            Filtros e Controles
+          </h2>
+          
+          <div className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-6">
             <div className="relative">
               <Search className="absolute left-3 top-2.5 h-4 w-4 text-blue-500" />
               <Input
@@ -1880,9 +1889,13 @@ const Commission = () => {
               </Popover>
             </div>
           </div>
+          </div>
         </div>
 
-        {renderCommissionTable()}
+        {/* Tabela de comissões em container moderno */}
+        <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+          {renderCommissionTable()}
+        </div>
       </div>
 
       {/* Modal de Relatório de Pagamento */}
