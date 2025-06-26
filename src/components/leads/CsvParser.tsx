@@ -83,16 +83,14 @@ export class CsvParser {
 
   private static validateRequiredColumns(indices: Record<string, number>): string[] {
     const errors: string[] = [];
-    const required = ['name', 'phone', 'bank', 'product', 'amount'];
+    // Apenas Nome e Telefone são realmente obrigatórios
+    const required = ['name', 'phone'];
     
     required.forEach(field => {
       if (indices[field] === -1) {
         const fieldNames = {
           name: 'Nome',
-          phone: 'Telefone', 
-          bank: 'Banco',
-          product: 'Produto',
-          amount: 'Valor'
+          phone: 'Telefone'
         };
         errors.push(`Coluna obrigatória não encontrada: ${fieldNames[field as keyof typeof fieldNames]}`);
       }
@@ -124,17 +122,16 @@ export class CsvParser {
   private static validateLeadData(lead: CsvLead, rowNumber: number): string[] {
     const errors: string[] = [];
 
-    if (!lead.name || lead.name.length < 2) {
+    // Apenas Nome e Telefone são obrigatórios
+    if (!lead.name || lead.name.trim().length < 2) {
       errors.push(`Linha ${rowNumber}: Nome inválido ou muito curto`);
     }
 
-    if (!lead.phone || lead.phone.length < 10) {
+    if (!lead.phone || lead.phone.trim().length < 8) {
       errors.push(`Linha ${rowNumber}: Telefone inválido`);
     }
 
-    if (!lead.amount || isNaN(parseFloat(lead.amount.replace(/[^\d.,]/g, '').replace(',', '.')))) {
-      errors.push(`Linha ${rowNumber}: Valor inválido`);
-    }
+    // Outros campos são opcionais - não geram erro se estiverem vazios
 
     return errors;
   }
@@ -184,26 +181,49 @@ export class CsvParser {
       }
 
       const leadData: CsvLead = {
-        name: values[indices.name] || '',
-        cpf: indices.cpf !== -1 ? values[indices.cpf] || '' : '',
-        phone: values[indices.phone] || '',
-        bank: values[indices.bank] || '',
-        product: values[indices.product] || '',
-        date: indices.date !== -1 ? values[indices.date] || '' : '',
-        amount: values[indices.amount] || '',
-        employee: indices.employee !== -1 ? values[indices.employee] || '' : ''
+        name: (values[indices.name] || '').trim(),
+        cpf: indices.cpf !== -1 ? (values[indices.cpf] || '').trim() : '',
+        phone: (values[indices.phone] || '').trim(),
+        bank: (values[indices.bank] || '').trim(),
+        product: (values[indices.product] || '').trim(),
+        date: indices.date !== -1 ? (values[indices.date] || '').trim() : '',
+        amount: (values[indices.amount] || '').trim(),
+        employee: indices.employee !== -1 ? (values[indices.employee] || '').trim() : ''
       };
 
-      // Validate lead data
+      // Validate lead data (apenas campos obrigatórios)
       const leadErrors = this.validateLeadData(leadData, i + 1);
       if (leadErrors.length > 0) {
         errors.push(...leadErrors);
         continue;
       }
 
-      // Map values to system format
-      leadData.bank = this.mapBankValue(leadData.bank);
-      leadData.product = this.mapProductValue(leadData.product);
+      // Preencher campos vazios com valores padrão
+      if (!leadData.bank) {
+        leadData.bank = 'outro';
+      } else {
+        leadData.bank = this.mapBankValue(leadData.bank);
+      }
+
+      if (!leadData.product) {
+        leadData.product = 'outro';
+      } else {
+        leadData.product = this.mapProductValue(leadData.product);
+      }
+
+      if (!leadData.amount) {
+        leadData.amount = '0';
+      }
+
+      if (!leadData.employee) {
+        leadData.employee = 'Não informado';
+      }
+
+      if (!leadData.date) {
+        // Se não tem data, usar data atual
+        const today = new Date();
+        leadData.date = today.toLocaleDateString('pt-BR');
+      }
 
       leads.push(leadData);
     }
