@@ -13,6 +13,14 @@ const Sales = () => {
     navigate("/login");
   };
 
+  const handlePayment = (url: string) => {
+    try {
+      window.location.href = url;
+    } catch (error) {
+      console.error("Payment error:", error);
+    }
+  };
+
   const testimonials = [
     {
       name: "Maria Silva",
@@ -281,7 +289,7 @@ const Sales = () => {
                 </ul>
               </CardContent>
               <CardFooter className="p-4 sm:p-6">
-                <Button className="w-full bg-blue-600 hover:bg-blue-700 text-sm sm:text-base py-2 sm:py-3" onClick={handleStartTrial}>Assinar Plano Mensal</Button>
+                <Button className="w-full bg-blue-600 hover:bg-blue-700 text-sm sm:text-base py-2 sm:py-3" onClick={() => handlePayment("https://buy.stripe.com/test_6oE03haZsbuP5sAeUU")}>Assinar Plano Mensal</Button>
               </CardFooter>
             </Card>
 
@@ -306,7 +314,7 @@ const Sales = () => {
                 </ul>
               </CardContent>
               <CardFooter className="p-4 sm:p-6">
-                <Button className="w-full bg-blue-600 hover:bg-blue-700 text-sm sm:text-base py-2 sm:py-3" onClick={handleStartTrial}>Assinar Plano Semestral</Button>
+                <Button className="w-full bg-blue-600 hover:bg-blue-700 text-sm sm:text-base py-2 sm:py-3" onClick={() => handlePayment("https://buy.stripe.com/test_28o03h8RkgP92go3cd")}>Assinar Plano Semestral</Button>
               </CardFooter>
             </Card>
 
@@ -329,7 +337,7 @@ const Sales = () => {
                 </ul>
               </CardContent>
               <CardFooter className="p-4 sm:p-6">
-                <Button className="w-full bg-blue-600 hover:bg-blue-700 text-sm sm:text-base py-2 sm:py-3" onClick={handleStartTrial}>Assinar Plano Anual</Button>
+                <Button className="w-full bg-blue-600 hover:bg-blue-700 text-sm sm:text-base py-2 sm:py-3" onClick={() => handlePayment("https://buy.stripe.com/test_5kA5nBd7A2YjcV23ce")}>Assinar Plano Anual</Button>
               </CardFooter>
             </Card>
           </div>
