@@ -4,10 +4,12 @@ import EmptyState from "./EmptyState";
 import { Lead } from "@/types/models";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Search, Plus, Filter, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, Plus, Filter, X, ChevronLeft, ChevronRight, Trash2, Check, Square, CheckSquare } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import LeadForm from "./LeadForm";
@@ -44,6 +46,12 @@ const LeadList: React.FC<LeadListProps> = ({
   const [currentPage, setCurrentPage] = useState(1);
   const [totalLeads, setTotalLeads] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
+
+  // Multi-selection states
+  const [selectedLeads, setSelectedLeads] = useState<Set<string>>(new Set());
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDeletingMultiple, setIsDeletingMultiple] = useState(false);
 
   const fetchLeads = async (page = 1) => {
     setIsLoading(true);
@@ -398,6 +406,115 @@ const LeadList: React.FC<LeadListProps> = ({
 
   const handleLeadDelete = (id: string) => {
     setLeads(leads.filter(lead => lead.id !== id));
+    // Remove from selection if it was selected
+    setSelectedLeads(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(id);
+      return newSet;
+    });
+  };
+
+  // Multi-selection functions
+  const handleSelectLead = (leadId: string, selected: boolean) => {
+    setSelectedLeads(prev => {
+      const newSet = new Set(prev);
+      if (selected) {
+        newSet.add(leadId);
+      } else {
+        newSet.delete(leadId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedLeads(new Set(filteredLeads.map(lead => lead.id)));
+    } else {
+      setSelectedLeads(new Set());
+    }
+  };
+
+  const toggleSelectionMode = () => {
+    setIsSelectionMode(!isSelectionMode);
+    setSelectedLeads(new Set());
+  };
+
+  const handleMultipleDelete = async () => {
+    if (selectedLeads.size === 0) return;
+
+    setIsDeletingMultiple(true);
+    try {
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (userError) throw userError;
+
+      const leadsToDelete = leads.filter(lead => selectedLeads.has(lead.id));
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 30);
+
+      // Move all selected leads to trash
+      const deletedLeadsData = leadsToDelete.map(lead => ({
+        original_lead_id: lead.id,
+        user_id: userData.user.id,
+        original_lead_data: {
+          id: lead.id,
+          user_id: lead.user_id,
+          name: lead.name,
+          email: lead.email,
+          phone: lead.phone,
+          phone2: lead.phone2,
+          phone3: lead.phone3,
+          cpf: lead.cpf,
+          status: lead.status,
+          source: lead.source,
+          notes: lead.notes,
+          amount: lead.amount,
+          createdAt: lead.createdAt,
+          updatedAt: lead.updatedAt,
+          scheduledAt: lead.scheduledAt,
+          product: lead.product,
+          employee: lead.employee,
+          created_at: lead.created_at,
+          date: (lead as any).date,
+          bank: (lead as any).bank,
+          benefit_type: (lead as any).benefit_type,
+          payment_period: (lead as any).payment_period,
+          representative_mode: (lead as any).representative_mode,
+          representative_name: (lead as any).representative_name,
+          representative_cpf: (lead as any).representative_cpf
+        },
+        deleted_at: new Date().toISOString(),
+        expires_at: expiresAt.toISOString()
+      }));
+
+      // Insert to deleted_leads table
+      const { error: trashError } = await supabase
+        .from("deleted_leads")
+        .insert(deletedLeadsData);
+
+      if (trashError) throw trashError;
+
+      // Delete from active leads
+      const { error: deleteError } = await supabase
+        .from("leads")
+        .delete()
+        .in("id", Array.from(selectedLeads));
+
+      if (deleteError) throw deleteError;
+
+      // Update local state
+      setLeads(leads.filter(lead => !selectedLeads.has(lead.id)));
+      setSelectedLeads(new Set());
+      setIsSelectionMode(false);
+      setIsDeleteDialogOpen(false);
+
+      toast.success(`${selectedLeads.size} leads movidos para a lixeira com sucesso!`);
+    } catch (error: any) {
+      console.error("Error deleting multiple leads:", error);
+      toast.error(`Erro ao deletar leads: ${error.message}`);
+    } finally {
+      setIsDeletingMultiple(false);
+    }
   };
 
   return (
@@ -408,6 +525,46 @@ const LeadList: React.FC<LeadListProps> = ({
           <span className="text-sm text-muted-foreground mr-2">
             Mostrando {filteredLeads.length} de {totalLeads} leads
           </span>
+          {isSelectionMode && (
+            <div className="flex items-center gap-2 mr-2">
+              <Checkbox
+                checked={selectedLeads.size === filteredLeads.length && filteredLeads.length > 0}
+                onCheckedChange={handleSelectAll}
+                className="data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
+              />
+              <span className="text-sm font-medium">Selecionar todos</span>
+              {selectedLeads.size > 0 && (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => setIsDeleteDialogOpen(true)}
+                  disabled={isDeletingMultiple}
+                  className="ml-2"
+                >
+                  <Trash2 className="h-4 w-4 mr-1" />
+                  Excluir ({selectedLeads.size})
+                </Button>
+              )}
+            </div>
+          )}
+          <Button
+            variant={isSelectionMode ? "secondary" : "outline"}
+            size="sm"
+            onClick={toggleSelectionMode}
+            className="flex items-center gap-2"
+          >
+            {isSelectionMode ? (
+              <>
+                <X className="h-4 w-4" />
+                Cancelar
+              </>
+            ) : (
+              <>
+                <CheckSquare className="h-4 w-4" />
+                Selecionar
+              </>
+            )}
+          </Button>
           <LeadImportButton />
         </div>
       </div>
@@ -428,7 +585,10 @@ const LeadList: React.FC<LeadListProps> = ({
                 key={lead.id} 
                 lead={lead} 
                 onUpdate={handleLeadUpdate} 
-                onDelete={handleLeadDelete} 
+                onDelete={handleLeadDelete}
+                isSelected={selectedLeads.has(lead.id)}
+                onSelect={handleSelectLead}
+                showSelection={isSelectionMode}
               />
             ))}
           </div>
@@ -485,6 +645,29 @@ const LeadList: React.FC<LeadListProps> = ({
       ) : (
         <EmptyState />
       )}
+
+      {/* Modal de confirmação para exclusão múltipla */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir Leads Selecionados</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja mover {selectedLeads.size} lead{selectedLeads.size > 1 ? 's' : ''} para a lixeira? 
+              Os leads ficarão disponíveis por 30 dias na lixeira antes de serem excluídos automaticamente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeletingMultiple}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleMultipleDelete} 
+              className="bg-red-600 hover:bg-red-700"
+              disabled={isDeletingMultiple}
+            >
+              {isDeletingMultiple ? "Excluindo..." : "Excluir Leads"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
