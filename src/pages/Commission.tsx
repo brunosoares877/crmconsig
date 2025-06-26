@@ -121,6 +121,16 @@ const Commission = () => {
     observacoes: false
   });
 
+  // Estados para configuração do WhatsApp
+  const [showWhatsAppConfig, setShowWhatsAppConfig] = useState(false);
+  const [currentReportForWhatsApp, setCurrentReportForWhatsApp] = useState<any>(null);
+  const [whatsAppConfig, setWhatsAppConfig] = useState({
+    includeCommissionValues: true,
+    includePercentages: true,
+    includeIndividualCommissions: true,
+    includeTotal: true
+  });
+
   useEffect(() => {
     fetchCommissions();
     fetchEmployees();
@@ -695,10 +705,10 @@ const Commission = () => {
   };
 
   // Função para gerar mensagem do WhatsApp
-  const generateWhatsAppMessage = (report: any): string => {
+  const generateWhatsAppMessage = (report: any, config = whatsAppConfig): string => {
     const periodText = `${format(new Date(reportDateFrom), 'dd/MM/yyyy')} a ${format(new Date(reportDateTo), 'dd/MM/yyyy')}`;
     
-    let message = `*RELATÓRIO DE COMISSÕES*\n\n`;
+    let message = `*RELATÓRIO DE VENDAS*\n\n`;
     
     // Informações do funcionário
     message += `*Funcionário:* ${report.employee}\n`;
@@ -708,44 +718,64 @@ const Commission = () => {
     message += `*RESUMO EXECUTIVO*\n`;
     message += `Total de Vendas: *${report.totalLeads}*\n`;
     message += `Valor Total Vendido: *R$ ${report.totalAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}*\n`;
-    message += `Total de Comissões: *R$ ${report.totalCommissionValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}*\n\n`;
+    
+    if (config.includeTotal) {
+      message += `Total de Comissões: *R$ ${report.totalCommissionValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}*\n`;
+    }
+    
+    message += `\n`;
     
     // Detalhamento das vendas
-    message += `*DETALHAMENTO DAS VENDAS*\n\n`;
-    
-    report.commissions.forEach((commission: any, index: number) => {
-      const leadDate = commission.lead?.date || commission.lead?.created_at;
-      const dateFormatted = leadDate ? format(new Date(leadDate), 'dd/MM/yyyy') : 'N/A';
+    if (config.includeIndividualCommissions) {
+      message += `*DETALHAMENTO DAS VENDAS*\n\n`;
       
-      message += `*${index + 1}. ${commission.lead?.name || 'Cliente'}*\n`;
-      message += `Data: ${dateFormatted}\n`;
-      message += `Produto: ${commission.product}\n`;
-      message += `Valor da Venda: R$ ${(commission.amount || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}\n`;
-      message += `Comissão: ${(commission.percentage || 0).toFixed(1)}% = *R$ ${(commission.commission_value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}*\n`;
-      
-      // Status sem emoji
-      let statusText = '';
-      switch (commission.status) {
-        case 'paid':
-          statusText = 'PAGO';
-          break;
-        case 'approved':
-          statusText = 'APROVADO';
-          break;
-        case 'completed':
-          statusText = 'CONCLUÍDO';
-          break;
-        case 'pending':
-          statusText = 'PENDENTE';
-          break;
-        case 'in_progress':
-          statusText = 'EM ANDAMENTO';
-          break;
-        default:
-          statusText = 'CANCELADO';
-      }
-      message += `Status: *${statusText}*\n\n`;
-    });
+      report.commissions.forEach((commission: any, index: number) => {
+        const leadDate = commission.lead?.date || commission.lead?.created_at;
+        const dateFormatted = leadDate ? format(new Date(leadDate), 'dd/MM/yyyy') : 'N/A';
+        
+        message += `*${index + 1}. ${commission.lead?.name || 'Cliente'}*\n`;
+        message += `Data: ${dateFormatted}\n`;
+        message += `Produto: ${commission.product}\n`;
+        message += `Valor da Venda: R$ ${(commission.amount || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}\n`;
+        
+        if (config.includeCommissionValues || config.includePercentages) {
+          let commissionLine = 'Comissão: ';
+          if (config.includePercentages) {
+            commissionLine += `${(commission.percentage || 0).toFixed(1)}%`;
+          }
+          if (config.includeCommissionValues) {
+            if (config.includePercentages) {
+              commissionLine += ` = `;
+            }
+            commissionLine += `*R$ ${(commission.commission_value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}*`;
+          }
+          message += `${commissionLine}\n`;
+        }
+        
+        // Status sem emoji
+        let statusText = '';
+        switch (commission.status) {
+          case 'paid':
+            statusText = 'PAGO';
+            break;
+          case 'approved':
+            statusText = 'APROVADO';
+            break;
+          case 'completed':
+            statusText = 'CONCLUÍDO';
+            break;
+          case 'pending':
+            statusText = 'PENDENTE';
+            break;
+          case 'in_progress':
+            statusText = 'EM ANDAMENTO';
+            break;
+          default:
+            statusText = 'CANCELADO';
+        }
+        message += `Status: *${statusText}*\n\n`;
+      });
+    }
     
     // Status geral
     const allPaid = report.commissions.every((c: any) => c.status === 'paid');
@@ -765,14 +795,29 @@ const Commission = () => {
     return message;
   };
 
-  // Função para enviar relatório via WhatsApp
-  const sendWhatsAppReport = (report: any) => {
-    const message = generateWhatsAppMessage(report);
+  // Função para abrir configuração do WhatsApp
+  const openWhatsAppConfig = (report: any) => {
+    setCurrentReportForWhatsApp(report);
+    setShowWhatsAppConfig(true);
+  };
+
+  // Função para enviar relatório via WhatsApp com configurações personalizadas
+  const sendWhatsAppReportWithConfig = () => {
+    if (!currentReportForWhatsApp) return;
+    
+    const message = generateWhatsAppMessage(currentReportForWhatsApp, whatsAppConfig);
     const encodedMessage = encodeURIComponent(message);
     const url = `https://wa.me/?text=${encodedMessage}`;
     
     window.open(url, '_blank');
     toast.success(`Relatório preparado para envio via WhatsApp!`);
+    setShowWhatsAppConfig(false);
+    setCurrentReportForWhatsApp(null);
+  };
+
+  // Função para enviar relatório via WhatsApp (compatibilidade)
+  const sendWhatsAppReport = (report: any) => {
+    openWhatsAppConfig(report);
   };
 
   // Função para marcar comissões como pagas
@@ -2037,6 +2082,106 @@ const Commission = () => {
             >
               <Download className="h-4 w-4 mr-2" />
               Gerar PDF Personalizado
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Configuração do WhatsApp */}
+      <Dialog open={showWhatsAppConfig} onOpenChange={setShowWhatsAppConfig}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Send className="h-5 w-5 text-green-600" />
+              Configurar WhatsApp
+            </DialogTitle>
+            <DialogDescription>
+              Escolha quais informações incluir na mensagem do WhatsApp
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="text-sm text-gray-600 bg-green-50 p-3 rounded-lg">
+              💬 <strong>Dica:</strong> Desmarque as opções que não quer incluir na mensagem. Por exemplo, retire os valores de comissão se quiser enviar apenas informações sobre vendas.
+            </div>
+
+            {/* Opções de configuração */}
+            <div className="space-y-3">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="includeTotal"
+                  checked={whatsAppConfig.includeTotal}
+                  onCheckedChange={(checked) => setWhatsAppConfig(prev => ({...prev, includeTotal: checked as boolean}))}
+                />
+                <label htmlFor="includeTotal" className="text-sm font-medium">
+                  💰 Incluir total de comissões no resumo
+                </label>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="includeIndividualCommissions"
+                  checked={whatsAppConfig.includeIndividualCommissions}
+                  onCheckedChange={(checked) => setWhatsAppConfig(prev => ({...prev, includeIndividualCommissions: checked as boolean}))}
+                />
+                <label htmlFor="includeIndividualCommissions" className="text-sm font-medium">
+                  📋 Incluir detalhamento individual das vendas
+                </label>
+              </div>
+
+              {whatsAppConfig.includeIndividualCommissions && (
+                <div className="ml-6 space-y-2 border-l-2 border-gray-200 pl-4">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="includePercentages"
+                      checked={whatsAppConfig.includePercentages}
+                      onCheckedChange={(checked) => setWhatsAppConfig(prev => ({...prev, includePercentages: checked as boolean}))}
+                    />
+                    <label htmlFor="includePercentages" className="text-sm">
+                      📊 Incluir percentuais (ex: 5.0%)
+                    </label>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="includeCommissionValues"
+                      checked={whatsAppConfig.includeCommissionValues}
+                      onCheckedChange={(checked) => setWhatsAppConfig(prev => ({...prev, includeCommissionValues: checked as boolean}))}
+                    />
+                    <label htmlFor="includeCommissionValues" className="text-sm">
+                      💵 Incluir valores de comissão (ex: R$ 150,00)
+                    </label>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Preview da configuração */}
+            <div className="bg-gray-50 p-3 rounded-lg border">
+              <div className="text-sm font-medium text-gray-700 mb-2">📱 Preview da mensagem:</div>
+              <div className="text-xs text-gray-600 bg-white p-2 rounded border max-h-32 overflow-y-auto">
+                {currentReportForWhatsApp && (
+                  <div className="whitespace-pre-line">
+                    {generateWhatsAppMessage(currentReportForWhatsApp, whatsAppConfig).substring(0, 200)}...
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowWhatsAppConfig(false)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={sendWhatsAppReportWithConfig}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              <Send className="h-4 w-4 mr-2" />
+              Enviar WhatsApp
             </Button>
           </DialogFooter>
         </DialogContent>
