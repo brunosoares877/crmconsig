@@ -45,7 +45,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { CustomCalendar } from "@/components/ui/custom-calendar";
-import { CalendarIcon, Search, Trash2, Settings, RefreshCw, FileText, Download, Send, CheckCircle, User } from "lucide-react";
+import { CalendarIcon, Search, Trash2, Settings, FileText, Download, Send, CheckCircle, User } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -89,7 +89,7 @@ const Commission = () => {
   const [totalCommissionsApproved, setTotalCommissionsApproved] = useState(0);
   const [totalCommissionsPaid, setTotalCommissionsPaid] = useState(0);
   const [deletingCommission, setDeletingCommission] = useState<string | null>(null);
-  const [isGenerating, setIsGenerating] = useState(false);
+
   const { isPrivilegedUser } = useAuth();
 
   // Lista de produtos únicos para filtro
@@ -409,113 +409,7 @@ const Commission = () => {
     }
   };
 
-  // Função para sincronizar comissões com valores atualizados dos leads
-  const syncCommissionsWithLeads = async () => {
-    try {
-      setIsGenerating(true);
-      
-      const { data: userData } = await supabase.auth.getUser();
-      if (!userData.user) {
-        toast.error("Usuário não autenticado");
-        return;
-      }
 
-      console.log("🔄 Iniciando sincronização de comissões...");
-
-      // Buscar todas as comissões com seus leads
-      const { data: commissionsWithLeads, error: fetchError } = await supabase
-        .from('commissions')
-        .select(`
-          *,
-          lead:lead_id (
-            id, amount, product, name, payment_period
-          )
-        `)
-        .eq('user_id', userData.user.id);
-
-      if (fetchError) {
-        console.error('Erro ao buscar comissões para sincronizar:', fetchError);
-        toast.error('Erro ao buscar comissões para sincronizar');
-        return;
-      }
-
-      if (!commissionsWithLeads || commissionsWithLeads.length === 0) {
-        toast.info('Não há comissões para sincronizar');
-        return;
-      }
-
-      console.log(`📊 Total de comissões encontradas: ${commissionsWithLeads.length}`);
-
-      let updated = 0;
-      let errors = 0;
-
-      for (const commission of commissionsWithLeads) {
-        try {
-          const lead = commission.lead as any;
-          if (!lead) {
-            console.log(`❌ Comissão ${commission.id} sem lead associado`);
-            continue;
-          }
-
-          // Converter valor do lead para número
-          const leadAmountStr = lead.amount?.toString() || '0';
-          const cleanLeadAmount = leadAmountStr.replace(/[^\d,]/g, '').replace(',', '.');
-          const leadAmount = parseFloat(cleanLeadAmount) || 0;
-
-          // Obter prazo de pagamento se disponível
-          const paymentPeriod = lead.payment_period ? parseInt(lead.payment_period.toString()) : undefined;
-
-          console.log(`🔄 Processando: ${lead.name}`);
-          console.log(`   Produto: ${lead.product}`);
-          console.log(`   Valor: R$ ${leadAmount}`);
-          console.log(`   Prazo: ${paymentPeriod}x`);
-
-          // Calcular nova comissão baseada nas configurações atualizadas
-          const newCommissionValue = await calculateCommissionValue(lead.product, leadAmount, paymentPeriod);
-          const newPercentage = leadAmount > 0 ? (newCommissionValue / leadAmount) * 100 : 0;
-
-          console.log(`   💰 Nova comissão: R$ ${newCommissionValue.toFixed(2)} (${newPercentage.toFixed(2)}%)`);
-
-          // Atualizar comissão no banco
-          const { error: updateError } = await supabase
-            .from('commissions')
-            .update({
-              amount: leadAmount,
-              product: lead.product,
-              commission_value: newCommissionValue,
-              percentage: newPercentage,
-              employee: lead.employee || 'Não informado'
-            })
-            .eq('id', commission.id);
-
-          if (updateError) {
-            console.error(`❌ Erro ao atualizar comissão ${commission.id}:`, updateError);
-            errors++;
-            continue;
-          }
-
-          updated++;
-          console.log(`   ✅ Comissão atualizada com sucesso!`);
-        } catch (error) {
-          console.error(`❌ Erro ao processar comissão ${commission.id}:`, error);
-          errors++;
-        }
-      }
-
-      // Recarregar dados da tabela
-      await fetchCommissions();
-      
-      const message = `✅ Sincronização concluída! ${updated} comissões atualizadas${errors > 0 ? `, ${errors} erros` : ''}.`;
-      console.log(message);
-      toast.success(message);
-      
-    } catch (error) {
-      console.error('❌ Erro geral na sincronização:', error);
-      toast.error('Erro ao sincronizar comissões com leads');
-    } finally {
-      setIsGenerating(false);
-    }
-  };
 
   const handleDeleteCommission = async (commissionId: string) => {
     try {
@@ -804,80 +698,69 @@ const Commission = () => {
   const generateWhatsAppMessage = (report: any): string => {
     const periodText = `${format(new Date(reportDateFrom), 'dd/MM/yyyy')} a ${format(new Date(reportDateTo), 'dd/MM/yyyy')}`;
     
-    let message = `🏢 *RELATÓRIO DE COMISSÕES*\n`;
-    message += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+    let message = `*RELATÓRIO DE COMISSÕES*\n\n`;
     
     // Informações do funcionário
-    message += `👤 *Funcionário:* ${report.employee}\n`;
-    message += `📅 *Período:* ${periodText}\n\n`;
+    message += `*Funcionário:* ${report.employee}\n`;
+    message += `*Período:* ${periodText}\n\n`;
     
     // Resumo executivo
-    message += `📊 *RESUMO EXECUTIVO*\n`;
-    message += `• Total de Vendas: *${report.totalLeads}*\n`;
-    message += `• Valor Total Vendido: *R$ ${report.totalAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}*\n`;
-    message += `• Total de Comissões: *R$ ${report.totalCommissionValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}*\n\n`;
+    message += `*RESUMO EXECUTIVO*\n`;
+    message += `Total de Vendas: *${report.totalLeads}*\n`;
+    message += `Valor Total Vendido: *R$ ${report.totalAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}*\n`;
+    message += `Total de Comissões: *R$ ${report.totalCommissionValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}*\n\n`;
     
     // Detalhamento das vendas
-    message += `📋 *DETALHAMENTO DAS VENDAS*\n`;
-    message += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+    message += `*DETALHAMENTO DAS VENDAS*\n\n`;
     
     report.commissions.forEach((commission: any, index: number) => {
       const leadDate = commission.lead?.date || commission.lead?.created_at;
       const dateFormatted = leadDate ? format(new Date(leadDate), 'dd/MM/yyyy') : 'N/A';
       
-      message += `\n*${index + 1}. ${commission.lead?.name || 'Cliente'}*\n`;
-      message += `   📅 Data: ${dateFormatted}\n`;
-      message += `   🏷️ Produto: ${commission.product}\n`;
-      message += `   💰 Valor da Venda: R$ ${(commission.amount || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}\n`;
-      message += `   💵 Comissão: ${(commission.percentage || 0).toFixed(1)}% = *R$ ${(commission.commission_value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}*\n`;
+      message += `*${index + 1}. ${commission.lead?.name || 'Cliente'}*\n`;
+      message += `Data: ${dateFormatted}\n`;
+      message += `Produto: ${commission.product}\n`;
+      message += `Valor da Venda: R$ ${(commission.amount || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}\n`;
+      message += `Comissão: ${(commission.percentage || 0).toFixed(1)}% = *R$ ${(commission.commission_value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}*\n`;
       
-      // Status com emoji
-      let statusEmoji = '';
+      // Status sem emoji
       let statusText = '';
       switch (commission.status) {
         case 'paid':
-          statusEmoji = '✅';
           statusText = 'PAGO';
           break;
         case 'approved':
-          statusEmoji = '👍';
           statusText = 'APROVADO';
           break;
         case 'completed':
-          statusEmoji = '✔️';
           statusText = 'CONCLUÍDO';
           break;
         case 'pending':
-          statusEmoji = '⏳';
           statusText = 'PENDENTE';
           break;
         case 'in_progress':
-          statusEmoji = '🔄';
           statusText = 'EM ANDAMENTO';
           break;
         default:
-          statusEmoji = '❌';
           statusText = 'CANCELADO';
       }
-      message += `   ${statusEmoji} Status: ${statusText}\n`;
+      message += `Status: *${statusText}*\n\n`;
     });
-    
-    message += `\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
     
     // Status geral
     const allPaid = report.commissions.every((c: any) => c.status === 'paid');
     const someApproved = report.commissions.some((c: any) => c.status === 'approved' || c.status === 'completed');
     
     if (allPaid) {
-      message += `✅ *STATUS GERAL: TOTALMENTE PAGO*\n`;
+      message += `*STATUS GERAL: TOTALMENTE PAGO*\n`;
     } else if (someApproved) {
-      message += `⏳ *STATUS GERAL: PARCIALMENTE PROCESSADO*\n`;
+      message += `*STATUS GERAL: PARCIALMENTE PROCESSADO*\n`;
     } else {
-      message += `🔄 *STATUS GERAL: PENDENTE DE PAGAMENTO*\n`;
+      message += `*STATUS GERAL: PENDENTE DE PAGAMENTO*\n`;
     }
     
-    message += `\n📱 *LeadConsig CRM*\n`;
-    message += `🕐 Gerado em: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`;
+    message += `\n*LeadConsig CRM*\n`;
+    message += `Gerado em: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`;
     
     return message;
   };
@@ -1678,79 +1561,9 @@ const Commission = () => {
     }
   };
 
-  // Debug: função para verificar campos da tabela leads
-  const debugLeadsTable = async () => {
-    try {
-      console.log('🔍 Verificando estrutura da tabela leads...');
-      
-      const { data: userData } = await supabase.auth.getUser();
-      if (!userData.user) return;
-      
-      // Buscar um lead de exemplo para ver os campos disponíveis
-      const { data: sampleLead, error } = await supabase
-        .from('leads')
-        .select('*')
-        .eq('user_id', userData.user.id)
-        .limit(1);
-      
-      if (error) {
-        console.error('❌ Erro ao buscar lead de exemplo:', error);
-        return;
-      }
-      
-      if (sampleLead && sampleLead.length > 0) {
-        console.log('🔍 CAMPOS DISPONÍVEIS NA TABELA LEADS:');
-        console.log('📋 Lead de exemplo:', sampleLead[0]);
-        console.log('📋 Campos disponíveis:');
-        Object.keys(sampleLead[0]).forEach(key => {
-          console.log(`   ${key}: '${sampleLead[0][key]}'`);
-        });
-      } else {
-        console.log('⚠️ Nenhum lead encontrado para debug');
-      }
-    } catch (error) {
-      console.error('❌ Erro no debug da tabela leads:', error);
-    }
-  };
 
-  // Função de DEBUG temporária
-  const debugEmployeeData = async () => {
-    try {
-      console.log("🔍 ===== DEBUG EMPLOYEE DATA =====");
-      
-      // Verificar dados das comissões
-      const { data: commissionsData } = await supabase
-        .from("commissions")
-        .select(`
-          id, employee, product, amount,
-          lead:lead_id (
-            id, name, employee, product
-          )
-        `)
-        .limit(5);
-        
-      console.log("📊 Comissões do banco:", commissionsData);
-      
-      // Verificar funcionários cadastrados
-      const employeeList = await getEmployees();
-      console.log("👥 Funcionários cadastrados:", employeeList);
-      
-      // Verificar leads com funcionários
-      const { data: leadsData } = await supabase
-        .from("leads")
-        .select("id, name, employee, product")
-        .not('employee', 'is', null)
-        .neq('employee', '')
-        .limit(5);
-        
-      console.log("📋 Leads com funcionários:", leadsData);
-      
-      toast.info("Dados de debug foram logados no console! Abra o F12 > Console para ver.");
-      
-    } catch (error) {
-      console.error("Erro no debug:", error);
-    }
-  };
+
+
 
   return (
     <PageLayout
@@ -1832,23 +1645,9 @@ const Commission = () => {
           {/* Botões de ação */}
           <div className="flex flex-wrap gap-2">
             <Button 
-              onClick={syncCommissionsWithLeads} 
-              variant="outline" 
-              disabled={isGenerating}
-              className="bg-orange-50 border-orange-300 text-orange-700 hover:bg-orange-100"
-            >
-              {isGenerating ? "Sincronizando..." : (
-                <>
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  Sincronizar com Leads
-                </>
-              )}
-            </Button>
-            
-            <Button 
               onClick={() => window.location.href = '/commission/settings'} 
               variant="outline"
-              className="bg-purple-50 border-purple-300 text-purple-700 hover:bg-purple-100"
+              className="px-4 py-2 bg-white border-2 border-purple-300 text-purple-700 hover:bg-purple-50 hover:border-purple-400 font-medium rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
             >
               <Settings className="h-4 w-4 mr-2" />
               Configurar Taxas
@@ -1865,20 +1664,18 @@ const Commission = () => {
                 setReportDateTo(format(lastDay, 'yyyy-MM-dd'));
                 setShowPaymentReport(true);
               }}
-              variant="outline"
-              className="bg-indigo-50 border-indigo-300 text-indigo-700 hover:bg-indigo-100"
+              className="relative px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 border-0"
             >
-              <FileText className="h-4 w-4 mr-2" />
-              Relatório de Pagamento
-            </Button>
-
-            {/* Botão DEBUG temporário */}
-            <Button 
-              onClick={debugEmployeeData}
-              variant="outline"
-              className="bg-yellow-50 border-yellow-300 text-yellow-700 hover:bg-yellow-100"
-            >
-              🔍 Debug Funcionários
+              <div className="flex items-center">
+                <div className="bg-white/20 rounded-full p-1 mr-3">
+                  <FileText className="h-4 w-4" />
+                </div>
+                <div className="flex flex-col items-start">
+                  <span className="text-sm font-bold">📊 Relatório de Pagamento</span>
+                  <span className="text-xs opacity-90">Gerar relatórios detalhados</span>
+                </div>
+              </div>
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 to-purple-600/20 rounded-lg blur-lg -z-10"></div>
             </Button>
           </div>
           
@@ -2006,10 +1803,17 @@ const Commission = () => {
               <Button
                 onClick={generatePaymentReport}
                 disabled={generatingReport}
-                className="bg-indigo-600 hover:bg-indigo-700"
+                className="px-6 py-2.5 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <FileText className="h-4 w-4 mr-2" />
-                {generatingReport ? "Gerando..." : "Gerar Relatório"}
+                {generatingReport ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Gerando...
+                  </>
+                ) : (
+                  "📊 Gerar Relatório"
+                )}
               </Button>
             </div>
 
@@ -2368,21 +2172,7 @@ const Commission = () => {
             </>
           )}
 
-          {/* Botão para ver detalhes individuais */}
-          <Button
-            onClick={() => {
-              console.log(`📋 DETALHES DE ${report.employee}:`);
-              report.commissions.forEach((c: any, i: number) => {
-                console.log(`${i + 1}. ${c.lead?.name} - Status: ${c.status} - ID: ${c.id}`);
-              });
-              toast.info(`Detalhes de ${report.employee} enviados para o console (F12)`);
-            }}
-            variant="outline"
-            size="sm"
-          >
-            <FileText className="h-4 w-4 mr-2" />
-            Ver Detalhes
-          </Button>
+
         </div>
       </div>
     );
