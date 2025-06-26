@@ -7,7 +7,6 @@ import {
   TableBody,
   TableCaption,
   TableCell,
-  TableFooter,
   TableHead,
   TableHeader,
   TableRow,
@@ -501,40 +500,7 @@ const Commission = () => {
     }
   };
 
-  const calculateEmployeeTotals = () => {
-    if (employeeFilter && employeeFilter !== "all") {
-      const filteredByEmployee = commissions.filter(
-        commission => commission.employee === employeeFilter || commission.lead?.employee === employeeFilter
-      );
-      
-      const inProgress = filteredByEmployee
-        .filter(c => c.status === "in_progress")
-        .reduce((acc, curr) => acc + (Number(curr.commission_value) || 0), 0);
 
-      const pending = filteredByEmployee
-        .filter(c => c.status === "pending")
-        .reduce((acc, curr) => acc + (Number(curr.commission_value) || 0), 0);
-        
-      const completed = filteredByEmployee
-        .filter(c => c.status === "completed" || c.status === "approved" || c.status === "paid")
-        .reduce((acc, curr) => acc + (Number(curr.commission_value) || 0), 0);
-        
-      const cancelled = filteredByEmployee
-        .filter(c => c.status === "cancelled")
-        .reduce((acc, curr) => acc + (Number(curr.commission_value) || 0), 0);
-      
-      return { inProgress, pending, completed, cancelled };
-    }
-    
-    return { 
-      inProgress: totalCommissionsPaid,
-      pending: totalCommissionsPending,
-      completed: totalCommissionsApproved,
-      cancelled: 0
-    };
-  };
-
-  const employeeTotals = calculateEmployeeTotals();
 
   // Função para gerar relatório de pagamento
   const generatePaymentReport = async () => {
@@ -1072,34 +1038,7 @@ const Commission = () => {
             })
           )}
         </TableBody>
-        <TableFooter>
-          <TableRow>
-            <TableCell colSpan={10}>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
-                  <span className="font-medium text-blue-600">Em Andamento:</span>
-                  <br />
-                  <span className="font-bold text-blue-700 text-lg">R$ {employeeTotals.inProgress.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-                </div>
-                <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
-                  <span className="font-medium text-yellow-600">Pendente:</span>
-                  <br />
-                  <span className="font-bold text-yellow-700 text-lg">R$ {employeeTotals.pending.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-                </div>
-                <div className="bg-green-50 p-3 rounded-lg border border-green-200">
-                  <span className="font-medium text-green-600">Concluído:</span>
-                  <br />
-                  <span className="font-bold text-green-700 text-lg">R$ {employeeTotals.completed.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-                </div>
-                <div className="bg-red-50 p-3 rounded-lg border border-red-200">
-                  <span className="font-medium text-red-600">Cancelado:</span>
-                  <br />
-                  <span className="font-bold text-red-700 text-lg">R$ {employeeTotals.cancelled.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-                </div>
-              </div>
-            </TableCell>
-          </TableRow>
-        </TableFooter>
+
       </Table>
     );
   };
