@@ -141,6 +141,7 @@ const BenefitTypeSelect: React.FC<BenefitTypeSelectProps> = ({ value, onValueCha
             </div>
           </div>
           <div className="max-h-[200px] overflow-y-auto">
+            <SelectItem value="none">Não informado</SelectItem>
             {filteredBenefits.length > 0 ? (
               filteredBenefits.map((benefit) => (
                 <SelectItem key={benefit.code} value={benefit.code}>

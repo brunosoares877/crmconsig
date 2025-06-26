@@ -103,13 +103,13 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
       phone2: "",
       phone3: "",
       email: "",
-      bank: "",
+      bank: "none",
       product: "",
       amount: "",
-      payment_period: "",
+      payment_period: "none",
       employee: "none",
       notes: "",
-      benefit_type: "",
+      benefit_type: "none",
       representative_mode: "nao",
       representative_name: "",
       representative_cpf: "",
@@ -142,7 +142,7 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
       setValue("phone2", initialData?.phone2 || "");
       setValue("phone3", initialData?.phone3 || "");
       setValue("email", initialData?.email || "");
-      setValue("bank", initialData?.bank || "");
+      setValue("bank", initialData?.bank || "none");
       setValue("product", initialData?.product || "");
       setValue("amount", initialData?.amount || "");
       
@@ -154,12 +154,12 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
         setCustomPeriod(paymentPeriod);
         setValue("payment_period", paymentPeriod);
       } else {
-        setValue("payment_period", paymentPeriod);
+        setValue("payment_period", paymentPeriod || "none");
       }
       
       setValue("employee", employeeValue);
       setValue("notes", initialData?.notes || "");
-      setValue("benefit_type", initialData?.benefit_type || "");
+      setValue("benefit_type", initialData?.benefit_type || "none");
       setValue("representative_mode", initialData?.representative_mode || "nao");
       setValue("representative_name", initialData?.representative_name || "");
       setValue("representative_cpf", initialData?.representative_cpf || "");
@@ -235,7 +235,8 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
       payment_period: finalPaymentPeriod,
       employee: data.employee && data.employee !== "none" && data.employee.trim() !== "" ? data.employee.trim() : null,
       bank: data.bank === "none" ? undefined : data.bank,
-      product: data.product && data.product.trim() !== "" ? data.product.trim() : undefined
+      product: data.product && data.product.trim() !== "" ? data.product.trim() : undefined,
+      benefit_type: data.benefit_type === "none" ? undefined : data.benefit_type
     };
 
     console.log("Form data processed for submission:", {
@@ -406,9 +407,9 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
         </div>
 
         <BenefitTypeSelect
-          value={watch("benefit_type") || ""}
+          value={watch("benefit_type") || "none"}
           onValueChange={(value) => setValue("benefit_type", value)}
-          defaultValue={initialData?.benefit_type || ""}
+          defaultValue={initialData?.benefit_type || "none"}
         />
 
         <div>
