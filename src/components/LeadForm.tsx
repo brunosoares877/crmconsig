@@ -341,6 +341,29 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
           <Label htmlFor="date">Data do Lead</Label>
           <Input id="date" type="date" {...register("date")} />
         </div>
+
+        {/* Botão para Calcular Comissão */}
+        <div className="flex items-center gap-4">
+          <Button
+            type="button"
+            variant={showCommissionSection ? "default" : "outline"}
+            onClick={() => setShowCommissionSection(!showCommissionSection)}
+            className="flex items-center gap-2"
+          >
+            <span>💰</span>
+            {showCommissionSection ? "Ocultar Cálculo de Comissão" : "Calcular Comissão"}
+          </Button>
+          
+          {commissionResult && !showCommissionSection && (
+            <div className="flex items-center gap-2 text-sm text-green-700">
+              <span>✅ Comissão:</span>
+              <span className="font-bold">
+                R$ {commissionResult.calculatedValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              </span>
+              <span className="text-xs">({commissionResult.percentage.toFixed(2)}%)</span>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Seção de Representante - aparece logo após os campos básicos */}
@@ -360,29 +383,6 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
           </div>
         </div>
       )}
-
-      {/* Botão para Calcular Comissão */}
-      <div className="mt-6 flex items-center gap-4">
-        <Button
-          type="button"
-          variant={showCommissionSection ? "default" : "outline"}
-          onClick={() => setShowCommissionSection(!showCommissionSection)}
-          className="flex items-center gap-2"
-        >
-          <span>💰</span>
-          {showCommissionSection ? "Ocultar Cálculo de Comissão" : "Calcular Comissão"}
-        </Button>
-        
-        {commissionResult && !showCommissionSection && (
-          <div className="flex items-center gap-2 text-sm text-green-700">
-            <span>✅ Comissão:</span>
-            <span className="font-bold">
-              R$ {commissionResult.calculatedValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-            </span>
-            <span className="text-xs">({commissionResult.percentage.toFixed(2)}%)</span>
-          </div>
-        )}
-      </div>
 
       {/* Seletor de Configuração de Comissão - Condicional */}
       {showCommissionSection && (
