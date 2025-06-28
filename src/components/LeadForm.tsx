@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { z } from "zod";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,7 +12,6 @@ import { toast } from "sonner";
 
 import BenefitTypeSelect from "@/components/forms/BenefitTypeSelect";
 import { BankSelect } from "@/components/forms/BankSelect";
-// import ProductSelect from "@/components/forms/ProductSelect"; // Removido - integrado com CommissionConfigSelector
 import EmployeeSelect from "@/components/EmployeeSelect";
 import CommissionConfigSelector from "@/components/forms/CommissionConfigSelector";
 import { useAuth } from "@/contexts/AuthContext";
@@ -23,12 +22,9 @@ const formSchema = z.object({
   cpf: z.string().optional(),
   phone: z.string().optional(),
   phone2: z.string().optional(),
-  phone3: z.string().optional(),
-  email: z.string().email("Email inválido").optional().or(z.literal("")),
   bank: z.string().optional(),
   product: z.string().optional(),
   amount: z.string().optional(),
-  payment_period: z.string().optional(),
   employee: z.string().optional(),
   notes: z.string().optional(),
   benefit_type: z.string().optional(),
@@ -40,10 +36,8 @@ const formSchema = z.object({
 
 type FormData = z.infer<typeof formSchema>;
 
-// Tipo para dados processados com payment_period como number
-type ProcessedFormData = Omit<FormData, 'payment_period'> & {
-  payment_period?: number;
-};
+// Tipo para dados processados
+type ProcessedFormData = FormData;
 
 interface LeadFormProps {
   onSubmit: (data: ProcessedFormData) => void;
@@ -89,8 +83,6 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
   const { user } = useAuth ? useAuth() : { user: null };
   const [isInitialized, setIsInitialized] = useState(false);
   const [commissionResult, setCommissionResult] = useState<CommissionCalculationResult | null>(null);
-  const [customPeriod, setCustomPeriod] = useState("");
-  const [isCustomPeriod, setIsCustomPeriod] = useState(false);
 
   console.log("LeadForm rendering - isEditing:", isEditing, "employee:", initialData?.employee);
 
@@ -101,12 +93,9 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
       cpf: "",
       phone: "",
       phone2: "",
-      phone3: "",
-      email: "",
       bank: "none",
       product: "",
       amount: "",
-      payment_period: "none",
       employee: "none",
       notes: "",
       benefit_type: "none",
@@ -140,23 +129,9 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
       setValue("cpf", initialData?.cpf || "");
       setValue("phone", initialData?.phone || "");
       setValue("phone2", initialData?.phone2 || "");
-      setValue("phone3", initialData?.phone3 || "");
-      setValue("email", initialData?.email || "");
       setValue("bank", initialData?.bank || "none");
       setValue("product", initialData?.product || "");
       setValue("amount", initialData?.amount || "");
-      
-      // Lógica especial para payment_period
-      const paymentPeriod = initialData?.payment_period?.toString() || "";
-      if (paymentPeriod && parseInt(paymentPeriod) > 96) {
-        // Se o valor for maior que 96, usar modo personalizado
-        setIsCustomPeriod(true);
-        setCustomPeriod(paymentPeriod);
-        setValue("payment_period", paymentPeriod);
-      } else {
-        setValue("payment_period", paymentPeriod || "none");
-      }
-      
       setValue("employee", employeeValue);
       setValue("notes", initialData?.notes || "");
       setValue("benefit_type", initialData?.benefit_type || "none");
@@ -176,16 +151,6 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
     setIsInitialized(true);
   }, []);
 
-  // Reset custom period when form is reset or not editing
-  useEffect(() => {
-    if (!isEditing) {
-      setIsCustomPeriod(false);
-      setCustomPeriod("");
-    }
-  }, [isEditing]);
-
-  
-
   // Monitorar mudanças no campo employee
   useEffect(() => {
     const currentEmployee = watch("employee");
@@ -204,12 +169,11 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
       return;
     }
 
-    // Validar se há produto selecionado quando há valor ou prazo
+    // Validar se há produto selecionado quando há valor
     const hasValue = data.amount && parseFloat(data.amount.replace(/[^\d,]/g, '').replace(',', '.')) > 0;
-    const hasPeriod = data.payment_period && data.payment_period !== "" && data.payment_period !== "none";
     
-    if ((hasValue || hasPeriod) && (!data.product || data.product.trim() === "")) {
-      toast.error("⚠️ Selecione uma configuração de produto quando informar valor ou prazo de pagamento");
+    if (hasValue && (!data.product || data.product.trim() === "")) {
+      toast.error("⚠️ Selecione uma configuração de produto quando informar valor");
       return;
     }
 
@@ -220,19 +184,8 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
     }
 
     // Processar dados do formulário
-
-    // Converter payment_period de string para integer ou null e limpar campos vazios
-    let finalPaymentPeriod = undefined;
-    if (data.payment_period && data.payment_period !== "" && data.payment_period !== "none") {
-      const periodValue = parseInt(data.payment_period);
-      if (!isNaN(periodValue) && periodValue > 0) {
-        finalPaymentPeriod = periodValue;
-      }
-    }
-    
     const processedData = {
       ...data,
-      payment_period: finalPaymentPeriod,
       employee: data.employee && data.employee !== "none" && data.employee.trim() !== "" ? data.employee.trim() : null,
       bank: data.bank === "none" ? undefined : data.bank,
       product: data.product && data.product.trim() !== "" ? data.product.trim() : undefined,
@@ -288,17 +241,6 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
           <Input id="phone2" {...register("phone2")} placeholder="(00) 00000-0000" />
         </div>
 
-        <div>
-          <Label htmlFor="phone3">Telefone 3</Label>
-          <Input id="phone3" {...register("phone3")} placeholder="(00) 00000-0000" />
-        </div>
-
-        <div>
-          <Label htmlFor="email">Email</Label>
-          <Input id="email" type="email" {...register("email")} />
-          {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>}
-        </div>
-
         <BankSelect
           value={watch("bank") || "none"}
           onValueChange={(value) => setValue("bank", value)}
@@ -320,70 +262,6 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
             placeholder="R$ 0,00"
             onChange={e => setValue("amount", formatBRL(e.target.value))}
           />
-        </div>
-
-        <div>
-          <Label htmlFor="payment_period">Prazo de Pagamento</Label>
-          <div className="space-y-2">
-            <Select 
-              onValueChange={(value) => {
-                if (value === "custom") {
-                  setIsCustomPeriod(true);
-                  setValue("payment_period", "");
-                } else {
-                  setIsCustomPeriod(false);
-                  setCustomPeriod("");
-                  setValue("payment_period", value === "none" ? "" : value);
-                }
-              }} 
-              value={isCustomPeriod ? "custom" : (watch("payment_period") || "none")}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione o prazo" />
-              </SelectTrigger>
-              <SelectContent className="max-h-60">
-                <SelectItem value="none">Não informado</SelectItem>
-                {/* Opções comuns de 1x a 96x */}
-                {Array.from({ length: 96 }, (_, i) => i + 1).map((months) => (
-                  <SelectItem key={months} value={months.toString()}>
-                    {months}x
-                  </SelectItem>
-                ))}
-                <SelectItem value="custom">📝 Personalizado</SelectItem>
-              </SelectContent>
-            </Select>
-            
-            {isCustomPeriod && (
-              <div className="flex gap-2 items-center">
-                <Input
-                  type="number"
-                  placeholder="Digite o prazo"
-                  value={customPeriod}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    setCustomPeriod(value);
-                    setValue("payment_period", value);
-                  }}
-                  className="flex-1"
-                  min="1"
-                  max="999"
-                />
-                <span className="text-sm text-gray-500">parcelas</span>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setIsCustomPeriod(false);
-                    setCustomPeriod("");
-                    setValue("payment_period", "");
-                  }}
-                >
-                  ✕
-                </Button>
-              </div>
-            )}
-          </div>
         </div>
 
         <div>
@@ -454,7 +332,7 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
         <CommissionConfigSelector
           productName={watch("product") || undefined}
           amount={watch("amount") || undefined}
-          paymentPeriod={watch("payment_period") || undefined}
+          paymentPeriod={undefined}
           onCommissionCalculated={setCommissionResult}
           onOptionSelected={(option) => {
             // Quando uma opção de comissão é selecionada, definir o produto automaticamente
