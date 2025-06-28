@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -15,7 +15,7 @@ import { BankSelect } from "@/components/forms/BankSelect";
 import EmployeeSelect from "@/components/EmployeeSelect";
 import CommissionConfigSelector from "@/components/forms/CommissionConfigSelector";
 import { useAuth } from "@/contexts/AuthContext";
-import { CommissionCalculationResult } from "@/hooks/useCommissionConfig";
+import { CommissionCalculationResult, useCommissionConfig } from "@/hooks/useCommissionConfig";
 
 const formSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
@@ -83,6 +83,21 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
   const { user } = useAuth ? useAuth() : { user: null };
   const [isInitialized, setIsInitialized] = useState(false);
   const [commissionResult, setCommissionResult] = useState<CommissionCalculationResult | null>(null);
+  const [showCommissionSection, setShowCommissionSection] = useState(false);
+  
+  // Hook para buscar todas as configurações de comissão disponíveis
+  const { availableOptions: allCommissionOptions, loading: loadingOptions } = useCommissionConfig();
+  
+  // Criar lista única de produtos (sem duplicatas)
+  const availableProducts = useMemo(() => {
+    const uniqueProducts = new Set<string>();
+    allCommissionOptions.forEach(option => {
+      if (option.product) {
+        uniqueProducts.add(option.product);
+      }
+    });
+    return Array.from(uniqueProducts).sort();
+  }, [allCommissionOptions]);
 
   console.log("LeadForm rendering - isEditing:", isEditing, "employee:", initialData?.employee);
 
@@ -251,9 +266,28 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
 
         <div>
           <Label htmlFor="product">Produto</Label>
-          <div className="text-sm text-gray-600 p-2 border rounded-md bg-gray-50">
-            {watch("product") || "👇 Escolha uma configuração de produto abaixo"}
-          </div>
+          <Select 
+            onValueChange={(value) => setValue("product", value === "none" ? "" : value)}
+            value={watch("product") || "none"}
+            disabled={loadingOptions}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder={loadingOptions ? "Carregando produtos..." : "Selecione o produto"} />
+            </SelectTrigger>
+            <SelectContent className="max-h-60">
+              <SelectItem value="none">Nenhum produto</SelectItem>
+              {availableProducts.map((product) => (
+                <SelectItem key={product} value={product}>
+                  <div className="flex items-center gap-2">
+                    <span>📦 {product}</span>
+                    <span className="text-xs text-gray-500">
+                      ({allCommissionOptions.filter(opt => opt.product === product).length} configurações)
+                    </span>
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         <div>
@@ -327,46 +361,56 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
         </div>
       )}
 
-      {/* Seletor de Configuração de Comissão */}
-      <div className="mt-6">
-        <CommissionConfigSelector
-          productName={watch("product") || undefined}
-          amount={watch("amount") || undefined}
-          paymentPeriod={undefined}
-          onCommissionCalculated={setCommissionResult}
-          onOptionSelected={(option) => {
-            // Quando uma opção de comissão é selecionada, definir o produto automaticamente
-            if (option?.product) {
-              setValue("product", option.product);
-            } else {
-              // Quando opção é limpa, limpar o produto também
-              setValue("product", "");
-            }
-          }}
-          showCard={true}
-          autoCalculate={false}
-        />
+      {/* Botão para Calcular Comissão */}
+      <div className="mt-6 flex items-center gap-4">
+        <Button
+          type="button"
+          variant={showCommissionSection ? "default" : "outline"}
+          onClick={() => setShowCommissionSection(!showCommissionSection)}
+          className="flex items-center gap-2"
+        >
+          <span>💰</span>
+          {showCommissionSection ? "Ocultar Cálculo de Comissão" : "Calcular Comissão"}
+        </Button>
+        
+        {commissionResult && !showCommissionSection && (
+          <div className="flex items-center gap-2 text-sm text-green-700">
+            <span>✅ Comissão:</span>
+            <span className="font-bold">
+              R$ {commissionResult.calculatedValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+            </span>
+            <span className="text-xs">({commissionResult.percentage.toFixed(2)}%)</span>
+          </div>
+        )}
       </div>
+
+      {/* Seletor de Configuração de Comissão - Condicional */}
+      {showCommissionSection && (
+        <div className="mt-4">
+          <CommissionConfigSelector
+            productName={watch("product") || undefined}
+            amount={watch("amount") || undefined}
+            paymentPeriod={undefined}
+            onCommissionCalculated={setCommissionResult}
+            onOptionSelected={(option) => {
+              // Quando uma opção de comissão é selecionada, definir o produto automaticamente
+              if (option?.product) {
+                setValue("product", option.product);
+              } else {
+                // Quando opção é limpa, limpar o produto também
+                setValue("product", "");
+              }
+            }}
+            showCard={true}
+            autoCalculate={false}
+          />
+        </div>
+      )}
 
       <div>
         <Label htmlFor="notes">Observações</Label>
         <Textarea id="notes" {...register("notes")} rows={3} />
       </div>
-
-      {/* Resumo da Comissão */}
-      {commissionResult && (
-        <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-          <div className="flex items-center gap-2 text-blue-700">
-            <span className="text-sm font-medium">💰 Comissão calculada:</span>
-            <span className="font-bold">
-              R$ {commissionResult.calculatedValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-            </span>
-            <span className="text-xs">
-              ({commissionResult.percentage.toFixed(2)}%)
-            </span>
-          </div>
-        </div>
-      )}
 
       <div className="flex gap-2 justify-end">
         <Button type="button" variant="outline" onClick={onCancel} disabled={isLoading}>Cancelar</Button>
