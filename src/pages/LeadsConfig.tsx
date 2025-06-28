@@ -44,15 +44,7 @@ const DEFAULT_BANKS = [
   { code: "777", name: "Banco JP Morgan (atua em nichos)" }
 ];
 
-const DEFAULT_PRODUCTS = [
-  { code: "CREDITO_PIX_CARTAO", name: "CREDITO PIX/CARTAO" },
-  { code: "EMPRESTIMO_CONSIGNADO", name: "EMPRESTIMO CONSIGNADO" },
-  { code: "CARTAO_CONSIGNADO", name: "CARTAO CONSIGNADO" },
-  { code: "PORTABILIDADE", name: "PORTABILIDADE" },
-  { code: "REFINANCIAMENTO", name: "REFINANCIAMENTO" },
-  { code: "SAQUE_ANIVERSARIO", name: "SAQUE ANIVERSARIO" },
-  { code: "ANTECIPACAO_13", name: "ANTECIPACAO 13º" }
-];
+// DEFAULT_PRODUCTS removidos - funcionalidade de produtos desabilitada
 
 const DEFAULT_BENEFIT_TYPES = [
   { code: "01", description: "Pensão por morte – trabalhador rural" },
@@ -147,21 +139,17 @@ function setEditedItems<T>(key: string, items: T[]) {
 
 const LeadsConfig = () => {
   const [banks, setBanks] = useState<Bank[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
   const [benefitTypes, setBenefitTypes] = useState<BenefitType[]>([]);
   const [loading, setLoading] = useState(true);
   
   // Form states
   const [newBankName, setNewBankName] = useState("");
   const [newBankCode, setNewBankCode] = useState("");
-  const [newProductName, setNewProductName] = useState("");
-  const [newProductCode, setNewProductCode] = useState("");
   const [newBenefitName, setNewBenefitName] = useState("");
   const [newBenefitCode, setNewBenefitCode] = useState("");
   
   // Edit states
   const [editingBank, setEditingBank] = useState<string | null>(null);
-  const [editingProduct, setEditingProduct] = useState<string | null>(null);
   const [editingBenefit, setEditingBenefit] = useState<number | null>(null);
 
   useEffect(() => {
@@ -203,29 +191,8 @@ const LeadsConfig = () => {
       
       setBanks(allBanks);
 
-      // --- PRODUTOS ---
-      const savedProducts = localStorage.getItem('configProducts');
-      const configuredProducts = savedProducts ? JSON.parse(savedProducts) : [];
-      const removedProductIds = getRemovedIds('removedProducts');
-      const editedProducts = getEditedItems<Product>('editedProducts');
-      const allProducts: Product[] = [];
-      DEFAULT_PRODUCTS.forEach(product => {
-        const id = `default-${product.code}`;
-        if (removedProductIds.includes(id)) return;
-        const edited = editedProducts.find(p => p.id === id);
-        if (edited) {
-          allProducts.push(edited);
-        } else {
-          allProducts.push({ id, name: product.name, code: product.code });
-        }
-      });
-      configuredProducts.forEach((configProduct: Product) => {
-        const exists = allProducts.find(product => product.code === configProduct.code || product.name === configProduct.name);
-        if (!exists) {
-          allProducts.push(configProduct);
-        }
-      });
-      setProducts(allProducts);
+      // --- PRODUTOS REMOVIDOS ---
+      // Funcionalidade de produtos foi desabilitada
 
       // --- BENEFÍCIOS ---
       const removedBenefitIds = getRemovedIds('removedBenefits');
@@ -372,52 +339,7 @@ const LeadsConfig = () => {
     toast.success("Banco removido com sucesso!");
   };
 
-  const addProduct = () => {
-    if (!newProductName.trim()) {
-      toast.error("Nome do produto é obrigatório");
-      return;
-    }
-
-    const newProduct: Product = {
-      id: Date.now().toString(),
-      name: newProductName.trim(),
-      code: newProductCode.trim()
-    };
-
-    const updatedProducts = [...products, newProduct];
-    setProducts(updatedProducts);
-    
-    // Save only user-added products to localStorage
-    const userProducts = updatedProducts.filter(product => !product.id.startsWith('default-'));
-    localStorage.setItem('configProducts', JSON.stringify(userProducts));
-    
-    // Disparar evento para notificar outros componentes
-    window.dispatchEvent(new CustomEvent('configDataChanged'));
-    
-    setNewProductName("");
-    setNewProductCode("");
-    toast.success("Produto adicionado com sucesso!");
-  };
-
-  const deleteProduct = (id: string) => {
-    const updatedProducts = products.filter(p => p.id !== id);
-    setProducts(updatedProducts);
-    if (id.startsWith('default-')) {
-      const removed = getRemovedIds('removedProducts');
-      if (!removed.includes(id)) {
-        removed.push(id);
-        setRemovedIds('removedProducts', removed);
-      }
-    } else {
-      const userProducts = updatedProducts.filter(product => !product.id.startsWith('default-'));
-      localStorage.setItem('configProducts', JSON.stringify(userProducts));
-    }
-    
-    // Disparar evento para notificar outros componentes
-    window.dispatchEvent(new CustomEvent('configDataChanged'));
-    
-    toast.success("Produto removido com sucesso!");
-  };
+  // Funções de produtos removidas - funcionalidade desabilitada
 
   const editBank = (id: string, newName: string, newCode: string) => {
     const updatedBanks = banks.map(bank =>
@@ -444,29 +366,7 @@ const LeadsConfig = () => {
     toast.success('Banco editado com sucesso!');
   };
 
-  const editProduct = (id: string, newName: string, newCode: string) => {
-    const updatedProducts = products.map(product =>
-      product.id === id ? { ...product, name: newName, code: newCode } : product
-    );
-    setProducts(updatedProducts);
-    if (id.startsWith('default-')) {
-      const edited = getEditedItems<Product>('editedProducts');
-      const idx = edited.findIndex(p => p.id === id);
-      if (idx !== -1) {
-        edited[idx] = { id, name: newName, code: newCode };
-      } else {
-        edited.push({ id, name: newName, code: newCode });
-      }
-      setEditedItems('editedProducts', edited);
-    } else {
-      localStorage.setItem('configProducts', JSON.stringify(updatedProducts.filter(p => !p.id.startsWith('default-'))));
-    }
-    
-    // Disparar evento para notificar outros componentes
-    window.dispatchEvent(new CustomEvent('configDataChanged'));
-    
-    toast.success('Produto editado com sucesso!');
-  };
+  // editProduct removido - funcionalidade desabilitada
 
   const editBenefit = async (id: number, newDescription: string, newCode: string) => {
     const updatedBenefits = benefitTypes.map(benefit =>
@@ -507,7 +407,7 @@ const LeadsConfig = () => {
 
   if (loading) {
     return (
-      <PageLayout title="Configurações de Leads" subtitle="Gerencie bancos, produtos e tipos de benefícios">
+      <PageLayout title="Configurações de Leads" subtitle="Gerencie bancos e tipos de benefícios">
         <div className="flex items-center justify-center h-64">
           <div className="text-lg">Carregando...</div>
         </div>
@@ -518,12 +418,11 @@ const LeadsConfig = () => {
   return (
     <PageLayout 
       title="Configurações de Leads" 
-      subtitle="Gerencie bancos, produtos e tipos de benefícios para seus leads"
+      subtitle="Gerencie bancos e tipos de benefícios para seus leads"
     >
       <Tabs defaultValue="banks" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="banks">Bancos</TabsTrigger>
-          <TabsTrigger value="products">Produtos</TabsTrigger>
           <TabsTrigger value="benefits">Tipos de Benefícios</TabsTrigger>
         </TabsList>
 
@@ -624,80 +523,7 @@ const LeadsConfig = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="products">
-          <Card>
-            <CardHeader>
-              <CardTitle>Gerenciar Produtos</CardTitle>
-              <CardDescription>
-                Adicione ou remova produtos disponíveis para seleção nos leads
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex gap-4">
-                <div className="flex-1">
-                  <Label htmlFor="productName">Nome do Produto *</Label>
-                  <Input
-                    id="productName"
-                    value={newProductName}
-                    onChange={(e) => setNewProductName(e.target.value)}
-                    placeholder="Ex: Empréstimo Pessoal"
-                  />
-                </div>
-                <div className="flex-1">
-                  <Label htmlFor="productCode">Código (opcional)</Label>
-                  <Input
-                    id="productCode"
-                    value={newProductCode}
-                    onChange={(e) => setNewProductCode(e.target.value)}
-                    placeholder="Ex: pessoal"
-                  />
-                </div>
-                <div className="flex items-end">
-                  <Button onClick={addProduct}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Adicionar
-                  </Button>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                {products.map((product) => (
-                  <div key={product.id} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div>
-                      <div className="font-medium">{product.name}</div>
-                      <div className="text-sm text-muted-foreground">
-                        Código: {product.code || "Não informado"}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="destructive" size="sm">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Tem certeza que deseja remover o produto "{product.name}"? Esta ação não pode ser desfeita.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => deleteProduct(product.id)}>
-                              Remover
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+        {/* Seção de produtos removida - funcionalidade desabilitada */}
 
         <TabsContent value="benefits">
           <Card>
