@@ -222,66 +222,83 @@ const CommissionConfigSelector: React.FC<CommissionConfigSelectorProps> = ({
         )}
 
         {/* Produtos Agrupados */}
-        {Object.entries(groupedByProduct)
-          .filter(([groupProductName]) => !productName || groupProductName === productName)
-          .map(([groupProductName, options]) => (
-          <div key={groupProductName} className="space-y-2">
-            <Collapsible
-              open={expandedGroups.has(groupProductName)}
-              onOpenChange={() => toggleGroup(groupProductName)}
-            >
-              <CollapsibleTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-between p-3 h-auto"
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium">📦 {groupProductName}</span>
-                    <Badge variant="secondary">{options.length} configurações</Badge>
-                  </div>
-                  {expandedGroups.has(groupProductName) ? 
-                    <ChevronDown className="h-4 w-4" /> : 
-                    <ChevronRight className="h-4 w-4" />
-                  }
-                </Button>
-              </CollapsibleTrigger>
-              <CollapsibleContent className="space-y-2 mt-2">
-                {options.map((option) => (
-                  <div
-                    key={option.id}
-                    className={`p-3 border rounded-lg cursor-pointer transition-all hover:bg-gray-50 ${
-                      selectedOption?.id === option.id ? 'border-blue-500 bg-blue-50' : 'border-gray-200'
-                    }`}
-                    onClick={() => handleOptionSelect(option)}
-                    title={selectedOption?.id === option.id ? "Clique novamente para desselecionar" : "Clique para selecionar"}
+        {productName ? (
+          Object.entries(groupedByProduct)
+            .filter(([groupProductName]) => groupProductName === productName)
+            .map(([groupProductName, options]) => (
+            <div key={groupProductName} className="space-y-2">
+              <Collapsible
+                open={expandedGroups.has(groupProductName)}
+                onOpenChange={() => toggleGroup(groupProductName)}
+              >
+                <CollapsibleTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-between p-3 h-auto"
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="font-medium">
-                            {selectedOption?.id === option.id && "✅ "}
-                            {option.name}
-                          </span>
-                          {getOptionBadge(option)}
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">📦 {groupProductName}</span>
+                      <Badge variant="secondary">{options.length} configurações</Badge>
+                    </div>
+                    {expandedGroups.has(groupProductName) ? 
+                      <ChevronDown className="h-4 w-4" /> : 
+                      <ChevronRight className="h-4 w-4" />
+                    }
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="space-y-2 mt-2">
+                  {options.map((option) => (
+                    <div
+                      key={option.id}
+                      className={`p-3 border rounded-lg cursor-pointer transition-all hover:bg-gray-50 ${
+                        selectedOption?.id === option.id ? 'border-blue-500 bg-blue-50' : 'border-gray-200'
+                      }`}
+                      onClick={() => handleOptionSelect(option)}
+                      title={selectedOption?.id === option.id ? "Clique novamente para desselecionar" : "Clique para selecionar"}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-medium">
+                              {selectedOption?.id === option.id && "✅ "}
+                              {option.name}
+                            </span>
+                            {getOptionBadge(option)}
+                          </div>
+                          {getOptionDescription(option) && (
+                            <div className="text-xs text-gray-500">
+                              {getOptionDescription(option)}
+                            </div>
+                          )}
+                          {selectedOption?.id === option.id && (
+                            <div className="text-xs text-blue-600 mt-1">
+                              💡 Clique novamente para desselecionar
+                            </div>
+                          )}
                         </div>
-                        {getOptionDescription(option) && (
-                          <div className="text-xs text-gray-500">
-                            {getOptionDescription(option)}
-                          </div>
-                        )}
-                        {selectedOption?.id === option.id && (
-                          <div className="text-xs text-blue-600 mt-1">
-                            💡 Clique novamente para desselecionar
-                          </div>
-                        )}
                       </div>
                     </div>
-                  </div>
-                ))}
-              </CollapsibleContent>
-            </Collapsible>
-          </div>
-        ))}
+                  ))}
+                </CollapsibleContent>
+              </Collapsible>
+            </div>
+          ))
+        ) : (
+          <Alert className="border-blue-200 bg-blue-50">
+            <Info className="h-4 w-4 text-blue-600" />
+            <AlertDescription className="text-blue-800">
+              <div className="space-y-2">
+                <div className="font-semibold">🎯 Selecione um produto primeiro</div>
+                <div className="text-sm">
+                  Para calcular a comissão, primeiro selecione um produto no campo "Produto" acima.
+                </div>
+                <div className="text-sm">
+                  Após selecionar o produto, as configurações de comissão específicas aparecerão aqui.
+                </div>
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
 
         {/* Resultado do Cálculo */}
         {calculationResult && (
