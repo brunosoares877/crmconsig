@@ -352,6 +352,71 @@ const LeadScheduling = () => {
     }
   };
 
+  const renderAppointmentCard = (appointment: Appointment) => (
+    <Card key={appointment.id}>
+      <CardHeader className="relative">
+        <div className="absolute right-6 top-6">
+          {getAppointmentStatusBadge(appointment)}
+        </div>
+        <CardTitle className="text-lg font-semibold mb-3">{appointment.title}</CardTitle>
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 text-base">
+            <span className="font-medium text-gray-700">Cliente:</span>
+            <span className="text-lg font-bold text-gray-900">{getLeadName(appointment.lead_id)}</span>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          <div className="flex items-center space-x-2 text-sm">
+            <CalendarIcon className="h-4 w-4" />
+            <span>{formatDate(appointment.date)}</span>
+            <Clock className="h-4 w-4 ml-2" />
+            <span>{appointment.time}</span>
+          </div>
+          
+          {appointment.notes && (
+            <div className="text-sm text-muted-foreground">
+              {appointment.notes}
+            </div>
+          )}
+
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleEditAppointment(appointment)}
+            >
+              <Edit className="h-4 w-4 mr-1" />
+              Editar
+            </Button>
+            
+            {appointment.status !== "completed" && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleStatusChange(appointment, "completed")}
+              >
+                <Check className="h-4 w-4 mr-1" />
+                Concluir
+              </Button>
+            )}
+            
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-destructive"
+              onClick={() => handleDeleteAppointment(appointment.id)}
+            >
+              <Trash2 className="h-4 w-4 mr-1" />
+              Excluir
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
   return (
     <PageLayout>
       <div className="flex flex-col gap-8 p-8">
@@ -378,7 +443,7 @@ const LeadScheduling = () => {
           </TabsList>
 
           <TabsContent value="all" className="mt-4">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
               {isLoading ? (
                 <div className="col-span-full flex justify-center">
                   <Loader2 className="h-8 w-8 animate-spin" />
@@ -395,73 +460,13 @@ const LeadScheduling = () => {
                   </Card>
                 </div>
               ) : (
-                filteredAppointments.map((appointment) => (
-                  <Card key={appointment.id}>
-                    <CardHeader className="relative">
-                      <div className="absolute right-6 top-6">
-                        {getAppointmentStatusBadge(appointment)}
-                      </div>
-                      <CardTitle>{appointment.title}</CardTitle>
-                      <CardDescription>
-                        Cliente: {getLeadName(appointment.lead_id)}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-4">
-                        <div className="flex items-center space-x-2 text-sm">
-                          <CalendarIcon className="h-4 w-4" />
-                          <span>{formatDate(appointment.date)}</span>
-                          <Clock className="h-4 w-4 ml-2" />
-                          <span>{appointment.time}</span>
-                        </div>
-                        
-                        {appointment.notes && (
-                          <div className="text-sm text-muted-foreground">
-                            {appointment.notes}
-                          </div>
-                        )}
-
-                        <div className="flex items-center space-x-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleEditAppointment(appointment)}
-                          >
-                            <Edit className="h-4 w-4 mr-1" />
-                            Editar
-                          </Button>
-                          
-                          {appointment.status !== "completed" && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleStatusChange(appointment, "completed")}
-                            >
-                              <Check className="h-4 w-4 mr-1" />
-                              Concluir
-                            </Button>
-                          )}
-                          
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="text-destructive"
-                            onClick={() => handleDeleteAppointment(appointment.id)}
-                          >
-                            <Trash2 className="h-4 w-4 mr-1" />
-                            Excluir
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))
+                                filteredAppointments.map(renderAppointmentCard)
               )}
             </div>
           </TabsContent>
 
           <TabsContent value="pending" className="mt-4">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
               {isLoading ? (
                 <div className="col-span-full flex justify-center">
                   <Loader2 className="h-8 w-8 animate-spin" />
@@ -478,7 +483,7 @@ const LeadScheduling = () => {
                   </Card>
                 </div>
               ) : (
-                filteredAppointments.map((appointment) => (
+                filteredAppointments.map(renderAppointmentCard)
                   <Card key={appointment.id}>
                     <CardHeader className="relative">
                       <div className="absolute right-6 top-6">
@@ -544,7 +549,7 @@ const LeadScheduling = () => {
           </TabsContent>
 
           <TabsContent value="completed" className="mt-4">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
               {isLoading ? (
                 <div className="col-span-full flex justify-center">
                   <Loader2 className="h-8 w-8 animate-spin" />
@@ -616,7 +621,7 @@ const LeadScheduling = () => {
           </TabsContent>
 
           <TabsContent value="overdue" className="mt-4">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
               {isLoading ? (
                 <div className="col-span-full flex justify-center">
                   <Loader2 className="h-8 w-8 animate-spin" />
