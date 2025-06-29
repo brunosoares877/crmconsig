@@ -816,11 +816,41 @@ const Reminders = () => {
 
 
   return (
-    <PageLayout
-      title="Lembretes"
-      subtitle="Gerencie seus lembretes e nunca perca uma tarefa importante"
-      headerActions={headerActions}
-    >
+    <div className="p-6 space-y-6">
+      {/* Header moderno customizado */}
+      <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700 text-white rounded-xl mb-8 shadow-xl">
+        <div className="p-8">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="bg-white/20 backdrop-blur-sm rounded-full p-3">
+                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold">Lembretes</h1>
+                <p className="text-blue-100 text-lg mt-1">Gerencie seus lembretes e nunca perca uma tarefa importante</p>
+              </div>
+            </div>
+            <div className="hidden md:flex items-center space-x-4">
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg px-4 py-2">
+                <div className="text-sm text-blue-100">Total de Lembretes</div>
+                <div className="text-2xl font-bold">
+                  {totalReminders}
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Header Actions */}
+          <div className="mt-6 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              {headerActions}
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="space-y-6">
         <Tabs 
           defaultValue="all" 
@@ -1042,7 +1072,7 @@ const Reminders = () => {
           </div>
         )}
       </div>
-    </PageLayout>
+    </div>
   );
 };
 

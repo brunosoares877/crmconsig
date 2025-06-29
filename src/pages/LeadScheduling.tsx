@@ -439,21 +439,45 @@ const LeadScheduling = () => {
   );
 
   return (
-    <PageLayout>
-      <div className="flex flex-col gap-8 p-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-3xl font-bold tracking-tight">Agendamentos</h2>
-            <p className="text-muted-foreground">
-              Gerencie seus agendamentos com clientes
-            </p>
+    <div className="p-6 space-y-6">
+      {/* Header moderno customizado */}
+      <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700 text-white rounded-xl mb-8 shadow-xl">
+        <div className="p-8">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="bg-white/20 backdrop-blur-sm rounded-full p-3">
+                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold">Agendamentos</h1>
+                <p className="text-blue-100 text-lg mt-1">Gerencie seus agendamentos com clientes</p>
+              </div>
+            </div>
+            <div className="hidden md:flex items-center space-x-4">
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg px-4 py-2">
+                <div className="text-sm text-blue-100">Total de Agendamentos</div>
+                <div className="text-2xl font-bold">
+                  {appointments.length}
+                </div>
+              </div>
+            </div>
           </div>
-
-          <Button onClick={openNewAppointmentDialog}>
-            <Plus className="mr-2 h-4 w-4" />
-            Novo Agendamento
-          </Button>
+          
+          {/* Header Actions */}
+          <div className="mt-6 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Button onClick={openNewAppointmentDialog} className="bg-white/20 hover:bg-white/30 border-white/30">
+                <Plus className="mr-2 h-4 w-4" />
+                Novo Agendamento
+              </Button>
+            </div>
+          </div>
         </div>
+      </div>
+
+      <div className="flex flex-col gap-8">
 
         <Tabs defaultValue="all" className="w-full" onValueChange={(value) => filterAppointments(value as AppointmentStatus)}>
           <TabsList className="grid w-full grid-cols-4 md:w-auto">
@@ -719,7 +743,7 @@ const LeadScheduling = () => {
           </DialogContent>
         </Dialog>
       </div>
-    </PageLayout>
+    </div>
   );
 };
 

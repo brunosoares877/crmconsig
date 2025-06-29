@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/dialog";
 import { Edit } from "lucide-react";
 import { getEmployees, createEmployee, updateEmployee, deleteEmployee, Employee } from "@/utils/employees";
-import PageLayout from "@/components/PageLayout";
+// Removido import PageLayout
 import { getBankName } from "@/utils/bankUtils";
 
 const Employees = () => {
@@ -177,7 +177,34 @@ const Employees = () => {
   };
 
   return (
-    <PageLayout title="Gerenciamento de Funcionários">
+    <div className="p-6 space-y-6">
+      {/* Header moderno customizado */}
+      <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700 text-white rounded-xl mb-8 shadow-xl">
+        <div className="p-8">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="bg-white/20 backdrop-blur-sm rounded-full p-3">
+                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                </svg>
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold">Gerenciamento de Funcionários</h1>
+                <p className="text-blue-100 text-lg mt-1">Cadastre e gerencie sua equipe de vendas</p>
+              </div>
+            </div>
+            <div className="hidden md:flex items-center space-x-4">
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg px-4 py-2">
+                <div className="text-sm text-blue-100">Total de Funcionários</div>
+                <div className="text-2xl font-bold">
+                  {employees.length}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="space-y-8">
         <div className="bg-card p-6 rounded-lg border shadow-sm">
           <h2 className="text-lg font-semibold mb-4">Adicionar Novo Funcionário</h2>
@@ -411,7 +438,7 @@ const Employees = () => {
           </DialogContent>
         </Dialog>
       </div>
-    </PageLayout>
+    </div>
   );
 };
 
