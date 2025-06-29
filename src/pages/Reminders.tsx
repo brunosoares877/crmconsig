@@ -17,8 +17,10 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { Plus, Check, Trash2, Clock, User, FileText, CalendarIcon, AlertCircle, Loader2, Edit3, ChevronDown } from "lucide-react";
-import PageLayout from "@/components/PageLayout";
 import { BankSelect } from "@/components/forms/BankSelect";
+import { SidebarProvider } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/AppSidebar";
+import Header from "@/components/Header";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { CustomCalendar } from "@/components/ui/custom-calendar";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
@@ -816,9 +818,15 @@ const Reminders = () => {
 
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Header moderno customizado */}
-      <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700 text-white rounded-xl mb-8 shadow-xl">
+    <SidebarProvider>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20 w-full flex">
+        <AppSidebar />
+        <div className="flex-1 w-full overflow-hidden min-w-0">
+          <Header />
+          <main className="w-full h-full">
+            <div className="p-6 space-y-6">
+              {/* Header moderno customizado */}
+              <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700 text-white rounded-xl mb-8 shadow-xl">
         <div className="p-8">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
@@ -1071,8 +1079,12 @@ const Reminders = () => {
             </Pagination>
           </div>
         )}
+              </div>
+            </div>
+          </main>
+        </div>
       </div>
-    </div>
+    </SidebarProvider>
   );
 };
 

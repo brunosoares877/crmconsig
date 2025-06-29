@@ -15,8 +15,10 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import PageLayout from "@/components/PageLayout";
 import { toast } from "sonner";
+import { SidebarProvider } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/AppSidebar";
+import Header from "@/components/Header";
 import { cn } from "@/lib/utils";
 import { BankSelect } from "@/components/forms/BankSelect";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -243,9 +245,15 @@ const Portability = () => {
   );
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Header moderno customizado */}
-      <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700 text-white rounded-xl mb-8 shadow-xl">
+    <SidebarProvider>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20 w-full flex">
+        <AppSidebar />
+        <div className="flex-1 w-full overflow-hidden min-w-0">
+          <Header />
+          <main className="w-full h-full">
+            <div className="p-6 space-y-6">
+              {/* Header moderno customizado */}
+              <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700 text-white rounded-xl mb-8 shadow-xl">
         <div className="p-8">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
@@ -482,7 +490,12 @@ const Portability = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+              </div>
+            </div>
+          </main>
+        </div>
+      </div>
+    </SidebarProvider>
   );
 };
 
