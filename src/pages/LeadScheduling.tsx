@@ -362,7 +362,7 @@ const LeadScheduling = () => {
         <div className="space-y-2">
           <div className="flex items-center gap-2 text-base">
             <span className="font-medium text-gray-700">Cliente:</span>
-            <span className="text-lg font-bold text-gray-900">{getLeadName(appointment.lead_id)}</span>
+            <span className="text-xl font-bold text-gray-900">{getLeadName(appointment.lead_id)}</span>
           </div>
         </div>
       </CardHeader>
@@ -435,7 +435,7 @@ const LeadScheduling = () => {
         </div>
 
         <Tabs defaultValue="all" className="w-full" onValueChange={(value) => filterAppointments(value as AppointmentStatus)}>
-          <TabsList>
+          <TabsList className="grid w-full grid-cols-4 md:w-auto">
             <TabsTrigger value="all">Todos</TabsTrigger>
             <TabsTrigger value="pending">Pendentes</TabsTrigger>
             <TabsTrigger value="completed">Concluídos</TabsTrigger>
