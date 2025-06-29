@@ -267,8 +267,13 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
         <div>
           <Label htmlFor="product">Produto</Label>
           <Select 
-            onValueChange={(value) => setValue("product", value === "none" ? "" : value)}
-            value={watch("product") || "none"}
+            onValueChange={(value) => {
+              console.log("Product selection changed:", value);
+              const newValue = value === "none" ? "" : value;
+              setValue("product", newValue);
+              console.log("Product value set to:", newValue);
+            }}
+            value={watch("product") === "" || !watch("product") ? "none" : watch("product")}
             disabled={loadingOptions}
           >
             <SelectTrigger>
@@ -393,13 +398,8 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
             paymentPeriod={undefined}
             onCommissionCalculated={setCommissionResult}
             onOptionSelected={(option) => {
-              // Quando uma opção de comissão é selecionada, definir o produto automaticamente
-              if (option?.product) {
-                setValue("product", option.product);
-              } else {
-                // Quando opção é limpa, limpar o produto também
-                setValue("product", "");
-              }
+              console.log("Commission option selected:", option);
+              // Não alterar o produto aqui para evitar conflitos com o select principal
             }}
             showCard={true}
             autoCalculate={false}
