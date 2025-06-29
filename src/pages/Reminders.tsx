@@ -919,15 +919,15 @@ const Reminders = () => {
         </div>
 
         {isLoading ? (
-          <div className="space-y-6">
-            {[1, 2, 3].map(i => (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {[1, 2, 3, 4].map(i => (
               <Card key={i} className="animate-pulse">
                 <div className="h-32 bg-gray-100 rounded-md" />
               </Card>
             ))}
           </div>
         ) : Array.isArray(filteredReminders) && filteredReminders.length > 0 ? (
-          <div className="grid grid-cols-1 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {filteredReminders.map((reminder) => (
               <Card
                 key={reminder.id}
