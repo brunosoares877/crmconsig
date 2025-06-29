@@ -388,7 +388,7 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
       {showCommissionSection && (
         <div className="mt-4">
           <CommissionConfigSelector
-            productName={watch("product") || undefined}
+            productName={watch("product") && watch("product") !== "" ? watch("product") : undefined}
             amount={watch("amount") || undefined}
             paymentPeriod={undefined}
             onCommissionCalculated={setCommissionResult}

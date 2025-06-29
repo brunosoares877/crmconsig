@@ -28,15 +28,16 @@ export const useCommissionConfig = (productName?: string) => {
   const [tiers, setTiers] = useState<CommissionTier[]>([]);
   const [selectedOption, setSelectedOption] = useState<CommissionConfigOption | null>(null);
 
-  // Carregar configurações quando o produto muda
+  // Carregar configurações uma única vez
   useEffect(() => {
-    loadCommissionConfig(productName);
-  }, [productName]);
+    loadCommissionConfig();
+  }, []);
 
-  const loadCommissionConfig = async (product?: string) => {
+  const loadCommissionConfig = async () => {
     try {
       setLoading(true);
 
+      // Sempre carregar todas as configurações - o filtro será feito no componente
       let ratesQuery = supabase
         .from('commission_rates')
         .select('*')
@@ -49,13 +50,6 @@ export const useCommissionConfig = (productName?: string) => {
         .eq('active', true)
         .order('min_amount', { ascending: true })
         .order('min_period', { ascending: true });
-
-      // Se produto específico fornecido, filtrar por ele
-      if (product) {
-        const mappedProduct = mapProductToCommissionConfig(product);
-        ratesQuery = ratesQuery.eq('product', mappedProduct);
-        tiersQuery = tiersQuery.eq('product', mappedProduct);
-      }
 
       const { data: ratesData, error: ratesError } = await ratesQuery;
       const { data: tiersData, error: tiersError } = await tiersQuery;
