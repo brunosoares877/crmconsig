@@ -5,6 +5,7 @@ import { ptBR } from "date-fns/locale";
 import { Calendar as CalendarIcon, Loader2, Plus, Trash2, MoreVertical, AlertCircle, Edit, Check, X, Ban, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -209,37 +210,30 @@ const Portability = () => {
 
   // UI Components
   const getStatusBadge = (status: Reminder['status'], is_completed: boolean) => {
-    const isPastDue = (dueDate: string) => new Date(dueDate) < new Date() && !is_completed;
-
     let text = "Pendente";
-    let color: "blue" | "green" | "red" | "orange" | "gray" = "blue";
+    let className = "bg-blue-50 text-blue-700 border border-blue-200 text-xs font-medium";
 
     switch(status) {
       case 'concluido':
         text = "Concluído";
-        color = "green";
+        className = "bg-green-50 text-green-700 border border-green-200 text-xs font-medium";
         break;
       case 'cancelado':
         text = "Cancelado";
-        color = "red";
+        className = "bg-red-50 text-red-700 border border-red-200 text-xs font-medium";
         break;
       case 'redigitado':
         text = "Redigitado";
-        color = "orange";
+        className = "bg-orange-50 text-orange-700 border border-orange-200 text-xs font-medium";
         break;
       case 'pendente':
       default:
         text = "Pendente";
-        color = "blue";
+        className = "bg-blue-50 text-blue-700 border border-blue-200 text-xs font-medium";
         break;
     }
 
-    return <Badge variant={is_completed ? "default" : "outline"} className={cn({
-      'bg-green-500': color === 'green',
-      'bg-red-500': color === 'red',
-      'bg-orange-500': color === 'orange',
-      'bg-blue-500': color === 'blue',
-    }, 'text-white')}>{text}</Badge>;
+    return <Badge className={className}>{text}</Badge>;
   };
 
   const headerActions = (
@@ -251,7 +245,7 @@ const Portability = () => {
   return (
     <PageLayout title="Lembretes de Portabilidade" subtitle="Gerencie e acompanhe seus lembretes de portabilidade" headerActions={headerActions}>
       <Tabs defaultValue="all" onValueChange={setActiveTab}>
-        <TabsList className="mb-4">
+        <TabsList className="grid w-full grid-cols-5 md:w-auto mb-6">
           <TabsTrigger value="all">Todos</TabsTrigger>
           <TabsTrigger value="pendente">Pendentes</TabsTrigger>
           <TabsTrigger value="concluido">Concluídos</TabsTrigger>
@@ -265,9 +259,9 @@ const Portability = () => {
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {filteredReminders.map(reminder => (
-            <Card key={reminder.id} className="flex flex-col">
+            <Card key={reminder.id} className="flex flex-col transition-all duration-200 hover:shadow-lg border-0 shadow-sm hover:shadow-xl hover:-translate-y-1">
               <CardHeader>
                 <div className="flex justify-between items-start">
                   <CardTitle className="text-lg">{reminder.title}</CardTitle>
@@ -309,10 +303,31 @@ const Portability = () => {
                       
                       <DropdownMenuSeparator />
                       
-                      <DropdownMenuItem onClick={() => handleDeleteReminder(reminder.id)} className="flex items-center gap-2 text-red-600 focus:text-red-600">
-                        <Trash2 className="h-4 w-4" />
-                        Excluir
-                      </DropdownMenuItem>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="flex items-center gap-2 text-red-600 focus:text-red-600">
+                            <Trash2 className="h-4 w-4" />
+                            Excluir
+                          </DropdownMenuItem>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Tem certeza?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Esta ação não pode ser desfeita. Isso excluirá permanentemente o lembrete "{reminder.title}".
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction 
+                              onClick={() => handleDeleteReminder(reminder.id)}
+                              className="bg-red-600 hover:bg-red-700"
+                            >
+                              Sim, excluir
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
