@@ -129,6 +129,16 @@ const CommissionConfigSelector: React.FC<CommissionConfigSelectorProps> = ({
     return groups;
   }, [availableOptions]);
 
+  // Se um produto específico está selecionado, auto-expandir apenas esse grupo
+  useEffect(() => {
+    if (productName && groupedByProduct[productName]) {
+      setExpandedGroups(new Set([productName]));
+    } else if (!productName) {
+      // Se nenhum produto específico, não expandir nenhum automaticamente
+      setExpandedGroups(new Set());
+    }
+  }, [productName, groupedByProduct]);
+
   const toggleGroup = (groupKey: string) => {
     const newExpanded = new Set(expandedGroups);
     if (newExpanded.has(groupKey)) {
@@ -212,11 +222,13 @@ const CommissionConfigSelector: React.FC<CommissionConfigSelectorProps> = ({
         )}
 
         {/* Produtos Agrupados */}
-        {Object.entries(groupedByProduct).map(([productName, options]) => (
-          <div key={productName} className="space-y-2">
+        {Object.entries(groupedByProduct)
+          .filter(([groupProductName]) => !productName || groupProductName === productName)
+          .map(([groupProductName, options]) => (
+          <div key={groupProductName} className="space-y-2">
             <Collapsible
-              open={expandedGroups.has(productName)}
-              onOpenChange={() => toggleGroup(productName)}
+              open={expandedGroups.has(groupProductName)}
+              onOpenChange={() => toggleGroup(groupProductName)}
             >
               <CollapsibleTrigger asChild>
                 <Button 
@@ -224,10 +236,10 @@ const CommissionConfigSelector: React.FC<CommissionConfigSelectorProps> = ({
                   className="w-full justify-between p-3 h-auto"
                 >
                   <div className="flex items-center gap-2">
-                    <span className="font-medium">📦 {productName}</span>
+                    <span className="font-medium">📦 {groupProductName}</span>
                     <Badge variant="secondary">{options.length} configurações</Badge>
                   </div>
-                  {expandedGroups.has(productName) ? 
+                  {expandedGroups.has(groupProductName) ? 
                     <ChevronDown className="h-4 w-4" /> : 
                     <ChevronRight className="h-4 w-4" />
                   }
