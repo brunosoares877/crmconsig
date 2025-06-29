@@ -421,8 +421,7 @@ const Dashboard = () => {
     {
       title: "Leads Hoje",
       value: metrics.leadsToday.toString(),
-      change: calculateChange(metrics.leadsToday, metrics.leadsToday - 2),
-      subtitle: `Comparado com ontem`,
+      subtitle: "",
       positive: true,
       icon: <Users className="h-4 w-4 lg:h-5 lg:w-5" />,
       iconBg: "bg-blue-100",
@@ -430,8 +429,7 @@ const Dashboard = () => {
     }, {
       title: "Total de Leads",
       value: metrics.leadsThisMonth.toString(),
-      change: calculateChange(metrics.leadsThisMonth, metrics.leadsThisMonth - 5),
-      subtitle: `Leads do mês atual`,
+      subtitle: "",
       positive: true,
       icon: <PhoneCall className="h-4 w-4 lg:h-5 lg:w-5" />,
       iconBg: "bg-green-100",
@@ -439,8 +437,7 @@ const Dashboard = () => {
     }, {
       title: "Propostas Digitadas",
       value: metrics.proposalsDigitatedToday.toString(),
-      change: calculateChange(metrics.proposalsDigitatedToday, metrics.proposalsDigitatedToday - 1),
-      subtitle: `Clientes com propostas hoje`,
+      subtitle: "",
       positive: true,
       icon: <FileText className="h-4 w-4 lg:h-5 lg:w-5" />,
       iconBg: "bg-orange-100",
