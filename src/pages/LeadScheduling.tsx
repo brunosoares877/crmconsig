@@ -484,66 +484,6 @@ const LeadScheduling = () => {
                 </div>
               ) : (
                 filteredAppointments.map(renderAppointmentCard)
-                  <Card key={appointment.id}>
-                    <CardHeader className="relative">
-                      <div className="absolute right-6 top-6">
-                        {getAppointmentStatusBadge(appointment)}
-                      </div>
-                      <CardTitle>{appointment.title}</CardTitle>
-                      <CardDescription>
-                        Cliente: {getLeadName(appointment.lead_id)}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-4">
-                        <div className="flex items-center space-x-2 text-sm">
-                          <CalendarIcon className="h-4 w-4" />
-                          <span>{formatDate(appointment.date)}</span>
-                          <Clock className="h-4 w-4 ml-2" />
-                          <span>{appointment.time}</span>
-                        </div>
-                        
-                        {appointment.notes && (
-                          <div className="text-sm text-muted-foreground">
-                            {appointment.notes}
-                          </div>
-                        )}
-
-                        <div className="flex items-center space-x-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleEditAppointment(appointment)}
-                          >
-                            <Edit className="h-4 w-4 mr-1" />
-                            Editar
-                          </Button>
-                          
-                          {appointment.status !== "completed" && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleStatusChange(appointment, "completed")}
-                            >
-                              <Check className="h-4 w-4 mr-1" />
-                              Concluir
-                            </Button>
-                          )}
-                          
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="text-destructive"
-                            onClick={() => handleDeleteAppointment(appointment.id)}
-                          >
-                            <Trash2 className="h-4 w-4 mr-1" />
-                            Excluir
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))
               )}
             </div>
           </TabsContent>
@@ -566,56 +506,7 @@ const LeadScheduling = () => {
                   </Card>
                 </div>
               ) : (
-                filteredAppointments.map((appointment) => (
-                  <Card key={appointment.id}>
-                    <CardHeader className="relative">
-                      <div className="absolute right-6 top-6">
-                        {getAppointmentStatusBadge(appointment)}
-                      </div>
-                      <CardTitle>{appointment.title}</CardTitle>
-                      <CardDescription>
-                        Cliente: {getLeadName(appointment.lead_id)}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-4">
-                        <div className="flex items-center space-x-2 text-sm">
-                          <CalendarIcon className="h-4 w-4" />
-                          <span>{formatDate(appointment.date)}</span>
-                          <Clock className="h-4 w-4 ml-2" />
-                          <span>{appointment.time}</span>
-                        </div>
-                        
-                        {appointment.notes && (
-                          <div className="text-sm text-muted-foreground">
-                            {appointment.notes}
-                          </div>
-                        )}
-
-                        <div className="flex items-center space-x-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleEditAppointment(appointment)}
-                          >
-                            <Edit className="h-4 w-4 mr-1" />
-                            Editar
-                          </Button>
-                          
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="text-destructive"
-                            onClick={() => handleDeleteAppointment(appointment.id)}
-                          >
-                            <Trash2 className="h-4 w-4 mr-1" />
-                            Excluir
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))
+                filteredAppointments.map(renderAppointmentCard)
               )}
             </div>
           </TabsContent>
@@ -638,67 +529,7 @@ const LeadScheduling = () => {
                   </Card>
                 </div>
               ) : (
-                filteredAppointments.map((appointment) => (
-                  <Card key={appointment.id}>
-                    <CardHeader className="relative">
-                      <div className="absolute right-6 top-6">
-                        {getAppointmentStatusBadge(appointment)}
-                      </div>
-                      <CardTitle>{appointment.title}</CardTitle>
-                      <CardDescription>
-                        Cliente: {getLeadName(appointment.lead_id)}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-4">
-                        <div className="flex items-center space-x-2 text-sm">
-                          <CalendarIcon className="h-4 w-4" />
-                          <span>{formatDate(appointment.date)}</span>
-                          <Clock className="h-4 w-4 ml-2" />
-                          <span>{appointment.time}</span>
-                        </div>
-                        
-                        {appointment.notes && (
-                          <div className="text-sm text-muted-foreground">
-                            {appointment.notes}
-                          </div>
-                        )}
-
-                        <div className="flex items-center space-x-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleEditAppointment(appointment)}
-                          >
-                            <Edit className="h-4 w-4 mr-1" />
-                            Editar
-                          </Button>
-                          
-                          {appointment.status !== "completed" && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleStatusChange(appointment, "completed")}
-                            >
-                              <Check className="h-4 w-4 mr-1" />
-                              Concluir
-                            </Button>
-                          )}
-                          
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="text-destructive"
-                            onClick={() => handleDeleteAppointment(appointment.id)}
-                          >
-                            <Trash2 className="h-4 w-4 mr-1" />
-                            Excluir
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))
+                filteredAppointments.map(renderAppointmentCard)
               )}
             </div>
           </TabsContent>
