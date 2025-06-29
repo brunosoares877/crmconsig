@@ -364,11 +364,11 @@ const Reminders = () => {
 
   const getReminderStatusBadge = (reminder: Reminder) => {
     if (reminder.is_completed) {
-      return <Badge className="bg-green-100 text-green-800">Concluído</Badge>;
+      return <Badge className="bg-green-50 text-green-700 border border-green-200 text-xs font-medium">Concluído</Badge>;
     } else if (isPastDue(reminder.due_date, reminder.is_completed)) {
-      return <Badge className="bg-red-100 text-red-800">Atrasado</Badge>;
+      return <Badge className="bg-red-50 text-red-700 border border-red-200 text-xs font-medium">Atrasado</Badge>;
     } else {
-      return <Badge className="bg-blue-100 text-blue-800">Pendente</Badge>;
+      return <Badge className="bg-blue-50 text-blue-700 border border-blue-200 text-xs font-medium">Pendente</Badge>;
     }
   };
 
@@ -649,124 +649,50 @@ const Reminders = () => {
             </div>
           </div>
 
-          <div className="space-y-4">
-            <Label className="text-sm font-medium text-gray-700">Prioridade</Label>
-            <div className="grid grid-cols-3 gap-4">
+          <div className="space-y-3">
+            <Label className="text-sm font-medium">Prioridade</Label>
+            <div className="grid grid-cols-3 gap-3">
               <Button
                 type="button"
-                variant="outline" 
+                variant={priority === "baixa" ? "default" : "outline"}
                 className={cn(
-                  "h-12 relative overflow-hidden flex flex-col items-center justify-center space-y-1 transition-all duration-300 transform border-2 rounded-lg",
+                  "h-10 text-sm font-medium transition-all",
                   priority === "baixa" 
-                    ? "bg-gradient-to-br from-emerald-400 via-green-500 to-teal-600 text-white border-emerald-400 shadow-lg shadow-emerald-500/30 scale-105 ring-2 ring-emerald-300" 
-                    : "border-emerald-300 text-emerald-700 bg-gradient-to-br from-emerald-50 to-green-100 hover:from-emerald-100 hover:to-green-200 hover:border-emerald-400 hover:shadow-md hover:scale-102"
+                    ? "bg-slate-900 text-white hover:bg-slate-800" 
+                    : "border-slate-200 text-slate-600 hover:bg-slate-50"
                 )}
                 onClick={() => setPriority("baixa")}
               >
-                <div className={cn(
-                  "absolute inset-0 opacity-0 bg-gradient-to-r from-emerald-600 to-green-600 transition-opacity duration-300",
-                  priority === "baixa" && "opacity-100"
-                )} />
-                <div className="relative z-10 flex flex-col items-center">
-                  <div className={cn(
-                    "w-4 h-4 rounded-full flex items-center justify-center transition-transform duration-300",
-                    priority === "baixa" ? "bg-white/20 scale-110" : "bg-emerald-500"
-                  )}>
-                    <span className={cn(
-                      "text-xs transition-colors duration-300",
-                      priority === "baixa" ? "text-white" : "text-white"
-                    )}>●</span>
-                  </div>
-                  <span className={cn(
-                    "text-xs font-bold tracking-wider transition-colors duration-300",
-                    priority === "baixa" ? "text-white" : "text-emerald-700"
-                  )}>BAIXA</span>
-                </div>
-                {priority === "baixa" && (
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-pulse" />
-                )}
+                Baixa
               </Button>
               
               <Button
                 type="button"
-                variant="outline"
+                variant={priority === "media" ? "default" : "outline"}
                 className={cn(
-                  "h-12 relative overflow-hidden flex flex-col items-center justify-center space-y-1 transition-all duration-300 transform border-2 rounded-lg",
+                  "h-10 text-sm font-medium transition-all",
                   priority === "media" 
-                    ? "bg-gradient-to-br from-amber-400 via-yellow-500 to-orange-500 text-white border-amber-400 shadow-lg shadow-amber-500/30 scale-105 ring-2 ring-amber-300" 
-                    : "border-amber-300 text-amber-700 bg-gradient-to-br from-amber-50 to-yellow-100 hover:from-amber-100 hover:to-yellow-200 hover:border-amber-400 hover:shadow-md hover:scale-102"
+                    ? "bg-slate-900 text-white hover:bg-slate-800" 
+                    : "border-slate-200 text-slate-600 hover:bg-slate-50"
                 )}
                 onClick={() => setPriority("media")}
               >
-                <div className={cn(
-                  "absolute inset-0 opacity-0 bg-gradient-to-r from-amber-600 to-orange-600 transition-opacity duration-300",
-                  priority === "media" && "opacity-100"
-                )} />
-                <div className="relative z-10 flex flex-col items-center">
-                  <div className={cn(
-                    "w-4 h-4 rounded-full flex items-center justify-center transition-transform duration-300",
-                    priority === "media" ? "bg-white/20 scale-110" : "bg-amber-500"
-                  )}>
-                    <span className={cn(
-                      "text-xs transition-colors duration-300",
-                      priority === "media" ? "text-white" : "text-white"
-                    )}>●</span>
-                  </div>
-                  <span className={cn(
-                    "text-xs font-bold tracking-wider transition-colors duration-300",
-                    priority === "media" ? "text-white" : "text-amber-700"
-                  )}>MÉDIA</span>
-                </div>
-                {priority === "media" && (
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-pulse" />
-                )}
+                Média
               </Button>
               
               <Button
                 type="button"
-                variant="outline"
+                variant={priority === "alta" ? "default" : "outline"}
                 className={cn(
-                  "h-12 relative overflow-hidden flex flex-col items-center justify-center space-y-1 transition-all duration-300 transform border-2 rounded-lg",
+                  "h-10 text-sm font-medium transition-all",
                   priority === "alta" 
-                    ? "bg-gradient-to-br from-red-400 via-rose-500 to-pink-600 text-white border-red-400 shadow-lg shadow-red-500/30 scale-105 ring-2 ring-red-300" 
-                    : "border-red-300 text-red-700 bg-gradient-to-br from-red-50 to-rose-100 hover:from-red-100 hover:to-rose-200 hover:border-red-400 hover:shadow-md hover:scale-102"
+                    ? "bg-slate-900 text-white hover:bg-slate-800" 
+                    : "border-slate-200 text-slate-600 hover:bg-slate-50"
                 )}
                 onClick={() => setPriority("alta")}
               >
-                <div className={cn(
-                  "absolute inset-0 opacity-0 bg-gradient-to-r from-red-600 to-rose-600 transition-opacity duration-300",
-                  priority === "alta" && "opacity-100"
-                )} />
-                <div className="relative z-10 flex flex-col items-center">
-                  <div className={cn(
-                    "w-4 h-4 rounded-full flex items-center justify-center transition-transform duration-300",
-                    priority === "alta" ? "bg-white/20 scale-110" : "bg-red-500"
-                  )}>
-                    <span className={cn(
-                      "text-xs transition-colors duration-300",
-                      priority === "alta" ? "text-white" : "text-white"
-                    )}>●</span>
-                  </div>
-                  <span className={cn(
-                    "text-xs font-bold tracking-wider transition-colors duration-300",
-                    priority === "alta" ? "text-white" : "text-red-700"
-                  )}>ALTA</span>
-                </div>
-                {priority === "alta" && (
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-pulse" />
-                )}
+                Alta
               </Button>
-            </div>
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-              <div className="flex items-start space-x-2">
-                <div className="w-5 h-5 rounded-full bg-blue-500 flex-shrink-0 flex items-center justify-center mt-0.5">
-                  <span className="text-white text-xs">i</span>
-                </div>
-                <p className="text-sm text-blue-800 leading-relaxed">
-                  <span className="font-semibold">Dica:</span> Selecione a urgência do lembrete. 
-                  <span className="font-medium text-red-600"> Alta prioridade</span> aparece primeiro na lista e tem destaque visual especial.
-                </p>
-              </div>
             </div>
           </div>
 
@@ -932,85 +858,95 @@ const Reminders = () => {
               <Card
                 key={reminder.id}
                 className={cn(
-                  "transition-all hover:shadow-lg border-l-8 shadow-md",
-                  reminder.is_completed ? "bg-gray-50 opacity-80 border-l-gray-400" : "bg-white",
-                  // Borda colorida e fundo sutil baseado na prioridade
-                  !reminder.is_completed && getPriorityFromReminder(reminder) === 'alta' && "border-l-red-500 bg-red-50/30",
-                  !reminder.is_completed && getPriorityFromReminder(reminder) === 'media' && "border-l-yellow-500 bg-yellow-50/30",
-                  !reminder.is_completed && getPriorityFromReminder(reminder) === 'baixa' && "border-l-green-500 bg-green-50/30"
+                  "transition-all duration-200 hover:shadow-lg border-0 shadow-sm",
+                  reminder.is_completed ? "bg-gray-50/50 opacity-70" : "bg-white",
+                  "hover:shadow-xl hover:-translate-y-1"
                 )}
               >
-                <CardHeader className="pb-3">
+                <CardHeader className="pb-4">
                   <div className="space-y-4">
                     {/* Linha 1: Título e Status */}
                     <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
-                      <CardTitle className={cn(
-                        "text-xl font-semibold flex-1 flex items-center gap-2",
-                        // Cores do título baseadas na prioridade
-                        getPriorityFromReminder(reminder) === 'alta' && "text-red-700",
-                        getPriorityFromReminder(reminder) === 'media' && "text-yellow-700", 
-                        getPriorityFromReminder(reminder) === 'baixa' && "text-green-700"
-                      )}>
-                        {getPriorityFromReminder(reminder) === 'alta' && <span className="text-red-500 text-2xl">🔴</span>}
-                        {getPriorityFromReminder(reminder) === 'media' && <span className="text-yellow-500 text-2xl">🟡</span>}
-                        {getPriorityFromReminder(reminder) === 'baixa' && <span className="text-green-500 text-2xl">🟢</span>}
-                        {reminder.title}
-                      </CardTitle>
+                      <div className="flex items-start gap-3 flex-1">
+                        {/* Indicador visual minimalista da prioridade */}
+                        <div className={cn(
+                          "w-1 h-16 rounded-full flex-shrink-0 mt-1",
+                          getPriorityFromReminder(reminder) === 'alta' && "bg-slate-800",
+                          getPriorityFromReminder(reminder) === 'media' && "bg-slate-500", 
+                          getPriorityFromReminder(reminder) === 'baixa' && "bg-slate-300"
+                        )} />
+                        <div className="flex-1">
+                          <CardTitle className="text-lg font-medium text-slate-900 leading-tight mb-1">
+                            {reminder.title}
+                          </CardTitle>
+                          <div className="flex items-center gap-2 text-sm text-slate-500">
+                            <span className={cn(
+                              "px-2 py-1 rounded-full text-xs font-medium",
+                              getPriorityFromReminder(reminder) === 'alta' && "bg-slate-100 text-slate-800",
+                              getPriorityFromReminder(reminder) === 'media' && "bg-slate-50 text-slate-600", 
+                              getPriorityFromReminder(reminder) === 'baixa' && "bg-slate-50 text-slate-500"
+                            )}>
+                              {getPriorityFromReminder(reminder) === 'alta' && "Alta prioridade"}
+                              {getPriorityFromReminder(reminder) === 'media' && "Prioridade média"}
+                              {getPriorityFromReminder(reminder) === 'baixa' && "Baixa prioridade"}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
                       <div className="flex flex-wrap gap-2">
-                        {getPriorityBadge(getPriorityFromReminder(reminder), reminder.id, true)}
                         {getReminderStatusBadge(reminder)}
                       </div>
                     </div>
                     
                     {/* Linha 2: Informações do Cliente e Data */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-3">
-                        <div className="flex items-center gap-2 text-base text-gray-600">
-                          <User className="h-5 w-5 text-blue-500" />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pl-4">
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-sm text-slate-600">
+                          <User className="h-4 w-4 text-slate-400" />
                           <span className="font-medium">Cliente:</span>
-                          <span className="text-gray-900">{getLeadName(reminder.lead_id)}</span>
+                          <span className="text-slate-900 font-medium">{getLeadName(reminder.lead_id)}</span>
                         </div>
                         {reminder.bank && (
-                          <div className="flex items-center gap-2 text-base text-gray-600">
-                            <FileText className="h-5 w-5 text-green-500" />
+                          <div className="flex items-center gap-2 text-sm text-slate-600">
+                            <FileText className="h-4 w-4 text-slate-400" />
                             <span className="font-medium">Banco:</span>
-                            <span className="text-gray-900">{getBankName(reminder.bank)}</span>
+                            <span className="text-slate-900 font-medium">{getBankName(reminder.bank)}</span>
                           </div>
                         )}
                       </div>
                       
-                      <div className="space-y-3">
-                        <div className="flex items-center gap-2 text-base text-gray-600">
-                          <Clock className="h-5 w-5 text-orange-500" />
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-sm text-slate-600">
+                          <Clock className="h-4 w-4 text-slate-400" />
                           <span className="font-medium">Data:</span>
-                          <span className="text-gray-900">{formatDate(reminder.due_date)}</span>
+                          <span className="text-slate-900 font-medium">{formatDate(reminder.due_date)}</span>
                         </div>
                       </div>
                     </div>
                     
                     {/* Linha 3: Ações */}
-                    <div className="flex justify-end space-x-3 pt-2 border-t border-gray-100">
+                    <div className="flex justify-end space-x-2 pt-3 border-t border-slate-100 pl-4">
                       <Button
-                        variant="outline"
+                        variant="ghost"
                         size="sm"
                         className={cn(
-                          "flex items-center gap-2 px-4 py-2",
+                          "h-8 text-xs font-medium",
                           reminder.is_completed 
-                            ? "text-green-600 bg-green-50 border-green-200 hover:bg-green-100" 
-                            : "text-gray-600 hover:text-green-600 hover:bg-green-50 hover:border-green-200"
+                            ? "text-green-700 hover:bg-green-50" 
+                            : "text-slate-600 hover:text-green-700 hover:bg-green-50"
                         )}
                         onClick={() => handleToggleComplete(reminder)}
                       >
-                        <Check className="h-4 w-4" />
-                        {reminder.is_completed ? "Concluído" : "Marcar como concluído"}
+                        <Check className="h-3 w-3 mr-1" />
+                        {reminder.is_completed ? "Concluído" : "Concluir"}
                       </Button>
                       <Button
-                        variant="outline"
+                        variant="ghost"
                         size="sm"
-                        className="flex items-center gap-2 px-4 py-2 text-red-600 hover:bg-red-50 hover:border-red-200"
+                        className="h-8 text-xs font-medium text-slate-600 hover:text-red-700 hover:bg-red-50"
                         onClick={() => handleDeleteReminder(reminder.id)}
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="h-3 w-3 mr-1" />
                         Excluir
                       </Button>
                     </div>
@@ -1018,37 +954,13 @@ const Reminders = () => {
                 </CardHeader>
                 
                 {reminder.notes && (
-                  <CardContent className="pt-0 pb-4">
-                    <div className={cn(
-                      "p-4 rounded-lg border-2",
-                                             // Cores das observações baseadas na prioridade
-                       getPriorityFromReminder(reminder) === 'alta' && "bg-red-50 border-red-200",
-                       getPriorityFromReminder(reminder) === 'media' && "bg-yellow-50 border-yellow-200",
-                       getPriorityFromReminder(reminder) === 'baixa' && "bg-green-50 border-green-200"
-                    )}>
-                      <div className="flex items-center gap-2 mb-3">
-                        <FileText className={cn(
-                          "h-5 w-5",
-                          // Cores dos ícones baseadas na prioridade
-                          getPriorityFromReminder(reminder) === 'alta' && "text-red-600",
-                          getPriorityFromReminder(reminder) === 'media' && "text-yellow-600",
-                          getPriorityFromReminder(reminder) === 'baixa' && "text-green-600"
-                        )} />
-                        <span className={cn(
-                          "font-semibold",
-                          // Cores do texto baseadas na prioridade
-                          getPriorityFromReminder(reminder) === 'alta' && "text-red-800",
-                          getPriorityFromReminder(reminder) === 'media' && "text-yellow-800",
-                          getPriorityFromReminder(reminder) === 'baixa' && "text-green-800"
-                        )}>Observações:</span>
+                  <CardContent className="pt-0 pb-4 pl-7">
+                    <div className="p-3 rounded-lg bg-slate-50 border border-slate-200">
+                      <div className="flex items-center gap-2 mb-2">
+                        <FileText className="h-4 w-4 text-slate-500" />
+                        <span className="text-sm font-medium text-slate-700">Observações</span>
                       </div>
-                      <p className={cn(
-                        "leading-relaxed break-words",
-                        // Cores do conteúdo baseadas na prioridade
-                        getPriorityFromReminder(reminder) === 'alta' && "text-red-700",
-                        getPriorityFromReminder(reminder) === 'media' && "text-yellow-700",
-                        getPriorityFromReminder(reminder) === 'baixa' && "text-green-700"
-                      )}>
+                      <p className="text-sm text-slate-600 leading-relaxed break-words">
                         {reminder.notes}
                       </p>
                     </div>
