@@ -17,8 +17,8 @@ Execute o código SQL no Supabase (arquivo `migracoes-comissoes-prazo.sql`) ou u
 ### 2. Configurar Comissões por Prazo
 
 1. Acesse **Comissões** no menu lateral
-2. Clique em **Configurar Taxas**
-3. Na aba **"Taxas Variáveis (Por Faixa de Valor ou Prazo)"**
+2. Clique em **Configurar Comissões**
+3. Na aba **"Comissões Variáveis (Por Faixa de Valor ou Prazo)"**
 4. Clique em **"Adicionar Taxa Variável"**
 5. Selecione **"📅 Por Prazo de Pagamento"**
 
@@ -100,7 +100,7 @@ A tabela agora mostra:
 ## 🎯 Benefícios
 
 1. **Flexibilidade**: Configure comissões por valor OU por prazo
-2. **Precisão**: Diferentes taxas para diferentes prazos de pagamento
+2. **Precisão**: Diferentes comissões para diferentes prazos de pagamento
 3. **Controle**: Ative/desative configurações específicas
 4. **Escalabilidade**: Sistema extensível para outros tipos de faixa
 
@@ -119,8 +119,8 @@ A tabela agora mostra:
 ```
 
 ### 2. Configurar Comissões por Prazo
-1. Acesse **Comissões** → **Configurar Taxas**
-2. Aba **"Taxas Variáveis (Por Faixa de Valor ou Prazo)"**
+1. Acesse **Comissões** → **Configurar Comissões**
+2. Aba **"Comissões Variáveis (Por Faixa de Valor ou Prazo)"**
 3. **Adicionar Taxa Variável** → **"📅 Por Prazo de Pagamento"**
 4. Configure: CRÉDITO CLT, 8x a 12x, 1.5%
 

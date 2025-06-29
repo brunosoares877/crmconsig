@@ -197,7 +197,7 @@ const CommissionSettings = () => {
       )}
 
       <Table>
-        <TableCaption>Lista de taxas de comissão fixas por produto.</TableCaption>
+                        <TableCaption>Lista de comissões fixas por produto.</TableCaption>
         <TableHeader>
           <TableRow>
             <TableHead className="w-[180px]">Produto</TableHead>
@@ -211,7 +211,7 @@ const CommissionSettings = () => {
         <TableBody>
           {loading ? (
             <TableRow>
-              <TableCell colSpan={6} className="text-center py-8">Carregando taxas de comissão...</TableCell>
+                                  <TableCell colSpan={6} className="text-center py-8">Carregando comissões...</TableCell>
             </TableRow>
           ) : rates.length === 0 ? (
             <TableRow>
@@ -312,7 +312,7 @@ const CommissionSettings = () => {
       )}
 
       <Table>
-        <TableCaption>Lista de taxas de comissão variáveis por produto, valor ou prazo.</TableCaption>
+                        <TableCaption>Lista de comissões variáveis por produto, valor ou prazo.</TableCaption>
         <TableHeader>
           <TableRow>
             <TableHead className="w-[150px]">Produto</TableHead>
@@ -329,7 +329,7 @@ const CommissionSettings = () => {
         <TableBody>
           {loading ? (
             <TableRow>
-              <TableCell colSpan={8} className="text-center py-8">Carregando taxas de comissão...</TableCell>
+                                  <TableCell colSpan={8} className="text-center py-8">Carregando comissões...</TableCell>
             </TableRow>
           ) : tiers.length === 0 ? (
             <TableRow>
@@ -438,8 +438,8 @@ const CommissionSettings = () => {
       <div className="space-y-8">
         <Tabs defaultValue="rates" className="w-full">
           <TabsList className="mb-6">
-            <TabsTrigger value="rates">Taxas Fixas</TabsTrigger>
-            <TabsTrigger value="tiers">Taxas Variáveis (Por Faixa de Valor ou Prazo)</TabsTrigger>
+            <TabsTrigger value="rates">Comissões Fixas</TabsTrigger>
+            <TabsTrigger value="tiers">Comissões Variáveis (Por Faixa de Valor ou Prazo)</TabsTrigger>
           </TabsList>
           <TabsContent value="rates">
             {renderRatesTable()}

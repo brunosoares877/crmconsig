@@ -6,7 +6,7 @@
 
 **Antes:** Campo estático mostrando "Escolha uma configuração de produto abaixo"
 
-**Agora:** Select automático que carrega todos os produtos configurados em "Configurar Taxas"
+**Agora:** Select automático que carrega todos os produtos configurados em "Configurar Comissões"
 - 📦 Produtos únicos (sem duplicatas)
 - 🔢 Mostra quantidade de configurações por produto
 - ⚡ Carregamento automático das configurações

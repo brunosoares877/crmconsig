@@ -39,10 +39,10 @@
 
 ### **⚙️ 6. Configurações de Taxa**
 - ✅ **Link direto** para configurações
-- ✅ **Taxas fixas** por produto
-- ✅ **Taxas variáveis** por faixa de valor
-- ✅ **Edição e exclusão** de taxas
-- ✅ **Ativação/desativação** de taxas
+- ✅ **Comissões fixas** por produto
+- ✅ **Comissões variáveis** por faixa de valor
+- ✅ **Edição e exclusão** de comissões
+- ✅ **Ativação/desativação** de comissões
 
 ## 📋 **Estrutura dos Dados**
 
@@ -80,9 +80,9 @@
 
 ## 🔄 **Fluxo Completo**
 
-### **1. Cadastro de Taxas:**
-1. Ir para **Configurar Taxas**
-2. Criar **taxas fixas** ou **variáveis**
+### **1. Cadastro de Comissões:**
+1. Ir para **Configurar Comissões**
+2. Criar **comissões fixas** ou **variáveis**
 3. Definir **produtos** e **percentuais/valores**
 
 ### **2. Geração de Comissões:**
@@ -100,9 +100,9 @@
 ## 🚀 **Produtos Suportados**
 
 ### **Tipos de Crédito:**
-- `CREDITO FGTS` - Taxas por faixa de valor
-- `CREDITO CLT` - Taxas fixas
-- `CREDITO INSS` - Taxas fixas
+- `CREDITO FGTS` - Comissões por faixa de valor
+- `CREDITO CLT` - Comissões fixas
+- `CREDITO INSS` - Comissões fixas
 - `CREDITO PIX/CARTAO` - Taxa fixa
 - `PORTABILIDADE INSS` - Taxa fixa
 

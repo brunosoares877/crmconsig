@@ -190,7 +190,7 @@ const CommissionConfigSelector: React.FC<CommissionConfigSelectorProps> = ({
             ) : (
               <>Nenhuma configuração de comissão encontrada.</>
             )}
-            {' '}Configure taxas em <strong>Comissões → Configurar Taxas</strong>.
+            {' '}Configure comissões em <strong>Comissões → Configurar Comissões</strong>.
           </AlertDescription>
         </Alert>
       );

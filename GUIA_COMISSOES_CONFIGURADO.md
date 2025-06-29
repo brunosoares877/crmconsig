@@ -44,12 +44,12 @@
 - **Acompanhar** valores de comissão
 
 ### **4. Ajustar Configurações**
-- Clique em **"Configurar Taxas"** na página de comissões
+- Clique em **"Configurar Comissões"** na página de comissões
 - Acesse: http://localhost:8081/commission/settings
-- **Aba "Taxas Fixas":** produtos com % fixo
-- **Aba "Taxas Variáveis":** produtos com faixas de valor
-- **Editar/Deletar** taxas existentes
-- **Ativar/Desativar** taxas
+- **Aba "Comissões Fixas":** produtos com % fixo
+- **Aba "Comissões Variáveis":** produtos com faixas de valor
+- **Editar/Deletar** comissões existentes
+- **Ativar/Desativar** comissões
 
 ## 🔢 **Exemplos de Cálculo**
 
@@ -80,7 +80,7 @@
 
 ## 🎯 **Sistema Pronto para Uso!**
 
-✅ **Taxas configuradas**  
+✅ **Comissões configuradas**  
 ✅ **Interface funcional**  
 ✅ **Cálculos automáticos**  
 ✅ **Relatórios disponíveis**  

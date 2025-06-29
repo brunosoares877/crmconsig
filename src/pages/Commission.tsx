@@ -390,7 +390,7 @@ const Commission = () => {
         }
       }
 
-      // Taxas padrão específicas por produto quando não há configuração
+      // Comissões padrão específicas por produto quando não há configuração
       let defaultPercentage = 5; // Taxa padrão geral
       
       if (mappedProduct === 'CREDITO FGTS' || leadProduct.includes('SAQUE') || leadProduct.includes('FGTS')) {
@@ -854,7 +854,7 @@ const Commission = () => {
         return;
       }
 
-      // Buscar taxas de comissão padrão
+      // Buscar comissões padrão
       const { data: commissionRates, error: ratesError } = await supabase
         .from("commission_rates")
         .select("*")
@@ -1671,7 +1671,7 @@ const Commission = () => {
               className="px-4 py-2 bg-white border-2 border-purple-300 text-purple-700 hover:bg-purple-50 hover:border-purple-400 font-medium rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
             >
               <Settings className="h-4 w-4 mr-2" />
-              Configurar Taxas
+              Configurar Comissões
             </Button>
 
             <Button 

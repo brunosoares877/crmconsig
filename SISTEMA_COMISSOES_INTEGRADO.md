@@ -40,8 +40,8 @@ const {
 ## 📝 **COMO USAR O SISTEMA**
 
 ### **Passo 1: Configurar Comissões**
-1. Vá em **Comissões → Configurar Taxas**
-2. Configure **Taxas Fixas** ou **Taxas Variáveis**
+1. Vá em **Comissões → Configurar Comissões**
+2. Configure **Comissões Fixas** ou **Comissões Variáveis**
 3. Defina produtos, faixas de valor/prazo e percentuais
 
 ### **Passo 2: Criar/Editar Leads**

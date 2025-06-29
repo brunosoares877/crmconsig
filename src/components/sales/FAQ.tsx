@@ -16,7 +16,7 @@ const FAQ = () => {
     },
     {
       question: "Posso cancelar minha assinatura a qualquer momento?",
-      answer: "Sim, você pode cancelar sua assinatura a qualquer momento através das configurações da sua conta. Não há multas ou taxas de cancelamento. Você continuará tendo acesso ao sistema até o final do período já pago."
+      answer: "Sim, você pode cancelar sua assinatura a qualquer momento através das configurações da sua conta. Não há multas ou comissões de cancelamento. Você continuará tendo acesso ao sistema até o final do período já pago."
     },
     {
       question: "Quantos leads posso gerenciar no sistema?",

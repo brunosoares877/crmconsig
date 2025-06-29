@@ -6,8 +6,8 @@
 - ❌ **Removido:** "Config. Comissões" da sidebar
 - ✅ **Motivo:** Centralizar funcionalidade em um só lugar
 
-### **🔗 Centralização no Botão "Configurar Taxas"**
-- ✅ **Mantido:** Botão "Configurar Taxas" na página de comissões
+### **🔗 Centralização no Botão "Configurar Comissões"**
+- ✅ **Mantido:** Botão "Configurar Comissões" na página de comissões
 - ✅ **Corrigido:** URL para `/commission/settings` (rota correta)
 - ✅ **Visual:** Ícone de engrenagem + texto claro
 
@@ -20,24 +20,24 @@
 
 ### **🔍 Como Acessar Configurações Agora:**
 1. **Página Comissões:** http://localhost:8081/commission
-2. **Clique em:** "Configurar Taxas" (botão roxo com ícone)
+2. **Clique em:** "Configurar Comissões" (botão roxo com ícone)
 3. **Redireciona para:** http://localhost:8081/commission/settings
 
 ### **📍 Localização do Botão:**
 - **Página:** Comissões
 - **Seção:** Botões de ação (junto com "Gerar Comissões")
 - **Visual:** Botão roxo com ícone de engrenagem
-- **Texto:** "Configurar Taxas"
+- **Texto:** "Configurar Comissões"
 
 ## 🎨 **Interface Simplificada**
 
 ### **Antes:**
 - Sidebar: "Config. Comissões"
-- Página Comissões: "Configurar Taxas"
+- Página Comissões: "Configurar Comissões"
 - Botão: "Criar Comissões de Teste"
 
 ### **Depois:**
-- ✅ **Apenas:** Botão "Configurar Taxas" na página
+- ✅ **Apenas:** Botão "Configurar Comissões" na página
 - ✅ **Funcional:** Botão "Gerar Comissões dos Leads"
 - ✅ **Limpo:** Sem opções desnecessárias
 
