@@ -658,8 +658,8 @@ const Reminders = () => {
                 className={cn(
                   "h-10 text-sm font-medium transition-all",
                   priority === "baixa" 
-                    ? "bg-slate-900 text-white hover:bg-slate-800" 
-                    : "border-slate-200 text-slate-600 hover:bg-slate-50"
+                    ? "bg-green-600 text-white hover:bg-green-700" 
+                    : "border-green-200 text-green-700 hover:bg-green-50"
                 )}
                 onClick={() => setPriority("baixa")}
               >
@@ -672,8 +672,8 @@ const Reminders = () => {
                 className={cn(
                   "h-10 text-sm font-medium transition-all",
                   priority === "media" 
-                    ? "bg-slate-900 text-white hover:bg-slate-800" 
-                    : "border-slate-200 text-slate-600 hover:bg-slate-50"
+                    ? "bg-yellow-600 text-white hover:bg-yellow-700" 
+                    : "border-yellow-200 text-yellow-700 hover:bg-yellow-50"
                 )}
                 onClick={() => setPriority("media")}
               >
@@ -686,8 +686,8 @@ const Reminders = () => {
                 className={cn(
                   "h-10 text-sm font-medium transition-all",
                   priority === "alta" 
-                    ? "bg-slate-900 text-white hover:bg-slate-800" 
-                    : "border-slate-200 text-slate-600 hover:bg-slate-50"
+                    ? "bg-red-600 text-white hover:bg-red-700" 
+                    : "border-red-200 text-red-700 hover:bg-red-50"
                 )}
                 onClick={() => setPriority("alta")}
               >
@@ -871,9 +871,9 @@ const Reminders = () => {
                         {/* Indicador visual minimalista da prioridade */}
                         <div className={cn(
                           "w-1 h-16 rounded-full flex-shrink-0 mt-1",
-                          getPriorityFromReminder(reminder) === 'alta' && "bg-slate-800",
-                          getPriorityFromReminder(reminder) === 'media' && "bg-slate-500", 
-                          getPriorityFromReminder(reminder) === 'baixa' && "bg-slate-300"
+                          getPriorityFromReminder(reminder) === 'alta' && "bg-red-500",
+                          getPriorityFromReminder(reminder) === 'media' && "bg-yellow-500", 
+                          getPriorityFromReminder(reminder) === 'baixa' && "bg-green-500"
                         )} />
                         <div className="flex-1">
                           <CardTitle className="text-lg font-medium text-slate-900 leading-tight mb-1">
@@ -882,9 +882,9 @@ const Reminders = () => {
                           <div className="flex items-center gap-2 text-sm text-slate-500">
                             <span className={cn(
                               "px-2 py-1 rounded-full text-xs font-medium",
-                              getPriorityFromReminder(reminder) === 'alta' && "bg-slate-100 text-slate-800",
-                              getPriorityFromReminder(reminder) === 'media' && "bg-slate-50 text-slate-600", 
-                              getPriorityFromReminder(reminder) === 'baixa' && "bg-slate-50 text-slate-500"
+                              getPriorityFromReminder(reminder) === 'alta' && "bg-red-50 text-red-700",
+                              getPriorityFromReminder(reminder) === 'media' && "bg-yellow-50 text-yellow-700", 
+                              getPriorityFromReminder(reminder) === 'baixa' && "bg-green-50 text-green-700"
                             )}>
                               {getPriorityFromReminder(reminder) === 'alta' && "Alta prioridade"}
                               {getPriorityFromReminder(reminder) === 'media' && "Prioridade média"}
