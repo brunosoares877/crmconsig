@@ -243,7 +243,41 @@ const Portability = () => {
   );
 
   return (
-    <PageLayout title="Lembretes de Portabilidade" subtitle="Gerencie e acompanhe seus lembretes de portabilidade" headerActions={headerActions}>
+    <div className="p-6 space-y-6">
+      {/* Header moderno customizado */}
+      <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700 text-white rounded-xl mb-8 shadow-xl">
+        <div className="p-8">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="bg-white/20 backdrop-blur-sm rounded-full p-3">
+                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l4-4 4 4m0 6l-4 4-4-4" />
+                </svg>
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold">Portabilidade</h1>
+                <p className="text-blue-100 text-lg mt-1">Gerencie e acompanhe seus lembretes de portabilidade</p>
+              </div>
+            </div>
+            <div className="hidden md:flex items-center space-x-4">
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg px-4 py-2">
+                <div className="text-sm text-blue-100">Total de Portabilidades</div>
+                <div className="text-2xl font-bold">
+                  {filteredReminders.length}
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Header Actions */}
+          <div className="mt-6 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              {headerActions}
+            </div>
+          </div>
+        </div>
+      </div>
+
       <Tabs defaultValue="all" onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-5 md:w-auto mb-6">
           <TabsTrigger value="all">Todos</TabsTrigger>
@@ -448,7 +482,7 @@ const Portability = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </PageLayout>
+    </div>
   );
 };
 

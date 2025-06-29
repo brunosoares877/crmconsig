@@ -431,10 +431,34 @@ const CommissionSettings = () => {
   );
 
   return (
-    <PageLayout
-      title="Configurações de Comissões"
-      subtitle="Gerencie as regras e faixas de comissão do sistema"
-    >
+    <div className="p-6 space-y-6">
+      {/* Header moderno customizado */}
+      <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700 text-white rounded-xl mb-8 shadow-xl">
+        <div className="p-8">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="bg-white/20 backdrop-blur-sm rounded-full p-3">
+                <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/>
+                </svg>
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold">Configurações de Comissões</h1>
+                <p className="text-blue-100 text-lg mt-1">Gerencie as regras e faixas de comissão do sistema</p>
+              </div>
+            </div>
+            <div className="hidden md:flex items-center space-x-4">
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg px-4 py-2">
+                <div className="text-sm text-blue-100">Total de Configurações</div>
+                <div className="text-2xl font-bold">
+                  {rates.length + tiers.length}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="space-y-8">
         <Tabs defaultValue="rates" className="w-full">
           <TabsList className="mb-6">
@@ -449,7 +473,7 @@ const CommissionSettings = () => {
           </TabsContent>
         </Tabs>
       </div>
-    </PageLayout>
+    </div>
   );
 };
 
