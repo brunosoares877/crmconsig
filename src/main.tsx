@@ -32,7 +32,7 @@ const initBundleOptimizations = () => {
   // Resource hints para domínios críticos
   const addResourceHints = () => {
     const domains = [
-      'https://xyzzkqvmjkzljjjgrwma.supabase.co',
+      'https://wjljrytblpsnzjwvugqg.supabase.co',
       'https://o4507473953669120.ingest.sentry.io'
     ];
     

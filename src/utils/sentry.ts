@@ -3,11 +3,11 @@ import React from 'react';
 
 // Configuração do Sentry
 export const initSentry = () => {
-  // Só inicializar em produção ou quando SENTRY_DSN estiver configurado
-  const dsn = import.meta.env.VITE_SENTRY_DSN || "https://your-sentry-dsn@sentry.io/project-id";
+  // Só inicializar se SENTRY_DSN estiver explicitamente configurado
+  const dsn = import.meta.env.VITE_SENTRY_DSN;
   const environment = import.meta.env.MODE;
   
-  if (environment === 'production' || import.meta.env.VITE_SENTRY_DSN) {
+  if (dsn && dsn !== "https://your-sentry-dsn@sentry.io/project-id") {
     Sentry.init({
       dsn,
       environment,
