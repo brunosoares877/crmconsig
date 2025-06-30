@@ -2,7 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 // Apenas as páginas essenciais (sem contextos complexos)
-import SalesSimple from "@/pages/Sales-simple";
+import SalesBasic from "@/pages/Sales-basic";
 import Login from "@/pages/Login";
 import Index from "@/pages/Index";
 import NotFound from "@/pages/NotFound";
@@ -78,7 +78,7 @@ function AppHybrid() {
         <Routes>
           {/* Rotas básicas */}
           <Route path="/" element={<SimpleDebugHome />} />
-          <Route path="/sales" element={<SalesSimple />} />
+          <Route path="/sales" element={<SalesBasic />} />
           <Route path="/login" element={<Login />} />
           
           {/* 404 Page */}
