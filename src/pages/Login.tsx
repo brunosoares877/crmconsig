@@ -3,12 +3,13 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Eye, EyeOff, Mail, Lock, User, Building, Phone } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, User, Phone } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
+import { ForgotPassword } from "@/components/ForgotPassword";
 
 const phoneRegex = /^\(\d{2}\) \d{5}-\d{4}$/;
 const LoginSchema = z.object({
@@ -17,14 +18,9 @@ const LoginSchema = z.object({
 });
 const SignupSchema = z.object({
   fullName: z.string().min(3, "Nome completo é obrigatório"),
-  company: z.string().min(2, "Nome da empresa é obrigatório"),
   email: z.string().email("Email inválido"),
   whatsapp: z.string().regex(phoneRegex, "WhatsApp inválido - use o formato (99) 99999-9999"),
-  password: z.string().min(6, "A senha deve ter pelo menos 6 caracteres"),
-  confirmPassword: z.string().min(6, "A confirmação de senha é obrigatória")
-}).refine(data => data.password === data.confirmPassword, {
-  message: "As senhas não coincidem",
-  path: ["confirmPassword"]
+  password: z.string().min(6, "A senha deve ter pelo menos 6 caracteres")
 });
 
 const Login = () => {
@@ -33,14 +29,13 @@ const Login = () => {
   const { startTrial } = useSubscription();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [fullName, setFullName] = useState("");
-  const [company, setCompany] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
   const [isLogin, setIsLogin] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
 
   const maskPhone = (value: string) => {
     const digits = value.replace(/\D/g, '');
@@ -62,7 +57,7 @@ const Login = () => {
       if (isLogin) {
         LoginSchema.parse({ email, password });
       } else {
-        SignupSchema.parse({ fullName, company, email, whatsapp, password, confirmPassword });
+        SignupSchema.parse({ fullName, email, whatsapp, password });
       }
       setErrors({});
       return true;
@@ -124,7 +119,6 @@ const Login = () => {
           options: {
             data: {
               full_name: fullName,
-              company_name: company,
               whatsapp: whatsapp
             }
           }
@@ -135,7 +129,6 @@ const Login = () => {
           const { error: profileError } = await supabase
             .from('profiles')
             .update({
-              company_name: company,
               first_name: fullName.split(' ')[0],
               last_name: fullName.split(' ').slice(1).join(' '),
               whatsapp: whatsapp
@@ -163,21 +156,24 @@ const Login = () => {
       <div className="w-full max-w-4xl grid lg:grid-cols-2 gap-8 items-center animate-in fade-in duration-700">
         
         {/* Lado esquerdo - Conteúdo promocional */}
-        <div className="hidden lg:flex flex-col justify-center space-y-8 px-8">
-          <div className="space-y-6">
+        <div className="hidden lg:flex flex-col justify-center space-y-8 px-8 overflow-visible">
+          <div className="space-y-6 overflow-visible">
             {/* Badge de novidade com animação */}
             <div className="inline-flex items-center px-4 py-2 rounded-full bg-gradient-to-r from-blue-500/10 to-indigo-500/10 border border-blue-200/50 backdrop-blur-sm">
               <span className="text-blue-600 text-sm font-medium">✨ Sistema Completo de CRM</span>
             </div>
             
             {/* Título principal com gradiente */}
-            <div className="space-y-4">
-              <h1 className="text-4xl lg:text-5xl font-bold text-gray-900 leading-tight">
-                Gerencie seus leads com
-                <span className="block bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
-                  inteligência
-                </span>
-              </h1>
+            <div className="space-y-4 overflow-visible">
+              <div className="overflow-visible p-2 -m-2">
+                <h1 className="text-4xl lg:text-5xl font-bold leading-[1.4] tracking-normal text-gray-900 overflow-visible" 
+                    style={{ letterSpacing: '0.02em', margin: '8px 0', padding: '8px 6px' }}>
+                  Gerencie seus leads com
+                  <span className="block bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mt-1">
+                    inteligência
+                  </span>
+                </h1>
+              </div>
               <p className="text-xl text-gray-600 leading-relaxed">
                 Transforme leads em resultados com nossa plataforma completa de gestão e automação.
               </p>
@@ -209,6 +205,9 @@ const Login = () => {
 
         {/* Lado direito - Formulário */}
         <div className="w-full max-w-md mx-auto">
+          {showForgotPassword ? (
+            <ForgotPassword onBack={() => setShowForgotPassword(false)} />
+          ) : (
           <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 p-8 transition-all duration-300 hover:shadow-3xl">
             
             {/* Header do formulário */}
@@ -245,23 +244,7 @@ const Login = () => {
                     {errors.fullName && <p className="text-xs text-red-500 flex items-center gap-1"><span>⚠</span>{errors.fullName}</p>}
                   </div>
                   
-                  <div className="space-y-2">
-                    <Label htmlFor="company" className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                      <Building className="w-4 h-4" />
-                      Nome da Empresa
-                    </Label>
-                    <Input 
-                      id="company" 
-                      type="text" 
-                      required 
-                      placeholder="Sua empresa" 
-                      className={`h-12 rounded-xl border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-200 ${errors.company ? "border-red-500 focus:border-red-500" : ""}`}
-                      value={company} 
-                      onChange={e => setCompany(e.target.value)} 
-                      disabled={isLoading} 
-                    />
-                    {errors.company && <p className="text-xs text-red-500 flex items-center gap-1"><span>⚠</span>{errors.company}</p>}
-                  </div>
+
 
                   <div className="space-y-2">
                     <Label htmlFor="whatsapp" className="text-sm font-medium text-gray-700 flex items-center gap-2">
@@ -292,7 +275,7 @@ const Login = () => {
                 </Label>
                 <Input 
                   id="email" 
-                  placeholder="seuemail@empresa.com" 
+                  placeholder="seu.email@gmail.com" 
                   type="email" 
                   required 
                   autoComplete="email" 
@@ -331,31 +314,23 @@ const Login = () => {
                   </button>
                 </div>
                 {errors.password && <p className="text-xs text-red-500 flex items-center gap-1"><span>⚠</span>{errors.password}</p>}
+                
+                {/* Link Esqueci minha senha - só no login */}
+                {isLogin && (
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => setShowForgotPassword(true)}
+                      className="text-sm text-blue-600 hover:text-blue-500 transition-colors duration-200 hover:underline"
+                      disabled={isLoading}
+                    >
+                      Esqueci minha senha
+                    </button>
+                  </div>
+                )}
               </div>
 
-              {/* Confirmar senha */}
-              {!isLogin && (
-                <div className="space-y-2 animate-in slide-in-from-top duration-300">
-                  <Label htmlFor="confirmPassword" className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                    <Lock className="w-4 h-4" />
-                    Confirmar Senha
-                  </Label>
-                  <div className="relative">
-                    <Input 
-                      id="confirmPassword" 
-                      type={showPassword ? "text" : "password"} 
-                      required 
-                      placeholder="••••••••" 
-                      autoComplete="new-password" 
-                      className={`h-12 rounded-xl border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-200 ${errors.confirmPassword ? "border-red-500 focus:border-red-500" : ""}`}
-                      value={confirmPassword} 
-                      onChange={e => setConfirmPassword(e.target.value)} 
-                      disabled={isLoading} 
-                    />
-                  </div>
-                  {errors.confirmPassword && <p className="text-xs text-red-500 flex items-center gap-1"><span>⚠</span>{errors.confirmPassword}</p>}
-                </div>
-              )}
+
 
               {/* Botão principal */}
               <Button 
@@ -423,6 +398,7 @@ const Login = () => {
               </div>
             </div>
           </div>
+          )}
         </div>
       </div>
     </div>

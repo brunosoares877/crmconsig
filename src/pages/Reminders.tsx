@@ -850,12 +850,13 @@ const Reminders = () => {
             </div>
           </div>
           
-          {/* Header Actions */}
-          <div className="mt-6 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              {headerActions}
-            </div>
-          </div>
+        </div>
+      </div>
+
+      {/* Botões fora do header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          {headerActions}
         </div>
       </div>
 

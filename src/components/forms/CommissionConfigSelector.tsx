@@ -43,13 +43,29 @@ const CommissionConfigSelector: React.FC<CommissionConfigSelectorProps> = ({
   // Converter valores de string para number
   const numericAmount = React.useMemo(() => {
     if (!amount) return 0;
-    const cleaned = amount.replace(/[^\d,]/g, '').replace(',', '.');
-    return parseFloat(cleaned) || 0;
+    
+    // Remover símbolos de moeda e espaços, manter apenas números, vírgulas e pontos
+    let cleaned = amount.toString().replace(/[^\d,.]/g, '');
+    
+    // Se tem vírgula e ponto, assumir formato brasileiro: 1.234,56
+    if (cleaned.includes(',') && cleaned.includes('.')) {
+      // Remove pontos (separadores de milhares) e substitui vírgula por ponto
+      cleaned = cleaned.replace(/\./g, '').replace(',', '.');
+    } else if (cleaned.includes(',')) {
+      // Se só tem vírgula, substituir por ponto
+      cleaned = cleaned.replace(',', '.');
+    }
+    
+    const parsed = parseFloat(cleaned) || 0;
+    console.log('Valor convertido:', { original: amount, cleaned, parsed });
+    return parsed;
   }, [amount]);
 
   const numericPeriod = React.useMemo(() => {
     if (!paymentPeriod) return undefined;
-    return parseInt(paymentPeriod) || undefined;
+    const parsed = parseInt(paymentPeriod.toString()) || undefined;
+    console.log('Período convertido:', { original: paymentPeriod, parsed });
+    return parsed;
   }, [paymentPeriod]);
 
   // Auto-seleção e cálculo automático
@@ -65,7 +81,21 @@ const CommissionConfigSelector: React.FC<CommissionConfigSelectorProps> = ({
   // Calcular comissão quando opção ou valores mudam
   useEffect(() => {
     if (selectedOption && numericAmount > 0) {
+      console.log('Calculando comissão:', {
+        selectedOption: selectedOption.name,
+        type: selectedOption.type,
+        commission_type: selectedOption.commission_type,
+        value: selectedOption.value,
+        numericAmount,
+        numericPeriod,
+        min_amount: selectedOption.min_amount,
+        max_amount: selectedOption.max_amount,
+        min_period: selectedOption.min_period,
+        max_period: selectedOption.max_period
+      });
+      
       const result = calculateCommission(selectedOption, numericAmount, numericPeriod);
+      console.log('Resultado do cálculo:', result);
       setCalculationResult(result);
       onCommissionCalculated?.(result);
     } else {
@@ -338,25 +368,72 @@ const CommissionConfigSelector: React.FC<CommissionConfigSelectorProps> = ({
           </div>
         )}
         
+        {/* Alerta quando valores estão fora da faixa */}
         {numericAmount > 0 && !calculationResult && selectedOption && (
           <Alert className="border-amber-200 bg-amber-50">
             <TrendingUp className="h-4 w-4 text-amber-600" />
             <AlertDescription className="text-amber-800">
               <div className="space-y-2">
-                <div className="font-semibold">⚠️ Valores fora da faixa configurada</div>
+                <div className="font-semibold">⚠️ Configuração não se aplica aos valores informados</div>
                 <div className="text-sm">
-                  A configuração "<strong>{selectedOption.name}</strong>" não se aplica aos valores informados:
+                  A configuração "<strong>{selectedOption.name}</strong>" (tipo: {selectedOption.type}) não pode ser aplicada:
                 </div>
                 <div className="text-sm space-y-1 ml-4">
-                  <div>• Valor informado: <strong>{formatCurrency(numericAmount)}</strong></div>
-                  {numericPeriod && <div>• Prazo informado: <strong>{numericPeriod}x parcelas</strong></div>}
+                  <div>• Valor: <strong>{formatCurrency(numericAmount)}</strong></div>
+                  {numericPeriod && <div>• Prazo: <strong>{numericPeriod}x parcelas</strong></div>}
+                  <div>• Tipo de comissão: <strong>{selectedOption.commission_type === 'fixed' ? 'Valor fixo' : 'Percentual'}</strong></div>
+                  <div>• Produto: <strong>{selectedOption.product}</strong></div>
                 </div>
+                
+                {/* Critérios específicos da configuração */}
                 <div className="text-sm mt-2 p-2 bg-amber-100 rounded border">
-                  <strong>Critérios da configuração selecionada:</strong><br/>
-                  {getOptionDescription(selectedOption) || "Verifique as faixas de valor e prazo configuradas"}
+                  <strong>Critérios da configuração:</strong><br/>
+                  {selectedOption.type === 'value_tier' && (
+                    <div>
+                      📊 Faixa de valor: {selectedOption.min_amount ? formatCurrency(selectedOption.min_amount) : 'sem mínimo'} até {selectedOption.max_amount ? formatCurrency(selectedOption.max_amount) : 'sem máximo'}
+                    </div>
+                  )}
+                  {selectedOption.type === 'period_tier' && (
+                    <div>
+                      📅 Faixa de período: {selectedOption.min_period ? `${selectedOption.min_period}x` : 'sem mínimo'} até {selectedOption.max_period ? `${selectedOption.max_period}x` : 'sem máximo'}
+                    </div>
+                  )}
+                  {selectedOption.type === 'fixed_rate' && (
+                    <div>
+                      🎯 Taxa fixa - Deveria funcionar para qualquer valor (possível erro do sistema)
+                    </div>
+                  )}
                 </div>
+                
                 <div className="text-sm text-amber-700 mt-2">
-                  💡 <em>Escolha outra configuração ou ajuste os valores para que se enquadrem na faixa.</em>
+                  💡 <em>Dicas:</em>
+                  <ul className="list-disc list-inside ml-2">
+                    <li>Verifique se o valor está dentro da faixa configurada</li>
+                    <li>Escolha outra configuração que aceite esses valores</li>
+                    <li>Configure novas faixas em "Comissões → Configurar Comissões"</li>
+                  </ul>
+                </div>
+                
+                {/* Botão de debug temporário */}
+                <div className="mt-3 p-2 bg-gray-100 rounded border">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      console.log('=== DEBUG COMISSÃO ===');
+                      console.log('Opção selecionada:', selectedOption);
+                      console.log('Valor numérico:', numericAmount);
+                      console.log('Período numérico:', numericPeriod);
+                      console.log('Teste de cálculo:', calculateCommission(selectedOption, numericAmount, numericPeriod));
+                      console.log('=== FIM DEBUG ===');
+                    }}
+                    className="text-xs"
+                  >
+                    🔍 Debug no Console
+                  </Button>
+                  <p className="text-xs text-gray-600 mt-1">
+                    Clique para ver informações detalhadas no console do navegador (F12)
+                  </p>
                 </div>
               </div>
             </AlertDescription>

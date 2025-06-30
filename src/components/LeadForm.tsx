@@ -9,13 +9,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { format } from "date-fns";
 
 import BenefitTypeSelect from "@/components/forms/BenefitTypeSelect";
 import { BankSelect } from "@/components/forms/BankSelect";
 import EmployeeSelect from "@/components/EmployeeSelect";
-import CommissionConfigSelector from "@/components/forms/CommissionConfigSelector";
 import { useAuth } from "@/contexts/AuthContext";
-import { CommissionCalculationResult, useCommissionConfig } from "@/hooks/useCommissionConfig";
 
 const formSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
@@ -35,8 +34,6 @@ const formSchema = z.object({
 });
 
 type FormData = z.infer<typeof formSchema>;
-
-// Tipo para dados processados
 type ProcessedFormData = FormData;
 
 interface LeadFormProps {
@@ -68,148 +65,109 @@ function formatBRL(value: string) {
   return reais + "," + cents;
 }
 
-// Função para extrair data do lead
-const getInitialDate = (initialData: any, isEditing: boolean) => {
-  if (initialData?.date) return initialData.date;
-  if ((initialData as any)?.date) return (initialData as any).date;
-  if (isEditing && (initialData as any)?.created_at) {
-    // Se estamos editando mas não há data personalizada, usar created_at como referência
-    return new Date((initialData as any).created_at).toISOString().slice(0, 10);
-  }
-  return new Date().toISOString().slice(0, 10);
-};
-
 const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, isEditing = false, isLoading = false }) => {
   const { user } = useAuth ? useAuth() : { user: null };
   const [isInitialized, setIsInitialized] = useState(false);
-  const [commissionResult, setCommissionResult] = useState<CommissionCalculationResult | null>(null);
-  const [showCommissionSection, setShowCommissionSection] = useState(false);
-  
-  // Hook para buscar todas as configurações de comissão disponíveis
-  const { availableOptions: allCommissionOptions, loading: loadingOptions } = useCommissionConfig();
-  
-  // Criar lista única de produtos (sem duplicatas)
-  const availableProducts = useMemo(() => {
-    const uniqueProducts = new Set<string>();
-    allCommissionOptions.forEach(option => {
-      if (option.product) {
-        uniqueProducts.add(option.product);
-      }
-    });
-    return Array.from(uniqueProducts).sort();
-  }, [allCommissionOptions]);
 
-  console.log("LeadForm rendering - isEditing:", isEditing, "employee:", initialData?.employee);
+  // Processar dados iniciais
+  const getInitialValues = () => {
+    if (!isEditing || !initialData) {
+      return {
+        name: "",
+        cpf: "",
+        phone: "",
+        phone2: "",
+        bank: "none",
+        product: "",
+        amount: "",
+        employee: "none",
+        notes: "",
+        benefit_type: "none",
+        representative_mode: "nao",
+        representative_name: "",
+        representative_cpf: "",
+        date: new Date().toISOString().slice(0, 10),
+      };
+    }
+
+    // Para edição, processar dados corretamente
+    const values = {
+      name: initialData?.name || "",
+      cpf: initialData?.cpf || "",
+      phone: initialData?.phone || "",
+      phone2: initialData?.phone2 || "",
+      bank: initialData?.bank || "none",
+      product: initialData?.product || "",
+      amount: initialData?.amount || "",
+      employee: initialData?.employee || "none", 
+      notes: initialData?.notes || "",
+      benefit_type: initialData?.benefit_type || "none",
+      representative_mode: initialData?.representative_mode || "nao",
+      representative_name: initialData?.representative_name || "",
+      representative_cpf: initialData?.representative_cpf || "",
+      date: initialData?.date || new Date().toISOString().slice(0, 10),
+    };
+    
+    console.log("🔧 Form initialized with:", {
+      employee: values.employee,
+      originalEmployee: initialData?.employee
+    });
+    
+    return values;
+  };
 
   const { register, handleSubmit, formState: { errors }, setValue, watch, reset } = useForm<FormData>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      name: "",
-      cpf: "",
-      phone: "",
-      phone2: "",
-      bank: "none",
-      product: "",
-      amount: "",
-      employee: "none",
-      notes: "",
-      benefit_type: "none",
-      representative_mode: "nao",
-      representative_name: "",
-      representative_cpf: "",
-      date: new Date().toISOString().slice(0, 10),
-    }
+    defaultValues: getInitialValues()
   });
 
   const representativeMode = watch("representative_mode");
 
-  // Effect para carregar dados iniciais quando estiver editando
   useEffect(() => {
     if (isEditing && initialData && isInitialized) {
-      console.log("🔄 Loading initial data for editing...");
-      console.log("📋 Raw initialData.employee:", initialData.employee);
-      
-      // Processar o valor do employee de forma mais robusta
-      let employeeValue = "none";
-      if (initialData.employee) {
-        if (typeof initialData.employee === 'string' && initialData.employee.trim() !== "") {
-          employeeValue = initialData.employee.trim();
-        }
-      }
-      
-      console.log("🎯 Processing employee:", initialData.employee, "->", employeeValue);
-      
-      // Usar setValue individual para garantir que funcione
-      setValue("name", initialData?.name || "");
-      setValue("cpf", initialData?.cpf || "");
-      setValue("phone", initialData?.phone || "");
-      setValue("phone2", initialData?.phone2 || "");
-      setValue("bank", initialData?.bank || "none");
-      setValue("product", initialData?.product || "");
-      setValue("amount", initialData?.amount || "");
-      setValue("employee", employeeValue);
-      setValue("notes", initialData?.notes || "");
-      setValue("benefit_type", initialData?.benefit_type || "none");
-      setValue("representative_mode", initialData?.representative_mode || "nao");
-      setValue("representative_name", initialData?.representative_name || "");
-      setValue("representative_cpf", initialData?.representative_cpf || "");
-      setValue("date", getInitialDate(initialData, isEditing));
-      
-      setTimeout(() => {
-        console.log("✅ After setValue - employee value:", watch("employee"));
-      }, 100);
+      const values = getInitialValues();
+      reset(values);
     }
-  }, [isEditing, initialData, isInitialized, setValue, watch]);
+  }, [isEditing, initialData, isInitialized, reset]);
 
   useEffect(() => {
-    console.log("LeadForm useEffect - initializing form");
     setIsInitialized(true);
   }, []);
 
-  // Monitorar mudanças no campo employee
-  useEffect(() => {
-    const currentEmployee = watch("employee");
-    if (currentEmployee) {
-      console.log("Employee field changed:", currentEmployee);
-    }
-  }, [watch("employee")]);
-
   const onFormSubmit = (data: FormData) => {
-    console.log("Form submission started with values:", data);
-    console.log("Date field being submitted:", data.date);
+    console.log("🚀 LeadForm - Submitting data:", data);
     
     if (!data.name || data.name.trim() === "") {
-      console.error("Validation failed: Name is required");
       toast.error("Nome é obrigatório");
       return;
     }
 
-    // Validar se há produto selecionado quando há valor
-    const hasValue = data.amount && parseFloat(data.amount.replace(/[^\d,]/g, '').replace(',', '.')) > 0;
-    
-    if (hasValue && (!data.product || data.product.trim() === "")) {
-      toast.error("⚠️ Selecione uma configuração de produto quando informar valor");
-      return;
-    }
-
-    // Validar se a comissão foi calculada corretamente quando há produto selecionado
-    if (data.product && hasValue && !commissionResult) {
-      toast.error("⚠️ A configuração selecionada não se aplica aos valores informados. Verifique as faixas ou escolha outra configuração.");
-      return;
-    }
-
     // Processar dados do formulário
-    const processedData = {
-      ...data,
-      employee: data.employee && data.employee !== "none" && data.employee.trim() !== "" ? data.employee.trim() : null,
-      bank: data.bank === "none" ? undefined : data.bank,
-      product: data.product && data.product.trim() !== "" ? data.product.trim() : undefined,
-      benefit_type: data.benefit_type === "none" ? undefined : data.benefit_type
+    const processedData: ProcessedFormData = {
+      name: data.name,
+      cpf: data.cpf,
+      phone: data.phone,
+      phone2: data.phone2 || null,
+      bank: data.bank && data.bank !== "none" ? data.bank : null,
+      product: data.product && data.product !== "none" ? data.product : null,
+      amount: data.amount || null,
+      employee: data.employee && data.employee !== "none" ? data.employee : null,
+      notes: data.notes || "",
+      benefit_type: data.benefit_type && data.benefit_type !== "none" ? data.benefit_type : null,
+      representative_mode: data.representative_mode || "nao",
+      representative_name: data.representative_mode === "sim" && data.representative_name 
+        ? data.representative_name 
+        : null,
+      representative_cpf: data.representative_mode === "sim" && data.representative_cpf 
+        ? data.representative_cpf 
+        : null,
+      date: data.date || format(new Date(), "yyyy-MM-dd"),
     };
 
-    console.log("Form data processed for submission:", {
+    console.log("📤 LeadForm - Processed data to send:", {
       employee: processedData.employee,
-      hasProduct: !!processedData.product
+      name: processedData.name,
+      originalEmployee: data.employee
     });
 
     onSubmit(processedData);
@@ -267,30 +225,21 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
         <div>
           <Label htmlFor="product">Produto</Label>
           <Select 
-            onValueChange={(value) => {
-              console.log("Product selection changed:", value);
-              const newValue = value === "none" ? "" : value;
-              setValue("product", newValue);
-              console.log("Product value set to:", newValue);
-            }}
+            onValueChange={(value) => setValue("product", value === "none" ? "" : value)}
             value={watch("product") === "" || !watch("product") ? "none" : watch("product")}
-            disabled={loadingOptions}
           >
             <SelectTrigger>
-              <SelectValue placeholder={loadingOptions ? "Carregando produtos..." : "Selecione o produto"} />
+              <SelectValue placeholder="Selecione o produto" />
             </SelectTrigger>
-            <SelectContent className="max-h-60">
+            <SelectContent>
               <SelectItem value="none">Nenhum produto</SelectItem>
-              {availableProducts.map((product) => (
-                <SelectItem key={product} value={product}>
-                  <div className="flex items-center gap-2">
-                    <span>📦 {product}</span>
-                    <span className="text-xs text-gray-500">
-                      ({allCommissionOptions.filter(opt => opt.product === product).length} configurações)
-                    </span>
-                  </div>
-                </SelectItem>
-              ))}
+              <SelectItem value="CREDITO CLT">CREDITO CLT</SelectItem>
+              <SelectItem value="CREDITO INSS">CREDITO INSS</SelectItem>
+              <SelectItem value="CREDITO PRIVADO">CREDITO PRIVADO</SelectItem>
+              <SelectItem value="CARTAO BENEFICIO">CARTAO BENEFICIO</SelectItem>
+              <SelectItem value="CARTAO CREDITO">CARTAO CREDITO</SelectItem>
+              <SelectItem value="PORTABILIDADE">PORTABILIDADE</SelectItem>
+              <SelectItem value="REFINANCIAMENTO">REFINANCIAMENTO</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -305,28 +254,19 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
 
         <div>
           <Label htmlFor="employee">Funcionário</Label>
-          <div className="space-y-2">
-            <EmployeeSelect
-              value={watch("employee") || "none"}
-              onValueChange={(value) => {
-                console.log("🎯 Employee selection changed:", value);
-                setValue("employee", value);
-                console.log("🔄 After setValue, watch value:", watch("employee"));
-              }}
-              placeholder="Selecione o funcionário"
-            />
-            {isEditing && (
-              <div className="text-xs text-amber-700 p-2 bg-amber-50 border border-amber-200 rounded">
-                💡 <strong>Importante:</strong> Leads que já possuem comissão gerada não devem ter o funcionário alterado para manter a integridade dos dados.
-              </div>
-            )}
-          </div>
+          <EmployeeSelect
+            value={watch("employee") || "none"}
+            onValueChange={(value) => {
+              console.log("🎯 Employee changed to:", value);
+              setValue("employee", value);
+            }}
+            placeholder="Selecione o funcionário"
+          />
         </div>
 
         <BenefitTypeSelect
           value={watch("benefit_type") || "none"}
           onValueChange={(value) => setValue("benefit_type", value)}
-          defaultValue={initialData?.benefit_type || "none"}
         />
 
         <div>
@@ -346,32 +286,9 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
           <Label htmlFor="date">Data do Lead</Label>
           <Input id="date" type="date" {...register("date")} />
         </div>
-
-        {/* Botão para Calcular Comissão */}
-        <div className="flex items-center gap-4">
-          <Button
-            type="button"
-            variant={showCommissionSection ? "default" : "outline"}
-            onClick={() => setShowCommissionSection(!showCommissionSection)}
-            className="flex items-center gap-2"
-          >
-            <span>💰</span>
-            {showCommissionSection ? "Ocultar Cálculo de Comissão" : "Calcular Comissão"}
-          </Button>
-          
-          {commissionResult && !showCommissionSection && (
-            <div className="flex items-center gap-2 text-sm text-green-700">
-              <span>✅ Comissão:</span>
-              <span className="font-bold">
-                R$ {commissionResult.calculatedValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-              </span>
-              <span className="text-xs">({commissionResult.percentage.toFixed(2)}%)</span>
-            </div>
-          )}
-        </div>
       </div>
 
-      {/* Seção de Representante - aparece logo após os campos básicos */}
+      {/* Seção de Representante */}
       {representativeMode === "sim" && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 border rounded-lg bg-gray-50 mt-4">
           <div>
@@ -389,24 +306,6 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
         </div>
       )}
 
-      {/* Seletor de Configuração de Comissão - Condicional */}
-      {showCommissionSection && (
-        <div className="mt-4">
-          <CommissionConfigSelector
-            productName={watch("product") && watch("product") !== "" ? watch("product") : undefined}
-            amount={watch("amount") || undefined}
-            paymentPeriod={undefined}
-            onCommissionCalculated={setCommissionResult}
-            onOptionSelected={(option) => {
-              console.log("Commission option selected:", option);
-              // Não alterar o produto aqui para evitar conflitos com o select principal
-            }}
-            showCard={true}
-            autoCalculate={false}
-          />
-        </div>
-      )}
-
       <div>
         <Label htmlFor="notes">Observações</Label>
         <Textarea id="notes" {...register("notes")} rows={3} />
@@ -415,12 +314,7 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
       <div className="flex gap-2 justify-end">
         <Button type="button" variant="outline" onClick={onCancel} disabled={isLoading}>Cancelar</Button>
         <Button type="submit" disabled={isLoading}>
-          {isLoading ? "Salvando..." : (isEditing ? "Atualizar Lead" : "Salvar Lead")}
-          {commissionResult && (
-            <span className="ml-2 text-xs opacity-75">
-              (Com comissão)
-            </span>
-          )}
+          {isLoading ? "Salvando..." : isEditing ? "Atualizar" : "Criar Lead"}
         </Button>
       </div>
     </form>

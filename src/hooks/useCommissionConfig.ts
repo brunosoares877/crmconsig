@@ -124,15 +124,53 @@ export const useCommissionConfig = (productName?: string) => {
   ): CommissionCalculationResult | null => {
     if (!option || amount <= 0) return null;
 
-    // Verificar se a opção é válida para os parâmetros fornecidos
-    if (option.type === 'value_tier') {
-      if (option.min_amount && amount < option.min_amount) return null;
-      if (option.max_amount && amount > option.max_amount) return null;
+    // Para taxas fixas (fixed_rate), não aplicar validação de faixa
+    if (option.type === 'fixed_rate') {
+      let calculatedValue: number;
+      let percentage: number;
+
+      if (option.commission_type === 'fixed') {
+        calculatedValue = option.value;
+        percentage = amount > 0 ? (calculatedValue / amount) * 100 : 0;
+      } else {
+        percentage = option.value;
+        calculatedValue = (amount * percentage) / 100;
+      }
+
+      return {
+        option,
+        calculatedValue,
+        percentage
+      };
     }
 
-    if (option.type === 'period_tier' && paymentPeriod) {
-      if (option.min_period && paymentPeriod < option.min_period) return null;
-      if (option.max_period && paymentPeriod > option.max_period) return null;
+    // Para faixas de valor (value_tier), verificar apenas se há faixas definidas
+    if (option.type === 'value_tier') {
+      // Se não há min nem max definidos, aceitar qualquer valor
+      const hasMinAmount = option.min_amount !== null && option.min_amount !== undefined;
+      const hasMaxAmount = option.max_amount !== null && option.max_amount !== undefined;
+      
+      if (hasMinAmount && amount < option.min_amount!) return null;
+      if (hasMaxAmount && amount > option.max_amount!) return null;
+    }
+
+    // Para faixas de período (period_tier), verificar apenas se período foi fornecido
+    if (option.type === 'period_tier') {
+      // Se não há período informado mas a validação exige, retornar null
+      if (!paymentPeriod) {
+        // Mas se não há restrições de período definidas, aceitar
+        const hasMinPeriod = option.min_period !== null && option.min_period !== undefined;
+        const hasMaxPeriod = option.max_period !== null && option.max_period !== undefined;
+        
+        if (hasMinPeriod || hasMaxPeriod) return null;
+      } else {
+        // Se há período, validar as faixas
+        const hasMinPeriod = option.min_period !== null && option.min_period !== undefined;
+        const hasMaxPeriod = option.max_period !== null && option.max_period !== undefined;
+        
+        if (hasMinPeriod && paymentPeriod < option.min_period!) return null;
+        if (hasMaxPeriod && paymentPeriod > option.max_period!) return null;
+      }
     }
 
     // Calcular valor da comissão
@@ -156,33 +194,64 @@ export const useCommissionConfig = (productName?: string) => {
 
   // Encontrar automaticamente a melhor opção baseada no valor e período
   const findBestOption = (amount: number, paymentPeriod?: number): CommissionConfigOption | null => {
-    // Prioridade: período > valor > taxa fixa
-    
+    if (amount <= 0) return null;
+
+    // Filtrar opções pelo produto se especificado
+    const filteredOptions = productName 
+      ? availableOptions.filter(opt => opt.product === productName)
+      : availableOptions;
+
+    if (filteredOptions.length === 0) return null;
+
+    // Lista de opções válidas baseadas na validação
+    const validOptions: CommissionConfigOption[] = [];
+
+    for (const option of filteredOptions) {
+      // Testar se a opção é válida fazendo um cálculo de teste
+      const testResult = calculateCommission(option, amount, paymentPeriod);
+      if (testResult) {
+        validOptions.push(option);
+      }
+    }
+
+    if (validOptions.length === 0) {
+      // Se não há opções válidas, retornar a primeira taxa fixa disponível
+      const fixedRates = filteredOptions.filter(opt => opt.type === 'fixed_rate');
+      return fixedRates[0] || filteredOptions[0] || null;
+    }
+
+    // Prioridade de seleção:
+    // 1. Faixas de período (se período foi fornecido)
+    // 2. Faixas de valor (mais específicas)
+    // 3. Taxas fixas (mais genéricas)
+
     // 1. Tentar encontrar por período se fornecido
     if (paymentPeriod) {
-      const periodOptions = availableOptions.filter(opt => opt.type === 'period_tier');
-      for (const option of periodOptions) {
-        if (option.min_period && paymentPeriod >= option.min_period &&
-            (!option.max_period || paymentPeriod <= option.max_period)) {
-          return option;
-        }
+      const periodOptions = validOptions.filter(opt => opt.type === 'period_tier');
+      if (periodOptions.length > 0) {
+        // Retornar a que tem a faixa mais específica (menor range)
+        return periodOptions.sort((a, b) => {
+          const rangeA = (a.max_period || Infinity) - (a.min_period || 0);
+          const rangeB = (b.max_period || Infinity) - (b.min_period || 0);
+          return rangeA - rangeB;
+        })[0];
       }
     }
 
     // 2. Tentar encontrar por faixa de valor
-    if (amount > 0) {
-      const valueOptions = availableOptions.filter(opt => opt.type === 'value_tier');
-      for (const option of valueOptions) {
-        if (option.min_amount && amount >= option.min_amount &&
-            (!option.max_amount || amount <= option.max_amount)) {
-          return option;
-        }
-      }
+    const valueOptions = validOptions.filter(opt => opt.type === 'value_tier');
+    if (valueOptions.length > 0) {
+      // Retornar a que tem a faixa mais específica (menor range)
+      return valueOptions.sort((a, b) => {
+        const rangeA = (a.max_amount || Infinity) - (a.min_amount || 0);
+        const rangeB = (b.max_amount || Infinity) - (b.min_amount || 0);
+        return rangeA - rangeB;
+      })[0];
     }
 
     // 3. Taxa fixa como fallback
-    const fixedRates = availableOptions.filter(opt => opt.type === 'fixed_rate');
-    return fixedRates[0] || null;
+    const fixedRates = validOptions.filter(opt => opt.type === 'fixed_rate');
+    return fixedRates[0] || validOptions[0];
   };
 
   return {

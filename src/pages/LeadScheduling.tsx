@@ -473,15 +473,16 @@ const LeadScheduling = () => {
             </div>
           </div>
           
-          {/* Header Actions */}
-          <div className="mt-6 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Button onClick={openNewAppointmentDialog} className="bg-white/20 hover:bg-white/30 border-white/30">
-                <Plus className="mr-2 h-4 w-4" />
-                Novo Agendamento
-              </Button>
-            </div>
-          </div>
+        </div>
+      </div>
+
+      {/* Botões fora do header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Button onClick={openNewAppointmentDialog} className="bg-blue-600 hover:bg-blue-700 text-white">
+            <Plus className="mr-2 h-4 w-4" />
+            Novo Agendamento
+          </Button>
         </div>
       </div>
 
