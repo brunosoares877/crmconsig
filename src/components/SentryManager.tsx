@@ -37,10 +37,10 @@ const SentryManager: React.FC = () => {
 
   useEffect(() => {
     // Verificar se Sentry está inicializado
-    const client = Sentry.getCurrentHub().getClient();
+    const isInitialized = !!import.meta.env.VITE_SENTRY_DSN;
     setSentryStatus(prev => ({
       ...prev,
-      isInitialized: !!client
+      isInitialized
     }));
   }, []);
 

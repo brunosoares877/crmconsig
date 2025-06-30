@@ -1,53 +1,110 @@
-import React from 'react';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ThemeProvider } from "@/contexts/ThemeContext";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
+import { WhiteLabelProvider } from "@/contexts/WhiteLabelContext";
+import "./App.css";
 
-// Componente de teste simples
-const TestPage = () => {
-  return (
-    <div style={{
-      minHeight: '100vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: '#f0f9ff',
-      fontFamily: 'Arial, sans-serif'
-    }}>
-      <div style={{
-        padding: '2rem',
-        backgroundColor: 'white',
-        borderRadius: '8px',
-        boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-        textAlign: 'center',
-        maxWidth: '400px'
-      }}>
-        <h1 style={{ color: '#1e40af', marginBottom: '1rem' }}>
-          🎉 LeadConsig FUNCIONANDO!
-        </h1>
-        <p style={{ color: '#6b7280', marginBottom: '1rem' }}>
-          Site carregando no Netlify! Cache invalidated!
-        </p>
-        <div style={{
-          padding: '1rem',
-          backgroundColor: '#dcfce7',
-          borderRadius: '4px',
-          border: '1px solid #16a34a'
-        }}>
-          <strong style={{ color: '#166534' }}>✅ Sistema Online</strong>
-          <br />
-          <small>BUILD ÚNICO: {Date.now()} - {new Date().toLocaleString()}</small>
-        </div>
-      </div>
-    </div>
-  );
-};
+// Pages
+import Index from "@/pages/Index";
+import Login from "@/pages/Login";
+import ResetPassword from "@/pages/ResetPassword";
+import Leads from "@/pages/Leads";
+import LeadNew from "@/pages/LeadNew";
+import LeadImport from "@/pages/LeadImport";
+import LeadScheduling from "@/pages/LeadScheduling";
+import LeadsConfig from "@/pages/LeadsConfig";
+import LeadsPremium from "@/pages/LeadsPremium";
+import LeadsTrash from "@/pages/LeadsTrash";
+import Employees from "@/pages/Employees";
+import Commission from "@/pages/Commission";
+import CommissionSettings from "@/pages/CommissionSettings";
+import Reminders from "@/pages/Reminders";
+import RemindersCalendar from "@/pages/RemindersCalendar";
+import RemindersManagement from "@/pages/RemindersManagement";
+import Portability from "@/pages/Portability";
+import Settings from "@/pages/Settings";
+import Plans from "@/pages/Plans";
+import Sales from "@/pages/Sales";
+import NotFound from "@/pages/NotFound";
+import CookiePolicy from "@/pages/CookiePolicy";
+import SubscriptionSuccess from "@/pages/SubscriptionSuccess";
+import SubscriptionCancelled from "@/pages/SubscriptionCancelled";
+
+// Components
+import { Toaster } from "@/components/ui/sonner";
+import ErrorBoundary from "@/components/ErrorBoundary";
+import CookieConsent from "@/components/CookieConsent";
+import PerformanceMonitor from "@/components/PerformanceMonitor";
+import SentryManager from "@/components/SentryManager";
+
+// Create a client
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 3,
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      cacheTime: 10 * 60 * 1000, // 10 minutes
+    },
+  },
+});
 
 function App() {
   return (
-    <Router>
-      <Routes>
-        <Route path="*" element={<TestPage />} />
-      </Routes>
-    </Router>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider>
+          <AuthProvider>
+            <SubscriptionProvider>
+              <WhiteLabelProvider>
+                <Router>
+                  <SentryManager />
+                  <PerformanceMonitor />
+                  <Routes>
+                    {/* Public Routes */}
+                    <Route path="/" element={<Index />} />
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/reset-password" element={<ResetPassword />} />
+                    <Route path="/sales" element={<Sales />} />
+                    <Route path="/cookie-policy" element={<CookiePolicy />} />
+                    <Route path="/subscription-success" element={<SubscriptionSuccess />} />
+                    <Route path="/subscription-cancelled" element={<SubscriptionCancelled />} />
+                    
+                    {/* Private Routes (CRM) */}
+                    <Route path="/leads" element={<Leads />} />
+                    <Route path="/leads/new" element={<LeadNew />} />
+                    <Route path="/leads/import" element={<LeadImport />} />
+                    <Route path="/leads/scheduling" element={<LeadScheduling />} />
+                    <Route path="/leads/config" element={<LeadsConfig />} />
+                    <Route path="/leads/premium" element={<LeadsPremium />} />
+                    <Route path="/leads/trash" element={<LeadsTrash />} />
+                    
+                    <Route path="/employees" element={<Employees />} />
+                    <Route path="/commission" element={<Commission />} />
+                    <Route path="/commission/settings" element={<CommissionSettings />} />
+                    
+                    <Route path="/reminders" element={<Reminders />} />
+                    <Route path="/reminders/calendar" element={<RemindersCalendar />} />
+                    <Route path="/reminders/management" element={<RemindersManagement />} />
+                    
+                    <Route path="/portability" element={<Portability />} />
+                    <Route path="/settings" element={<Settings />} />
+                    <Route path="/plans" element={<Plans />} />
+                    
+                    {/* 404 Page */}
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                  <Toaster />
+                  <CookieConsent />
+                </Router>
+              </WhiteLabelProvider>
+            </SubscriptionProvider>
+          </AuthProvider>
+        </ThemeProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 

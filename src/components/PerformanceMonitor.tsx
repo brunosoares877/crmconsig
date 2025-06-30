@@ -33,7 +33,7 @@ interface PerformanceMonitorProps {
   isDevelopment?: boolean;
 }
 
-export const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
+const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
   isVisible = false,
   onToggle,
   isDevelopment = process.env.NODE_ENV === 'development'
@@ -278,4 +278,6 @@ export const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
       )}
     </div>
   );
-}; 
+};
+
+export default PerformanceMonitor;
