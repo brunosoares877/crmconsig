@@ -1,27 +1,27 @@
-import React, { Suspense, lazy } from 'react';
+import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-// Lazy imports das páginas
-const Index = lazy(() => import("@/pages/Index"));
-const Plans = lazy(() => import("@/pages/Plans"));
-const SubscriptionSuccess = lazy(() => import("@/pages/SubscriptionSuccess"));
-const SubscriptionCancelled = lazy(() => import("@/pages/SubscriptionCancelled"));
-const Leads = lazy(() => import("@/pages/Leads"));
-const LeadsPremium = lazy(() => import("@/pages/LeadsPremium"));
-const LeadNew = lazy(() => import("@/pages/LeadNew"));
-const LeadImport = lazy(() => import("@/pages/LeadImport"));
-const LeadsConfig = lazy(() => import("@/pages/LeadsConfig"));
-const LeadScheduling = lazy(() => import("@/pages/LeadScheduling"));
-const LeadsTrash = lazy(() => import("@/pages/LeadsTrash"));
-const Login = lazy(() => import("@/pages/Login"));
-const Sales = lazy(() => import("@/pages/Sales"));
-const Portability = lazy(() => import("@/pages/Portability"));
-const Reminders = lazy(() => import("@/pages/Reminders"));
-const RemindersCalendar = lazy(() => import("@/pages/RemindersCalendar"));
-const Commission = lazy(() => import("@/pages/Commission"));
-const CommissionSettings = lazy(() => import("@/pages/CommissionSettings"));
-const Settings = lazy(() => import("@/pages/Settings"));
-const Employees = lazy(() => import("@/pages/Employees"));
-const NotFound = lazy(() => import("@/pages/NotFound"));
+// Imports diretos (sem lazy loading)
+import Index from "@/pages/Index";
+import Plans from "@/pages/Plans";
+import SubscriptionSuccess from "@/pages/SubscriptionSuccess";
+import SubscriptionCancelled from "@/pages/SubscriptionCancelled";
+import Leads from "@/pages/Leads";
+import LeadsPremium from "@/pages/LeadsPremium";
+import LeadNew from "@/pages/LeadNew";
+import LeadImport from "@/pages/LeadImport";
+import LeadsConfig from "@/pages/LeadsConfig";
+import LeadScheduling from "@/pages/LeadScheduling";
+import LeadsTrash from "@/pages/LeadsTrash";
+import Login from "@/pages/Login";
+import Sales from "@/pages/Sales";
+import Portability from "@/pages/Portability";
+import Reminders from "@/pages/Reminders";
+import RemindersCalendar from "@/pages/RemindersCalendar";
+import Commission from "@/pages/Commission";
+import CommissionSettings from "@/pages/CommissionSettings";
+import Settings from "@/pages/Settings";
+import Employees from "@/pages/Employees";
+import NotFound from "@/pages/NotFound";
 import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
@@ -35,32 +35,30 @@ function App() {
         <AuthProvider>
           <ThemeProvider>
             <SubscriptionProvider>
-              <Suspense fallback={<div className="w-full min-h-screen flex items-center justify-center text-lg">Carregando...</div>}>
-                <Routes>
-                    <Route path="/" element={<Sales />} />
-                    <Route path="/dashboard" element={<Index />} />
-                    <Route path="/plans" element={<Plans />} />
-                    <Route path="/subscription-success" element={<SubscriptionSuccess />} />
-                    <Route path="/subscription-cancelled" element={<SubscriptionCancelled />} />
-                    <Route path="/leads" element={<Leads />} />
-                    <Route path="/leads-premium" element={<LeadsPremium />} />
-                    <Route path="/leads/new" element={<LeadNew />} />
-                    <Route path="/leads/import" element={<LeadImport />} />
-                    <Route path="/leads/config" element={<LeadsConfig />} />
-                    <Route path="/leads/scheduled" element={<LeadScheduling />} />
-                    <Route path="/leads/trash" element={<LeadsTrash />} />
-                    <Route path="/login" element={<Login />} />
-                    <Route path="/sales" element={<Sales />} />
-                    <Route path="/portability" element={<Portability />} />
-                    <Route path="/reminders" element={<Reminders />} />
-                    <Route path="/reminders/calendar" element={<RemindersCalendar />} />
-                    <Route path="/commission" element={<Commission />} />
-                    <Route path="/commission/settings" element={<CommissionSettings />} />
-                    <Route path="/settings" element={<Settings />} />
-                    <Route path="/employees" element={<Employees />} />
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
-              </Suspense>
+              <Routes>
+                <Route path="/" element={<Sales />} />
+                <Route path="/dashboard" element={<Index />} />
+                <Route path="/plans" element={<Plans />} />
+                <Route path="/subscription-success" element={<SubscriptionSuccess />} />
+                <Route path="/subscription-cancelled" element={<SubscriptionCancelled />} />
+                <Route path="/leads" element={<Leads />} />
+                <Route path="/leads-premium" element={<LeadsPremium />} />
+                <Route path="/leads/new" element={<LeadNew />} />
+                <Route path="/leads/import" element={<LeadImport />} />
+                <Route path="/leads/config" element={<LeadsConfig />} />
+                <Route path="/leads/scheduled" element={<LeadScheduling />} />
+                <Route path="/leads/trash" element={<LeadsTrash />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/sales" element={<Sales />} />
+                <Route path="/portability" element={<Portability />} />
+                <Route path="/reminders" element={<Reminders />} />
+                <Route path="/reminders/calendar" element={<RemindersCalendar />} />
+                <Route path="/commission" element={<Commission />} />
+                <Route path="/commission/settings" element={<CommissionSettings />} />
+                <Route path="/settings" element={<Settings />} />
+                <Route path="/employees" element={<Employees />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
               <Toaster />
               <SonnerToaster />
             </SubscriptionProvider>

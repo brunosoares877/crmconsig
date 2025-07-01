@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LeadConsig - Teste Sales</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-align: center;
+            padding: 50px;
+            margin: 0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255,255,255,0.1);
+            padding: 40px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+        }
+        h1 {
+            font-size: 3em;
+            margin-bottom: 20px;
+        }
+        .btn {
+            background: #4CAF50;
+            color: white;
+            padding: 15px 30px;
+            font-size: 1.2em;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            margin: 10px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn:hover {
+            background: #45a049;
+            transform: scale(1.05);
+        }
+        .status {
+            background: #2196F3;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎉 LeadConsig - TESTE FUNCIONANDO!</h1>
+        
+        <div class="status">
+            ✅ Página HTML estática carregou com sucesso!<br>
+            ⏰ Horário do teste: <span id="time"></span><br>
+            🌐 URL atual: <span id="url"></span>
+        </div>
+        
+        <h2>🚀 CRM Completo para Corbans</h2>
+        <p style="font-size: 1.2em; margin: 30px 0;">
+            Se você está vendo esta página, significa que o Netlify está funcionando perfeitamente!
+        </p>
+        
+        <div style="margin: 40px 0;">
+            <a href="/sales" class="btn">🔗 Ir para Sales React</a>
+            <a href="/" class="btn">🏠 Voltar ao Home</a>
+            <a href="https://wa.me/5584991850149" class="btn">💬 WhatsApp</a>
+        </div>
+        
+        <h3>📋 Planos Disponíveis:</h3>
+        <div style="display: flex; justify-content: center; flex-wrap: wrap; gap: 20px; margin: 30px 0;">
+            <div style="background: rgba(255,255,255,0.2); padding: 20px; border-radius: 10px; min-width: 200px;">
+                <h4>Plano Mensal</h4>
+                <div style="font-size: 2em; color: #4CAF50;">R$ 37,90</div>
+                <p>Acesso completo ao sistema</p>
+            </div>
+            <div style="background: rgba(255,255,255,0.3); padding: 20px; border-radius: 10px; min-width: 200px; border: 2px solid #FFD700;">
+                <h4>Plano Semestral ⭐</h4>
+                <div style="font-size: 2em; color: #FFD700;">R$ 187,00</div>
+                <p>Economia de 17%</p>
+            </div>
+            <div style="background: rgba(255,255,255,0.2); padding: 20px; border-radius: 10px; min-width: 200px;">
+                <h4>Plano Anual</h4>
+                <div style="font-size: 2em; color: #4CAF50;">R$ 297,00</div>
+                <p>Economia de 34%</p>
+            </div>
+        </div>
+        
+        <div style="margin-top: 40px; font-size: 0.9em; opacity: 0.8;">
+            🔧 Teste técnico - Se esta página carrega, o problema não é do Netlify<br>
+            📱 Teste no celular e PC para confirmar funcionamento
+        </div>
+    </div>
+
+    <script>
+        // Mostrar horário atual
+        document.getElementById('time').textContent = new Date().toLocaleString('pt-BR');
+        
+        // Mostrar URL atual
+        document.getElementById('url').textContent = window.location.href;
+        
+        // Teste de JavaScript
+        console.log('✅ JavaScript funcionando!');
+        console.log('🌐 URL:', window.location.href);
+        console.log('⏰ Horário:', new Date().toISOString());
+    </script>
+</body>
+</html> 
