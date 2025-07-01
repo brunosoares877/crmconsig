@@ -174,3 +174,13 @@ Para configuração específica do seu domínio, me informe:
 ---
 
 **🎉 Seu CRM está pronto para produção!**
+
+## ✅ Hospedado no Vercel
+- Deploy automático configurado
+- Última atualização: $(date)
+
+## Recursos
+- Gestão de leads
+- Sistema de comissões
+- Dashboard analítico
+- Relatórios
