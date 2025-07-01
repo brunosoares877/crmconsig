@@ -29,6 +29,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as SonnerToaster } from "sonner";
 
 function App() {
+  console.log('=== APP COMPONENT CARREGADO ===');
+
   return (
     <div className="w-full min-h-screen">
       <Router>
