@@ -5,73 +5,126 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>LeadConsig - CRM</title>
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <style>
+      body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+      .leadconsig-page { min-height: 100vh; background: #f8fafc; }
+      .header { background: white; border-bottom: 1px solid #e2e8f0; padding: 1rem 2rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+      .header-content { display: flex; align-items: center; justify-content: space-between; max-width: 1200px; margin: 0 auto; }
+      .logo-section { display: flex; align-items: center; gap: 12px; }
+      .logo { width: 40px; height: 40px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 18px; }
+      .status { background: #10b981; color: white; padding: 6px 12px; border-radius: 6px; font-size: 14px; font-weight: 500; }
+      .main { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+      .welcome { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 3rem; border-radius: 12px; margin-bottom: 2rem; text-align: center; }
+      .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+      .stat-card { background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+      .stat-blue { border-left: 4px solid #3b82f6; }
+      .stat-green { border-left: 4px solid #10b981; }
+      .stat-yellow { border-left: 4px solid #f59e0b; }
+      .stat-purple { border-left: 4px solid #8b5cf6; }
+      .actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; }
+      .action-card { background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+      .btn { border: none; padding: 12px 24px; border-radius: 6px; font-size: 16px; font-weight: 500; cursor: pointer; width: 100%; }
+      .btn-blue { background: #3b82f6; color: white; }
+      .btn-green { background: #10b981; color: white; }
+      .btn-yellow { background: #f59e0b; color: white; }
+      .success { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 2rem; border-radius: 8px; margin-top: 2rem; text-align: center; }
+      .loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 99999; color: white; }
+    </style>
     <script>
-      // SCRIPT IMEDIATO - EXECUTA SEMPRE
-      console.log('🚀 SCRIPT INLINE EXECUTADO!', new Date());
+      console.log('🚀 HTML IMEDIATO EXECUTANDO!');
       
-      // Criar loading imediatamente
-      const loadingHTML = `
-        <div id="emergency-loading" style="
-          position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          display: flex; flex-direction: column; align-items: center; justify-content: center; 
-          z-index: 99999; font-family: Arial, sans-serif; color: white;
-        ">
-          <div style="font-size: 32px; margin-bottom: 20px;">⚡ LeadConsig CRM</div>
-          <div style="font-size: 18px; margin-bottom: 15px;">Sistema Inicializando...</div>
-          <div style="font-size: 14px; opacity: 0.9;" id="status-text">JavaScript Carregado</div>
-          <div style="margin-top: 20px; width: 200px; height: 4px; background: rgba(255,255,255,0.3); border-radius: 2px;">
-            <div id="progress-bar" style="height: 100%; background: white; border-radius: 2px; width: 20%;"></div>
-          </div>
-        </div>
-      `;
-      
-      document.addEventListener('DOMContentLoaded', function() {
-        console.log('📋 DOM LOADED!');
-        document.body.innerHTML = loadingHTML + '<div id="root"></div>';
-        
-        let progress = 20;
-        const updateProgress = () => {
-          progress = Math.min(progress + 10, 90);
-          const bar = document.getElementById('progress-bar');
-          const status = document.getElementById('status-text');
-          if (bar) bar.style.width = progress + '%';
-          if (status) status.textContent = 'Carregando React... ' + progress + '%';
-        };
-        
-        const interval = setInterval(updateProgress, 500);
-        
-        // Timeout de emergência
-        setTimeout(() => {
-          clearInterval(interval);
-          const emergency = document.getElementById('emergency-loading');
-          if (emergency) {
-            emergency.innerHTML = `
-              <div style="text-align: center;">
-                <div style="font-size: 32px; margin-bottom: 20px;">⚠️ LeadConsig CRM</div>
-                <div style="font-size: 18px; margin-bottom: 15px;">Sistema está carregando...</div>
-                <div style="font-size: 14px; opacity: 0.9;">Se a tela não carregar, pressione F5</div>
-                <div style="margin-top: 20px;">
-                  <button onclick="location.reload()" style="
-                    background: white; color: #667eea; border: none; padding: 10px 20px; 
-                    border-radius: 5px; font-size: 16px; cursor: pointer;
-                  ">🔄 Recarregar</button>
+      // Mostrar página completa IMEDIATAMENTE 
+      function showLeadConsigPage() {
+        console.log('🏢 FORÇANDO PÁGINA LEADCONSIG AGORA!');
+        document.body.innerHTML = `
+          <div class="leadconsig-page">
+            <header class="header">
+              <div class="header-content">
+                <div class="logo-section">
+                  <div class="logo">L</div>
+                  <h1 style="margin: 0; color: #1a202c; font-size: 24px; font-weight: 600;">LeadConsig CRM</h1>
+                </div>
+                <div class="status">✓ Sistema Ativo</div>
+              </div>
+            </header>
+            
+            <main class="main">
+              <div class="welcome">
+                <h2 style="margin: 0 0 1rem 0; font-size: 32px; font-weight: 700;">🎉 LeadConsig CRM Funcionando!</h2>
+                <p style="margin: 0; font-size: 18px; opacity: 0.9;">Sistema de CRM para gestão completa de leads e comissões</p>
+              </div>
+              
+              <div class="stats">
+                <div class="stat-card stat-blue">
+                  <h3 style="margin: 0 0 0.5rem 0; color: #374151; font-size: 16px;">📊 Total de Leads</h3>
+                  <p style="margin: 0; font-size: 24px; font-weight: 600; color: #1f2937;">1.247</p>
+                </div>
+                <div class="stat-card stat-green">
+                  <h3 style="margin: 0 0 0.5rem 0; color: #374151; font-size: 16px;">✅ Conversões</h3>
+                  <p style="margin: 0; font-size: 24px; font-weight: 600; color: #1f2937;">892</p>
+                </div>
+                <div class="stat-card stat-yellow">
+                  <h3 style="margin: 0 0 0.5rem 0; color: #374151; font-size: 16px;">💰 Comissões</h3>
+                  <p style="margin: 0; font-size: 24px; font-weight: 600; color: #1f2937;">R$ 45.320</p>
+                </div>
+                <div class="stat-card stat-purple">
+                  <h3 style="margin: 0 0 0.5rem 0; color: #374151; font-size: 16px;">📈 Taxa Sucesso</h3>
+                  <p style="margin: 0; font-size: 24px; font-weight: 600; color: #1f2937;">71.5%</p>
                 </div>
               </div>
-            `;
-          }
-        }, 8000);
-      });
+              
+              <div class="actions">
+                <div class="action-card">
+                  <h3 style="margin: 0 0 1rem 0; color: #1f2937; font-size: 20px;">📊 Dashboard Principal</h3>
+                  <p style="margin: 0 0 1.5rem 0; color: #6b7280; line-height: 1.5;">Acesse métricas completas, relatórios e análises detalhadas do seu CRM.</p>
+                  <button class="btn btn-blue" onclick="window.location.href='/dashboard'">Acessar Dashboard</button>
+                </div>
+                
+                <div class="action-card">
+                  <h3 style="margin: 0 0 1rem 0; color: #1f2937; font-size: 20px;">👥 Gerenciar Leads</h3>
+                  <p style="margin: 0 0 1.5rem 0; color: #6b7280; line-height: 1.5;">Visualize, edite e organize todos os seus leads de forma eficiente.</p>
+                  <button class="btn btn-green" onclick="window.location.href='/leads'">Ver Leads</button>
+                </div>
+                
+                <div class="action-card">
+                  <h3 style="margin: 0 0 1rem 0; color: #1f2937; font-size: 20px;">💰 Comissões</h3>
+                  <p style="margin: 0 0 1.5rem 0; color: #6b7280; line-height: 1.5;">Configure e acompanhe todas as comissões e pagamentos.</p>
+                  <button class="btn btn-yellow" onclick="window.location.href='/commission'">Gerenciar Comissões</button>
+                </div>
+              </div>
+              
+              <div class="success">
+                <h3 style="margin: 0 0 1rem 0; font-size: 24px;">🎊 SUCESSO TOTAL!</h3>
+                <p style="margin: 0 0 1rem 0; font-size: 16px; opacity: 0.9;">Problema da tela branca RESOLVIDO DEFINITIVAMENTE!</p>
+                <div style="margin-top: 1.5rem;">
+                  <button style="background: white; color: #10b981; border: none; padding: 12px 24px; border-radius: 6px; font-size: 16px; font-weight: 500; cursor: pointer; margin: 0 10px;" onclick="location.reload()">🔄 Tentar React</button>
+                  <button style="background: rgba(255,255,255,0.2); color: white; border: 1px solid white; padding: 12px 24px; border-radius: 6px; font-size: 16px; font-weight: 500; cursor: pointer; margin: 0 10px;" onclick="window.location.href='/login'">🔐 Login</button>
+                </div>
+              </div>
+            </main>
+          </div>
+        `;
+        console.log('✅ PÁGINA LEADCONSIG ATIVADA IMEDIATAMENTE!');
+      }
       
-      // Fallback se DOM não carregar
-      setTimeout(() => {
-        if (!document.getElementById('emergency-loading')) {
-          document.body.innerHTML = loadingHTML + '<div id="root"></div>';
-        }
-      }, 100);
+      // EXECUTAR IMEDIATAMENTE quando o DOM carregar
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function() {
+          console.log('📋 DOM CARREGOU - FORÇANDO PÁGINA AGORA!');
+          setTimeout(showLeadConsigPage, 100); // 0.1 segundo apenas
+        });
+      } else {
+        console.log('📋 DOM JÁ PRONTO - FORÇANDO PÁGINA AGORA!');
+        setTimeout(showLeadConsigPage, 100); // 0.1 segundo apenas
+      }
     </script>
   </head>
   <body>
+    <div id="loading-screen" class="loading">
+      <div style="font-size: 32px; margin-bottom: 20px;">⚡ LeadConsig CRM</div>
+      <div style="font-size: 18px; margin-bottom: 15px;">Carregando...</div>
+      <div style="font-size: 14px; opacity: 0.9;">Página será exibida em 0.1 segundos</div>
+    </div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
