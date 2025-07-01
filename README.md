@@ -176,8 +176,10 @@ Para configuração específica do seu domínio, me informe:
 **🎉 Seu CRM está pronto para produção!**
 
 ## ✅ Hospedado no Vercel
-- Deploy automático configurado
-- Última atualização: $(date)
+- Deploy automático configurado ✅
+- Domínio customizado ativo: https://leadconsig.com.br ✅
+- SSL automático ✅
+- Última atualização: Deploy automático funcionando!
 
 ## Recursos
 - Gestão de leads
