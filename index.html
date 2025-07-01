@@ -5,6 +5,71 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>LeadConsig - CRM</title>
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <script>
+      // SCRIPT IMEDIATO - EXECUTA SEMPRE
+      console.log('🚀 SCRIPT INLINE EXECUTADO!', new Date());
+      
+      // Criar loading imediatamente
+      const loadingHTML = `
+        <div id="emergency-loading" style="
+          position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          display: flex; flex-direction: column; align-items: center; justify-content: center; 
+          z-index: 99999; font-family: Arial, sans-serif; color: white;
+        ">
+          <div style="font-size: 32px; margin-bottom: 20px;">⚡ LeadConsig CRM</div>
+          <div style="font-size: 18px; margin-bottom: 15px;">Sistema Inicializando...</div>
+          <div style="font-size: 14px; opacity: 0.9;" id="status-text">JavaScript Carregado</div>
+          <div style="margin-top: 20px; width: 200px; height: 4px; background: rgba(255,255,255,0.3); border-radius: 2px;">
+            <div id="progress-bar" style="height: 100%; background: white; border-radius: 2px; width: 20%;"></div>
+          </div>
+        </div>
+      `;
+      
+      document.addEventListener('DOMContentLoaded', function() {
+        console.log('📋 DOM LOADED!');
+        document.body.innerHTML = loadingHTML + '<div id="root"></div>';
+        
+        let progress = 20;
+        const updateProgress = () => {
+          progress = Math.min(progress + 10, 90);
+          const bar = document.getElementById('progress-bar');
+          const status = document.getElementById('status-text');
+          if (bar) bar.style.width = progress + '%';
+          if (status) status.textContent = 'Carregando React... ' + progress + '%';
+        };
+        
+        const interval = setInterval(updateProgress, 500);
+        
+        // Timeout de emergência
+        setTimeout(() => {
+          clearInterval(interval);
+          const emergency = document.getElementById('emergency-loading');
+          if (emergency) {
+            emergency.innerHTML = `
+              <div style="text-align: center;">
+                <div style="font-size: 32px; margin-bottom: 20px;">⚠️ LeadConsig CRM</div>
+                <div style="font-size: 18px; margin-bottom: 15px;">Sistema está carregando...</div>
+                <div style="font-size: 14px; opacity: 0.9;">Se a tela não carregar, pressione F5</div>
+                <div style="margin-top: 20px;">
+                  <button onclick="location.reload()" style="
+                    background: white; color: #667eea; border: none; padding: 10px 20px; 
+                    border-radius: 5px; font-size: 16px; cursor: pointer;
+                  ">🔄 Recarregar</button>
+                </div>
+              </div>
+            `;
+          }
+        }, 8000);
+      });
+      
+      // Fallback se DOM não carregar
+      setTimeout(() => {
+        if (!document.getElementById('emergency-loading')) {
+          document.body.innerHTML = loadingHTML + '<div id="root"></div>';
+        }
+      }, 100);
+    </script>
   </head>
   <body>
     <div id="root"></div>
