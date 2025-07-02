@@ -42,26 +42,7 @@ const Leads = () => {
     { value: "cancelado", label: "Cancelado" }
   ];
 
-  const headerActions = (
-    <div className="flex items-center gap-3">
-      <AddLeadButton />
-      <div className="relative">
-        <Search className="absolute left-3 top-2.5 h-4 w-4 text-blue-500" />
-        <Input 
-          placeholder="Buscar por nome, telefone ou CPF..." 
-          className="pl-10 py-2 border-blue-100 bg-blue-50/50 hover:bg-blue-50 focus:border-blue-200 focus:ring-1 focus:ring-blue-200 transition-all rounded-full w-full md:w-[280px]" 
-          value={searchQuery} 
-          onChange={e => setSearchQuery(e.target.value)} 
-        />
-      </div>
-      <Button asChild variant="outline" className="flex items-center gap-2">
-        <Link to="/leads/trash">
-          <Trash2 className="h-4 w-4" />
-          Lixeira
-        </Link>
-      </Button>
-    </div>
-  );
+
 
   useEffect(() => {
     const fetchLeadStats = async () => {
@@ -190,38 +171,55 @@ const Leads = () => {
           <main className="w-full h-full">
             <div className="p-6 space-y-6">
               {/* Header moderno customizado */}
-              <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700 text-white rounded-xl mb-8 shadow-xl">
-        <div className="p-8">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="bg-white/20 backdrop-blur-sm rounded-full p-3">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold">Gestão de Leads</h1>
-                <p className="text-blue-100 text-lg mt-1">Gerencie e acompanhe todos os seus leads em um só lugar</p>
-              </div>
-            </div>
-            <div className="hidden md:flex items-center space-x-4">
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg px-4 py-2">
-                <div className="text-sm text-blue-100">Total de Leads</div>
-                <div className="text-2xl font-bold">
-                  {isLoading ? "..." : leadStats.total}
+              <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700 text-white rounded-xl mb-6 shadow-xl">
+                <div className="p-8">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      <div className="bg-white/20 backdrop-blur-sm rounded-full p-3">
+                        <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                      </div>
+                      <div>
+                        <h1 className="text-3xl font-bold">Gestão de Leads</h1>
+                        <p className="text-blue-100 text-lg mt-1">Gerencie e acompanhe todos os seus leads em um só lugar</p>
+                      </div>
+                    </div>
+                    <div className="hidden md:flex items-center space-x-4">
+                      <div className="bg-white/10 backdrop-blur-sm rounded-lg px-4 py-2">
+                        <div className="text-sm text-blue-100">Total de Leads</div>
+                        <div className="text-2xl font-bold">
+                          {isLoading ? "..." : leadStats.total}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
-          
-          {/* Header Actions */}
-          <div className="mt-6 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              {headerActions}
-            </div>
-          </div>
-        </div>
-      </div>
+
+              {/* Controles movidos para baixo */}
+              <Card className="p-4 mb-6">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full">
+                    <AddLeadButton />
+                    <div className="relative flex-1 min-w-0">
+                      <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+                      <Input 
+                        placeholder="Buscar por nome, telefone ou CPF..." 
+                        className="pl-10 py-2 w-full" 
+                        value={searchQuery} 
+                        onChange={e => setSearchQuery(e.target.value)} 
+                      />
+                    </div>
+                    <Button asChild variant="outline" className="flex items-center gap-2 shrink-0">
+                      <Link to="/leads/trash">
+                        <Trash2 className="h-4 w-4" />
+                        Lixeira
+                      </Link>
+                    </Button>
+                  </div>
+                </div>
+              </Card>
 
       <div className="space-y-6">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">

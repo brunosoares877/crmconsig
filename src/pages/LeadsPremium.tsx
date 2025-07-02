@@ -1,17 +1,15 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Copy, MessageCircle, Star, Plus } from "lucide-react";
+import { Search, Copy, MessageCircle, Star } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import LeadPremiumChat from "@/components/leads-premium/LeadPremiumChat";
-import { useAddMockLeads } from "@/hooks/useAddMockLeads";
 import PageLayout from "@/components/PageLayout";
 
 interface LeadPremium {
@@ -33,7 +31,6 @@ const LeadsPremium = () => {
   const [statusFilter, setStatusFilter] = useState("all");
   const [modalidadeFilter, setModalidadeFilter] = useState("all");
   const [selectedLead, setSelectedLead] = useState<LeadPremium | null>(null);
-  const { addMockLeads } = useAddMockLeads();
 
   const getModalidadeBadgeColor = (modalidade: string) => {
     switch (modalidade) {
@@ -89,7 +86,6 @@ const LeadsPremium = () => {
         return;
       }
 
-      console.log('Leads carregados:', data);
       setLeads(data || []);
       setFilteredLeads(data || []);
     } catch (error) {
@@ -98,12 +94,6 @@ const LeadsPremium = () => {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleAddMockLeads = async () => {
-    await addMockLeads();
-    // Recarregar leads após adicionar mockados
-    fetchLeads();
   };
 
   useEffect(() => {
@@ -144,18 +134,10 @@ const LeadsPremium = () => {
     );
   }
 
-  const headerActions = (
-    <Button onClick={handleAddMockLeads} className="gap-2">
-      <Plus className="h-4 w-4" />
-      Adicionar Leads Mockados
-    </Button>
-  );
-
   return (
     <PageLayout 
       title="Leads Premium"
       subtitle="Leads recebidos via tráfego pago"
-      headerActions={headerActions}
       showTrialBanner={true}
     >
       {/* Filtros */}
@@ -204,7 +186,7 @@ const LeadsPremium = () => {
               <Star className="h-12 w-12 text-yellow-400 fill-yellow-400 mx-auto mb-4" />
               <p className="text-gray-500">Nenhum lead premium encontrado</p>
               <p className="text-sm text-gray-400 mt-2">
-                Clique no botão "Adicionar Leads Mockados" para testar a funcionalidade
+                Os leads premium aparecem aqui quando recebidos via campanhas de tráfego pago
               </p>
             </CardContent>
           </Card>
