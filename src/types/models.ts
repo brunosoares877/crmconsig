@@ -53,6 +53,7 @@ export interface Lead {
   product?: string;
   employee?: string;
   created_at?: string; // Add alias for compatibility
+  commission_config?: any; // Configuração de comissão selecionada
 }
 
 // Add Appointment interface

@@ -73,6 +73,13 @@ const Employees = () => {
       return;
     }
 
+    // Verificar se já existe funcionário com o mesmo nome (case insensitive)
+    const nomeExiste = employees.some(emp => emp.name.trim().toLowerCase() === newEmployeeName.trim().toLowerCase() && emp.active);
+    if (nomeExiste) {
+      toast.error("Já existe um funcionário com esse nome. Escolha um nome diferente.");
+      return;
+    }
+
     try {
       setLoading(true);
 
@@ -117,6 +124,13 @@ const Employees = () => {
   const handleEditEmployee = async () => {
     if (!employeeToEdit || !editEmployeeName.trim()) {
       toast.error("O nome do funcionário não pode estar vazio");
+      return;
+    }
+
+    // Verificar se já existe funcionário com o mesmo nome (case insensitive), exceto o próprio
+    const nomeExiste = employees.some(emp => emp.name.trim().toLowerCase() === editEmployeeName.trim().toLowerCase() && emp.id !== employeeToEdit.id && emp.active);
+    if (nomeExiste) {
+      toast.error("Já existe um funcionário com esse nome. Escolha um nome diferente.");
       return;
     }
 

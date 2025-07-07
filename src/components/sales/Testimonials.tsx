@@ -12,15 +12,15 @@ const testimonials = [
   {
     name: "Maria Silva",
     role: "Corretora Autônoma",
-    content: "O CRM revolucionou minha forma de trabalhar! Consigo gerenciar todos meus leads de forma organizada e aumentei minhas vendas em 40% no primeiro mês.",
+    content: "O LeadConsig transformou minha rotina! Agora consigo acompanhar meus clientes com muito mais facilidade e fechei o dobro de contratos no último mês. Recomendo para todos que querem crescer de verdade!",
     stars: 5,
     date: "2 semanas atrás",
-    avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b742?w=150&h=150&fit=crop&crop=face"
+    avatar: "https://randomuser.me/api/portraits/women/44.jpg"
   },
   {
     name: "João Santos",
     role: "Gerente Comercial",
-    content: "Excelente sistema! A interface é intuitiva e o suporte é muito atencioso. Recomendo para qualquer profissional do mercado de consignado.",
+    content: "Nunca vi um sistema tão intuitivo! O suporte é excelente e minha equipe ficou muito mais produtiva. O painel de métricas em tempo real é sensacional.",
     stars: 5,
     date: "1 mês atrás",
     avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face"
@@ -28,7 +28,7 @@ const testimonials = [
   {
     name: "Ana Paula Oliveira",
     role: "Consultora Financeira",  
-    content: "O melhor investimento que fiz para meu negócio. O controle de leads e o acompanhamento das propostas ficou muito mais fácil.",
+    content: "A automação dos lembretes e o controle de propostas me deram mais tempo para focar no cliente. O LeadConsig é meu braço direito!",
     stars: 5,
     date: "3 semanas atrás",
     avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face"
@@ -36,7 +36,7 @@ const testimonials = [
   {
     name: "Carlos Eduardo",
     role: "Correspondente Bancário",
-    content: "Sistema completo e prático. A função de lembretes me ajuda a não perder nenhuma oportunidade de venda.",
+    content: "Ferramenta completa! Não perco mais nenhum lead e consigo acompanhar todo o funil de vendas. O resultado foi um aumento de 50% nas conversões.",
     stars: 5,
     date: "1 mês atrás",
     avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face"
@@ -44,7 +44,7 @@ const testimonials = [
   {
     name: "Patricia Mendes",
     role: "Supervisora Comercial",
-    content: "Ferramenta indispensável! O dashboard com métricas em tempo real me ajuda a tomar decisões mais assertivas.",
+    content: "O dashboard com métricas em tempo real me ajuda a tomar decisões rápidas e certeiras. O LeadConsig virou indispensável para minha equipe!",
     stars: 5,
     date: "2 meses atrás",
     avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&h=150&fit=crop&crop=face"
@@ -52,7 +52,7 @@ const testimonials = [
   {
     name: "Roberto Lima",
     role: "Consultor de Crédito",
-    content: "Aumentei minha produtividade em 60%! O sistema me permite focar no que realmente importa: fechar negócios.",
+    content: "Aumentei minha produtividade em 60%! O sistema é rápido, confiável e me permite focar no que realmente importa: fechar negócios.",
     stars: 5,
     date: "3 semanas atrás",
     avatar: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150&h=150&fit=crop&crop=face"
@@ -60,7 +60,7 @@ const testimonials = [
   {
     name: "Fernanda Costa",
     role: "Analista Comercial",
-    content: "Nunca foi tão fácil acompanhar o funil de vendas. O CRM me dá total controle sobre meus processos.",
+    content: "Nunca foi tão fácil acompanhar o funil de vendas. O CRM me dá total controle sobre meus processos e clientes.",
     stars: 5,
     date: "1 semana atrás",
     avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&h=150&fit=crop&crop=face"
@@ -68,7 +68,7 @@ const testimonials = [
   {
     name: "Diego Almeida",
     role: "Gerente de Relacionamento",
-    content: "A automação dos lembretes salvou meu negócio! Não perco mais nenhum follow-up importante.",
+    content: "A automação dos lembretes salvou meu negócio! Não perco mais nenhum follow-up importante e meus clientes elogiam o atendimento.",
     stars: 5,
     date: "2 semanas atrás",
     avatar: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150&h=150&fit=crop&crop=face"
@@ -76,7 +76,7 @@ const testimonials = [
   {
     name: "Lucia Fernandes",
     role: "Diretora Comercial",
-    content: "Sistema robusto e confiável. Minha equipe triplicou os resultados desde que começamos a usar o LeadConsig.",
+    content: "Sistema robusto e confiável. Minha equipe triplicou os resultados desde que começamos a usar o LeadConsig. Recomendo!",
     stars: 5,
     date: "1 mês atrás",
     avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&h=150&fit=crop&crop=face"
@@ -84,15 +84,15 @@ const testimonials = [
   {
     name: "Marcos Pereira",
     role: "Consultor Sênior",
-    content: "Interface limpa e funcional. Consegui organizar minha carteira de clientes em poucas horas de uso.",
+    content: "Interface limpa e funcional. Organizei minha carteira de clientes em poucas horas e nunca mais perdi um contato importante.",
     stars: 5,
     date: "1 semana atrás",
-    avatar: "https://images.unsplash.com/photo-1566492031773-4f4e44671d66?w=150&h=150&fit=crop&crop=face"
+    avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b742?w=150&h=150&fit=crop&crop=face"
   },
   {
     name: "Juliana Rodrigues",
     role: "Agente de Crédito",
-    content: "O suporte técnico é excepcional! Sempre que preciso, sou atendida rapidamente e com qualidade.",
+    content: "O suporte técnico é excepcional! Sempre que preciso, sou atendida rapidamente e com muita atenção.",
     stars: 5,
     date: "2 semanas atrás",
     avatar: "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=150&h=150&fit=crop&crop=face"
@@ -100,7 +100,7 @@ const testimonials = [
   {
     name: "Rafael Martins",
     role: "Supervisor de Vendas",
-    content: "Implementamos o sistema em toda a equipe. Os resultados foram impressionantes já no primeiro trimestre.",
+    content: "Implementamos o sistema em toda a equipe. Os resultados foram impressionantes já no primeiro trimestre!",
     stars: 5,
     date: "3 semanas atrás",
     avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face"
@@ -147,6 +147,8 @@ const testimonials = [
   }
 ];
 
+const FAKE_AVATAR = "https://randomuser.me/api/portraits/men/32.jpg";
+
 const Testimonials = () => {
   const plugin = React.useRef(
     Autoplay({ delay: 4000, stopOnInteraction: false, stopOnMouseEnter: false })
@@ -189,9 +191,16 @@ const Testimonials = () => {
                       </blockquote>
                       
                       <div className="flex items-center gap-3">
-                        <div className="h-12 w-12 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                          {testimonial.name.split(' ').map(n => n[0]).join('')}
-                        </div>
+                        <img
+                          src={testimonial.avatar || FAKE_AVATAR}
+                          alt={testimonial.name}
+                          className="h-12 w-12 rounded-full object-cover border-2 border-blue-200 shadow-sm"
+                          onError={e => {
+                            if (e.currentTarget.src !== FAKE_AVATAR) {
+                              e.currentTarget.src = FAKE_AVATAR;
+                            }
+                          }}
+                        />
                         <div>
                           <p className="font-semibold text-gray-900">{testimonial.name}</p>
                           <p className="text-sm text-gray-600">{testimonial.role}</p>

@@ -52,7 +52,7 @@ http://localhost:8080/reset-password
 - Campo: `Redirect URLs` (lista)
 - Clique em **"Add URL"** para cada uma:
   1. `https://leadconsig.com.br/**`
-  2. `https://leadconsig.com.br/reset-password`
+  2. `image.png`
   3. `http://localhost:8080/**`
   4. `http://localhost:8081/**`
   5. `http://localhost:8082/**`

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, Users, BarChart3, Bell, Calculator, Shield, Target, Star, MessageCircle, ArrowRight, Play, Zap, TrendingUp, Award } from "lucide-react";
+import Testimonials from "@/components/sales/Testimonials";
 
 const Sales = () => {
   const navigate = useNavigate();
@@ -20,27 +21,6 @@ const Sales = () => {
       console.error("Payment error:", error);
     }
   };
-
-  const testimonials = [
-    {
-      name: "Maria Silva",
-      role: "Corretora Autônoma",
-      content: "O CRM revolucionou minha forma de trabalhar! Consigo gerenciar todos meus leads de forma organizada e aumentei minhas vendas em 40% no primeiro mês.",
-      rating: 5
-    },
-    {
-      name: "João Santos",
-      role: "Gerente Comercial",
-      content: "Excelente sistema! A interface é intuitiva e o suporte é muito atencioso. Recomendo para qualquer profissional do mercado de consignado.",
-      rating: 5
-    },
-    {
-      name: "Ana Paula Oliveira",
-      role: "Consultora Financeira",
-      content: "O melhor investimento que fiz para meu negócio. O controle de leads e o acompanhamento das propostas ficou muito mais fácil.",
-      rating: 5
-    }
-  ];
 
   const features = [
     {
@@ -212,51 +192,7 @@ const Sales = () => {
       {/* Testimonials Section */}
       <section className="py-12 sm:py-16 md:py-20 bg-gradient-to-br from-gray-50 to-blue-50/20 relative">
         <div className="container mx-auto px-4 sm:px-6">
-          <div className="text-center mb-10 sm:mb-12 md:mb-16">
-            <Badge className="mb-3 sm:mb-4 bg-green-100 text-green-800 hover:bg-green-200 px-4 sm:px-6 py-2 text-xs sm:text-sm">
-              <Star className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-              DEPOIMENTOS REAIS
-            </Badge>
-            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-4 sm:mb-6 px-4">O que nossos <span className="text-blue-600">clientes</span> dizem</h2>
-            <p className="text-base sm:text-lg md:text-xl text-gray-600 max-w-3xl mx-auto px-4">Histórias reais de transformação e sucesso com o LeadConsig</p>
-          </div>
-          <div className="max-w-5xl mx-auto">
-            <Card className="border-0 shadow-2xl bg-white/80 backdrop-blur-sm relative overflow-hidden">
-              <div className="hidden sm:block absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-400/20 to-purple-400/20 rounded-full -translate-y-16 translate-x-16" />
-              <CardContent className="p-6 sm:p-8 md:p-12">
-                <div className="flex items-center justify-center mb-6 sm:mb-8">
-                  {[...Array(testimonials[activeTestimonial].rating)].map((_, i) => (
-                    <Star key={i} className="w-6 h-6 sm:w-8 sm:h-8 text-yellow-400 fill-current animate-pulse" style={{animationDelay: `${i * 200}ms`}} />
-                  ))}
-                </div>
-                <blockquote className="text-lg sm:text-xl md:text-2xl lg:text-3xl text-gray-700 mb-6 sm:mb-8 italic font-light leading-relaxed text-center px-2">
-                  "{testimonials[activeTestimonial].content}"
-                </blockquote>
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                  <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-blue-600 to-purple-600 rounded-full flex items-center justify-center text-white font-bold shadow-lg text-sm sm:text-base">
-                    {testimonials[activeTestimonial].name.split(' ').map(n => n[0]).join('')}
-                  </div>
-                  <div className="text-center sm:text-left">
-                    <div className="font-bold text-lg sm:text-xl text-gray-900">{testimonials[activeTestimonial].name}</div>
-                    <div className="text-blue-600 font-semibold text-sm sm:text-base">{testimonials[activeTestimonial].role}</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <div className="flex justify-center mt-8 sm:mt-12 gap-2 sm:gap-3">
-              {testimonials.map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => setActiveTestimonial(index)}
-                  className={`w-3 h-3 sm:w-4 sm:h-4 rounded-full transition-all duration-300 transform hover:scale-110 ${
-                    index === activeTestimonial 
-                      ? 'bg-gradient-to-r from-blue-600 to-purple-600 shadow-lg' 
-                      : 'bg-gray-300 hover:bg-gray-400'
-                  }`}
-                />
-              ))}
-            </div>
-          </div>
+          <Testimonials />
         </div>
       </section>
 

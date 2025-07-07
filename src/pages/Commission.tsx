@@ -823,7 +823,7 @@ const Commission = () => {
         .from("leads")
         .select("*")
         .eq("user_id", userData.user.id)
-        .in("status", ["sold", "convertido"]); // Leads vendidos/convertidos
+        .in("status", ["convertido"]); // Leads convertidos (vendidos)
 
       if (leadsError) {
         throw leadsError;

@@ -82,8 +82,8 @@ const EmployeeSelect = ({ value, onValueChange, disabled, placeholder = "Selecio
           </>
         ) : (
           employees.map((employee) => (
-            <SelectItem key={employee.id} value={employee.name}>
-              {employee.name} {currentValue === employee.name && "✓"}
+            <SelectItem key={employee.id} value={employee.id}>
+              {employee.name} {currentValue === employee.id && "✓"}
             </SelectItem>
           ))
         )}

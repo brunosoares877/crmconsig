@@ -19,6 +19,7 @@ import { getBankName } from "@/utils/bankUtils";
 import { formatLeadDate } from "@/utils/dateUtils";
 import CommissionConfigSelector from "@/components/forms/CommissionConfigSelector";
 import { CommissionCalculationResult } from "@/hooks/useCommissionConfig";
+import { getEmployees, Employee } from "@/utils/employees";
 
 interface LeadTag {
   tag_id: string;
@@ -45,8 +46,8 @@ const statusColors = {
   pendente: "bg-amber-100 text-amber-800",
   negociando: "bg-orange-100 text-orange-800",
   concluido: "bg-green-100 text-green-800",
-  sold: "bg-green-100 text-green-800",
-  cancelado: "bg-red-100 text-red-800"
+  convertido: "bg-green-100 text-green-800",
+  perdido: "bg-red-100 text-red-800"
 };
 
 const statusLabels = {
@@ -56,8 +57,8 @@ const statusLabels = {
   pendente: "Pendente",
   negociando: "Em Andamento",
   concluido: "Concluído",
-  sold: "Concluído",
-  cancelado: "Cancelado"
+  convertido: "Convertido",
+  perdido: "Perdido"
 };
 
 const bankLabels = {
@@ -97,6 +98,17 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete, isSelecte
     amount: number;
   } | null>(null);
   const [editCommissionResult, setEditCommissionResult] = useState<CommissionCalculationResult | null>(null);
+  const [employeeList, setEmployeeList] = useState<Employee[]>([]);
+
+  useEffect(() => {
+    getEmployees().then(setEmployeeList);
+  }, []);
+
+  const getEmployeeNameById = (employeeId: string | undefined, list: Employee[] = employeeList): string => {
+    if (!employeeId || employeeId === "none") return "Nenhum funcionário";
+    const emp = list.find(e => e.id === employeeId);
+    return emp ? emp.name : "Funcionário não encontrado";
+  };
 
   // Debug apenas quando necessário
   if (lead.employee) {
@@ -284,10 +296,10 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete, isSelecte
   };
 
   const handleStatusChange = async (newStatus: string) => {
-    // Se o status for "concluido" e o lead tiver valor, mostrar modal de comissão
-    if (newStatus === 'concluido' && lead.amount) {
-      // Mapear "concluido" para "sold" no banco de dados
-      await calculateAndShowCommission('sold');
+    // Se o status for "convertido" e o lead tiver valor, mostrar modal de comissão
+    if (newStatus === 'convertido' && lead.amount) {
+      // Usar "convertido" no banco de dados
+      await calculateAndShowCommission('convertido');
       return;
     }
 
@@ -706,13 +718,11 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete, isSelecte
               </div>
             )}
             
-            {lead.employee && (
-              <div className="flex items-center gap-2">
-                <User className="h-4 w-4 text-orange-500" />
-                <span className="font-medium">Responsável:</span>
-                <span>{lead.employee}</span>
-              </div>
-            )}
+            <div className="flex items-center gap-2">
+              <User className="h-4 w-4 text-orange-500" />
+              <span className="font-medium">Responsável:</span>
+              <span>{getEmployeeNameById(lead.employee)}</span>
+            </div>
           </div>
 
           {/* Observação do Lead */}
@@ -758,7 +768,7 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete, isSelecte
             <div className="flex flex-col items-center mb-4">
               <span className="text-base font-semibold text-blue-800">Responsável</span>
               <span className="text-2xl font-bold text-blue-900 bg-blue-100 rounded-full px-4 py-1 mt-1">
-                {lead.employee || 'Não informado'}
+                {getEmployeeNameById(lead.employee)}
               </span>
               {/* Badge 100% deste responsável */}
               {lead.employee && (
@@ -781,12 +791,9 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete, isSelecte
             {lead.product && (
               <div className="mt-6 w-full">
                 <CommissionConfigSelector
-                  productName={lead.product}
-                  amount={lead.amount}
-                  paymentPeriod={lead.payment_period?.toString()}
-                  onCommissionCalculated={setEditCommissionResult}
-                  showCard={true}
-                  autoCalculate={true}
+                  selectedProduct={lead.product}
+                  onConfigSelect={() => {}}
+                  selectedConfig={lead.commission_config}
                 />
               </div>
             )}

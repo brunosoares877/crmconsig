@@ -14,7 +14,9 @@ import { format } from "date-fns";
 import BenefitTypeSelect from "@/components/forms/BenefitTypeSelect";
 import { BankSelect } from "@/components/forms/BankSelect";
 import EmployeeSelect from "@/components/EmployeeSelect";
+import CommissionConfigSelector from "@/components/forms/CommissionConfigSelector";
 import { useAuth } from "@/contexts/AuthContext";
+import { getEmployees, Employee } from "@/utils/employees";
 
 const formSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
@@ -31,10 +33,15 @@ const formSchema = z.object({
   representative_name: z.string().optional(),
   representative_cpf: z.string().optional(),
   date: z.string().optional(),
+  payment_period: z.string().optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
-type ProcessedFormData = FormData;
+
+// Adicionar campo para configuração de comissão
+type ProcessedFormData = FormData & {
+  commission_config?: any;
+};
 
 interface LeadFormProps {
   onSubmit: (data: ProcessedFormData) => void;
@@ -68,6 +75,10 @@ function formatBRL(value: string) {
 const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, isEditing = false, isLoading = false }) => {
   const { user } = useAuth ? useAuth() : { user: null };
   const [isInitialized, setIsInitialized] = useState(false);
+  const [selectedCommissionConfig, setSelectedCommissionConfig] = useState<any>(null);
+  const [availableProducts, setAvailableProducts] = useState<string[]>([]);
+  const [loadingProducts, setLoadingProducts] = useState(false);
+  const [employeeList, setEmployeeList] = useState<Employee[]>([]);
 
   // Processar dados iniciais
   const getInitialValues = () => {
@@ -87,6 +98,7 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
         representative_name: "",
         representative_cpf: "",
         date: new Date().toISOString().slice(0, 10),
+        payment_period: "",
       };
     }
 
@@ -99,13 +111,14 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
       bank: initialData?.bank || "none",
       product: initialData?.product || "",
       amount: initialData?.amount || "",
-      employee: initialData?.employee || "none", 
+      employee: (initialData?.employee && initialData.employee !== "none" && initialData.employee !== "" ? initialData.employee : "none"),
       notes: initialData?.notes || "",
       benefit_type: initialData?.benefit_type || "none",
       representative_mode: initialData?.representative_mode || "nao",
       representative_name: initialData?.representative_name || "",
       representative_cpf: initialData?.representative_cpf || "",
       date: initialData?.date || new Date().toISOString().slice(0, 10),
+      payment_period: initialData?.payment_period || "",
     };
     
     console.log("🔧 Form initialized with:", {
@@ -122,6 +135,65 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
   });
 
   const representativeMode = watch("representative_mode");
+  const currentProduct = watch("product");
+  const currentAmount = watch("amount");
+  const currentPeriod = watch("payment_period");
+
+  // Função para buscar produtos das configurações de comissão
+  const loadAvailableProducts = async () => {
+    try {
+      setLoadingProducts(true);
+      
+      // Buscar produtos das comissões fixas
+      const { data: ratesData, error: ratesError } = await supabase
+        .from('commission_rates')
+        .select('product')
+        .eq('active', true);
+
+      // Buscar produtos das comissões variáveis
+      const { data: tiersData, error: tiersError } = await supabase
+        .from('commission_tiers')
+        .select('product')
+        .eq('active', true);
+
+      if (ratesError) {
+        console.error('Erro ao buscar produtos das comissões fixas:', ratesError);
+      }
+      if (tiersError) {
+        console.error('Erro ao buscar produtos das comissões variáveis:', tiersError);
+      }
+
+      // Combinar produtos únicos
+      const allProducts = new Set<string>();
+      
+      if (ratesData) {
+        ratesData.forEach(rate => {
+          if (rate.product) allProducts.add(rate.product);
+        });
+      }
+      
+      if (tiersData) {
+        tiersData.forEach(tier => {
+          if (tier.product) allProducts.add(tier.product);
+        });
+      }
+
+      const uniqueProducts = Array.from(allProducts).sort();
+      setAvailableProducts(uniqueProducts);
+      
+      console.log('📦 Produtos encontrados nas configurações:', uniqueProducts);
+      
+      if (uniqueProducts.length === 0) {
+        toast.info("Nenhum produto encontrado nas configurações de comissão. Configure produtos em 'Comissões → Configurar Comissões'");
+      }
+
+    } catch (error) {
+      console.error('Erro ao carregar produtos:', error);
+      toast.error('Erro ao carregar produtos das configurações');
+    } finally {
+      setLoadingProducts(false);
+    }
+  };
 
   useEffect(() => {
     if (isEditing && initialData && isInitialized) {
@@ -132,6 +204,11 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
 
   useEffect(() => {
     setIsInitialized(true);
+    loadAvailableProducts();
+  }, []);
+
+  useEffect(() => {
+    getEmployees().then(setEmployeeList);
   }, []);
 
   const onFormSubmit = (data: FormData) => {
@@ -151,7 +228,7 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
       bank: data.bank && data.bank !== "none" ? data.bank : null,
       product: data.product && data.product !== "none" ? data.product : null,
       amount: data.amount || null,
-      employee: data.employee && data.employee !== "none" ? data.employee : null,
+      employee: data.employee && data.employee !== "none" ? data.employee : null, // agora employee é o id
       notes: data.notes || "",
       benefit_type: data.benefit_type && data.benefit_type !== "none" ? data.benefit_type : null,
       representative_mode: data.representative_mode || "nao",
@@ -162,12 +239,15 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
         ? data.representative_cpf 
         : null,
       date: data.date || format(new Date(), "yyyy-MM-dd"),
+      payment_period: data.payment_period || null,
+      commission_config: selectedCommissionConfig,
     };
 
     console.log("📤 LeadForm - Processed data to send:", {
       employee: processedData.employee,
       name: processedData.name,
-      originalEmployee: data.employee
+      originalEmployee: data.employee,
+      commission_config: selectedCommissionConfig
     });
 
     onSubmit(processedData);
@@ -186,8 +266,14 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
     );
   }
 
+  const getEmployeeNameById = (id: string | undefined) => {
+    if (!id || id === "none") return "Nenhum funcionário";
+    const emp = employeeList.find(e => e.id === id);
+    return emp ? emp.name : "Funcionário não encontrado";
+  };
+
   return (
-    <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-4">
+    <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <Label htmlFor="name">Nome *</Label>
@@ -225,23 +311,35 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
         <div>
           <Label htmlFor="product">Produto</Label>
           <Select 
-            onValueChange={(value) => setValue("product", value === "none" ? "" : value)}
+            onValueChange={(value) => {
+              setValue("product", value === "none" ? "" : value);
+              setSelectedCommissionConfig(null); // Limpar configuração quando produto mudar
+            }}
             value={watch("product") === "" || !watch("product") ? "none" : watch("product")}
+            disabled={loadingProducts}
           >
             <SelectTrigger>
-              <SelectValue placeholder="Selecione o produto" />
+              <SelectValue placeholder={loadingProducts ? "Carregando produtos..." : "Selecione o produto"} />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="none">Nenhum produto</SelectItem>
-              <SelectItem value="CREDITO CLT">CREDITO CLT</SelectItem>
-              <SelectItem value="CREDITO INSS">CREDITO INSS</SelectItem>
-              <SelectItem value="CREDITO PRIVADO">CREDITO PRIVADO</SelectItem>
-              <SelectItem value="CARTAO BENEFICIO">CARTAO BENEFICIO</SelectItem>
-              <SelectItem value="CARTAO CREDITO">CARTAO CREDITO</SelectItem>
-              <SelectItem value="PORTABILIDADE">PORTABILIDADE</SelectItem>
-              <SelectItem value="REFINANCIAMENTO">REFINANCIAMENTO</SelectItem>
+              {availableProducts.map((product) => (
+                <SelectItem key={product} value={product}>
+                  {product}
+                </SelectItem>
+              ))}
+              {availableProducts.length === 0 && !loadingProducts && (
+                <SelectItem value="no-products" disabled>
+                  Nenhum produto configurado
+                </SelectItem>
+              )}
             </SelectContent>
           </Select>
+          {availableProducts.length === 0 && !loadingProducts && (
+            <p className="text-sm text-amber-600 mt-1">
+              ⚠️ Configure produtos em "Comissões → Configurar Comissões"
+            </p>
+          )}
         </div>
 
         <div>
@@ -253,11 +351,31 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
         </div>
 
         <div>
+          <Label htmlFor="payment_period">Prazo de Pagamento (parcelas)</Label>
+          <Select 
+            onValueChange={(value) => setValue("payment_period", value === "none" ? "" : value)}
+            value={watch("payment_period") === "" || !watch("payment_period") ? "none" : watch("payment_period")}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Selecione o prazo" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">Não informado</SelectItem>
+              {Array.from({ length: 120 }, (_, i) => i + 1).map(month => (
+                <SelectItem key={month} value={month.toString()}>
+                  {month}x parcelas
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div>
           <Label htmlFor="employee">Funcionário</Label>
           <EmployeeSelect
             value={watch("employee") || "none"}
             onValueChange={(value) => {
-              console.log("🎯 Employee changed to:", value);
+              console.log("🎯 Employee changed to (id):", value);
               setValue("employee", value);
             }}
             placeholder="Selecione o funcionário"
@@ -287,6 +405,20 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
           <Input id="date" type="date" {...register("date")} />
         </div>
       </div>
+
+      {/* Seção de Configuração de Comissão */}
+      {currentProduct && currentProduct !== "none" && (
+        <div className="space-y-4">
+          <div className="border-t pt-4">
+            <h3 className="text-lg font-semibold mb-4">💰 Configuração de Comissão</h3>
+            <CommissionConfigSelector
+              selectedProduct={currentProduct}
+              onConfigSelect={setSelectedCommissionConfig}
+              selectedConfig={selectedCommissionConfig}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Seção de Representante */}
       {representativeMode === "sim" && (
