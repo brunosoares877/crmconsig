@@ -294,7 +294,10 @@ const LeadsConfig = () => {
       toast.error("Nome do banco é obrigatório");
       return;
     }
-
+    if (!newBankCode.trim()) {
+      toast.error("Código do banco é obrigatório");
+      return;
+    }
     const newBank: Bank = {
       id: Date.now().toString(),
       name: newBankName.trim(),

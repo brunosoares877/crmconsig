@@ -61,11 +61,13 @@ export const BankSelect: React.FC<BankSelectProps> = ({
               </div>
             </SelectItem>
           ) : banks.length > 0 ? (
-            banks.map((bank) => (
-              <SelectItem key={bank.code} value={bank.code}>
-                {bank.name}
-              </SelectItem>
-            ))
+            banks
+              .filter((bank) => bank.code && bank.code.trim() !== "")
+              .map((bank) => (
+                <SelectItem key={bank.code} value={bank.code}>
+                  {bank.name}
+                </SelectItem>
+              ))
           ) : (
             <SelectItem value="no-banks" disabled>
               Nenhum banco encontrado nos leads
