@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, PhoneCall, CalendarCheck, TrendingUp, TrendingDown, User, Search, BarChart3, DollarSign, Calendar, FileText, Clock, AlertTriangle, CheckCircle, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,6 +12,12 @@ import ProductionCard from "@/components/dashboard/ProductionCard";
 import EmployeePerformanceCard from "@/components/dashboard/EmployeePerformanceCard";
 import LatestLeadsCard from "@/components/dashboard/LatestLeadsCard";
 import { formatLeadDate } from "@/utils/dateUtils";
+import { getEmployees, Employee } from "@/utils/employees";
+
+function isUUID(str) {
+  // Regex para UUID v4 padrão
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
+}
 
 const Dashboard = () => {
   const [metrics, setMetrics] = useState({
@@ -35,6 +41,9 @@ const Dashboard = () => {
   const [dailyProduction, setDailyProduction] = useState([]);
   const [employeeSales, setEmployeeSales] = useState([]);
   const [latestLeads, setLatestLeads] = useState([]);
+  const [employeeMap, setEmployeeMap] = useState<{ [id: string]: string }>({});
+  const [employeeMapLoaded, setEmployeeMapLoaded] = useState(false);
+  const [employeeSalesMap, setEmployeeSalesMap] = useState({});
 
   useEffect(() => {
     const fetchMetrics = async () => {
@@ -259,15 +268,15 @@ const Dashboard = () => {
           console.log("Employee data raw:", employeeData);
           
           // Vamos log todos os employees únicos encontrados
-          const uniqueEmployees = [...new Set(employeeData?.map(lead => lead.employee).filter(Boolean))];
-          console.log("Unique employees found:", uniqueEmployees);
+          const uniqueEmployeesDebug = [...new Set(employeeData?.map(lead => lead.employee).filter(Boolean))];
+          console.log("Funcionários encontrados para ranking:", uniqueEmployeesDebug);
           
           // Process employee data to count total leads with amounts and converted sales per employee
           const employeeSalesMap = {};
 
           // Count all leads with amounts and converted sales per employee
           employeeData?.forEach(lead => {
-            console.log("Processing lead:", { employee: lead.employee, amount: lead.amount, status: lead.status });
+            // Não filtra mais nada, exibe tudo que vier
             if (lead.employee && lead.amount) {
               if (!employeeSalesMap[lead.employee]) {
                 employeeSalesMap[lead.employee] = {
@@ -293,19 +302,10 @@ const Dashboard = () => {
           });
 
           console.log("Employee sales map:", employeeSalesMap);
+          console.log('IDs de funcionários nos leads:', Object.keys(employeeSalesMap));
 
           // Convert to array format for display
-          const employeeSalesArray = Object.entries(employeeSalesMap).map(([employee, data]) => ({
-            employee,
-            count: (data as { totalLeadsWithAmount: number; convertedSales: number; totalValue: number }).totalLeadsWithAmount,
-            convertedSales: (data as { totalLeadsWithAmount: number; convertedSales: number; totalValue: number }).convertedSales,
-            totalValue: (data as { totalLeadsWithAmount: number; convertedSales: number; totalValue: number }).totalValue
-          }));
-
-          // Sort by total value (highest first)
-          employeeSalesArray.sort((a, b) => b.totalValue - a.totalValue);
-          console.log("Employee sales array final:", employeeSalesArray);
-          setEmployeeSales(employeeSalesArray);
+          setEmployeeSalesMap(employeeSalesMap);
         }
 
         // Fetch latest 6 registered leads
@@ -405,6 +405,17 @@ const Dashboard = () => {
     return () => clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    // Buscar funcionários ativos e montar o mapa id -> nome
+    getEmployees().then((list: Employee[]) => {
+      const map: { [id: string]: string } = {};
+      list.forEach(emp => { map[emp.id] = emp.name; });
+      setEmployeeMap(map);
+      setEmployeeMapLoaded(true);
+      console.log('Mapa de funcionários carregado:', map);
+    });
+  }, []);
+
   const calculateChange = (current: number, previous: number) => {
     if (!previous) return {
       value: "+0%",
@@ -493,6 +504,23 @@ const Dashboard = () => {
   const mainMetrics = metricsData.slice(0, 3);
   const otherMetrics = metricsData.slice(3);
 
+  const employeeSalesArray = useMemo(() => {
+    return Object.entries(employeeSalesMap).map(([employee, data]) => {
+      const d = data as any;
+      return {
+        employee, // Exibe apenas o ID
+        id: employee,
+        count: d.totalLeadsWithAmount,
+        convertedSales: d.convertedSales,
+        totalValue: d.totalValue
+      };
+    });
+  }, [employeeSalesMap]);
+
+  // Sort by total value (highest first)
+  employeeSalesArray.sort((a, b) => b.totalValue - a.totalValue);
+  console.log("Employee sales array final:", employeeSalesArray);
+
   return (
     <div className="w-full px-2 sm:px-4 md:px-0 lg:px-0 space-y-4 sm:space-y-6">
       {/* Metrics Cards Grid (status cards no topo) */}
@@ -519,7 +547,7 @@ const Dashboard = () => {
         </div>
         
         <EmployeePerformanceCard 
-          employeeSales={employeeSales}
+          employeeSales={employeeSalesArray}
           isLoading={isLoading}
         />
       </div>

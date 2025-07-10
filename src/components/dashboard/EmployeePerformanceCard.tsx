@@ -62,7 +62,7 @@ const EmployeePerformanceCard = ({ employeeSales, isLoading }: EmployeePerforman
               </div>
             ) : (
               employeeSales.map((employee, index) => (
-                <div key={employee.employee} className="flex items-center justify-between p-3 bg-white/80 backdrop-blur-sm rounded-2xl border border-blue-100/50 hover:bg-white hover:shadow-md transition-all duration-300 group/item">
+                <div key={employee.id} className="flex items-center justify-between p-3 bg-white/80 backdrop-blur-sm rounded-2xl border border-blue-100/50 hover:bg-white hover:shadow-md transition-all duration-300 group/item">
                   <div className="flex items-center gap-3 flex-1 min-w-0">
                     <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shadow-lg ${getRankColors(index)}`}>
                       {getRankIcon(index)}
