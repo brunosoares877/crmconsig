@@ -47,7 +47,8 @@ const statusColors = {
   negociando: "bg-orange-100 text-orange-800",
   concluido: "bg-green-100 text-green-800",
   convertido: "bg-green-100 text-green-800",
-  perdido: "bg-red-100 text-red-800"
+  perdido: "bg-red-100 text-red-800",
+  cancelado: "bg-red-100 text-red-800" // Agora vermelho igual ao perdido
 };
 
 const statusLabels = {
@@ -58,7 +59,8 @@ const statusLabels = {
   negociando: "Em Andamento",
   concluido: "Concluído",
   convertido: "Convertido",
-  perdido: "Perdido"
+  perdido: "Perdido",
+  cancelado: "Cancelado" // Adicionado para status cancelado
 };
 
 const bankLabels = {

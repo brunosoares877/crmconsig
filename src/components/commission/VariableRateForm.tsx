@@ -108,20 +108,12 @@ const VariableRateForm: React.FC<VariableRateFormProps> = ({ onCancel, onSave, i
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="product">Produto *</Label>
-          <Select value={product} onValueChange={setProduct}>
-            <SelectTrigger>
-              <SelectValue placeholder="Selecione um produto" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="CREDITO CLT">CRÉDITO CLT</SelectItem>
-              <SelectItem value="CREDITO INSS">CRÉDITO INSS</SelectItem>
-              <SelectItem value="CREDITO PIX/CARTAO">CRÉDITO PIX/CARTÃO</SelectItem>
-              <SelectItem value="PORTABILIDADE INSS">PORTABILIDADE INSS</SelectItem>
-              <SelectItem value="REFINANCIAMENTO">REFINANCIAMENTO</SelectItem>
-              <SelectItem value="CARTAO BENEFICIO">CARTÃO BENEFÍCIO</SelectItem>
-              <SelectItem value="SAQUE ANIVERSARIO">SAQUE ANIVERSÁRIO</SelectItem>
-            </SelectContent>
-          </Select>
+          <Input
+            id="product"
+            value={product}
+            onChange={(e) => setProduct(e.target.value)}
+            placeholder="Ex: Portabilidade, Crefaz, Novo, etc."
+          />
         </div>
 
         <div className="space-y-2">
