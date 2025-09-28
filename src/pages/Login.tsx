@@ -151,84 +151,114 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      {/* Container principal com animação de entrada */}
-      <div className="w-full max-w-4xl grid lg:grid-cols-2 gap-8 items-center animate-in fade-in duration-700">
-        
-        {/* Lado esquerdo - Conteúdo promocional */}
-        <div className="hidden lg:flex flex-col justify-center space-y-8 px-8 overflow-visible">
-          <div className="space-y-6 overflow-visible">
-            {/* Badge de novidade com animação */}
-            <div className="inline-flex items-center px-4 py-2 rounded-full bg-gradient-to-r from-blue-500/10 to-indigo-500/10 border border-blue-200/50 backdrop-blur-sm">
-              <span className="text-blue-600 text-sm font-medium">✨ Sistema Completo de CRM</span>
-            </div>
-            
-            {/* Título principal com gradiente */}
-            <div className="space-y-4 overflow-visible">
-              <div className="overflow-visible p-2 -m-2">
-                <h1 className="text-4xl lg:text-5xl font-bold leading-[1.4] tracking-normal text-gray-900 overflow-visible" 
-                    style={{ letterSpacing: '0.02em', margin: '8px 0', padding: '8px 6px' }}>
-                  Gerencie seus leads com
-                  <span className="block bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mt-1">
-                    inteligência
-                  </span>
-                </h1>
-              </div>
-              <p className="text-xl text-gray-600 leading-relaxed">
-                Transforme leads em resultados com nossa plataforma completa de gestão e automação.
-              </p>
-            </div>
-          </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 relative overflow-hidden">
+      {/* Background decorativo */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-blue-400/20 to-indigo-400/20 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-tr from-purple-400/20 to-pink-400/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-cyan-400/10 to-blue-400/10 rounded-full blur-3xl animate-pulse delay-500"></div>
+      </div>
 
-          {/* Features com ícones */}
-          <div className="space-y-4">
-            <div className="flex items-center space-x-3 text-gray-700">
-              <div className="flex-shrink-0 w-6 h-6 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center">
-                <span className="text-white text-xs">✓</span>
+      <div className="relative z-10 flex items-center justify-center min-h-screen p-4">
+        {/* Container principal com animação de entrada */}
+        <div className="w-full max-w-6xl grid lg:grid-cols-2 gap-12 items-center animate-in fade-in duration-1000">
+          
+          {/* Lado esquerdo - Conteúdo promocional */}
+          <div className="hidden lg:flex flex-col justify-center space-y-10 px-8 overflow-visible">
+            <div className="space-y-8 overflow-visible">
+              {/* Badge de novidade com animação */}
+              <div className="inline-flex items-center px-6 py-3 rounded-full bg-gradient-to-r from-blue-500/15 to-indigo-500/15 border border-blue-200/60 backdrop-blur-sm shadow-lg animate-in slide-in-from-left duration-700 delay-200">
+                <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse mr-3"></div>
+                <span className="text-blue-700 text-sm font-semibold">✨ Sistema Completo de CRM</span>
               </div>
-              <span>Dashboard com métricas em tempo real</span>
+              
+              {/* Título principal com gradiente */}
+              <div className="space-y-6 overflow-visible">
+                <div className="overflow-visible p-2 -m-2 animate-in slide-in-from-left duration-700 delay-300">
+                  <h1 className="text-5xl lg:text-6xl font-bold leading-[1.2] tracking-tight text-gray-900 overflow-visible" 
+                      style={{ letterSpacing: '-0.02em' }}>
+                    Gerencie seus leads com
+                    <span className="block bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent mt-2 animate-in slide-in-from-left duration-700 delay-500">
+                      inteligência
+                    </span>
+                  </h1>
+                </div>
+                <p className="text-xl lg:text-2xl text-gray-600 leading-relaxed animate-in slide-in-from-left duration-700 delay-700">
+                  Transforme leads em resultados com nossa plataforma completa de gestão e automação.
+                </p>
+              </div>
             </div>
-            <div className="flex items-center space-x-3 text-gray-700">
-              <div className="flex-shrink-0 w-6 h-6 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full flex items-center justify-center">
-                <span className="text-white text-xs">✓</span>
+
+            {/* Features com ícones melhorados */}
+            <div className="space-y-6 animate-in slide-in-from-left duration-700 delay-900">
+              <div className="flex items-center space-x-4 text-gray-700 group hover:text-gray-900 transition-colors duration-300">
+                <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                  <span className="text-white text-sm font-bold">✓</span>
+                </div>
+                <span className="text-lg font-medium">Dashboard com métricas em tempo real</span>
               </div>
-              <span>Automação de WhatsApp integrada</span>
+              <div className="flex items-center space-x-4 text-gray-700 group hover:text-gray-900 transition-colors duration-300">
+                <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                  <span className="text-white text-sm font-bold">✓</span>
+                </div>
+                <span className="text-lg font-medium">Automação de WhatsApp integrada</span>
+              </div>
+              <div className="flex items-center space-x-4 text-gray-700 group hover:text-gray-900 transition-colors duration-300">
+                <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                  <span className="text-white text-sm font-bold">✓</span>
+                </div>
+                <span className="text-lg font-medium">Relatórios de comissão automáticos</span>
+              </div>
             </div>
-            <div className="flex items-center space-x-3 text-gray-700">
-              <div className="flex-shrink-0 w-6 h-6 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
-                <span className="text-white text-xs">✓</span>
+
+            {/* Estatísticas impressionantes */}
+            <div className="grid grid-cols-3 gap-6 pt-6 animate-in slide-in-from-left duration-700 delay-1100">
+              <div className="text-center">
+                <div className="text-3xl font-bold text-blue-600">500+</div>
+                <div className="text-sm text-gray-600">Leads/mês</div>
               </div>
-              <span>Relatórios de comissão automáticos</span>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-green-600">95%</div>
+                <div className="text-sm text-gray-600">Satisfação</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-purple-600">24/7</div>
+                <div className="text-sm text-gray-600">Suporte</div>
+              </div>
             </div>
           </div>
-        </div>
 
         {/* Lado direito - Formulário */}
-        <div className="w-full max-w-md mx-auto">
+        <div className="w-full max-w-lg mx-auto">
           {showForgotPassword ? (
             <ForgotPassword onBack={() => setShowForgotPassword(false)} />
           ) : (
-          <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 p-8 transition-all duration-300 hover:shadow-3xl">
+          <div className="bg-white/90 backdrop-blur-2xl rounded-3xl shadow-2xl border border-white/30 p-10 transition-all duration-500 hover:shadow-3xl hover:scale-[1.02] animate-in slide-in-from-right duration-700 delay-200">
             
             {/* Header do formulário */}
-            <div className="text-center mb-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            <div className="text-center mb-10">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-2xl mb-6 shadow-lg">
+                <span className="text-2xl">🚀</span>
+              </div>
+              <h2 className="text-3xl font-bold text-gray-900 mb-3">
                 {isLogin ? "Bem-vindo de volta" : "Criar sua conta"}
               </h2>
-              <p className="text-gray-600">
+              <p className="text-gray-600 text-lg">
                 {isLogin ? "Entre na sua conta para continuar" : "Comece seu período de teste gratuito"}
               </p>
             </div>
 
             {/* Formulário */}
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-7">
               
               {/* Campos do cadastro */}
               {!isLogin && (
-                <div className="space-y-4 animate-in slide-in-from-top duration-300">
-                  <div className="space-y-2">
-                    <Label htmlFor="fullName" className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                      <User className="w-4 h-4" />
+                <div className="space-y-6 animate-in slide-in-from-top duration-500 delay-300">
+                  <div className="space-y-3">
+                    <Label htmlFor="fullName" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                      <div className="w-5 h-5 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-md flex items-center justify-center">
+                        <User className="w-3 h-3 text-white" />
+                      </div>
                       Nome Completo
                     </Label>
                     <Input 
@@ -236,19 +266,19 @@ const Login = () => {
                       placeholder="Seu nome completo" 
                       type="text" 
                       required 
-                      className={`h-12 rounded-xl border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-200 ${errors.fullName ? "border-red-500 focus:border-red-500" : ""}`}
+                      className={`h-14 rounded-2xl border-2 border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all duration-300 text-lg px-4 ${errors.fullName ? "border-red-500 focus:border-red-500 focus:ring-red-500/10" : "hover:border-gray-300"}`}
                       value={fullName} 
                       onChange={e => setFullName(e.target.value)} 
                       disabled={isLoading} 
                     />
-                    {errors.fullName && <p className="text-xs text-red-500 flex items-center gap-1"><span>⚠</span>{errors.fullName}</p>}
+                    {errors.fullName && <p className="text-sm text-red-500 flex items-center gap-2 animate-in slide-in-from-top duration-200"><span className="text-red-500">⚠</span>{errors.fullName}</p>}
                   </div>
                   
-
-
-                  <div className="space-y-2">
-                    <Label htmlFor="whatsapp" className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                      <Phone className="w-4 h-4" />
+                  <div className="space-y-3">
+                    <Label htmlFor="whatsapp" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                      <div className="w-5 h-5 bg-gradient-to-r from-green-500 to-emerald-500 rounded-md flex items-center justify-center">
+                        <Phone className="w-3 h-3 text-white" />
+                      </div>
                       WhatsApp
                     </Label>
                     <Input 
@@ -256,21 +286,23 @@ const Login = () => {
                       type="text" 
                       required 
                       placeholder="(99) 99999-9999" 
-                      className={`h-12 rounded-xl border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-200 ${errors.whatsapp ? "border-red-500 focus:border-red-500" : ""}`}
+                      className={`h-14 rounded-2xl border-2 border-gray-200 focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all duration-300 text-lg px-4 ${errors.whatsapp ? "border-red-500 focus:border-red-500 focus:ring-red-500/10" : "hover:border-gray-300"}`}
                       value={whatsapp} 
                       onChange={handlePhoneChange} 
                       maxLength={15} 
                       disabled={isLoading} 
                     />
-                    {errors.whatsapp && <p className="text-xs text-red-500 flex items-center gap-1"><span>⚠</span>{errors.whatsapp}</p>}
+                    {errors.whatsapp && <p className="text-sm text-red-500 flex items-center gap-2 animate-in slide-in-from-top duration-200"><span className="text-red-500">⚠</span>{errors.whatsapp}</p>}
                   </div>
                 </div>
               )}
           
               {/* Email */}
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                  <Mail className="w-4 h-4" />
+              <div className="space-y-3">
+                <Label htmlFor="email" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                  <div className="w-5 h-5 bg-gradient-to-r from-purple-500 to-pink-500 rounded-md flex items-center justify-center">
+                    <Mail className="w-3 h-3 text-white" />
+                  </div>
                   E-mail
                 </Label>
                 <Input 
@@ -279,18 +311,20 @@ const Login = () => {
                   type="email" 
                   required 
                   autoComplete="email" 
-                  className={`h-12 rounded-xl border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-200 ${errors.email ? "border-red-500 focus:border-red-500" : ""}`}
+                  className={`h-14 rounded-2xl border-2 border-gray-200 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10 transition-all duration-300 text-lg px-4 ${errors.email ? "border-red-500 focus:border-red-500 focus:ring-red-500/10" : "hover:border-gray-300"}`}
                   value={email} 
                   onChange={e => setEmail(e.target.value)} 
                   disabled={isLoading} 
                 />
-                {errors.email && <p className="text-xs text-red-500 flex items-center gap-1"><span>⚠</span>{errors.email}</p>}
+                {errors.email && <p className="text-sm text-red-500 flex items-center gap-2 animate-in slide-in-from-top duration-200"><span className="text-red-500">⚠</span>{errors.email}</p>}
               </div>
               
               {/* Senha */}
-              <div className="space-y-2">
-                <Label htmlFor="password" className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                  <Lock className="w-4 h-4" />
+              <div className="space-y-3">
+                <Label htmlFor="password" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                  <div className="w-5 h-5 bg-gradient-to-r from-orange-500 to-red-500 rounded-md flex items-center justify-center">
+                    <Lock className="w-3 h-3 text-white" />
+                  </div>
                   Senha
                 </Label>
                 <div className="relative">
@@ -300,20 +334,20 @@ const Login = () => {
                     required 
                     placeholder="••••••••" 
                     autoComplete={isLogin ? "current-password" : "new-password"} 
-                    className={`h-12 rounded-xl border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 pr-12 transition-all duration-200 ${errors.password ? "border-red-500 focus:border-red-500" : ""}`}
+                    className={`h-14 rounded-2xl border-2 border-gray-200 focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 pr-14 transition-all duration-300 text-lg px-4 ${errors.password ? "border-red-500 focus:border-red-500 focus:ring-red-500/10" : "hover:border-gray-300"}`}
                     value={password} 
                     onChange={e => setPassword(e.target.value)} 
                     disabled={isLoading} 
                   />
                   <button 
                     type="button" 
-                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600 transition-colors duration-200" 
+                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600 transition-all duration-300 hover:scale-110" 
                     onClick={() => setShowPassword(!showPassword)}
                   >
-                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                    {showPassword ? <EyeOff className="h-6 w-6" /> : <Eye className="h-6 w-6" />}
                   </button>
                 </div>
-                {errors.password && <p className="text-xs text-red-500 flex items-center gap-1"><span>⚠</span>{errors.password}</p>}
+                {errors.password && <p className="text-sm text-red-500 flex items-center gap-2 animate-in slide-in-from-top duration-200"><span className="text-red-500">⚠</span>{errors.password}</p>}
                 
                 {/* Link Esqueci minha senha - só no login */}
                 {isLogin && (
@@ -321,7 +355,7 @@ const Login = () => {
                     <button
                       type="button"
                       onClick={() => setShowForgotPassword(true)}
-                      className="text-sm text-blue-600 hover:text-blue-500 transition-colors duration-200 hover:underline"
+                      className="text-sm font-medium text-blue-600 hover:text-blue-500 transition-all duration-300 hover:underline hover:scale-105"
                       disabled={isLoading}
                     >
                       Esqueci minha senha
@@ -330,43 +364,44 @@ const Login = () => {
                 )}
               </div>
 
-
-
               {/* Botão principal */}
               <Button 
                 type="submit" 
-                className="w-full h-12 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold rounded-xl shadow-lg transition-all duration-200 transform hover:scale-[1.02] hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none" 
+                className="w-full h-16 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 text-white font-bold rounded-2xl shadow-2xl transition-all duration-300 transform hover:scale-[1.02] hover:shadow-3xl disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none text-lg" 
                 disabled={isLoading}
               >
                 {isLoading ? (
-                  <div className="flex items-center justify-center gap-2">
-                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white"></div>
-                    {isLogin ? "Entrando..." : "Criando conta..."}
+                  <div className="flex items-center justify-center gap-3">
+                    <div className="h-6 w-6 animate-spin rounded-full border-3 border-white/30 border-t-white"></div>
+                    <span>{isLogin ? "Entrando..." : "Criando conta..."}</span>
                   </div>
                 ) : (
-                  isLogin ? "Entrar na conta" : "Criar conta grátis"
+                  <div className="flex items-center justify-center gap-2">
+                    <span>{isLogin ? "Entrar na conta" : "Criar conta grátis"}</span>
+                    <span className="text-xl">🚀</span>
+                  </div>
                 )}
               </Button>
 
               {/* Divisor */}
-              <div className="relative my-6">
+              <div className="relative my-8">
                 <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t border-gray-200" />
+                  <span className="w-full border-t-2 border-gradient-to-r from-gray-200 via-gray-300 to-gray-200" />
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="bg-white px-4 text-gray-500">ou</span>
+                  <span className="bg-white px-6 text-gray-500 font-medium">ou continue com</span>
                 </div>
               </div>
 
               {/* Google Sign In */}
               <Button 
                 variant="outline" 
-                className="w-full h-12 border-gray-200 rounded-xl hover:bg-gray-50 transition-all duration-200 transform hover:scale-[1.02]" 
+                className="w-full h-14 border-2 border-gray-200 rounded-2xl hover:bg-gray-50 hover:border-gray-300 transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg text-lg font-semibold" 
                 onClick={handleGoogleSignIn} 
                 disabled={isLoading} 
                 type="button"
               >
-                <svg className="mr-3 h-5 w-5" viewBox="0 0 24 24">
+                <svg className="mr-4 h-6 w-6" viewBox="0 0 24 24">
                   <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
                   <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
                   <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
@@ -377,28 +412,42 @@ const Login = () => {
             </form>
 
             {/* Toggle Login/Cadastro */}
-            <div className="mt-8 text-center">
-              <p className="text-gray-600">
-                {isLogin ? "Não tem uma conta? " : "Já tem uma conta? "}
+            <div className="mt-10 text-center">
+              <div className="bg-gradient-to-r from-gray-50 to-blue-50 rounded-2xl p-6 border border-gray-100">
+                <p className="text-gray-600 text-lg mb-3">
+                  {isLogin ? "Não tem uma conta? " : "Já tem uma conta? "}
+                </p>
                 <button 
                   onClick={() => setIsLogin(!isLogin)} 
-                  className="font-semibold text-blue-600 hover:text-blue-500 transition-colors duration-200 hover:underline" 
+                  className="font-bold text-blue-600 hover:text-blue-500 transition-all duration-300 hover:underline hover:scale-105 text-lg" 
                   disabled={isLoading}
                 >
                   {isLogin ? "Criar conta grátis" : "Fazer login"}
                 </button>
-              </p>
+                {!isLogin && (
+                  <p className="text-sm text-gray-500 mt-3">
+                    ✨ 7 dias grátis • Sem cartão de crédito
+                  </p>
+                )}
+              </div>
             </div>
 
             {/* Footer */}
-            <div className="mt-6 text-center">
-              <div className="flex items-center justify-center space-x-6 text-xs text-gray-500">
-                <a href="#" className="hover:text-gray-700 transition-colors duration-200">Termos de Uso</a>
-                <a href="#" className="hover:text-gray-700 transition-colors duration-200">Privacidade</a>
+            <div className="mt-8 text-center">
+              <div className="flex items-center justify-center space-x-8 text-sm text-gray-500">
+                <a href="#" className="hover:text-gray-700 transition-all duration-300 hover:scale-105 font-medium">Termos de Uso</a>
+                <div className="w-1 h-1 bg-gray-300 rounded-full"></div>
+                <a href="#" className="hover:text-gray-700 transition-all duration-300 hover:scale-105 font-medium">Privacidade</a>
+                <div className="w-1 h-1 bg-gray-300 rounded-full"></div>
+                <a href="#" className="hover:text-gray-700 transition-all duration-300 hover:scale-105 font-medium">Suporte</a>
+              </div>
+              <div className="mt-4 text-xs text-gray-400">
+                &copy; 2024 LeadConsig. Todos os direitos reservados.
               </div>
             </div>
           </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
     </div>
