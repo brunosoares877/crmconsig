@@ -6,7 +6,7 @@ import Plans from "@/pages/Plans";
 import SubscriptionSuccess from "@/pages/SubscriptionSuccess";
 import SubscriptionCancelled from "@/pages/SubscriptionCancelled";
 import Leads from "@/pages/Leads";
-import LeadsPremium from "@/pages/LeadsPremium";
+import MaquinaDeLeads from "@/pages/MaquinaDeLeads";
 import LeadNew from "@/pages/LeadNew";
 import LeadImport from "@/pages/LeadImport";
 import LeadsConfig from "@/pages/LeadsConfig";
@@ -43,7 +43,7 @@ function App() {
                 <Route path="/subscription-success" element={<SubscriptionSuccess />} />
                 <Route path="/subscription-cancelled" element={<SubscriptionCancelled />} />
                 <Route path="/leads" element={<Leads />} />
-                <Route path="/leads-premium" element={<LeadsPremium />} />
+                <Route path="/maquina-de-leads" element={<MaquinaDeLeads />} />
                 <Route path="/leads/new" element={<LeadNew />} />
                 <Route path="/leads/import" element={<LeadImport />} />
                 <Route path="/leads/config" element={<LeadsConfig />} />

@@ -51,8 +51,8 @@ const items = [
     group: "LEADS"
   },
   {
-    title: "Leads Premium",
-    url: "/leads-premium",
+    title: "Máquina de Leads",
+    url: "/maquina-de-leads",
     icon: Star,
     group: "LEADS",
     highlight: true
@@ -120,6 +120,7 @@ export function AppSidebar() {
   const { user } = useAuth();
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [isAvatarHovered, setIsAvatarHovered] = useState(false);
 
   // Load existing profile image on component mount
   useEffect(() => {
@@ -355,9 +356,11 @@ export function AppSidebar() {
         <div className="pt-4">
           <div className="flex flex-col items-center space-y-3 px-3">
             {/* Profile Image/Selfie Section */}
-            <div className="relative group">
+            <div className="relative">
               <Avatar 
-                className="h-16 w-16 cursor-pointer ring-2 ring-blue-400/30 transition-all duration-300 group-hover:ring-blue-300/80 group-hover:shadow-lg group-hover:shadow-blue-500/20"
+                className={`h-16 w-16 cursor-pointer ring-2 ring-blue-400/30 transition-all duration-300 relative ${
+                  isAvatarHovered ? 'ring-blue-300/80 shadow-lg shadow-blue-500/20' : ''
+                }`}
                 onClick={handleAvatarClick}
                 tabIndex={0}
                 onKeyDown={e => {
@@ -365,6 +368,14 @@ export function AppSidebar() {
                 }}
                 aria-label={uploading ? "Enviando foto" : "Editar foto de perfil"}
                 role="button"
+                onMouseEnter={(e) => {
+                  e.stopPropagation();
+                  setIsAvatarHovered(true);
+                }}
+                onMouseLeave={(e) => {
+                  e.stopPropagation();
+                  setIsAvatarHovered(false);
+                }}
               >
                 {profileImage ? (
                   <AvatarImage src={profileImage} alt="Profile" className="h-full w-full object-cover" loading="lazy" />
@@ -373,8 +384,10 @@ export function AppSidebar() {
                     {user ? getInitials(user.email || "") : "U"}
                   </AvatarFallback>
                 )}
-                {/* Botão de editar sobreposto (ícone lápis) visível apenas ao hover */}
-                <div className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                {/* Botão de editar sobreposto (ícone lápis) visível apenas ao hover diretamente no avatar */}
+                <div className={`absolute inset-0 bg-black/60 rounded-full flex items-center justify-center transition-opacity duration-300 pointer-events-none z-10 ${
+                  isAvatarHovered ? 'opacity-100' : 'opacity-0'
+                }`}>
                   <Edit className="h-6 w-6 text-white drop-shadow-lg" />
                 </div>
               </Avatar>

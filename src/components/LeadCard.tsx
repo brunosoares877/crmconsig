@@ -103,10 +103,38 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete, isSelecte
   } | null>(null);
   const [editCommissionResult, setEditCommissionResult] = useState<CommissionCalculationResult | null>(null);
   const [employeeList, setEmployeeList] = useState<Employee[]>([]);
+  const [isStatusChangeConfirmOpen, setIsStatusChangeConfirmOpen] = useState(false);
+  const [pendingNewStatus, setPendingNewStatus] = useState<string | null>(null);
+  const [hasCommission, setHasCommission] = useState(false);
 
   useEffect(() => {
     getEmployees().then(setEmployeeList);
   }, []);
+
+  // Verificar se o lead tem comissão gerada
+  useEffect(() => {
+    const checkCommission = async () => {
+      if (lead.status === 'concluido') {
+        try {
+          const { data: userData } = await supabase.auth.getUser();
+          if (userData.user) {
+            const { data: commission } = await supabase
+              .from("commissions")
+              .select("id")
+              .eq("lead_id", lead.id)
+              .eq("user_id", userData.user.id)
+              .single();
+            setHasCommission(!!commission);
+          }
+        } catch (error) {
+          setHasCommission(false);
+        }
+      } else {
+        setHasCommission(false);
+      }
+    };
+    checkCommission();
+  }, [lead.id, lead.status]);
 
   const getEmployeeNameById = (employeeId: string | undefined, list: Employee[] = employeeList): string => {
     if (!employeeId || employeeId === "none") return "Nenhum funcionário";
@@ -308,15 +336,29 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete, isSelecte
   };
 
   const handleStatusChange = async (newStatus: string) => {
-    // Se o status for "convertido" e o lead tiver valor, mostrar modal de comissão
-    if (newStatus === 'convertido' && lead.amount) {
-      // Usar "convertido" no banco de dados
-      await calculateAndShowCommission('convertido');
+    // Se o lead está como "concluido" e tem comissão, e está sendo mudado para outro status, pedir confirmação
+    if (lead.status === 'concluido' && hasCommission && newStatus !== 'concluido') {
+      setPendingNewStatus(newStatus);
+      setIsStatusChangeConfirmOpen(true);
+      return;
+    }
+
+    // Se o status for "concluido" ou "convertido" e o lead tiver valor, calcular e criar comissão automaticamente
+    if ((newStatus === 'concluido' || newStatus === 'convertido') && lead.amount) {
+      await calculateAndShowCommission(newStatus);
       return;
     }
 
     // Para outros status, atualizar normalmente
     await updateLeadStatus(newStatus);
+  };
+
+  const handleConfirmStatusChange = async () => {
+    if (pendingNewStatus) {
+      setIsStatusChangeConfirmOpen(false);
+      await updateLeadStatus(pendingNewStatus);
+      setPendingNewStatus(null);
+    }
   };
 
   const calculateAndShowCommission = async (newStatus: string) => {
@@ -498,6 +540,8 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete, isSelecte
         return;
       }
 
+      const employeeName = lead.employee && lead.employee.trim() !== '' ? lead.employee.trim() : 'Não informado';
+
       // Inserir dados completos da comissão
       const { data: createdCommission, error } = await supabase
         .from("commissions")
@@ -508,7 +552,7 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete, isSelecte
           commission_value: commissionValue,
           percentage: percentage,
           product: lead.product,
-          employee: lead.employee && lead.employee.trim() !== '' ? lead.employee.trim() : 'Não informado',
+          employee: employeeName,
           status: 'in_progress',
           payment_period: 'monthly'
         })
@@ -964,6 +1008,40 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete, isSelecte
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Dialog de confirmação para mudança de status quando há comissão */}
+      <AlertDialog open={isStatusChangeConfirmOpen} onOpenChange={setIsStatusChangeConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-500" />
+              Confirmação de Mudança de Status
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <p>
+                Este lead está marcado como <strong>Concluído</strong> e já possui uma <strong>comissão gerada</strong>.
+              </p>
+              <p>
+                Tem certeza que deseja alterar o status para <strong>{statusLabels[pendingNewStatus as keyof typeof statusLabels] || pendingNewStatus}</strong>?
+              </p>
+              <p className="text-amber-600 font-medium mt-3">
+                ⚠️ A comissão existente não será removida, mas a mudança de status pode afetar relatórios e cálculos futuros.
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setPendingNewStatus(null)}>
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleConfirmStatusChange}
+              className="bg-amber-600 hover:bg-amber-700"
+            >
+              Sim, Tenho Certeza
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 };

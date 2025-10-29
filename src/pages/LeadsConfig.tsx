@@ -467,7 +467,7 @@ const LeadsConfig = () => {
 
               <div className="space-y-2">
                 {banks.map((bank) => (
-                  <div key={bank.id} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div key={bank.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-blue-50 hover:shadow-sm transition-colors duration-200 cursor-pointer">
                     {editingBank === bank.id ? (
                       <div className="flex-1 flex gap-2 items-center">
                         <Input
