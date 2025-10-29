@@ -1,0 +1,110 @@
+import React, { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import LeadForm from "@/components/LeadForm";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+
+const AddLeadButton = ({ onLeadAdded }: { onLeadAdded?: () => void }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleFormSubmit = async (values: any) => {
+    setIsLoading(true);
+    try {
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (userError) throw userError;
+
+      const { selectedTags, ...leadData } = values;
+
+      // Processar payment_period para evitar erro de integer
+      const processedLeadData = {
+        ...leadData,
+        payment_period: leadData.payment_period && leadData.payment_period !== "" && leadData.payment_period !== "none" 
+          ? parseInt(leadData.payment_period) 
+          : undefined
+      };
+
+      console.log("AddLeadButton - Lead data to insert:", processedLeadData);
+      console.log("AddLeadButton - Payment period:", {
+        original: leadData.payment_period,
+        processed: processedLeadData.payment_period
+      });
+
+      const { data: leadInsertData, error: leadError } = await supabase
+        .from("leads")
+        .insert({
+          ...processedLeadData,
+          user_id: userData.user.id,
+        })
+        .select()
+        .single();
+
+      if (leadError) {
+        console.error("AddLeadButton - Database error:", leadError);
+        throw leadError;
+      }
+
+      // Save tag assignments if any tags were selected
+      if (selectedTags && selectedTags.length > 0) {
+        const tagAssignments = selectedTags.map((tagId: string) => ({
+          lead_id: leadInsertData.id,
+          tag_id: tagId,
+          user_id: userData.user.id,
+        }));
+
+        const { error: tagError } = await (supabase as any)
+          .from('lead_tag_assignments')
+          .insert(tagAssignments);
+
+        if (tagError) {
+          console.error('Error saving tag assignments:', tagError);
+          toast.error('Lead salvo, mas erro ao aplicar etiquetas');
+        }
+      }
+      
+      toast.success("Lead cadastrado com sucesso!");
+      setIsOpen(false);
+      if (onLeadAdded) onLeadAdded();
+    } catch (error: any) {
+      console.error("AddLeadButton - Error creating lead:", error);
+      toast.error(`Erro ao cadastrar lead: ${error.message}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <Button className="bg-blue-600 hover:bg-blue-700">
+          <Plus className="mr-2 h-4 w-4" />
+          Cadastrar Lead
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Cadastrar Novo Lead</DialogTitle>
+          <DialogDescription>
+            Preencha os dados do novo lead no formulário abaixo.
+          </DialogDescription>
+        </DialogHeader>
+        <LeadForm 
+          onSubmit={handleFormSubmit} 
+          onCancel={() => setIsOpen(false)}
+          isLoading={isLoading}
+        />
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+export default AddLeadButton;
