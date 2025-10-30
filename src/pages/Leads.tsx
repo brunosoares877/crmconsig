@@ -14,6 +14,8 @@ import AddLeadButton from "@/components/leads/AddLeadButton";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import Header from "@/components/Header";
+import { getBankName } from "@/utils/bankUtils";
+import { getEmployees, Employee } from "@/utils/employees";
 
 const Leads = () => {
   const [searchParams] = useSearchParams();
@@ -29,7 +31,8 @@ const Leads = () => {
   const [employeeFilter, setEmployeeFilter] = useState<string>("");
   const [productFilter, setProductFilter] = useState<string>("");
   const [bankFilter, setBankFilter] = useState<string>("");
-  const [employees, setEmployees] = useState<string[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]); // agora Employee[]
+  const [employeeMap, setEmployeeMap] = useState<Record<string, string>>({}); // id => nome
   const [products, setProducts] = useState<string[]>([]);
   const [banks, setBanks] = useState<string[]>([]);
 
@@ -101,18 +104,12 @@ const Leads = () => {
       const { data: userData, error: userError } = await supabase.auth.getUser();
       if (userError) throw userError;
 
-      // Buscar funcionários únicos
-      const { data: employeeData, error: employeeError } = await supabase
-        .from('leads')
-        .select('employee')
-        .eq('user_id', userData.user.id)
-        .not('employee', 'is', null)
-        .neq('employee', '');
-
-      if (!employeeError && employeeData) {
-        const uniqueEmployees = [...new Set(employeeData.map(item => item.employee))];
-        setEmployees(uniqueEmployees);
-      }
+      // Buscar funcionários ativos
+      const employeeList = await getEmployees();
+      setEmployees(employeeList);
+      const empMap: Record<string, string> = {};
+      employeeList.forEach(e => { empMap[e.id] = e.name; });
+      setEmployeeMap(empMap);
 
       // Buscar produtos únicos
       const { data: productData, error: productError } = await supabase
@@ -307,9 +304,9 @@ const Leads = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos os funcionários</SelectItem>
-                  {employees.map((employee) => (
-                    <SelectItem key={employee} value={employee}>
-                      {employee}
+                  {employees.map(emp => (
+                    <SelectItem key={emp.id} value={emp.id}>
+                      {emp.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -345,7 +342,7 @@ const Leads = () => {
                   <SelectItem value="all">Todos os bancos</SelectItem>
                   {banks.map((bank) => (
                     <SelectItem key={bank} value={bank}>
-                      {bank}
+                      {getBankName(bank)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -366,7 +363,7 @@ const Leads = () => {
               )}
               {employeeFilter && (
                 <Badge variant="secondary" className="flex items-center gap-1">
-                  Funcionário: {employeeFilter}
+                  Funcionário: {employeeMap[employeeFilter] || employeeFilter}
                   <button onClick={() => setEmployeeFilter("")} className="ml-1 hover:bg-gray-300 rounded-full p-0.5">
                     <X className="h-3 w-3" />
                   </button>
@@ -382,7 +379,7 @@ const Leads = () => {
               )}
               {bankFilter && (
                 <Badge variant="secondary" className="flex items-center gap-1">
-                  Banco: {bankFilter}
+                  Banco: {getBankName(bankFilter)}
                   <button onClick={() => setBankFilter("")} className="ml-1 hover:bg-gray-300 rounded-full p-0.5">
                     <X className="h-3 w-3" />
                   </button>
