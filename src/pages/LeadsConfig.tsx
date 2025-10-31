@@ -181,13 +181,19 @@ const LeadsConfig = () => {
         }
       });
       
-      // Add configured banks
+      // Add configured banks (user-added banks)
       configuredBanks.forEach((configBank: Bank) => {
-        const exists = allBanks.find(bank => bank.code === configBank.code || bank.name === configBank.name);
+        // Verificar se não foi removido e não existe duplicado
+        const exists = allBanks.find(
+          bank => bank.code === configBank.code || bank.name === configBank.name
+        );
         if (!exists) {
           allBanks.push(configBank);
         }
       });
+      
+      // Ordenar bancos por nome
+      allBanks.sort((a, b) => a.name.localeCompare(b.name));
       
       setBanks(allBanks);
 
@@ -298,8 +304,20 @@ const LeadsConfig = () => {
       toast.error("Código do banco é obrigatório");
       return;
     }
+
+    // Verificar se já existe banco com mesmo código ou nome
+    const exists = banks.some(
+      bank => bank.code.toLowerCase() === newBankCode.trim().toLowerCase() || 
+              bank.name.toLowerCase() === newBankName.trim().toLowerCase()
+    );
+    
+    if (exists) {
+      toast.error("Já existe um banco com este código ou nome");
+      return;
+    }
+
     const newBank: Bank = {
-      id: Date.now().toString(),
+      id: `user-${Date.now()}`,
       name: newBankName.trim(),
       code: newBankCode.trim()
     };
@@ -331,7 +349,7 @@ const LeadsConfig = () => {
         setRemovedIds('removedBanks', removed);
       }
     } else {
-      // Save only user-added banks to localStorage
+      // Save only user-added banks to localStorage (remove o banco deletado)
       const userBanks = updatedBanks.filter(bank => !bank.id.startsWith('default-'));
       localStorage.setItem('configBanks', JSON.stringify(userBanks));
     }
