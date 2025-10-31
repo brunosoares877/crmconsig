@@ -30,7 +30,7 @@ export default defineConfig(({ command, mode }) => ({
   },
   build: {
     target: 'es2015',
-    minify: 'terser',
+    minify: 'esbuild', // Mudar de terser para esbuild que é mais seguro
     sourcemap: false,
     chunkSizeWarningLimit: 1000,
     rollupOptions: {
@@ -60,7 +60,14 @@ export default defineConfig(({ command, mode }) => ({
             return 'vendor';
           }
         },
+        // Adicionar configurações para evitar problemas de inicialização
+        hoistTransitiveImports: false,
       },
+    },
+    // Adicionar configuração para evitar problemas com código minificado
+    commonjsOptions: {
+      include: [/node_modules/],
+      transformMixedEsModules: true,
     },
   },
   optimizeDeps: {
