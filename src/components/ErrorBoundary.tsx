@@ -54,7 +54,7 @@ class ErrorBoundary extends Component<Props, State> {
     };
 
     // For now, just log to console in development
-    if (process.env.NODE_ENV === 'development') {
+    if (import.meta.env.DEV) {
       console.error('Error logged:', errorData);
     }
 
@@ -113,7 +113,7 @@ class ErrorBoundary extends Component<Props, State> {
                 </Button>
               </div>
               
-              {process.env.NODE_ENV === 'development' && this.state.error && (
+              {import.meta.env.DEV && this.state.error && (
                 <details className="mt-4 p-3 bg-gray-100 rounded-md text-sm">
                   <summary className="cursor-pointer font-medium text-gray-700 mb-2">
                     Detalhes do Erro (Desenvolvimento)
@@ -175,7 +175,7 @@ export const useErrorHandler = () => {
     toast.error('Ops! Algo deu errado. Tente novamente.');
     
     // In production, send to monitoring service
-    if (process.env.NODE_ENV === 'development') {
+    if (import.meta.env.DEV) {
       console.error('Error data:', errorData);
     }
   };
