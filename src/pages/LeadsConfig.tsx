@@ -300,16 +300,20 @@ const LeadsConfig = () => {
       toast.error("Nome do banco é obrigatório");
       return;
     }
-    if (!newBankCode.trim()) {
-      toast.error("Código do banco é obrigatório");
-      return;
-    }
 
-    // Verificar se já existe banco com mesmo código ou nome
-    const exists = banks.some(
-      bank => bank.code.toLowerCase() === newBankCode.trim().toLowerCase() || 
-              bank.name.toLowerCase() === newBankName.trim().toLowerCase()
-    );
+    const bankCode = newBankCode.trim();
+    const bankName = newBankName.trim();
+
+    // Verificar se já existe banco com mesmo código (se informado) ou nome
+    const exists = banks.some(bank => {
+      // Se tem código, verifica código E nome
+      if (bankCode) {
+        return (bank.code.toLowerCase() === bankCode.toLowerCase()) || 
+               (bank.name.toLowerCase() === bankName.toLowerCase());
+      }
+      // Se não tem código, verifica apenas nome
+      return bank.name.toLowerCase() === bankName.toLowerCase();
+    });
     
     if (exists) {
       toast.error("Já existe um banco com este código ou nome");
@@ -318,8 +322,8 @@ const LeadsConfig = () => {
 
     const newBank: Bank = {
       id: `user-${Date.now()}`,
-      name: newBankName.trim(),
-      code: newBankCode.trim()
+      name: bankName,
+      code: bankCode || "" // Permite código vazio
     };
 
     const updatedBanks = [...banks, newBank];
