@@ -163,6 +163,7 @@ const LeadsConfig = () => {
       // --- BANCOS ---
       const savedBanks = localStorage.getItem('configBanks');
       const configuredBanks = savedBanks ? JSON.parse(savedBanks) : [];
+      console.log('Bancos carregados do localStorage:', configuredBanks);
       const removedBankIds = getRemovedIds('removedBanks');
       const editedBanks = getEditedItems<Bank>('editedBanks');
       const allBanks: Bank[] = [];
@@ -183,10 +184,18 @@ const LeadsConfig = () => {
       
       // Add configured banks (user-added banks)
       configuredBanks.forEach((configBank: Bank) => {
-        // Verificar se não foi removido e não existe duplicado
-        const exists = allBanks.find(
-          bank => bank.code === configBank.code || bank.name === configBank.name
-        );
+        // Verificar se não existe duplicado
+        // Se ambos têm código, compara código; se não, compara apenas nome
+        const exists = allBanks.find(bank => {
+          // Se ambos têm código, verifica código OU nome
+          if (configBank.code && bank.code) {
+            return bank.code.toLowerCase() === configBank.code.toLowerCase() || 
+                   bank.name.toLowerCase() === configBank.name.toLowerCase();
+          }
+          // Se algum não tem código, compara apenas nome
+          return bank.name.toLowerCase() === configBank.name.toLowerCase();
+        });
+        
         if (!exists) {
           allBanks.push(configBank);
         }
@@ -329,9 +338,18 @@ const LeadsConfig = () => {
     const updatedBanks = [...banks, newBank];
     setBanks(updatedBanks);
     
-    // Save only user-added banks to localStorage
-    const userBanks = updatedBanks.filter(bank => !bank.id.startsWith('default-'));
-    localStorage.setItem('configBanks', JSON.stringify(userBanks));
+    // Save only user-added banks to localStorage (todos os que começam com 'user-')
+    const userBanks = updatedBanks.filter(bank => bank.id.startsWith('user-'));
+    
+    // Garantir que está salvando corretamente
+    try {
+      localStorage.setItem('configBanks', JSON.stringify(userBanks));
+      console.log('Bancos salvos no localStorage:', userBanks);
+    } catch (error) {
+      console.error('Erro ao salvar no localStorage:', error);
+      toast.error('Erro ao salvar banco. Tente novamente.');
+      return;
+    }
     
     // Disparar evento para notificar outros componentes
     window.dispatchEvent(new CustomEvent('configDataChanged'));
@@ -353,9 +371,16 @@ const LeadsConfig = () => {
         setRemovedIds('removedBanks', removed);
       }
     } else {
-      // Save only user-added banks to localStorage (remove o banco deletado)
-      const userBanks = updatedBanks.filter(bank => !bank.id.startsWith('default-'));
-      localStorage.setItem('configBanks', JSON.stringify(userBanks));
+      // Save only user-added banks to localStorage (todos os que começam com 'user-')
+      const userBanks = updatedBanks.filter(bank => bank.id.startsWith('user-'));
+      try {
+        localStorage.setItem('configBanks', JSON.stringify(userBanks));
+        console.log('Bancos salvos após deletar:', userBanks);
+      } catch (error) {
+        console.error('Erro ao salvar no localStorage:', error);
+        toast.error('Erro ao remover banco. Tente novamente.');
+        return;
+      }
     }
     
     // Disparar evento para notificar outros componentes
@@ -382,7 +407,16 @@ const LeadsConfig = () => {
       }
       setEditedItems('editedBanks', edited);
     } else {
-      localStorage.setItem('configBanks', JSON.stringify(updatedBanks.filter(b => !b.id.startsWith('default-'))));
+      // Save only user-added banks (todos os que começam com 'user-')
+      const userBanks = updatedBanks.filter(bank => bank.id.startsWith('user-'));
+      try {
+        localStorage.setItem('configBanks', JSON.stringify(userBanks));
+        console.log('Bancos salvos após editar:', userBanks);
+      } catch (error) {
+        console.error('Erro ao salvar no localStorage:', error);
+        toast.error('Erro ao editar banco. Tente novamente.');
+        return;
+      }
     }
     
     // Disparar evento para notificar outros componentes
