@@ -2,25 +2,35 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
-import ErrorBoundary from "./components/ErrorBoundary";
+
+console.log('🚀 Iniciando aplicação...');
 
 const rootElement = document.getElementById("root");
 
 if (!rootElement) {
+  console.error('❌ Root element não encontrado!');
   throw new Error("Root element not found. Make sure there is a div with id='root' in your HTML.");
 }
 
-// Log para debug em produção
-console.log('Iniciando aplicação...');
-console.log('Variáveis de ambiente:', {
-  VITE_SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL ? '✓ Configurada' : '✗ Não configurada',
-  VITE_SUPABASE_ANON_KEY: import.meta.env.VITE_SUPABASE_ANON_KEY ? '✓ Configurada' : '✗ Não configurada',
-});
+console.log('✅ Root element encontrado');
 
-createRoot(rootElement).render(
-  <StrictMode>
-    <ErrorBoundary>
+try {
+  console.log('📦 Renderizando App...');
+  createRoot(rootElement).render(
+    <StrictMode>
       <App />
-    </ErrorBoundary>
-  </StrictMode>
-);
+    </StrictMode>
+  );
+  console.log('✅ App renderizado com sucesso!');
+} catch (error) {
+  console.error('❌ Erro ao renderizar aplicação:', error);
+  // Renderizar mensagem de erro simples
+  rootElement.innerHTML = `
+    <div style="padding: 20px; font-family: Arial, sans-serif; background: white;">
+      <h1>Erro ao carregar aplicação</h1>
+      <p>Por favor, recarregue a página.</p>
+      <pre style="background: #f5f5f5; padding: 10px; border-radius: 4px;">${error instanceof Error ? error.message : String(error)}</pre>
+      <button onclick="window.location.reload()" style="margin-top: 10px; padding: 10px 20px; background: #0070f3; color: white; border: none; border-radius: 4px; cursor: pointer;">Recarregar</button>
+    </div>
+  `;
+}
