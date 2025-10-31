@@ -30,45 +30,9 @@ export default defineConfig(({ command, mode }) => ({
   },
   build: {
     target: 'es2015',
-    minify: 'esbuild', // Mudar de terser para esbuild que é mais seguro
+    minify: 'esbuild',
     sourcemap: false,
     chunkSizeWarningLimit: 1000,
-    rollupOptions: {
-      output: {
-        manualChunks: (id) => {
-          // Vendor chunks
-          if (id.includes('node_modules')) {
-            if (id.includes('react') || id.includes('react-dom')) {
-              return 'vendor-react';
-            }
-            if (id.includes('react-router')) {
-              return 'vendor-router';
-            }
-            if (id.includes('@radix-ui')) {
-              return 'vendor-ui';
-            }
-            if (id.includes('@supabase') || id.includes('supabase')) {
-              return 'vendor-supabase';
-            }
-            if (id.includes('lucide-react')) {
-              return 'vendor-icons';
-            }
-            if (id.includes('date-fns')) {
-              return 'vendor-dates';
-            }
-            // Other vendor dependencies
-            return 'vendor';
-          }
-        },
-        // Adicionar configurações para evitar problemas de inicialização
-        hoistTransitiveImports: false,
-      },
-    },
-    // Adicionar configuração para evitar problemas com código minificado
-    commonjsOptions: {
-      include: [/node_modules/],
-      transformMixedEsModules: true,
-    },
   },
   optimizeDeps: {
     include: ['react', 'react-dom', 'react-router-dom'],
