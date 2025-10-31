@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { useNavigate } from 'react-router-dom';
 
 interface AuthContextType {
   user: User | null;
@@ -21,7 +20,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isPrivilegedUser, setIsPrivilegedUser] = useState<boolean>(false);
-  const navigate = useNavigate();
 
   useEffect(() => {
     // Set up auth state listener FIRST
@@ -39,9 +37,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setIsPrivilegedUser(false);
         }
         
-        // Redirect to dashboard on successful login
+        // Redirect to dashboard on successful login using window.location
         if (event === 'SIGNED_IN' && window.location.pathname === '/login') {
-          navigate('/dashboard');
+          window.location.href = '/dashboard';
         }
       }
     );
@@ -60,12 +58,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, []);
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
-    navigate('/dashboard');
+    window.location.href = '/dashboard';
   };
 
   const signUp = async (email: string, password: string, company: string) => {
@@ -79,12 +77,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     });
     if (error) throw error;
-    navigate('/dashboard');
+    window.location.href = '/dashboard';
   };
 
   const signOut = async () => {
     await supabase.auth.signOut();
-    navigate('/login');
+    window.location.href = '/login';
   };
 
   return (

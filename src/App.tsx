@@ -43,6 +43,25 @@ const Employees = lazy(() => import("@/pages/Employees"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
 function App() {
+  // Capturar erros globais
+  React.useEffect(() => {
+    const handleError = (event: ErrorEvent) => {
+      console.error('Erro capturado:', event.error);
+    };
+
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      console.error('Promise rejeitada:', event.reason);
+    };
+
+    window.addEventListener('error', handleError);
+    window.addEventListener('unhandledrejection', handleUnhandledRejection);
+
+    return () => {
+      window.removeEventListener('error', handleError);
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+    };
+  }, []);
+
   return (
     <div className="w-full min-h-screen">
       <Router>
