@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, Users, BarChart3, Bell, Calculator, Shield, Target, Star, MessageCircle, ArrowRight, Play, Zap, TrendingUp, Award } from "lucide-react";
+import { CheckCircle, Users, BarChart3, Bell, Calculator, Shield, Target, Star, MessageCircle, ArrowRight, Play, Zap, TrendingUp, Award, BookOpen, Gift, CreditCard } from "lucide-react";
 import Testimonials from "@/components/sales/Testimonials";
 
 const Sales = () => {
@@ -11,7 +11,12 @@ const Sales = () => {
   const [activeTestimonial, setActiveTestimonial] = useState(0);
 
   const handleStartTrial = () => {
-    navigate("/login");
+    const plansSection = document.getElementById('planos');
+    if (plansSection) {
+      plansSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+      navigate("/login");
+    }
   };
 
   const handlePayment = (url: string) => {
@@ -24,15 +29,14 @@ const Sales = () => {
 
   const features = [
     {
-      icon: Target,
-      title: "Tráfego Pago Premium Incluso",
-      description: "Receba leads qualificados todos os meses sem pagar gestor de tráfego. Gestão profissional de campanhas já inclusa no seu plano!",
-      badge: "Exclusivo LeadConsig"
-    },
-    {
       icon: Users,
       title: "Gerenciamento de Leads",
       description: "Nunca mais perca uma oportunidade de venda com nosso sistema intuitivo que organiza seus contatos do primeiro clique à conversão."
+    },
+    {
+      icon: Award,
+      title: "Gestão de Equipe",
+      description: "Controle completo de funcionários e vendedores. Acompanhe performance individual, atribua leads e gerencie sua equipe de forma eficiente."
     },
     {
       icon: BarChart3,
@@ -59,7 +63,7 @@ const Sales = () => {
   const stats = [
     { value: "+250%", label: "Aumento na taxa de conversão", icon: TrendingUp },
     { value: "99%", label: "De satisfação dos clientes", icon: Award },
-    { value: "100%", label: "Assertividade", icon: CheckCircle }
+    { value: "97%", label: "Assertividade", icon: CheckCircle }
   ];
 
   return (
@@ -87,7 +91,7 @@ const Sales = () => {
         <div className="container mx-auto text-center relative z-10">
           <Badge className="mb-6 sm:mb-8 bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 px-4 sm:px-6 py-2 text-xs sm:text-sm font-semibold shadow-lg">
             <Zap className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-            7 DIAS GRÁTIS - COMECE AGORA!
+            7 dias de garantia - COMECE AGORA!
           </Badge>
           <h1 className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-bold text-gray-900 mb-6 sm:mb-8 leading-tight px-2">
             CRM completo para corbans:<br />
@@ -100,13 +104,13 @@ const Sales = () => {
           <div className="mb-6 sm:mb-8">
             <Button size="lg" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 sm:px-10 py-3 sm:py-4 text-base sm:text-lg shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300 w-full sm:w-auto" onClick={handleStartTrial}>
               <Play className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-            Começar Teste Gratuito
+            Começar agora mesmo
           </Button>
           </div>
           <div className="flex flex-col sm:flex-row flex-wrap justify-center items-center gap-4 sm:gap-8 text-xs sm:text-sm text-gray-500">
             <div className="flex items-center">
               <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-green-500" />
-              <span>Sem cartão de crédito</span>
+              <span>7 dias de garantia</span>
             </div>
             <div className="flex items-center">
               <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-green-500" />
@@ -114,7 +118,7 @@ const Sales = () => {
             </div>
             <div className="flex items-center">
               <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-green-500" />
-              <span>Suporte 24/7</span>
+              <span>Suporte rápido</span>
             </div>
           </div>
         </div>
@@ -197,15 +201,15 @@ const Sales = () => {
       </section>
 
       {/* Pricing Section */}
-      <section className="py-20 px-4 bg-gradient-to-br from-white to-blue-50/30">
+      <section id="planos" className="py-20 px-4 bg-gradient-to-br from-white to-blue-50/30">
         <div className="container mx-auto">
           <div className="text-center mb-16">
             <Badge className="mb-4 bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-600 hover:to-emerald-600 px-6 py-2 text-sm font-semibold shadow-lg">
               <Zap className="w-4 h-4 mr-2" />
-              EXPERIMENTE 7 DIAS GRÁTIS!
+              EXPERIMENTE AGORA MESMO
             </Badge>
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">Escolha o plano <span className="text-blue-600">ideal</span> para você</h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">Comece grátis e escolha seu plano quando estiver pronto. Todos os planos incluem suporte completo.</p>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">Comece e escolha seu plano quando estiver pronto. Todos os planos incluem suporte completo.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 max-w-5xl mx-auto">
             {/* Plano Mensal */}
@@ -278,31 +282,100 @@ const Sales = () => {
             </Card>
           </div>
 
-          {/* Upsell Tráfego Pago */}
+          {/* Curso PDF Tráfego Pago */}
           <div className="mt-12 sm:mt-16 max-w-3xl mx-auto">
-            <Card className="border-2 border-yellow-300 bg-gradient-to-r from-yellow-50 to-orange-50">
-              <CardHeader className="text-center p-4 sm:p-6">
-                <Badge className="w-fit mx-auto bg-yellow-500 text-white mb-2 text-xs sm:text-sm px-2 sm:px-3">Turbine seu Plano</Badge>
-                <CardTitle className="text-xl sm:text-2xl">Tráfego Pago Premium</CardTitle>
-                <div className="text-2xl sm:text-3xl font-bold text-orange-600">R$397,00<span className="text-base sm:text-lg text-gray-500">/mês</span></div>
-                <CardDescription className="text-sm sm:text-base">Adicional aos planos existentes - Leads qualificados para INSS, Bolsa Família e FGTS</CardDescription>
-              </CardHeader>
-              <CardContent className="p-4 sm:p-6 pt-0">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                  <ul className="space-y-2 sm:space-y-3">
-                    <li className="flex items-center"><Target className="w-4 h-4 text-orange-500 mr-2 flex-shrink-0" /><span className="text-sm sm:text-base">Leads segmentados INSS</span></li>
-                    <li className="flex items-center"><Target className="w-4 h-4 text-orange-500 mr-2 flex-shrink-0" /><span className="text-sm sm:text-base">Leads Bolsa Família</span></li>
-                    <li className="flex items-center"><Target className="w-4 h-4 text-orange-500 mr-2 flex-shrink-0" /><span className="text-sm sm:text-base">Leads FGTS qualificados</span></li>
-                  </ul>
-                  <ul className="space-y-2 sm:space-y-3">
-                    <li className="flex items-center"><Target className="w-4 h-4 text-orange-500 mr-2 flex-shrink-0" /><span className="text-sm sm:text-base">Campanhas otimizadas</span></li>
-                    <li className="flex items-center"><Target className="w-4 h-4 text-orange-500 mr-2 flex-shrink-0" /><span className="text-sm sm:text-base">Relatórios de performance</span></li>
-                    <li className="flex items-center"><Target className="w-4 h-4 text-orange-500 mr-2 flex-shrink-0" /><span className="text-sm sm:text-base">ROI garantido</span></li>
-                  </ul>
+            <Card className="border-3 border-yellow-400 bg-gradient-to-br from-white via-yellow-50/30 to-orange-50/50 shadow-2xl relative overflow-hidden">
+              {/* Decorative Elements */}
+              <div className="absolute top-0 right-0 w-32 h-32 bg-orange-200/20 rounded-full blur-3xl"></div>
+              <div className="absolute bottom-0 left-0 w-24 h-24 bg-yellow-200/20 rounded-full blur-2xl"></div>
+              
+              <CardHeader className="text-center p-5 sm:p-7 relative z-10">
+                <Badge className="w-fit mx-auto bg-gradient-to-r from-yellow-500 to-orange-500 text-white mb-3 text-xs sm:text-sm px-3 sm:px-4 py-1 font-bold shadow-lg">
+                  <BookOpen className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 inline" />
+                  Curso em PDF
+                </Badge>
+                
+                <CardTitle className="text-2xl sm:text-3xl md:text-4xl font-black text-gray-900 mb-6 leading-tight">
+                  Curso de Tráfego Pago<br />
+                  <span className="text-blue-600">para Corbans</span>
+                </CardTitle>
+                
+              {/* Preço Destacado */}
+              <div className="my-6 bg-white/80 backdrop-blur-sm rounded-xl p-5 border-2 border-orange-200 shadow-lg">
+                <div className="flex items-baseline justify-center gap-2 mb-2">
+                  <span className="text-4xl sm:text-5xl font-black text-orange-600">R$ 197</span>
+                  <span className="text-xl sm:text-2xl font-bold text-gray-600">,00</span>
                 </div>
-              </CardContent>
-              <CardFooter className="p-4 sm:p-6">
-                <Button className="w-full bg-orange-600 hover:bg-orange-700 text-sm sm:text-base py-2 sm:py-3" onClick={handleStartTrial}>Adicionar Tráfego Pago</Button>
+                <div className="flex items-center justify-center gap-2 mb-3">
+                  <p className="text-sm text-gray-500 line-through">De R$597,00</p>
+                  <Badge className="bg-gradient-to-r from-red-600 to-red-700 text-white text-xs px-3 py-1 font-bold shadow-md">
+                    67% OFF
+                  </Badge>
+                </div>
+                <p className="text-xs text-gray-600 font-medium">Economize R$400,00</p>
+              </div>
+                
+                {/* Bônus - SUPER DESTACADO */}
+                <div className="bg-gradient-to-r from-green-500 via-emerald-500 to-green-600 border-3 border-green-700 rounded-xl p-5 mb-5 shadow-2xl transform hover:scale-[1.02] transition-all relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full blur-xl"></div>
+                  <div className="relative z-10">
+                    <div className="flex items-center justify-center gap-2 mb-3">
+                      <Gift className="w-7 h-7 text-white animate-pulse" />
+                      <h3 className="font-black text-white text-lg sm:text-xl drop-shadow-lg">
+                        BÔNUS EXCLUSIVO AO COMPRAR!
+                      </h3>
+                    </div>
+                  <div className="bg-white/25 backdrop-blur-md rounded-lg p-4 border border-white/30">
+                    <p className="text-white font-black text-lg sm:text-xl text-center mb-2 drop-shadow-md">
+                      🎁 1 MÊS GRÁTIS DO CRM LEADCONSIG
+                    </p>
+                    <p className="text-white/95 text-sm text-center font-medium">
+                      Sistema completo de gestão de leads, comissões e vendas para correspondentes bancários
+                    </p>
+                  </div>
+                  </div>
+                </div>
+
+                {/* Conteúdo do Curso */}
+                <div className="text-left mb-5 bg-white/60 backdrop-blur-sm rounded-lg p-4 border border-gray-200">
+                  <p className="text-sm sm:text-base font-bold text-gray-900 mb-4 text-center">📚 O que você vai aprender:</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="flex items-start">
+                      <CheckCircle className="w-4 h-4 text-green-600 mr-2 flex-shrink-0 mt-0.5" />
+                      <span className="text-sm text-gray-700 font-medium">Como criar campanhas no Google Ads</span>
+                    </div>
+                    <div className="flex items-start">
+                      <CheckCircle className="w-4 h-4 text-green-600 mr-2 flex-shrink-0 mt-0.5" />
+                      <span className="text-sm text-gray-700 font-medium">Anúncios no Facebook e Instagram</span>
+                    </div>
+                    <div className="flex items-start">
+                      <CheckCircle className="w-4 h-4 text-green-600 mr-2 flex-shrink-0 mt-0.5" />
+                      <span className="text-sm text-gray-700 font-medium">Segmentação de público para Corbans</span>
+                    </div>
+                    <div className="flex items-start">
+                      <CheckCircle className="w-4 h-4 text-green-600 mr-2 flex-shrink-0 mt-0.5" />
+                      <span className="text-sm text-gray-700 font-medium">Leads para INSS, FGTS e Bolsa Família</span>
+                    </div>
+                    <div className="flex items-start">
+                      <CheckCircle className="w-4 h-4 text-green-600 mr-2 flex-shrink-0 mt-0.5" />
+                      <span className="text-sm text-gray-700 font-medium">Otimização de campanhas e ROI</span>
+                    </div>
+                    <div className="flex items-start">
+                      <CheckCircle className="w-4 h-4 text-green-600 mr-2 flex-shrink-0 mt-0.5" />
+                      <span className="text-sm text-gray-700 font-medium">Funil de vendas que converte</span>
+                    </div>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardFooter className="p-5 sm:p-7 relative z-10">
+                <Button 
+                  className="w-full bg-gradient-to-r from-orange-600 via-orange-500 to-orange-600 hover:from-orange-700 hover:via-orange-600 hover:to-orange-700 text-white text-base sm:text-lg py-4 sm:py-5 font-black shadow-2xl hover:shadow-3xl transform hover:scale-105 transition-all rounded-xl" 
+                  onClick={() => navigate("/curso-trafego-pago")}
+                >
+                  <CreditCard className="w-5 h-5 mr-2 inline" />
+                  COMPRAR CURSO AGORA
+                  <ArrowRight className="w-5 h-5 ml-2 inline" />
+                </Button>
               </CardFooter>
             </Card>
           </div>
@@ -326,7 +399,7 @@ const Sales = () => {
             suas vendas?
           </h2>
           <p className="text-lg sm:text-xl md:text-2xl mb-8 sm:mb-12 font-light opacity-90 max-w-3xl mx-auto px-4">
-            Experimente nosso CRM por 7 dias gratuitamente e veja como podemos ajudar sua empresa a crescer exponencialmente.
+            Experimente nosso CRM e veja como podemos ajudar sua empresa a crescer exponencialmente.
           </p>
           <div className="mb-8 sm:mb-12">
             <Button 

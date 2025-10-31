@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from "react";
 import PageLayout from "@/components/PageLayout";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
-  Download, CheckCircle, Star, CreditCard, Shield, Clock, 
-  ArrowRight, Sparkles, Rocket
+  Download, CheckCircle, CreditCard, Gift, BookOpen, ArrowRight
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
@@ -19,7 +18,7 @@ const MaquinaDeLeads = () => {
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
 
   const price = 197.00;
-  const originalPrice = 497.00;
+  const originalPrice = 597.00;
 
   useEffect(() => {
     checkAccess();
@@ -36,7 +35,7 @@ const MaquinaDeLeads = () => {
         .from('course_purchases')
         .select('*')
         .eq('user_id', user.id)
-        .eq('course_id', 'trafegopago-corban')
+        .eq('course_id', 'curso-trafego-pago')
         .eq('status', 'paid')
         .single();
 
@@ -60,7 +59,7 @@ const MaquinaDeLeads = () => {
     try {
       const { data } = await supabase.storage
         .from('courses')
-        .getPublicUrl('trafegopago-corban/curso.pdf');
+        .getPublicUrl('curso-trafego-pago/curso.pdf');
       
       if (data?.publicUrl) {
         setPdfUrl(data.publicUrl);
@@ -82,7 +81,7 @@ const MaquinaDeLeads = () => {
         .from('course_purchases')
         .insert({
           user_id: user.id,
-          course_id: 'trafegopago-corban',
+          course_id: 'curso-trafego-pago',
           amount: price,
           status: 'pending',
           payment_method: 'manual'
@@ -125,7 +124,7 @@ const MaquinaDeLeads = () => {
 
   if (loading) {
     return (
-      <PageLayout title="Máquina de Vendas" subtitle="Carregando...">
+      <PageLayout title="Curso de Tráfego Pago para Corbans" subtitle="Carregando...">
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
         </div>
@@ -134,7 +133,7 @@ const MaquinaDeLeads = () => {
   }
 
   return (
-    <PageLayout title="Máquina de Vendas" subtitle="Curso avançado de tráfego pago para Corbanistas">
+    <PageLayout title="Curso de Tráfego Pago para Corbans" subtitle="">
       {hasAccess ? (
         <div className="max-w-2xl mx-auto py-8 px-4">
           <Card className="border-2 border-green-500 shadow-2xl">
@@ -144,7 +143,7 @@ const MaquinaDeLeads = () => {
                 <h1 className="text-2xl font-bold">Acesso Liberado!</h1>
               </div>
               <p className="text-green-50">
-                Você tem acesso completo ao curso <strong>Máquina de Vendas</strong> — Tráfego Pago para Corban
+                Você tem acesso completo ao Curso de Tráfego Pago para Corbans
               </p>
             </div>
             <CardContent className="p-8">
@@ -160,158 +159,110 @@ const MaquinaDeLeads = () => {
           </Card>
         </div>
       ) : (
-        <div className="max-w-4xl mx-auto px-4 py-6">
-          {/* Hero Section */}
-          <div className="relative bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 rounded-2xl overflow-hidden mb-4 shadow-2xl">
-            <div className="relative z-10 p-6 md:p-8">
-              <div className="max-w-2xl mx-auto text-center">
-                <Badge className="mb-4 bg-yellow-400 text-slate-900 px-3 py-1.5 text-xs font-black">
-                  60% OFF
-                </Badge>
-                <h1 className="text-3xl md:text-5xl font-black text-white mb-2 leading-tight">
-                  Domine o Tráfego Pago para Corban
-                  <span className="block text-yellow-300">Venda Todos os Dias!</span>
-                </h1>
-                <p className="text-lg text-white mb-6">
-                  O curso mais completo do Brasil em tráfego pago 100% prático feito para quem atua como corban.
-                </p>
-                {/* Preço */}
-                <Card className="bg-white border-4 border-yellow-500 shadow-2xl max-w-sm mx-auto">
-                  <CardContent className="p-5">
-                    <div className="text-center mb-4">
-                      <p className="text-xs text-gray-500 mb-1">De <span className="line-through">R$ {originalPrice.toFixed(2).replace('.', ',')}</span></p>
-                      <div className="flex items-baseline justify-center gap-1 mb-2">
-                        <span className="text-5xl font-black text-slate-900">R$ {price.toFixed(0)}</span>
-                        <span className="text-2xl text-slate-700 font-black">,00</span>
-                      </div>
-                      <Badge className="bg-red-600 text-white text-xs px-2 py-0.5 font-bold">
-                        Economize R$ {(originalPrice - price).toFixed(2).replace('.', ',')}
-                      </Badge>
-                    </div>
-                    <Button 
-                      onClick={handlePurchase}
-                      disabled={processing}
-                      className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black text-base py-6 rounded-lg shadow-xl mb-3"
-                      size="lg"
-                    >
-                      {processing ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                          Processando...
-                        </>
-                      ) : (
-                        <>
-                          <CreditCard className="h-4 w-4 mr-2" />
-                          COMPRAR AGORA
-                          <ArrowRight className="h-4 w-4 ml-2" />
-                        </>
-                      )}
-                    </Button>
-                    <div className="flex items-center justify-center gap-3 text-xs text-gray-600">
-                      <Shield className="h-3 w-3" />
-                      <Clock className="h-3 w-3" />
-                      <CheckCircle className="h-3 w-3" />
-                      <span>Seguro • Imediato • Garantia 7d</span>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-          </div>
-          {/* Conteúdo Essencial - Compacto */}
-          <div className="grid md:grid-cols-3 gap-3 mb-4">
-            {/* O Que Você Vai Aprender */}
-            <Card className="border-2 md:col-span-2">
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-3 border-b">
-                <h3 className="text-base font-bold text-gray-900">Você vai aprender no <span className='text-blue-600'>Máquina de Vendas</span>:</h3>
-              </div>
-              <CardContent className="p-3">
-                <div className="grid grid-cols-2 gap-1.5">
-                  {[
-                    "Criação de campanhas no Meta Ads do zero",
-                    "Funil de vendas digital de fácil execução para Corban",
-                    "Como vender crédito consignado todos os dias no digital",
-                    "Estratégias de criativos, copy e segmentação para o público 50+",
-                    "Como operar dentro das regras do BACEN para Corbanistas",
-                    "Acesso a modelos validados e acompanhamento das campanhas"
-                  ].map((item, idx) => (
-                    <div key={idx} className="flex items-center gap-1.5">
-                      <CheckCircle className="h-3 w-3 text-green-600 flex-shrink-0" />
-                      <span className="text-xs text-gray-700">{item}</span>
-                    </div>
-                  ))}
+        <div className="max-w-3xl mx-auto px-4 py-6">
+          <Card className="border-3 border-yellow-400 bg-gradient-to-br from-white via-yellow-50/30 to-orange-50/50 shadow-2xl relative overflow-hidden">
+            {/* Decorative Elements */}
+            <div className="absolute top-0 right-0 w-32 h-32 bg-orange-200/20 rounded-full blur-3xl"></div>
+            <div className="absolute bottom-0 left-0 w-24 h-24 bg-yellow-200/20 rounded-full blur-2xl"></div>
+            
+            <CardHeader className="text-center p-5 sm:p-7 relative z-10">
+              <Badge className="w-fit mx-auto bg-gradient-to-r from-yellow-500 to-orange-500 text-white mb-3 text-xs sm:text-sm px-3 sm:px-4 py-1 font-bold shadow-lg">
+                <BookOpen className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 inline" />
+                Curso em PDF
+              </Badge>
+              
+              <CardTitle className="text-2xl sm:text-3xl md:text-4xl font-black text-gray-900 mb-6 leading-tight">
+                Curso de Tráfego Pago<br />
+                <span className="text-blue-600">para Corbans</span>
+              </CardTitle>
+              
+              {/* Preço Destacado */}
+              <div className="my-6 bg-white/80 backdrop-blur-sm rounded-xl p-5 border-2 border-orange-200 shadow-lg">
+                <div className="flex items-baseline justify-center gap-2 mb-2">
+                  <span className="text-4xl sm:text-5xl font-black text-orange-600">R$ 197</span>
+                  <span className="text-xl sm:text-2xl font-bold text-gray-600">,00</span>
                 </div>
-              </CardContent>
-            </Card>
-            {/* Garantia + Depoimento */}
-            <div className="space-y-3">
-              <Card className="bg-gradient-to-br from-green-500 to-emerald-600 text-white border-0 shadow-lg">
-                <CardContent className="p-4 text-center">
-                  <Shield className="h-7 w-7 mx-auto mb-2" />
-                  <h3 className="text-sm font-bold mb-1">Garantia 7 Dias</h3>
-                  <p className="text-xs text-green-50">
-                    100% do dinheiro de volta.
-                  </p>
-                </CardContent>
-              </Card>
-              <Card className="border-2">
-                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-2.5 border-b">
-                  <h3 className="text-xs font-bold text-gray-900 flex items-center gap-1">
-                    <Star className="h-3.5 w-3.5 text-yellow-500 fill-yellow-500" />
-                    Depoimento
-                  </h3>
+                <div className="flex items-center justify-center gap-2 mb-3">
+                  <p className="text-sm text-gray-500 line-through">De R$597,00</p>
+                  <Badge className="bg-gradient-to-r from-red-600 to-red-700 text-white text-xs px-3 py-1 font-bold shadow-md">
+                    67% OFF
+                  </Badge>
                 </div>
-                <CardContent className="p-2.5">
-                  <div className="border-l-2 border-blue-500 pl-2">
-                    <div className="flex gap-0.5 mb-1">
-                      {[...Array(5)].map((_, i) => (
-                        <Star key={i} className="h-2.5 w-2.5 fill-yellow-400 text-yellow-400" />
-                      ))}
-                    </div>
-                    <p className="text-xs text-gray-700 mb-0.5 italic">
-                      "Nunca imaginei fechar tanto negócio online! O método é prático e direto. Recomendo para todo Corban."
-                    </p>
-                    <p className="text-xs font-semibold text-gray-900">Carlos Silva</p>
+                <p className="text-xs text-gray-600 font-medium">Economize R$400,00</p>
+              </div>
+              
+              {/* Bônus - SUPER DESTACADO */}
+              <div className="bg-gradient-to-r from-green-500 via-emerald-500 to-green-600 border-3 border-green-700 rounded-xl p-5 mb-5 shadow-2xl transform hover:scale-[1.02] transition-all relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full blur-xl"></div>
+                <div className="relative z-10">
+                  <div className="flex items-center justify-center gap-2 mb-3">
+                    <Gift className="w-7 h-7 text-white animate-pulse" />
+                    <h3 className="font-black text-white text-lg sm:text-xl drop-shadow-lg">
+                      BÔNUS EXCLUSIVO AO COMPRAR!
+                    </h3>
                   </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-          {/* CTA Final */}
-          <Card className="bg-gradient-to-r from-slate-900 to-blue-900 text-white border-0 shadow-2xl">
-            <CardContent className="p-5 text-center">
-              <Rocket className="h-8 w-8 mx-auto mb-2 text-yellow-400" />
-              <h2 className="text-xl font-bold mb-2">APROVEITE - ACESSO IMEDIATO!</h2>
-              <p className="text-sm text-white mb-4">
-                Seu atalho definitivo para geração de contratos de crédito via tráfego pago!
-              </p>
-              <div className="max-w-xs mx-auto">
-                <div className="mb-3">
-                  <p className="text-xs text-blue-200 mb-0.5">De <span className="line-through">R$ {originalPrice.toFixed(2).replace('.', ',')}</span></p>
-                  <p className="text-3xl font-black text-yellow-400 mb-1">R$ {price.toFixed(0)},00</p>
-                  <Badge className="bg-red-500 text-white text-xs">60% OFF</Badge>
+                  <div className="bg-white/25 backdrop-blur-md rounded-lg p-4 border border-white/30">
+                    <p className="text-white font-black text-lg sm:text-xl text-center mb-2 drop-shadow-md">
+                      🎁 TEMPLATES PRONTOS + PLANILHAS BÔNUS
+                    </p>
+                    <p className="text-white/95 text-sm text-center font-medium">
+                      Receba templates prontos de campanhas para Google Ads, Facebook e Instagram + planilhas de gestão e acompanhamento de ROI
+                    </p>
+                  </div>
                 </div>
-                <Button 
-                  onClick={handlePurchase}
-                  disabled={processing}
-                  className="w-full bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-slate-900 font-bold py-5 rounded-lg shadow-xl transform hover:scale-105 transition-all"
-                  size="lg"
-                >
-                  {processing ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-slate-900 mr-2"></div>
-                      Processando...
-                    </>
-                  ) : (
-                    <>
-                      <CreditCard className="h-4 w-4 mr-2" />
-                      QUERO MEU ACESSO AGORA!
-                      <ArrowRight className="h-4 w-4 ml-2" />
-                    </>
-                  )}
-                </Button>
               </div>
-            </CardContent>
+
+              {/* Conteúdo do Curso */}
+              <div className="text-left mb-5 bg-white/60 backdrop-blur-sm rounded-lg p-4 border border-gray-200">
+                <p className="text-sm sm:text-base font-bold text-gray-900 mb-4 text-center">📚 O que você vai aprender:</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="flex items-start">
+                    <CheckCircle className="w-4 h-4 text-green-600 mr-2 flex-shrink-0 mt-0.5" />
+                    <span className="text-sm text-gray-700 font-medium">Como criar campanhas no Google Ads</span>
+                  </div>
+                  <div className="flex items-start">
+                    <CheckCircle className="w-4 h-4 text-green-600 mr-2 flex-shrink-0 mt-0.5" />
+                    <span className="text-sm text-gray-700 font-medium">Anúncios no Facebook e Instagram</span>
+                  </div>
+                  <div className="flex items-start">
+                    <CheckCircle className="w-4 h-4 text-green-600 mr-2 flex-shrink-0 mt-0.5" />
+                    <span className="text-sm text-gray-700 font-medium">Segmentação de público para Corbans</span>
+                  </div>
+                  <div className="flex items-start">
+                    <CheckCircle className="w-4 h-4 text-green-600 mr-2 flex-shrink-0 mt-0.5" />
+                    <span className="text-sm text-gray-700 font-medium">Leads para INSS, FGTS e Bolsa Família</span>
+                  </div>
+                  <div className="flex items-start">
+                    <CheckCircle className="w-4 h-4 text-green-600 mr-2 flex-shrink-0 mt-0.5" />
+                    <span className="text-sm text-gray-700 font-medium">Otimização de campanhas e ROI</span>
+                  </div>
+                  <div className="flex items-start">
+                    <CheckCircle className="w-4 h-4 text-green-600 mr-2 flex-shrink-0 mt-0.5" />
+                    <span className="text-sm text-gray-700 font-medium">Funil de vendas que converte</span>
+                  </div>
+                </div>
+              </div>
+            </CardHeader>
+            <CardFooter className="p-5 sm:p-7 relative z-10">
+              <Button 
+                onClick={handlePurchase}
+                disabled={processing}
+                className="w-full bg-gradient-to-r from-orange-600 via-orange-500 to-orange-600 hover:from-orange-700 hover:via-orange-600 hover:to-orange-700 text-white text-base sm:text-lg py-4 sm:py-5 font-black shadow-2xl hover:shadow-3xl transform hover:scale-105 transition-all rounded-xl" 
+              >
+                {processing ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2 inline"></div>
+                    Processando...
+                  </>
+                ) : (
+                  <>
+                    <CreditCard className="w-5 h-5 mr-2 inline" />
+                    COMPRAR CURSO AGORA
+                    <ArrowRight className="w-5 h-5 ml-2 inline" />
+                  </>
+                )}
+              </Button>
+            </CardFooter>
           </Card>
         </div>
       )}

@@ -49,117 +49,114 @@ const Dashboard = () => {
     const fetchMetrics = async () => {
       setIsLoading(true);
       try {
-        // Get today's date range
+        // Get date ranges
         const today = new Date();
         const todayStart = startOfToday().toISOString();
         const todayEnd = endOfToday().toISOString();
-
-        // Get month's date range
         const monthStart = startOfMonth(today).toISOString();
         const monthEnd = endOfMonth(today).toISOString();
-
-        // Get week's date range
-        const weekStart = startOfWeek(today, { weekStartsOn: 1 }).toISOString(); // Monday as start
+        const weekStart = startOfWeek(today, { weekStartsOn: 1 }).toISOString();
         const weekEnd = endOfWeek(today, { weekStartsOn: 1 }).toISOString();
 
-        console.log("Fetching dashboard metrics...");
+        // Get user ID once
+        const { data: { user } } = await supabase.auth.getUser();
+        const userId = user?.id;
 
-        // Get leads created today
-        const {
-          count: leadsToday
-        } = await supabase.from('leads').select('*', {
-          count: 'exact',
-          head: true
-        }).gte('created_at', todayStart).lte('created_at', todayEnd);
+        // Fetching metrics with optimized parallel queries
 
-        console.log("Leads today:", leadsToday);
+        // Execute all independent queries in parallel using Promise.all
+        const [
+          leadsTodayResult,
+          leadsThisMonthResult,
+          proposalsTodayResult,
+          emAndamentoResult,
+          pendenteResult,
+          pagoResult,
+          canceladoResult,
+          monthLeadsResult,
+          monthlyProductionResult,
+          weeklyLeadsResult,
+          weeklyConvertedResult,
+          dailyDataResult,
+          employeeDataResult,
+          latestLeadsResult,
+          statusLeadsResult
+        ] = await Promise.all([
+          // Count queries
+          supabase.from('leads').select('*', { count: 'exact', head: true })
+            .gte('created_at', todayStart).lte('created_at', todayEnd),
+          supabase.from('leads').select('*', { count: 'exact', head: true })
+            .gte('created_at', monthStart).lte('created_at', monthEnd),
+          supabase.from('leads').select('*', { count: 'exact', head: true })
+            .not('amount', 'is', null).neq('amount', '')
+            .gte('created_at', todayStart).lte('created_at', todayEnd),
+          supabase.from('leads').select('*', { count: 'exact', head: true })
+            .eq('status', 'negociando').not('amount', 'is', null).neq('amount', '')
+            .gte('created_at', monthStart).lte('created_at', monthEnd),
+          supabase.from('leads').select('*', { count: 'exact', head: true })
+            .eq('status', 'pendente').not('amount', 'is', null).neq('amount', '')
+            .gte('created_at', monthStart).lte('created_at', monthEnd),
+          supabase.from('leads').select('*', { count: 'exact', head: true })
+            .eq('status', 'concluido').not('amount', 'is', null).neq('amount', '')
+            .gte('created_at', monthStart).lte('created_at', monthEnd),
+          supabase.from('leads').select('*', { count: 'exact', head: true })
+            .eq('status', 'cancelado').not('amount', 'is', null).neq('amount', '')
+            .gte('created_at', monthStart).lte('created_at', monthEnd),
+          // Data queries
+          supabase.from('leads').select('created_at')
+            .gte('created_at', monthStart).lte('created_at', monthEnd)
+            .order('created_at', { ascending: true }),
+          supabase.from('leads').select('amount')
+            .not('amount', 'is', null).neq('amount', '')
+            .gte('created_at', monthStart).lte('created_at', monthEnd),
+          supabase.from('leads').select('*', { count: 'exact', head: true })
+            .gte('created_at', weekStart).lte('created_at', weekEnd),
+          supabase.from('leads').select('*', { count: 'exact', head: true })
+            .eq('status', 'concluido')
+            .gte('created_at', weekStart).lte('created_at', weekEnd),
+          supabase.from('leads').select('*')
+            .not('amount', 'is', null).neq('amount', '')
+            .gte('created_at', todayStart).lte('created_at', todayEnd),
+          supabase.from('leads').select('employee, amount, status, created_at')
+            .eq('user_id', userId)
+            .not('employee', 'is', null).not('amount', 'is', null).neq('amount', '')
+            .gte('created_at', monthStart).lte('created_at', monthEnd),
+          supabase.from('leads').select('*')
+            .order('date', { ascending: false })
+            .order('created_at', { ascending: false })
+            .limit(6),
+          supabase.from('leads').select('status, amount')
+            .not('amount', 'is', null).neq('amount', '')
+            .gte('created_at', monthStart).lte('created_at', monthEnd)
+        ]);
 
-        // Get leads created this month
-        const {
-          count: leadsThisMonth
-        } = await supabase.from('leads').select('*', {
-          count: 'exact',
-          head: true
-        }).gte('created_at', monthStart).lte('created_at', monthEnd);
+        // Extract results
+        const leadsToday = leadsTodayResult.count || 0;
+        const leadsThisMonth = leadsThisMonthResult.count || 0;
+        const proposalsDigitatedToday = proposalsTodayResult.count || 0;
+        const emAndamento = emAndamentoResult.count || 0;
+        const pendente = pendenteResult.count || 0;
+        const pago = pagoResult.count || 0;
+        const cancelado = canceladoResult.count || 0;
+        const monthLeads = monthLeadsResult.data || [];
+        const monthlyLeadsWithAmount = monthlyProductionResult.data || [];
+        const weeklyLeadsCount = weeklyLeadsResult.count || 0;
+        const weeklyConvertedCount = weeklyConvertedResult.count || 0;
+        const dailyData = dailyDataResult.data || [];
+        const employeeData = employeeDataResult.data || [];
+        const latestLeadsData = latestLeadsResult.data || [];
+        const statusLeads = statusLeadsResult.data || [];
 
-        console.log("Leads this month:", leadsThisMonth);
-
-        // Get proposals digitadas (leads que tem amount preenchido) do dia atual
-        const {
-          count: proposalsDigitatedToday
-        } = await supabase.from('leads')
-          .select('*', { count: 'exact', head: true })
-          .not('amount', 'is', null)
-          .neq('amount', '')
-          .gte('created_at', todayStart)
-          .lte('created_at', todayEnd);
-
-        console.log("Proposals digitadas today:", proposalsDigitatedToday);
-
-        // Get financial status counts
-        const {
-          count: emAndamento
-        } = await supabase.from('leads')
-          .select('*', { count: 'exact', head: true })
-          .eq('status', 'negociando')
-          .not('amount', 'is', null)
-          .neq('amount', '')
-          .gte('created_at', monthStart)
-          .lte('created_at', monthEnd);
-
-        const {
-          count: pendente
-        } = await supabase.from('leads')
-          .select('*', { count: 'exact', head: true })
-          .eq('status', 'pendente')
-          .not('amount', 'is', null)
-          .neq('amount', '')
-          .gte('created_at', monthStart)
-          .lte('created_at', monthEnd);
-
-        const {
-          count: pago
-        } = await supabase.from('leads')
-          .select('*', { count: 'exact', head: true })
-          .eq('status', 'concluido')
-          .not('amount', 'is', null)
-          .neq('amount', '')
-          .gte('created_at', monthStart)
-          .lte('created_at', monthEnd);
-
-        const {
-          count: cancelado
-        } = await supabase.from('leads')
-          .select('*', { count: 'exact', head: true })
-          .eq('status', 'cancelado')
-          .not('amount', 'is', null)
-          .neq('amount', '')
-          .gte('created_at', monthStart)
-          .lte('created_at', monthEnd);
-
-        // Get average time between leads (in minutes)
-        const {
-          data: monthLeads,
-          error: monthLeadsError
-        } = await supabase.from('leads').select('created_at').gte('created_at', monthStart).lte('created_at', monthEnd).order('created_at', {
-          ascending: true
-        });
-        if (monthLeadsError) {
-          console.error('Error fetching month leads:', monthLeadsError);
-        }
-
+        // Calculate average time between leads
         let averageTimeBetweenLeads = "0min";
-        if (monthLeads && monthLeads.length > 1) {
+        if (monthLeads.length > 1) {
           let totalMinutesDiff = 0;
           let diffCount = 0;
           for (let i = 1; i < monthLeads.length; i++) {
             const prevDate = new Date(monthLeads[i - 1].created_at);
             const currentDate = new Date(monthLeads[i].created_at);
             const diffMinutes = differenceInMinutes(currentDate, prevDate);
-
-            // Only count reasonable differences (ignore batch imports, etc.)
             if (diffMinutes > 0 && diffMinutes < 1440) {
-              // Less than 24 hours
               totalMinutesDiff += diffMinutes;
               diffCount += 1;
             }
@@ -168,190 +165,69 @@ const Dashboard = () => {
           averageTimeBetweenLeads = `${avgMinutes}min`;
         }
 
-        // Calculate average leads per day in this month
+        // Calculate average leads per day
         const daysPassed = Math.max(1, new Date().getDate());
         const averageLeadsPerDay = leadsThisMonth ? parseFloat((leadsThisMonth / daysPassed).toFixed(1)) : 0;
 
-        // Get monthly production (all leads with amount this month, regardless of status)
-        const {
-          data: monthlyLeadsWithAmount,
-          error: monthlyError
-        } = await supabase.from('leads')
-          .select('amount')
-          .not('amount', 'is', null)
-          .neq('amount', '')
-          .gte('created_at', monthStart)
-          .lte('created_at', monthEnd);
-        
-        if (monthlyError) {
-          console.error('Error fetching monthly production:', monthlyError);
-        }
-
-        // Calculate total monthly production from all leads with amounts
-        const monthlyProduction = monthlyLeadsWithAmount ? monthlyLeadsWithAmount.reduce((total, lead) => {
+        // Calculate monthly production
+        const monthlyProduction = monthlyLeadsWithAmount.reduce((total, lead) => {
           const cleanAmount = lead.amount?.replace(/[^\d,]/g, '').replace(',', '.') || "0";
           const amount = parseFloat(cleanAmount);
           return isNaN(amount) ? total : total + amount;
-        }, 0) : 0;
-
-        console.log("Monthly production:", monthlyProduction);
+        }, 0);
 
         // Calculate weekly conversion rate
-        const {
-          count: weeklyLeadsCount
-        } = await supabase.from('leads').select('*', {
-          count: 'exact',
-          head: true
-        }).gte('created_at', weekStart).lte('created_at', weekEnd);
-
-        const {
-          count: weeklyConvertedCount
-        } = await supabase.from('leads').select('*', {
-          count: 'exact',
-          head: true
-        }).eq('status', 'concluido').gte('created_at', weekStart).lte('created_at', weekEnd);
-
-        const weeklyConversionRate = weeklyLeadsCount && weeklyLeadsCount > 0 ? 
+        const weeklyConversionRate = weeklyLeadsCount > 0 ? 
           ((weeklyConvertedCount || 0) / weeklyLeadsCount * 100) : 0;
 
-        console.log("Weekly conversion rate:", weeklyConversionRate);
-
-        // Fetch daily production data (all leads with amounts today, regardless of status)
-        const {
-          data: dailyData,
-          error: dailyError
-        } = await supabase.from('leads')
-          .select('*')
-          .not('amount', 'is', null)
-          .neq('amount', '')
-          .gte('created_at', todayStart)
-          .lte('created_at', todayEnd);
-        if (dailyError) {
-          console.error('Error fetching daily production:', dailyError);
-          toast.error("Erro ao carregar produção diária");
-        } else {
-          console.log("Daily production data:", dailyData);
-          setDailyProduction(dailyData || []);
-        }
-
-        // Fetch employee performance data (all leads with amounts and employees)
-        const {
-          data: employeeData,
-          error: employeeError
-        } = await supabase.from('leads')
-          .select('employee, amount, status, created_at')
-          .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
-          .not('employee', 'is', null)
-          .not('amount', 'is', null)
-          .neq('amount', '')
-          .gte('created_at', monthStart)
-          .lte('created_at', monthEnd);
-          
-        // Debug: verificar leads com employee mas sem amount
-        const {
-          data: allEmployeeLeads,
-          error: allEmployeeError
-        } = await supabase.from('leads')
-          .select('employee, amount, status, created_at')
-          .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
-          .not('employee', 'is', null)
-          .gte('created_at', monthStart)
-          .lte('created_at', monthEnd);
-          
-        console.log("All employee leads (including without amount):", allEmployeeLeads?.length || 0);
-        console.log("Employee leads with amount:", employeeData?.length || 0);
-        
-        if (employeeError) {
-          console.error('Error fetching employee sales:', employeeError);
-          toast.error("Erro ao carregar vendas por funcionário");
-        } else {
-          console.log("Employee data raw:", employeeData);
-          
-          // Vamos log todos os employees únicos encontrados
-          const uniqueEmployeesDebug = [...new Set(employeeData?.map(lead => lead.employee).filter(Boolean))];
-          console.log("Funcionários encontrados para ranking:", uniqueEmployeesDebug);
-          
-          // Process employee data to count total leads with amounts and converted sales per employee
-          const employeeSalesMap = {};
-
-          // Count all leads with amounts and converted sales per employee
-          employeeData?.forEach(lead => {
-            // Não filtra mais nada, exibe tudo que vier
-            if (lead.employee && lead.amount) {
-              if (!employeeSalesMap[lead.employee]) {
-                employeeSalesMap[lead.employee] = {
-                  totalLeadsWithAmount: 0,
-                  convertedSales: 0,
-                  totalValue: 0
-                };
-              }
-              
-              // Parse amount value
-              const cleanAmount = lead.amount.replace(/[^\d,]/g, '').replace(',', '.') || "0";
-              const amount = parseFloat(cleanAmount);
-              
-              if (!isNaN(amount)) {
-                employeeSalesMap[lead.employee].totalLeadsWithAmount += 1;
-                employeeSalesMap[lead.employee].totalValue += amount;
-                
-                if (lead.status === 'concluido') {
-                  employeeSalesMap[lead.employee].convertedSales += 1;
-                }
+        // Process employee data
+        const employeeSalesMap: { [key: string]: { totalLeadsWithAmount: number; convertedSales: number; totalValue: number } } = {};
+        employeeData.forEach(lead => {
+          if (lead.employee && lead.amount) {
+            if (!employeeSalesMap[lead.employee]) {
+              employeeSalesMap[lead.employee] = {
+                totalLeadsWithAmount: 0,
+                convertedSales: 0,
+                totalValue: 0
+              };
+            }
+            const cleanAmount = lead.amount.replace(/[^\d,]/g, '').replace(',', '.') || "0";
+            const amount = parseFloat(cleanAmount);
+            if (!isNaN(amount)) {
+              employeeSalesMap[lead.employee].totalLeadsWithAmount += 1;
+              employeeSalesMap[lead.employee].totalValue += amount;
+              if (lead.status === 'concluido') {
+                employeeSalesMap[lead.employee].convertedSales += 1;
               }
             }
-          });
+          }
+        });
 
-          console.log("Employee sales map:", employeeSalesMap);
-          console.log('IDs de funcionários nos leads:', Object.keys(employeeSalesMap));
-
-          // Convert to array format for display
-          setEmployeeSalesMap(employeeSalesMap);
-        }
-
-        // Fetch latest 6 registered leads
-        const {
-          data: latestLeadsData,
-          error: latestLeadsError
-        } = await supabase.from('leads').select('*')
-          .order('date', { ascending: false })
-          .order('created_at', { ascending: false })
-          .limit(6);
-        if (latestLeadsError) {
-          console.error('Error fetching latest leads:', latestLeadsError);
-          toast.error("Erro ao carregar leads recentes");
-        } else {
-          const formattedLatestLeads = latestLeadsData?.map(lead => ({
-            ...lead,
-            createdAt: formatLeadDate((lead as any).date ? (lead as any).date : lead.created_at)
-          })) || [];
-          console.log("Latest leads:", formattedLatestLeads);
-          setLatestLeads(formattedLatestLeads);
-        }
-
-        // Buscar e somar valores por status
+        // Calculate status sums
         const statusSums = {
           emAndamentoValue: 0,
           pendenteValue: 0,
           pagoValue: 0,
           canceladoValue: 0
         };
-        const { data: statusLeads, error: statusLeadsError } = await supabase.from('leads')
-          .select('status, amount')
-          .not('amount', 'is', null)
-          .neq('amount', '')
-          .gte('created_at', monthStart)
-          .lte('created_at', monthEnd);
-        if (!statusLeadsError && statusLeads) {
-          statusLeads.forEach(lead => {
-            const cleanAmount = lead.amount?.replace(/[^\d,]/g, '').replace(',', '.') || "0";
-            const amount = parseFloat(cleanAmount);
-            if (isNaN(amount)) return;
-            if (lead.status === 'negociando') statusSums.emAndamentoValue += amount;
-            if (lead.status === 'pendente') statusSums.pendenteValue += amount;
-            if (lead.status === 'concluido') statusSums.pagoValue += amount;
-            if (lead.status === 'cancelado') statusSums.canceladoValue += amount;
-          });
-        }
+        statusLeads.forEach(lead => {
+          const cleanAmount = lead.amount?.replace(/[^\d,]/g, '').replace(',', '.') || "0";
+          const amount = parseFloat(cleanAmount);
+          if (isNaN(amount)) return;
+          if (lead.status === 'negociando') statusSums.emAndamentoValue += amount;
+          if (lead.status === 'pendente') statusSums.pendenteValue += amount;
+          if (lead.status === 'concluido') statusSums.pagoValue += amount;
+          if (lead.status === 'cancelado') statusSums.canceladoValue += amount;
+        });
+
+        // Set state
+        setDailyProduction(dailyData);
+        setEmployeeSalesMap(employeeSalesMap);
+        const formattedLatestLeads = latestLeadsData.map(lead => ({
+          ...lead,
+          createdAt: formatLeadDate((lead as any).date ? (lead as any).date : lead.created_at)
+        }));
+        setLatestLeads(formattedLatestLeads);
 
         // Update metrics
         setMetrics({

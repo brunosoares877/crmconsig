@@ -198,16 +198,16 @@ const Login = () => {
                 <span className="text-lg font-medium">Dashboard com métricas em tempo real</span>
               </div>
               <div className="flex items-center space-x-4 text-gray-700 group hover:text-gray-900 transition-colors duration-300">
-                <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
-                  <span className="text-white text-sm font-bold">✓</span>
-                </div>
-                <span className="text-lg font-medium">Automação de WhatsApp integrada</span>
-              </div>
-              <div className="flex items-center space-x-4 text-gray-700 group hover:text-gray-900 transition-colors duration-300">
                 <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
                   <span className="text-white text-sm font-bold">✓</span>
                 </div>
                 <span className="text-lg font-medium">Relatórios de comissão automáticos</span>
+              </div>
+              <div className="flex items-center space-x-4 text-gray-700 group hover:text-gray-900 transition-colors duration-300">
+                <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                  <span className="text-white text-sm font-bold">✓</span>
+                </div>
+                <span className="text-lg font-medium">Filtros personalizados</span>
               </div>
             </div>
 
@@ -218,11 +218,11 @@ const Login = () => {
                 <div className="text-sm text-gray-600">Leads/mês</div>
               </div>
               <div className="text-center">
-                <div className="text-3xl font-bold text-green-600">95%</div>
+                <div className="text-3xl font-bold text-green-600">99%</div>
                 <div className="text-sm text-gray-600">Satisfação</div>
               </div>
               <div className="text-center">
-                <div className="text-3xl font-bold text-purple-600">24/7</div>
+                <div className="text-3xl font-bold text-purple-600">Rápido</div>
                 <div className="text-sm text-gray-600">Suporte</div>
               </div>
             </div>
@@ -424,11 +424,6 @@ const Login = () => {
                 >
                   {isLogin ? "Criar conta grátis" : "Fazer login"}
                 </button>
-                {!isLogin && (
-                  <p className="text-sm text-gray-500 mt-3">
-                    ✨ 7 dias grátis • Sem cartão de crédito
-                  </p>
-                )}
               </div>
             </div>
 
