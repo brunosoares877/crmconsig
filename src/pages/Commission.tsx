@@ -61,6 +61,7 @@ import { mapProductToCommissionConfig } from "@/utils/productMapping";
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { Checkbox } from "@/components/ui/checkbox";
+import { AdminPasswordDialog } from "@/components/AdminPasswordDialog";
 
 // Declarar tipo para autoTable
 declare module 'jspdf' {
@@ -84,10 +85,13 @@ const Commission = () => {
   const [dateTo, setDateTo] = useState<Date>();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [employees, setEmployees] = useState<string[]>([]);
+  const [employeeMap, setEmployeeMap] = useState<Record<string, string>>({}); // Mapa ID -> Nome
   const [totalCommissionsPending, setTotalCommissionsPending] = useState(0);
   const [totalCommissionsApproved, setTotalCommissionsApproved] = useState(0);
   const [totalCommissionsPaid, setTotalCommissionsPaid] = useState(0);
   const [deletingCommission, setDeletingCommission] = useState<string | null>(null);
+  const [showAdminPasswordDialog, setShowAdminPasswordDialog] = useState(false);
+  const [commissionToDelete, setCommissionToDelete] = useState<string | null>(null);
 
   const { isPrivilegedUser } = useAuth();
 
@@ -143,6 +147,13 @@ const Commission = () => {
     try {
       const employeeList = await getEmployees();
       setEmployees(employeeList.map(employee => employee.name));
+      
+      // Criar mapa de ID -> Nome para exibir nomes ao invés de UUIDs
+      const map: Record<string, string> = {};
+      employeeList.forEach(employee => {
+        map[employee.id] = employee.name;
+      });
+      setEmployeeMap(map);
     } catch (error: any) {
       console.error("Error fetching employees:", error);
     }
@@ -421,21 +432,31 @@ const Commission = () => {
 
 
   const handleDeleteCommission = async (commissionId: string) => {
+    // Abrir dialog de confirmação com senha administrativa
+    setCommissionToDelete(commissionId);
+    setShowAdminPasswordDialog(true);
+  };
+
+  const confirmDeleteCommission = async () => {
+    if (!commissionToDelete) return;
+
     try {
-      setDeletingCommission(commissionId);
+      setDeletingCommission(commissionToDelete);
       
       const { error } = await supabase
         .from("commissions")
         .delete()
-        .eq("id", commissionId);
+        .eq("id", commissionToDelete);
 
       if (error) throw error;
 
       toast.success("Comissão removida com sucesso!");
       fetchCommissions(); // Recarregar dados
+      setCommissionToDelete(null);
     } catch (error: any) {
       console.error("Error deleting commission:", error);
-      // Removido o toast de erro que estava aparecendo desnecessariamente
+      toast.error(`Erro ao excluir comissão: ${error.message}`);
+      setCommissionToDelete(null);
     } finally {
       setDeletingCommission(null);
     }
@@ -474,8 +495,8 @@ const Commission = () => {
     
     // Filtro por funcionário/responsável
     const matchesEmployee = employeeFilter === "" || employeeFilter === "all" || 
-      (commission.employee && commission.employee === employeeFilter) || 
-      (commission.lead?.employee && commission.lead.employee === employeeFilter);
+      (commission.employee && (commission.employee === employeeFilter || employeeMap[commission.employee] === employeeFilter)) || 
+      (commission.lead?.employee && (commission.lead.employee === employeeFilter || employeeMap[commission.lead.employee] === employeeFilter));
     
     return matchesSearch && matchesEmployee;
   });
@@ -610,7 +631,8 @@ const Commission = () => {
       } else {
         // Relatório de todos os funcionários
         const employeeGroups = commissionsData.reduce((groups: any, commission: any) => {
-          const emp = commission.employee || commission.lead?.employee || 'Não informado';
+          const empId = commission.employee || commission.lead?.employee;
+          const emp = empId ? (employeeMap[empId] || empId) : 'Não informado';
           if (!groups[emp]) {
             groups[emp] = [];
           }
@@ -997,7 +1019,14 @@ const Commission = () => {
                     </Badge>
                   </TableCell>
                   <TableCell>{getStatusBadge(commission.status!)}</TableCell>
-                  <TableCell>{commission.employee || commission.lead?.employee || "-"}</TableCell>
+                  <TableCell>
+                    {(() => {
+                      const employeeId = commission.employee || commission.lead?.employee;
+                      if (!employeeId) return "-";
+                      // Se for UUID, buscar nome no mapa; se já for nome, usar direto
+                      return employeeMap[employeeId] || employeeId;
+                    })()}
+                  </TableCell>
                   <TableCell className="text-right">
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
@@ -1307,23 +1336,29 @@ const Commission = () => {
     
     const filtered = commissions.filter(commission => {
       // Verificar tanto commission.employee quanto lead.employee
-      const commissionEmployee = commission.employee || '';
-      const leadEmployee = commission.lead?.employee || '';
+      const commissionEmployeeId = commission.employee || '';
+      const leadEmployeeId = commission.lead?.employee || '';
       
-      // Múltiplas verificações para maior precisão
+      // Buscar nomes no mapa
+      const commissionEmployeeName = employeeMap[commissionEmployeeId] || commissionEmployeeId;
+      const leadEmployeeName = employeeMap[leadEmployeeId] || leadEmployeeId;
+      
+      // Múltiplas verificações para maior precisão (por ID e por nome)
       const matches = [
-        commissionEmployee === employeeName,
-        leadEmployee === employeeName,
-        commissionEmployee.toLowerCase() === employeeName.toLowerCase(),
-        leadEmployee.toLowerCase() === employeeName.toLowerCase(),
-        commissionEmployee.includes(employeeName),
-        leadEmployee.includes(employeeName),
-        employeeName.includes(commissionEmployee) && commissionEmployee.length > 2,
-        employeeName.includes(leadEmployee) && leadEmployee.length > 2
+        commissionEmployeeId === employeeName,
+        leadEmployeeId === employeeName,
+        commissionEmployeeName === employeeName,
+        leadEmployeeName === employeeName,
+        commissionEmployeeName.toLowerCase() === employeeName.toLowerCase(),
+        leadEmployeeName.toLowerCase() === employeeName.toLowerCase(),
+        commissionEmployeeName.includes(employeeName),
+        leadEmployeeName.includes(employeeName),
+        employeeName.includes(commissionEmployeeName) && commissionEmployeeName.length > 2,
+        employeeName.includes(leadEmployeeName) && leadEmployeeName.length > 2
       ].some(Boolean);
       
       if (matches) {
-        console.log(`✅ Incluindo: ${commission.lead?.name} (emp: "${commissionEmployee}", lead: "${leadEmployee}")`);
+        console.log(`✅ Incluindo: ${commission.lead?.name} (emp: "${commissionEmployeeName}", lead: "${leadEmployeeName}")`);
       }
       
       return matches;
@@ -2235,6 +2270,16 @@ const Commission = () => {
           </div>
         </div>
       </div>
+
+      {/* Dialog de confirmação com senha administrativa */}
+      <AdminPasswordDialog
+        open={showAdminPasswordDialog}
+        onOpenChange={setShowAdminPasswordDialog}
+        onConfirm={confirmDeleteCommission}
+        title="Confirmar Exclusão de Comissão"
+        description="Esta ação é irreversível. Digite sua senha administrativa para confirmar a exclusão."
+        itemName={commissionToDelete ? commissions.find(c => c.id === commissionToDelete)?.product : undefined}
+      />
     </PageLayout>
   );
 

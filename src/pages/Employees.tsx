@@ -28,6 +28,8 @@ import { getBankName } from "@/utils/bankUtils";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import Header from "@/components/Header";
+import { AdminPasswordDialog } from "@/components/AdminPasswordDialog";
+import { hasAdminPassword } from "@/utils/adminPassword";
 
 const Employees = () => {
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -46,12 +48,15 @@ const Employees = () => {
   const [editEmployeePixKeyMain, setEditEmployeePixKeyMain] = useState("");
   const [editEmployeePixKey2, setEditEmployeePixKey2] = useState("");
   const [editEmployeePixKey3, setEditEmployeePixKey3] = useState("");
+  const [showAdminPasswordDialog, setShowAdminPasswordDialog] = useState(false);
+  const [hasAdminPwd, setHasAdminPwd] = useState(false);
   const { user } = useAuth();
 
   useEffect(() => {
     if (user) {
       fetchEmployees();
     }
+    hasAdminPassword().then(setHasAdminPwd);
   }, [user]);
 
   const fetchEmployees = async () => {
@@ -169,6 +174,19 @@ const Employees = () => {
   };
 
   const handleDeleteEmployee = async () => {
+    if (!employeeToDelete) return;
+    
+    // Se tiver senha administrativa configurada, pedir confirmação
+    if (hasAdminPwd) {
+      setShowAdminPasswordDialog(true);
+      return;
+    }
+    
+    // Se não tiver senha configurada, deletar diretamente
+    confirmDeleteEmployee();
+  };
+
+  const confirmDeleteEmployee = async () => {
     if (!employeeToDelete) return;
 
     try {
@@ -464,6 +482,16 @@ const Employees = () => {
           </main>
         </div>
       </div>
+
+      {/* Dialog de confirmação com senha administrativa */}
+      <AdminPasswordDialog
+        open={showAdminPasswordDialog}
+        onOpenChange={setShowAdminPasswordDialog}
+        onConfirm={confirmDeleteEmployee}
+        title="Confirmar Exclusão de Funcionário"
+        description="Esta ação é irreversível. Digite sua senha administrativa para confirmar a exclusão."
+        itemName={employeeToDelete?.name}
+      />
     </SidebarProvider>
   );
 };

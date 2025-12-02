@@ -1,9 +1,16 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Paperclip, X, File, FileText, Image } from "lucide-react";
+import { Paperclip, X, File, FileText, Image, Eye } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface DocumentUploadProps {
   leadId: string;
@@ -21,6 +28,8 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ leadId }) => {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [isDocumentsDialogOpen, setIsDocumentsDialogOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const fetchDocuments = async () => {
     try {
@@ -142,23 +151,41 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ leadId }) => {
     }
   };
 
+  const hasDocuments = documents.length > 0;
+
   return (
-    <div className="space-y-4">
+    <>
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-medium">Documentos</h3>
-        <div className="relative">
+        <div className="flex items-center gap-2">
+          <h3 className="text-lg font-medium">Documentos</h3>
+          <Button
+            variant="ghost"
+            size="sm"
+            type="button"
+            className={`p-1 h-8 w-8 ${hasDocuments ? "text-green-600 hover:text-green-700 hover:bg-green-50" : "text-gray-400 hover:text-gray-600 hover:bg-gray-50"}`}
+            onClick={() => setIsDocumentsDialogOpen(true)}
+            title={hasDocuments ? "Ver documentos anexados" : "Nenhum documento anexado"}
+          >
+            <Eye className={`h-5 w-5 ${hasDocuments ? "text-green-600" : "text-gray-400"}`} />
+          </Button>
+        </div>
+        <div>
           <Input
             type="file"
             id="document-upload"
-            className="absolute inset-0 opacity-0 cursor-pointer"
+            ref={fileInputRef}
+            className="hidden"
             onChange={handleFileChange}
             disabled={isUploading}
+            accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.xls,.xlsx"
           />
           <Button
             variant="outline"
             size="sm"
+            type="button"
             className={`flex items-center ${isUploading ? "opacity-50" : ""}`}
             disabled={isUploading}
+            onClick={() => fileInputRef.current?.click()}
           >
             <Paperclip className="mr-2 h-4 w-4" />
             {isUploading ? `Enviando... ${progress}%` : "Anexar documento"}
@@ -166,39 +193,63 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ leadId }) => {
         </div>
       </div>
 
-      {documents.length > 0 ? (
-        <div className="space-y-2">
-          {documents.map((document) => (
-            <div 
-              key={document.id} 
-              className="flex items-center justify-between p-2 bg-gray-50 rounded-md hover:bg-gray-100"
-            >
-              <div 
-                className="flex items-center flex-1 cursor-pointer"
-                onClick={() => handleDocumentClick(document)}
-              >
-                {getDocumentIcon(document.file_type)}
-                <span className="ml-2 text-sm font-medium truncate">
-                  {document.file_name}
-                </span>
+      <Dialog open={isDocumentsDialogOpen} onOpenChange={setIsDocumentsDialogOpen}>
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Documentos Anexados</DialogTitle>
+            <DialogDescription>
+              Visualize e gerencie os documentos anexados a este lead
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 mt-4">
+            {documents.length > 0 ? (
+              <div className="space-y-2">
+                {documents.map((document) => (
+                  <div 
+                    key={document.id} 
+                    className="flex items-center justify-between p-3 bg-gray-50 rounded-md hover:bg-gray-100 border border-gray-200"
+                  >
+                    <div 
+                      className="flex items-center flex-1 cursor-pointer"
+                      onClick={() => handleDocumentClick(document)}
+                    >
+                      {getDocumentIcon(document.file_type)}
+                      <span className="ml-3 text-sm font-medium truncate">
+                        {document.file_name}
+                      </span>
+                      <span className="ml-2 text-xs text-gray-500">
+                        ({new Date(document.created_at).toLocaleDateString('pt-BR')})
+                      </span>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                      onClick={() => {
+                        handleDelete(document);
+                        if (documents.length === 1) {
+                          setIsDocumentsDialogOpen(false);
+                        }
+                      }}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
-                onClick={() => handleDelete(document)}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <p className="text-sm text-muted-foreground italic">
-          Nenhum documento anexado ainda.
-        </p>
-      )}
-    </div>
+            ) : (
+              <div className="text-center py-8">
+                <FileText className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+                <p className="text-sm text-gray-500">
+                  Nenhum documento anexado ainda.
+                </p>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 

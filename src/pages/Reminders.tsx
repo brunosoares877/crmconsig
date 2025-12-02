@@ -24,6 +24,8 @@ import Header from "@/components/Header";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { CustomCalendar } from "@/components/ui/custom-calendar";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { getEmployees, Employee } from "@/utils/employees";
+import { AdminPasswordDialog } from "@/components/AdminPasswordDialog";
 
 const getBankName = (bankCode: string | null | undefined) => {
   if (!bankCode) return "Não informado";
@@ -65,6 +67,7 @@ interface Reminder {
   created_at: string;
   bank?: string | null;
   priority: string;
+  employee?: string | null;
 }
 
 interface Lead {
@@ -84,11 +87,16 @@ const Reminders = () => {
   const [reminders, setReminders] = useState<Reminder[]>([]);
   const [filteredReminders, setFilteredReminders] = useState<Reminder[]>([]);
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [employeeMap, setEmployeeMap] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [currentStatus, setCurrentStatus] = useState<ReminderStatus>("all");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [editingReminder, setEditingReminder] = useState<Reminder | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [showAdminPasswordDialog, setShowAdminPasswordDialog] = useState(false);
+  const [reminderToDelete, setReminderToDelete] = useState<string | null>(null);
   const [totalPages, setTotalPages] = useState(0);
   const [totalReminders, setTotalReminders] = useState(0);
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -96,6 +104,7 @@ const Reminders = () => {
   // Form state
   const [title, setTitle] = useState("");
   const [leadId, setLeadId] = useState("none");
+  const [employeeId, setEmployeeId] = useState("none");
   const [date, setDate] = useState<Date>(new Date());
   const [time, setTime] = useState("09:00");
   const [notes, setNotes] = useState("");
@@ -149,6 +158,17 @@ const Reminders = () => {
       const leadsWithCpf = (leadsData || []) as Lead[];
       setLeads(leadsWithCpf);
       setFilteredLeads(leadsWithCpf);
+
+      // Fetch employees
+      const employeeList = await getEmployees();
+      setEmployees(employeeList);
+      
+      // Criar mapa de ID -> Nome
+      const map: Record<string, string> = {};
+      employeeList.forEach(emp => {
+        map[emp.id] = emp.name;
+      });
+      setEmployeeMap(map);
       
     } catch (error: any) {
       console.error("Erro ao buscar dados:", error);
@@ -241,6 +261,22 @@ const Reminders = () => {
     setFilteredReminders(filtered);
   };
 
+  const handleOpenEditDialog = (reminder: Reminder) => {
+    setEditingReminder(reminder);
+    setTitle(reminder.title);
+    setLeadId(reminder.lead_id || "none");
+    setEmployeeId(reminder.employee || "none");
+    setDate(new Date(reminder.due_date));
+    const reminderDate = new Date(reminder.due_date);
+    const hours = String(reminderDate.getHours()).padStart(2, '0');
+    const minutes = String(reminderDate.getMinutes()).padStart(2, '0');
+    setTime(`${hours}:${minutes}`);
+    setNotes(reminder.notes || "");
+    setBank(reminder.bank || "none");
+    setPriority(reminder.priority || "media");
+    setIsDialogOpen(true);
+  };
+
   const handleCreateReminder = async () => {
     if (!title || !date) {
       toast.error("Preencha todos os campos obrigatórios");
@@ -255,32 +291,41 @@ const Reminders = () => {
       const [hours, minutes] = time.split(':').map(Number);
       const finalDate = setMinutes(setHours(date, hours), minutes);
       
-      // Temporariamente removendo priority até a migração ser aplicada
       const reminderData: any = {
         title,
         lead_id: leadId && leadId !== "none" ? leadId : null,
         notes: notes || null,
         due_date: finalDate.toISOString(),
-        is_completed: false,
         user_id: userData.user.id,
-        bank: bank && bank !== "none" ? bank : null
+        bank: bank && bank !== "none" ? bank : null,
+        employee: employeeId && employeeId !== "none" ? employeeId : null,
+        priority: priority || "media"
       };
 
-      // FORÇAR a inclusão da prioridade (migração deve estar aplicada)
-      reminderData.priority = priority || "media";
-      console.log("🎯 Criando lembrete com prioridade:", priority);
-
-      const { error } = await supabase.from("reminders").insert(reminderData);
+      if (editingReminder) {
+        // Atualizar lembrete existente
+        const { error } = await supabase
+          .from("reminders")
+          .update(reminderData)
+          .eq("id", editingReminder.id);
+        
+        if (error) throw error;
+        toast.success("Lembrete atualizado com sucesso!");
+      } else {
+        // Criar novo lembrete
+        reminderData.is_completed = false;
+        const { error } = await supabase.from("reminders").insert(reminderData);
+        
+        if (error) throw error;
+        toast.success("Lembrete criado com sucesso!");
+      }
       
-      if (error) throw error;
-      
-      toast.success("Lembrete criado com sucesso!");
       setIsDialogOpen(false);
       resetForm();
-      await fetchData();
+      await fetchReminders(currentPage);
     } catch (error: any) {
-      console.error("Erro ao criar lembrete:", error);
-      toast.error(`Erro ao criar lembrete: ${error.message}`);
+      console.error("Erro ao salvar lembrete:", error);
+      toast.error(`Erro ao salvar lembrete: ${error.message}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -315,27 +360,37 @@ const Reminders = () => {
   };
 
   const handleDeleteReminder = async (id: string) => {
+    // Abrir dialog de confirmação com senha administrativa
+    setReminderToDelete(id);
+    setShowAdminPasswordDialog(true);
+  };
+
+  const confirmDeleteReminder = async () => {
+    if (!reminderToDelete) return;
+
     try {
       const { error } = await supabase
         .from("reminders")
         .delete()
-        .eq("id", id);
+        .eq("id", reminderToDelete);
         
       if (error) throw error;
       
       if (!Array.isArray(reminders)) {
-        await fetchData();
+        await fetchReminders(currentPage);
         return;
       }
       
-      const updatedReminders = reminders.filter(r => r.id !== id);
+      const updatedReminders = reminders.filter(r => r.id !== reminderToDelete);
       setReminders(updatedReminders);
       filterReminders(currentStatus, updatedReminders);
       
       toast.success("Lembrete excluído com sucesso!");
+      setReminderToDelete(null);
     } catch (error: any) {
       console.error("Erro ao excluir lembrete:", error);
       toast.error(`Erro ao excluir lembrete: ${error.message}`);
+      setReminderToDelete(null);
     }
   };
 
@@ -486,27 +541,41 @@ const Reminders = () => {
   const resetForm = () => {
     setTitle("");
     setLeadId("none");
+    setEmployeeId("none");
     setDate(new Date());
     setTime("09:00");
     setNotes("");
     setBank("none");
     setPriority("media");
     setCategory("");
+    setEditingReminder(null);
   };
 
   const headerActions = (
-    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <Dialog open={isDialogOpen} onOpenChange={(open) => {
+          setIsDialogOpen(open);
+          if (!open) {
+            resetForm();
+          }
+        }}>
       <DialogTrigger asChild>
-        <Button size="lg" className="bg-blue-600 hover:bg-blue-700">
+        <Button size="lg" className="bg-blue-600 hover:bg-blue-700" onClick={() => {
+          resetForm();
+          setIsDialogOpen(true);
+        }}>
           <Plus className="mr-2 h-5 w-5" />
           Novo Lembrete
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto" aria-describedby="dialog-description">
         <DialogHeader>
-          <DialogTitle className="text-xl">Criar Novo Lembrete</DialogTitle>
+          <DialogTitle className="text-xl">
+            {editingReminder ? "Editar Lembrete" : "Criar Novo Lembrete"}
+          </DialogTitle>
           <DialogDescription id="dialog-description" className="text-base">
-            Adicione um novo lembrete para acompanhamento de clientes e tarefas.
+            {editingReminder 
+              ? "Edite os detalhes do lembrete."
+              : "Adicione um novo lembrete para acompanhamento de clientes e tarefas."}
           </DialogDescription>
         </DialogHeader>
         
@@ -598,6 +667,23 @@ const Reminders = () => {
                 </Command>
               </PopoverContent>
             </Popover>
+          </div>
+
+          <div className="space-y-3">
+            <Label className="text-sm font-medium">Funcionário Responsável</Label>
+            <Select value={employeeId} onValueChange={setEmployeeId}>
+              <SelectTrigger className="h-11">
+                <SelectValue placeholder="Selecione um funcionário (opcional)" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Nenhum funcionário</SelectItem>
+                {employees.map((employee) => (
+                  <SelectItem key={employee.id} value={employee.id}>
+                    {employee.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           
           <BankSelect
@@ -744,8 +830,17 @@ const Reminders = () => {
               </>
             ) : (
               <>
-                <Plus className="mr-2 h-4 w-4" />
-                Criar Lembrete
+                {editingReminder ? (
+                  <>
+                    <Edit3 className="mr-2 h-4 w-4" />
+                    Atualizar Lembrete
+                  </>
+                ) : (
+                  <>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Criar Lembrete
+                  </>
+                )}
               </>
             )}
           </Button>
@@ -953,6 +1048,15 @@ const Reminders = () => {
                             <span className="text-slate-900 font-medium">{getBankName(reminder.bank)}</span>
                           </div>
                         )}
+                        {reminder.employee && (
+                          <div className="flex items-center gap-2 text-sm text-slate-600">
+                            <User className="h-4 w-4 text-slate-400" />
+                            <span className="font-medium">Responsável:</span>
+                            <span className="text-slate-900 font-medium">
+                              {employeeMap[reminder.employee] || reminder.employee}
+                            </span>
+                          </div>
+                        )}
                       </div>
                       
                       <div className="space-y-2">
@@ -966,6 +1070,15 @@ const Reminders = () => {
                     
                     {/* Linha 3: Ações */}
                     <div className="flex justify-end space-x-2 pt-3 border-t border-slate-100 pl-4">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 text-xs font-medium text-slate-600 hover:text-blue-700 hover:bg-blue-50"
+                        onClick={() => handleOpenEditDialog(reminder)}
+                      >
+                        <Edit3 className="h-3 w-3 mr-1" />
+                        Editar
+                      </Button>
                       <Button
                         variant="ghost"
                         size="sm"
@@ -1001,7 +1114,13 @@ const Reminders = () => {
                           <AlertDialogFooter>
                             <AlertDialogCancel>Cancelar</AlertDialogCancel>
                             <AlertDialogAction 
-                              onClick={() => handleDeleteReminder(reminder.id)}
+                              onClick={() => {
+                                // Fechar o AlertDialog primeiro
+                                const event = new Event('close');
+                                window.dispatchEvent(event);
+                                // Abrir dialog de senha administrativa
+                                handleDeleteReminder(reminder.id);
+                              }}
                               className="bg-red-600 hover:bg-red-700"
                             >
                               Sim, excluir
@@ -1085,6 +1204,16 @@ const Reminders = () => {
           </main>
         </div>
       </div>
+
+      {/* Dialog de confirmação com senha administrativa */}
+      <AdminPasswordDialog
+        open={showAdminPasswordDialog}
+        onOpenChange={setShowAdminPasswordDialog}
+        onConfirm={confirmDeleteReminder}
+        title="Confirmar Exclusão de Lembrete"
+        description="Esta ação é irreversível. Digite sua senha administrativa para confirmar a exclusão."
+        itemName={reminderToDelete ? reminders.find(r => r.id === reminderToDelete)?.title : undefined}
+      />
     </SidebarProvider>
   );
 };

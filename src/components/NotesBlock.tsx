@@ -12,6 +12,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Trash2, Edit3, FileText, Loader2, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { AdminPasswordDialog } from "@/components/AdminPasswordDialog";
+import { hasAdminPassword } from "@/utils/adminPassword";
 
 interface Note {
   id: string;
@@ -30,6 +32,9 @@ const NotesBlock = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingNote, setEditingNote] = useState<Note | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [showAdminPasswordDialog, setShowAdminPasswordDialog] = useState(false);
+  const [noteToDelete, setNoteToDelete] = useState<string | null>(null);
+  const [hasAdminPwd, setHasAdminPwd] = useState(false);
 
   // Form state
   const [title, setTitle] = useState("");
@@ -66,6 +71,7 @@ const NotesBlock = () => {
 
   useEffect(() => {
     fetchNotes();
+    hasAdminPassword().then(setHasAdminPwd);
   }, []);
 
   useEffect(() => {
@@ -77,8 +83,8 @@ const NotesBlock = () => {
     const query = searchQuery.toLowerCase();
     const filtered = notes.filter(
       (note) =>
-        note.title.toLowerCase().includes(query) ||
-        note.content.toLowerCase().includes(query)
+        (note.title || '').toLowerCase().includes(query) ||
+        (note.content || '').toLowerCase().includes(query)
     );
     setFilteredNotes(filtered);
   }, [searchQuery, notes]);
@@ -148,17 +154,34 @@ const NotesBlock = () => {
   };
 
   const handleDeleteNote = async (id: string) => {
+    // Se tiver senha administrativa configurada, pedir confirmação
+    if (hasAdminPwd) {
+      setNoteToDelete(id);
+      setShowAdminPasswordDialog(true);
+      return;
+    }
+    
+    // Se não tiver senha configurada, deletar diretamente
+    confirmDeleteNote(id);
+  };
+
+  const confirmDeleteNote = async (id?: string) => {
+    const noteId = id || noteToDelete;
+    if (!noteId) return;
+
     try {
-      const { error } = await supabase.from("notes").delete().eq("id", id);
+      const { error } = await supabase.from("notes").delete().eq("id", noteId);
 
       if (error) throw error;
 
-      setNotes(notes.filter((n) => n.id !== id));
-      setFilteredNotes(filteredNotes.filter((n) => n.id !== id));
+      setNotes(notes.filter((n) => n.id !== noteId));
+      setFilteredNotes(filteredNotes.filter((n) => n.id !== noteId));
       toast.success("Nota excluída com sucesso!");
+      setNoteToDelete(null);
     } catch (error: any) {
       console.error("Erro ao excluir nota:", error);
       toast.error(`Erro ao excluir nota: ${error.message}`);
+      setNoteToDelete(null);
     }
   };
 
@@ -381,6 +404,27 @@ const NotesBlock = () => {
             )}
           </CardContent>
         </Card>
+      )}
+
+      {/* Dialog de confirmação com senha administrativa */}
+      {hasAdminPwd && (
+        <AdminPasswordDialog
+          open={showAdminPasswordDialog}
+          onOpenChange={(open) => {
+            setShowAdminPasswordDialog(open);
+            if (!open) {
+              setNoteToDelete(null);
+            }
+          }}
+          onConfirm={() => {
+            if (noteToDelete) {
+              confirmDeleteNote();
+            }
+          }}
+          title="Confirmar Exclusão de Nota"
+          description="Esta ação é irreversível. Digite sua senha administrativa para confirmar a exclusão."
+          itemName={noteToDelete ? (notes.find(n => n.id === noteToDelete)?.title || "Nota") : undefined}
+        />
       )}
     </div>
   );

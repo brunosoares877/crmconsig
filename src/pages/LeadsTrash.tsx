@@ -11,6 +11,8 @@ import { Search, Trash2, RotateCcw, AlertTriangle, User, Phone, Mail, Calendar, 
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import PageLayout from "@/components/PageLayout";
+import { AdminPasswordDialog } from "@/components/AdminPasswordDialog";
+import { hasAdminPassword } from "@/utils/adminPassword";
 
 interface DeletedLead {
   id: string;
@@ -29,9 +31,13 @@ const LeadsTrash = () => {
   const [actionType, setActionType] = useState<'restore' | 'delete' | null>(null);
   const [selectedLeads, setSelectedLeads] = useState<Set<string>>(new Set());
   const [bulkActionType, setBulkActionType] = useState<'bulk_restore' | 'bulk_delete' | null>(null);
+  const [showAdminPasswordDialog, setShowAdminPasswordDialog] = useState(false);
+  const [pendingDeleteAction, setPendingDeleteAction] = useState<'single' | 'bulk' | null>(null);
+  const [hasAdminPwd, setHasAdminPwd] = useState(false);
 
   useEffect(() => {
     fetchDeletedLeads();
+    hasAdminPassword().then(setHasAdminPwd);
   }, []);
 
   const fetchDeletedLeads = async () => {
@@ -114,6 +120,20 @@ const LeadsTrash = () => {
   };
 
   const handlePermanentDelete = async (deletedLead: DeletedLead) => {
+    // Se tiver senha administrativa configurada, pedir confirmação
+    if (hasAdminPwd) {
+      setSelectedLead(deletedLead);
+      setActionType('delete');
+      setPendingDeleteAction('single');
+      setShowAdminPasswordDialog(true);
+      return;
+    }
+    
+    // Se não tiver senha configurada, deletar diretamente
+    confirmPermanentDelete(deletedLead);
+  };
+
+  const confirmPermanentDelete = async (deletedLead: DeletedLead) => {
     try {
       const { error } = await supabase
         .from("deleted_leads")
@@ -126,9 +146,11 @@ const LeadsTrash = () => {
       toast.success("Lead excluído permanentemente!");
       setSelectedLead(null);
       setActionType(null);
+      setPendingDeleteAction(null);
     } catch (error: any) {
       console.error("Error permanently deleting lead:", error);
       toast.error(`Erro ao excluir lead permanentemente: ${error.message}`);
+      setPendingDeleteAction(null);
     }
   };
 
@@ -194,6 +216,18 @@ const LeadsTrash = () => {
   };
 
   const handleBulkDelete = async () => {
+    // Se tiver senha administrativa configurada, pedir confirmação
+    if (hasAdminPwd) {
+      setPendingDeleteAction('bulk');
+      setShowAdminPasswordDialog(true);
+      return;
+    }
+    
+    // Se não tiver senha configurada, deletar diretamente
+    confirmBulkDelete();
+  };
+
+  const confirmBulkDelete = async () => {
     try {
       const selectedIds = Array.from(selectedLeads);
       
@@ -520,6 +554,31 @@ const LeadsTrash = () => {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* Dialog de confirmação com senha administrativa */}
+        <AdminPasswordDialog
+          open={showAdminPasswordDialog}
+          onOpenChange={(open) => {
+            setShowAdminPasswordDialog(open);
+            if (!open) {
+              setPendingDeleteAction(null);
+            }
+          }}
+          onConfirm={() => {
+            if (pendingDeleteAction === 'single' && selectedLead) {
+              confirmPermanentDelete(selectedLead);
+            } else if (pendingDeleteAction === 'bulk') {
+              confirmBulkDelete();
+            }
+          }}
+          title="Confirmar Exclusão Permanente"
+          description={
+            pendingDeleteAction === 'single'
+              ? `Esta ação é irreversível. Digite sua senha administrativa para excluir permanentemente o lead "${selectedLead?.original_lead_data?.name}".`
+              : `Esta ação é irreversível. Digite sua senha administrativa para excluir permanentemente ${selectedLeads.size} leads selecionados.`
+          }
+          itemName={pendingDeleteAction === 'single' ? selectedLead?.original_lead_data?.name : `${selectedLeads.size} leads`}
+        />
       </div>
     </PageLayout>
   );

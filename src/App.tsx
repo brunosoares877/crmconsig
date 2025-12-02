@@ -32,6 +32,7 @@ const LeadsConfig = lazy(() => import("@/pages/LeadsConfig"));
 const LeadScheduling = lazy(() => import("@/pages/LeadScheduling"));
 const LeadsTrash = lazy(() => import("@/pages/LeadsTrash"));
 const ResetPassword = lazy(() => import("@/pages/ResetPassword"));
+const ResetAdminPassword = lazy(() => import("@/pages/ResetAdminPassword"));
 const Portability = lazy(() => import("@/pages/Portability"));
 const TrafficPremium = lazy(() => import("@/pages/TrafficPremium"));
 const CursoTrafegoPago = lazy(() => import("@/pages/CursoTrafegoPago"));
@@ -86,6 +87,7 @@ function App() {
                   <Route path="/leads/trash" element={<LeadsTrash />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/reset-password" element={<ResetPassword />} />
+                  <Route path="/reset-admin-password" element={<ResetAdminPassword />} />
                   <Route path="/sales" element={<Sales />} />
                   <Route path="/portability" element={<Portability />} />
                   <Route path="/reminders" element={<Reminders />} />

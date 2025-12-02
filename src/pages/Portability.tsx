@@ -23,8 +23,10 @@ import { cn } from "@/lib/utils";
 import { BankSelect } from "@/components/forms/BankSelect";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getBankName } from "@/utils/bankUtils";
+import { AdminPasswordDialog } from "@/components/AdminPasswordDialog";
+import { hasAdminPassword } from "@/utils/adminPassword";
 
-interface Reminder {
+interface Portability {
   id: string;
   title: string;
   lead_id: string | null;
@@ -34,6 +36,7 @@ interface Reminder {
   created_at: string;
   bank: string | null;
   status: 'pendente' | 'concluido' | 'cancelado' | 'redigitado';
+  employee: string | null;
   lead?: { name: string };
 }
 
@@ -44,13 +47,16 @@ interface Lead {
 }
 
 const Portability = () => {
-  const [reminders, setReminders] = useState<Reminder[]>([]);
+  const [portabilities, setPortabilities] = useState<Portability[]>([]);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingReminder, setEditingReminder] = useState<Reminder | null>(null);
+  const [editingPortability, setEditingPortability] = useState<Portability | null>(null);
   const [activeTab, setActiveTab] = useState("all");
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [showAdminPasswordDialog, setShowAdminPasswordDialog] = useState(false);
+  const [portabilityToDelete, setPortabilityToDelete] = useState<string | null>(null);
+  const [hasAdminPwd, setHasAdminPwd] = useState(false);
 
   const initialFormState = {
     title: "",
@@ -58,7 +64,8 @@ const Portability = () => {
     due_date: new Date(),
     notes: "",
     bank: "",
-    status: 'pendente' as Reminder['status'],
+    status: 'pendente' as Portability['status'],
+    employee: "",
   };
 
   const [formData, setFormData] = useState(initialFormState);
@@ -72,11 +79,11 @@ const Portability = () => {
       if (leadsError) throw leadsError;
       setLeads(leadsData || []);
 
-      const { data: remindersData, error: remindersError } = await supabase
-        .from("reminders")
+      const { data: portabilitiesData, error: portabilitiesError } = await supabase
+        .from("portabilities")
         .select("*, lead:leads(name)");
-      if (remindersError) throw remindersError;
-      setReminders((remindersData as unknown as Reminder[]) || []);
+      if (portabilitiesError) throw portabilitiesError;
+      setPortabilities((portabilitiesData as unknown as Portability[]) || []);
 
     } catch (error: any) {
       toast.error("Erro ao carregar dados", { description: error.message });
@@ -87,6 +94,7 @@ const Portability = () => {
 
   useEffect(() => {
     fetchData();
+    hasAdminPassword().then(setHasAdminPwd);
   }, []);
   
   useEffect(() => {
@@ -102,16 +110,16 @@ const Portability = () => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleOpenDialog = (reminder: Reminder | null = null) => {
-    setEditingReminder(reminder);
-    if (reminder) {
+  const handleOpenDialog = (portability: Portability | null = null) => {
+    setEditingPortability(portability);
+    if (portability) {
       setFormData({
-        title: reminder.title,
-        lead_id: reminder.lead_id || "",
-        due_date: new Date(reminder.due_date),
-        notes: reminder.notes || "",
-        bank: reminder.bank || "",
-        status: reminder.status,
+        title: portability.title,
+        lead_id: portability.lead_id || "",
+        due_date: new Date(portability.due_date),
+        notes: portability.notes || "",
+        bank: portability.bank || "",
+        status: portability.status,
       });
     } else {
       setFormData(initialFormState);
@@ -121,11 +129,11 @@ const Portability = () => {
 
   const handleCloseDialog = () => {
     setIsDialogOpen(false);
-    setEditingReminder(null);
+    setEditingPortability(null);
     setFormData(initialFormState);
   };
 
-  const handleSaveReminder = async () => {
+  const handleSavePortability = async () => {
     if (!formData.title || !formData.due_date) {
       return toast.error("Título e Data são obrigatórios.");
     }
@@ -134,67 +142,82 @@ const Portability = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Usuário não autenticado.");
 
-      const reminderData = {
+      const portabilityData = {
         title: formData.title,
         lead_id: formData.lead_id || null,
         due_date: formData.due_date.toISOString(),
         notes: formData.notes,
         bank: formData.bank,
         status: formData.status,
+        employee: formData.employee || null,
         user_id: user.id,
         is_completed: formData.status === 'concluido',
       };
 
       let response;
-      if (editingReminder) {
+      if (editingPortability) {
         response = await supabase
-          .from("reminders")
-          .update(reminderData)
-          .eq("id", editingReminder.id)
+          .from("portabilities")
+          .update(portabilityData)
+          .eq("id", editingPortability.id)
           .select()
           .single();
       } else {
         response = await supabase
-          .from("reminders")
-          .insert(reminderData)
+          .from("portabilities")
+          .insert(portabilityData)
           .select()
           .single();
       }
 
       if (response.error) throw response.error;
 
-      toast.success(editingReminder ? 'Lembrete atualizado com sucesso!' : 'Lembrete criado com sucesso!');
+      toast.success(editingPortability ? 'Portabilidade atualizada com sucesso!' : 'Portabilidade criada com sucesso!');
       handleCloseDialog();
       fetchData();
 
     } catch (error: any) {
-      toast.error('Erro ao salvar lembrete', { description: error.message });
+      toast.error('Erro ao salvar portabilidade', { description: error.message });
     }
   };
   
-  const handleDeleteReminder = async (id: string) => {
+  const handleDeletePortability = async (id: string) => {
+    // Se tiver senha administrativa configurada, pedir confirmação
+    if (hasAdminPwd) {
+      setPortabilityToDelete(id);
+      setShowAdminPasswordDialog(true);
+      return;
+    }
+    
+    // Se não tiver senha configurada, deletar diretamente
+    confirmDeletePortability(id);
+  };
+
+  const confirmDeletePortability = async (id: string) => {
     try {
-      const { error } = await supabase.from("reminders").delete().eq("id", id);
+      const { error } = await supabase.from("portabilities").delete().eq("id", id);
       if (error) throw error;
-      toast.success("Lembrete removido com sucesso!");
+      toast.success("Portabilidade removida com sucesso!");
       fetchData();
+      setPortabilityToDelete(null);
     } catch (error: any) {
-       toast.error('Erro ao remover lembrete', { description: error.message });
+       toast.error('Erro ao remover portabilidade', { description: error.message });
+       setPortabilityToDelete(null);
     }
   };
 
-  const handleUpdateStatus = async (reminder: Reminder, newStatus: Reminder['status']) => {
+  const handleUpdateStatus = async (portability: Portability, newStatus: Portability['status']) => {
     try {
       const is_completed = newStatus === 'concluido';
       
       const { error } = await supabase
-        .from("reminders")
+        .from("portabilities")
         .update({ 
           status: newStatus, 
           is_completed,
           updated_at: new Date().toISOString() 
         })
-        .eq("id", reminder.id);
+        .eq("id", portability.id);
         
       if (error) throw error;
       
@@ -205,20 +228,20 @@ const Portability = () => {
         'pendente': 'Pendente'
       }[newStatus];
       
-      toast.success('Lembrete marcado como ' + statusText);
+      toast.success('Portabilidade marcada como ' + statusText);
       fetchData();
     } catch (error: any) {
-      toast.error('Erro ao atualizar status do lembrete', { description: error.message });
+      toast.error('Erro ao atualizar status da portabilidade', { description: error.message });
     }
   };
   
-  const filteredReminders = useMemo(() => {
-    if (activeTab === "all") return reminders;
-    if (activeTab === "concluido") return reminders.filter(r => r.is_completed);
-    return reminders.filter(r => r.status === activeTab && !r.is_completed);
-  }, [reminders, activeTab]);
+  const filteredPortabilities = useMemo(() => {
+    if (activeTab === "all") return portabilities;
+    if (activeTab === "concluido") return portabilities.filter(p => p.is_completed);
+    return portabilities.filter(p => p.status === activeTab && !p.is_completed);
+  }, [portabilities, activeTab]);
 
-  const getStatusBadge = (status: Reminder['status'], is_completed: boolean) => {
+  const getStatusBadge = (status: Portability['status'], is_completed: boolean) => {
     let text = "Pendente";
     let className = "bg-blue-50 text-blue-700 border border-blue-200 text-xs font-medium";
 
@@ -270,14 +293,14 @@ const Portability = () => {
                       </div>
                       <div>
                         <h1 className="text-3xl font-bold">Portabilidade</h1>
-                        <p className="text-blue-100 text-lg mt-1">Gerencie e acompanhe seus lembretes de portabilidade</p>
+                        <p className="text-blue-100 text-lg mt-1">Gerencie e acompanhe suas portabilidades</p>
                       </div>
                     </div>
                     <div className="hidden md:flex items-center space-x-4">
                       <div className="bg-white/10 backdrop-blur-sm rounded-lg px-4 py-2">
                         <div className="text-sm text-blue-100">Total de Portabilidades</div>
                         <div className="text-2xl font-bold">
-                          {filteredReminders.length}
+                          {filteredPortabilities.length}
                         </div>
                       </div>
                     </div>
@@ -307,11 +330,11 @@ const Portability = () => {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {filteredReminders.map(reminder => (
-                    <Card key={reminder.id} className="flex flex-col transition-all duration-200 hover:shadow-lg border-0 shadow-sm hover:shadow-xl hover:-translate-y-1">
+                  {filteredPortabilities.map(portability => (
+                    <Card key={portability.id} className="flex flex-col transition-all duration-200 hover:shadow-lg border-0 shadow-sm hover:shadow-xl hover:-translate-y-1">
                       <CardHeader>
                         <div className="flex justify-between items-start">
-                          <CardTitle className="text-lg">{reminder.title}</CardTitle>
+                          <CardTitle className="text-lg">{portability.title}</CardTitle>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -319,31 +342,31 @@ const Portability = () => {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-56">
-                              <DropdownMenuItem onClick={() => handleOpenDialog(reminder)} className="flex items-center gap-2">
+                              <DropdownMenuItem onClick={() => handleOpenDialog(portability)} className="flex items-center gap-2">
                                 <Edit className="h-4 w-4" />
                                 Editar
                               </DropdownMenuItem>
                       
                               <DropdownMenuSeparator />
                       
-                              {!reminder.is_completed ? (
-                                <DropdownMenuItem onClick={() => handleUpdateStatus(reminder, 'concluido')} className="flex items-center gap-2 text-green-600">
+                              {!portability.is_completed ? (
+                                <DropdownMenuItem onClick={() => handleUpdateStatus(portability, 'concluido')} className="flex items-center gap-2 text-green-600">
                                   <Check className="h-4 w-4" />
                                   Marcar como Concluído
                                 </DropdownMenuItem>
                               ) : (
-                                <DropdownMenuItem onClick={() => handleUpdateStatus(reminder, 'pendente')} className="flex items-center gap-2 text-blue-600">
+                                <DropdownMenuItem onClick={() => handleUpdateStatus(portability, 'pendente')} className="flex items-center gap-2 text-blue-600">
                                   <RotateCcw className="h-4 w-4" />
                                   Marcar como Pendente
                                 </DropdownMenuItem>
                               )}
                       
-                              <DropdownMenuItem onClick={() => handleUpdateStatus(reminder, 'cancelado')} className="flex items-center gap-2 text-red-600">
+                              <DropdownMenuItem onClick={() => handleUpdateStatus(portability, 'cancelado')} className="flex items-center gap-2 text-red-600">
                                 <Ban className="h-4 w-4" />
                                 Marcar como Cancelado
                               </DropdownMenuItem>
                       
-                              <DropdownMenuItem onClick={() => handleUpdateStatus(reminder, 'redigitado')} className="flex items-center gap-2 text-orange-600">
+                              <DropdownMenuItem onClick={() => handleUpdateStatus(portability, 'redigitado')} className="flex items-center gap-2 text-orange-600">
                                 <RotateCcw className="h-4 w-4" />
                                 Marcar como Redigitado
                               </DropdownMenuItem>
@@ -361,13 +384,13 @@ const Portability = () => {
                                   <AlertDialogHeader>
                                     <AlertDialogTitle>Tem certeza?</AlertDialogTitle>
                                     <AlertDialogDescription>
-                                      Esta ação não pode ser desfeita. Isso excluirá permanentemente o lembrete "{reminder.title}".
+                                      Esta ação não pode ser desfeita. Isso excluirá permanentemente o lembrete "{portability.title}".
                                     </AlertDialogDescription>
                                   </AlertDialogHeader>
                                   <AlertDialogFooter>
                                     <AlertDialogCancel>Cancelar</AlertDialogCancel>
                                     <AlertDialogAction 
-                                      onClick={() => handleDeleteReminder(reminder.id)}
+                                      onClick={() => handleDeletePortability(portability.id)}
                                       className="bg-red-600 hover:bg-red-700"
                                     >
                                       Sim, excluir
@@ -380,8 +403,8 @@ const Portability = () => {
                         </div>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <CalendarIcon className="h-4 w-4" />
-                          <span>{format(new Date(reminder.due_date), "dd/MM/yyyy")}</span>
-                          {new Date(reminder.due_date) < new Date() && !reminder.is_completed && (
+                          <span>{format(new Date(portability.due_date), "dd/MM/yyyy")}</span>
+                          {new Date(portability.due_date) < new Date() && !portability.is_completed && (
                             <Badge variant="destructive" className="flex items-center gap-1">
                               <AlertCircle className="h-3 w-3" /> Atrasado
                             </Badge>
@@ -389,35 +412,35 @@ const Portability = () => {
                         </div>
                       </CardHeader>
                       <CardContent className="flex-grow space-y-2">
-                        {reminder.lead_id && <Badge variant="secondary">{reminder.lead?.name || 'Cliente...'}</Badge>}
-                        {reminder.bank && <Badge variant="outline">{getBankName(reminder.bank)}</Badge>}
-                        {reminder.notes && (
+                        {portability.lead_id && <Badge variant="secondary">{portability.lead?.name || 'Cliente...'}</Badge>}
+                        {portability.bank && <Badge variant="outline">{getBankName(portability.bank)}</Badge>}
+                        {portability.notes && (
                           <div className="pt-2">
                             <p className="text-sm text-muted-foreground break-words overflow-wrap-anywhere hyphens-auto max-h-20 overflow-y-auto">
-                              {reminder.notes}
+                              {portability.notes}
                             </p>
                           </div>
                         )}
                       </CardContent>
                       <CardFooter className="flex justify-center">
-                        {getStatusBadge(reminder.status, reminder.is_completed)}
+                        {getStatusBadge(portability.status, portability.is_completed)}
                       </CardFooter>
                     </Card>
                   ))}
                 </div>
               )}
       
-              {!isLoading && filteredReminders.length === 0 && (
+              {!isLoading && filteredPortabilities.length === 0 && (
                 <div className="text-center py-16">
-                  <p className="text-lg font-semibold">Nenhum lembrete encontrado</p>
-                  <p className="text-muted-foreground">Tente criar um novo lembrete ou mudar de aba.</p>
+                  <p className="text-lg font-semibold">Nenhuma portabilidade encontrada</p>
+                  <p className="text-muted-foreground">Tente criar uma nova portabilidade ou mudar de aba.</p>
                 </div>
               )}
 
               <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogContent className="sm:max-w-[425px]" onInteractOutside={(e) => e.preventDefault()} onCloseAutoFocus={handleCloseDialog}>
                   <DialogHeader>
-                    <DialogTitle>{editingReminder ? 'Editar Lembrete' : 'Novo Lembrete'}</DialogTitle>
+                    <DialogTitle>{editingPortability ? 'Editar Lembrete' : 'Novo Lembrete'}</DialogTitle>
                   </DialogHeader>
                   <div className="grid gap-4 py-4">
                     <div className="space-y-2">
@@ -490,10 +513,29 @@ const Portability = () => {
                   </div>
                   <DialogFooter>
                     <Button variant="ghost" onClick={handleCloseDialog}>Cancelar</Button>
-                    <Button onClick={handleSaveReminder}>Salvar</Button>
+                    <Button onClick={handleSavePortability}>Salvar</Button>
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
+
+              {/* Dialog de confirmação com senha administrativa */}
+              <AdminPasswordDialog
+                open={showAdminPasswordDialog}
+                onOpenChange={(open) => {
+                  setShowAdminPasswordDialog(open);
+                  if (!open) {
+                    setPortabilityToDelete(null);
+                  }
+                }}
+                onConfirm={() => {
+                  if (portabilityToDelete) {
+                    confirmDeletePortability(portabilityToDelete);
+                  }
+                }}
+                title="Confirmar Exclusão de Portabilidade"
+                description="Esta ação é irreversível. Digite sua senha administrativa para confirmar a exclusão."
+                itemName={portabilityToDelete ? portabilities.find(p => p.id === portabilityToDelete)?.title : undefined}
+              />
             </div>
           </main>
         </div>

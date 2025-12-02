@@ -21,6 +21,8 @@ import { formatLeadDate } from "@/utils/dateUtils";
 import CommissionConfigSelector from "@/components/forms/CommissionConfigSelector";
 import { CommissionCalculationResult } from "@/hooks/useCommissionConfig";
 import { getEmployees, Employee } from "@/utils/employees";
+import { AdminPasswordDialog } from "@/components/AdminPasswordDialog";
+import { hasAdminPassword } from "@/utils/adminPassword";
 
 interface LeadTag {
   tag_id: string;
@@ -106,9 +108,14 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete, isSelecte
   const [isStatusChangeConfirmOpen, setIsStatusChangeConfirmOpen] = useState(false);
   const [pendingNewStatus, setPendingNewStatus] = useState<string | null>(null);
   const [hasCommission, setHasCommission] = useState(false);
+  const [showAdminPasswordDialog, setShowAdminPasswordDialog] = useState(false);
+  const [pendingAction, setPendingAction] = useState<'delete' | 'edit' | null>(null);
+  const [hasAdminPwd, setHasAdminPwd] = useState(false);
 
   useEffect(() => {
     getEmployees().then(setEmployeeList);
+    // Verificar se tem senha administrativa configurada
+    hasAdminPassword().then(setHasAdminPwd);
   }, []);
 
   // Verificar se o lead tem comissão gerada
@@ -268,6 +275,18 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete, isSelecte
   };
 
   const handleDeleteLead = async () => {
+    // Se tiver senha administrativa configurada, pedir confirmação
+    if (hasAdminPwd) {
+      setPendingAction('delete');
+      setShowAdminPasswordDialog(true);
+      return;
+    }
+    
+    // Se não tiver senha configurada, deletar diretamente
+    confirmDeleteLead();
+  };
+
+  const confirmDeleteLead = async () => {
     try {
       const { data: userData, error: userError } = await supabase.auth.getUser();
       if (userError) throw userError;
@@ -329,8 +348,10 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete, isSelecte
       onDelete(lead.id);
       toast.success("Lead movido para a lixeira com sucesso!");
       setIsDeleteDialogOpen(false);
+      setPendingAction(null);
     } catch (error: any) {
       console.error("Error moving lead to trash:", error);
+      setPendingAction(null);
       toast.error(`Erro ao mover lead para lixeira: ${error.message}`);
     }
   };
@@ -747,7 +768,15 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete, isSelecte
                       </DropdownMenuItem>
                     </>
                   )}
-                  <DropdownMenuItem onClick={() => setIsEditDialogOpen(true)}>
+                  <DropdownMenuItem onClick={async () => {
+                    // Se o lead estiver concluído e tiver senha configurada, pedir senha
+                    if (lead.status === 'concluido' && hasAdminPwd) {
+                      setPendingAction('edit');
+                      setShowAdminPasswordDialog(true);
+                    } else {
+                      setIsEditDialogOpen(true);
+                    }
+                  }}>
                     <Edit className="mr-2 h-4 w-4" />
                     Editar
                   </DropdownMenuItem>
@@ -1042,6 +1071,32 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete, isSelecte
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Dialog de confirmação com senha administrativa */}
+      <AdminPasswordDialog
+        open={showAdminPasswordDialog}
+        onOpenChange={(open) => {
+          setShowAdminPasswordDialog(open);
+          if (!open) {
+            setPendingAction(null);
+          }
+        }}
+        onConfirm={() => {
+          if (pendingAction === 'delete') {
+            confirmDeleteLead();
+          } else if (pendingAction === 'edit') {
+            setIsEditDialogOpen(true);
+            setPendingAction(null);
+          }
+        }}
+        title={pendingAction === 'delete' ? "Confirmar Exclusão de Lead" : "Confirmar Edição de Lead Concluído"}
+        description={
+          pendingAction === 'delete' 
+            ? "Esta ação é irreversível. Digite sua senha administrativa para confirmar a exclusão."
+            : "Este lead está marcado como concluído. Digite sua senha administrativa para editá-lo."
+        }
+        itemName={lead.name}
+      />
     </>
   );
 };

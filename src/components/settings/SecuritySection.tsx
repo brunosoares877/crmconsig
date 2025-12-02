@@ -1,6 +1,7 @@
 
 import React from "react";
 import { PasswordSection } from "./PasswordSection";
+import { AdminPasswordSection } from "./AdminPasswordSection";
 
 export default function SecuritySection() {
   return (
@@ -13,6 +14,8 @@ export default function SecuritySection() {
       </div>
       
       <PasswordSection />
+      
+      <AdminPasswordSection />
     </div>
   );
 }
