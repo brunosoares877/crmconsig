@@ -39,6 +39,7 @@ const Reminders = lazy(() => import("@/pages/Reminders"));
 const RemindersCalendar = lazy(() => import("@/pages/RemindersCalendar"));
 const Commission = lazy(() => import("@/pages/Commission"));
 const CommissionSettings = lazy(() => import("@/pages/CommissionSettings"));
+const Notes = lazy(() => import("@/pages/Notes"));
 const Settings = lazy(() => import("@/pages/Settings"));
 const Employees = lazy(() => import("@/pages/Employees"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
@@ -93,6 +94,7 @@ function App() {
                   <Route path="/curso-trafego-pago" element={<CursoTrafegoPago />} />
                   <Route path="/commission" element={<Commission />} />
                   <Route path="/commission/settings" element={<CommissionSettings />} />
+                  <Route path="/notes" element={<Notes />} />
                   <Route path="/settings" element={<Settings />} />
                   <Route path="/employees" element={<Employees />} />
                   <Route path="*" element={<NotFound />} />
