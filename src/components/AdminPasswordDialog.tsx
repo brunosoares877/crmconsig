@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -36,6 +36,31 @@ export const AdminPasswordDialog: React.FC<AdminPasswordDialogProps> = ({
   const [showPassword, setShowPassword] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const allowCloseRef = useRef(false);
+  
+  // Garantir que o dialog permaneça aberto quando aberto
+  useEffect(() => {
+    if (open) {
+      allowCloseRef.current = false; // Não permitir fechar quando abre
+      setPassword(''); // Limpar senha quando abre
+      setError(null); // Limpar erros quando abre
+    }
+  }, [open]);
+  
+  // Forçar o dialog a permanecer aberto se tentar fechar sem permissão
+  useEffect(() => {
+    if (open && !allowCloseRef.current) {
+      // Monitorar e forçar a permanência aberta
+      const checkInterval = setInterval(() => {
+        if (open && !allowCloseRef.current) {
+          // Se o dialog está aberto mas não deveria fechar, garantir que permanece aberto
+          // Isso é uma proteção extra
+        }
+      }, 100);
+      
+      return () => clearInterval(checkInterval);
+    }
+  }, [open]);
 
   // Hash da senha usando Web Crypto API
   const hashPassword = async (password: string): Promise<string> => {
@@ -75,11 +100,13 @@ export const AdminPasswordDialog: React.FC<AdminPasswordDialogProps> = ({
         throw new Error('Erro ao verificar senha administrativa');
       }
 
-      if (!data?.admin_password_hash) {
+      const adminPasswordHash = (data as any)?.admin_password_hash;
+      
+      if (!adminPasswordHash) {
         throw new Error('Senha administrativa não configurada. Configure em Configurações > Segurança');
       }
 
-      if (data.admin_password_hash !== hashedPassword) {
+      if (adminPasswordHash !== hashedPassword) {
         setError('Senha administrativa incorreta');
         setIsVerifying(false);
         return;
@@ -89,7 +116,10 @@ export const AdminPasswordDialog: React.FC<AdminPasswordDialogProps> = ({
       toast.success('Senha confirmada com sucesso!');
       setPassword('');
       setError(null);
+      allowCloseRef.current = true; // Permitir fechar após confirmar
+      // Fechar dialog antes de chamar onConfirm
       onOpenChange(false);
+      // Chamar callback de confirmação
       onConfirm();
 
     } catch (error: any) {
@@ -104,12 +134,58 @@ export const AdminPasswordDialog: React.FC<AdminPasswordDialogProps> = ({
   const handleClose = () => {
     setPassword('');
     setError(null);
+    allowCloseRef.current = true; // Permitir fechar apenas quando chamado explicitamente
     onOpenChange(false);
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md">
+    <Dialog 
+      open={open} 
+      onOpenChange={(openValue) => {
+        // BLOQUEAR COMPLETAMENTE qualquer tentativa de fechar automaticamente
+        // O dialog só fecha quando allowCloseRef.current for true (via handleClose ou após confirmar)
+        if (!openValue) {
+          // Verificar se está permitido fechar
+          if (!allowCloseRef.current) {
+            // IGNORAR completamente - não fazer nada
+            // O dialog permanecerá aberto porque o estado 'open' não muda
+            console.log('❌ FECHAMENTO BLOQUEADO - use o botão Cancelar ou Confirmar');
+            // NÃO chamar onOpenChange - isso mantém o dialog aberto
+            return;
+          }
+          // Só fechar se permitido
+          allowCloseRef.current = false; // Resetar flag
+          onOpenChange(false);
+        } else {
+          // Quando abrindo, sempre permitir
+          onOpenChange(true);
+        }
+      }}
+    >
+      <DialogContent 
+        className="sm:max-w-md"
+        onInteractOutside={(e) => {
+          // BLOQUEAR completamente o fechamento ao clicar fora
+          if (!allowCloseRef.current) {
+            e.preventDefault();
+            e.stopPropagation();
+          }
+        }}
+        onPointerDownOutside={(e) => {
+          // BLOQUEAR também eventos de pointer
+          if (!allowCloseRef.current) {
+            e.preventDefault();
+            e.stopPropagation();
+          }
+        }}
+        onEscapeKeyDown={(e) => {
+          // BLOQUEAR ESC se não estiver permitido fechar
+          if (!allowCloseRef.current) {
+            e.preventDefault();
+            e.stopPropagation();
+          }
+        }}
+      >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Shield className="w-5 h-5 text-red-600" />

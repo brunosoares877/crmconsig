@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Paperclip, X, File, FileText, Image, Eye } from "lucide-react";
+import { Paperclip, X, File, FileText, Image, Loader2, Eye } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
@@ -11,6 +11,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { hasAdminPassword } from "@/utils/adminPassword";
+import { AdminPasswordDialog } from "@/components/AdminPasswordDialog";
 
 interface DocumentUploadProps {
   leadId: string;
@@ -29,6 +31,11 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ leadId }) => {
   const [isUploading, setIsUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [isDocumentsDialogOpen, setIsDocumentsDialogOpen] = useState(false);
+  const [showAdminPasswordDialog, setShowAdminPasswordDialog] = useState(false);
+  const [documentToDelete, setDocumentToDelete] = useState<Document | null>(null);
+  const [hasAdminPwd, setHasAdminPwd] = useState(false);
+  const [imageUrls, setImageUrls] = useState<Record<string, string>>({});
+  const [loadingImages, setLoadingImages] = useState<Record<string, boolean>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const fetchDocuments = async () => {
@@ -51,11 +58,13 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ leadId }) => {
     if (leadId) {
       fetchDocuments();
     }
+    hasAdminPassword().then(setHasAdminPwd);
   }, [leadId]);
 
+
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
     
     setIsUploading(true);
     setProgress(0);
@@ -65,33 +74,59 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ leadId }) => {
       if (!userData.user) throw new Error("Usuário não autenticado");
       
       const userId = userData.user.id;
-      const filePath = `${userId}/${leadId}/${Date.now()}_${file.name}`;
+      const totalFiles = files.length;
+      let successCount = 0;
+      let errorCount = 0;
       
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from("lead-documents")
-        .upload(filePath, file, {
-          cacheControl: "3600",
-          upsert: false
-        });
+      // Processar todos os arquivos
+      for (let i = 0; i < totalFiles; i++) {
+        const file = files[i];
+        const fileProgress = Math.round(((i + 1) / totalFiles) * 100);
+        setProgress(fileProgress);
         
-      if (uploadError) throw uploadError;
+        try {
+          const filePath = `${userId}/${leadId}/${Date.now()}_${i}_${file.name}`;
+          
+          const { error: uploadError } = await supabase.storage
+            .from("lead-documents")
+            .upload(filePath, file, {
+              cacheControl: "3600",
+              upsert: false
+            });
+            
+          if (uploadError) throw uploadError;
+          
+          const { error: dbError } = await supabase.from("documents").insert({
+            lead_id: leadId,
+            user_id: userId,
+            file_name: file.name,
+            file_path: filePath,
+            file_type: file.type,
+          });
+          
+          if (dbError) throw dbError;
+          
+          successCount++;
+        } catch (fileError: any) {
+          console.error(`Error uploading file ${file.name}:`, fileError);
+          errorCount++;
+        }
+      }
       
-      const { error: dbError } = await supabase.from("documents").insert({
-        lead_id: leadId,
-        user_id: userId,
-        file_name: file.name,
-        file_path: filePath,
-        file_type: file.type,
-      });
+      // Mostrar mensagem de sucesso/erro
+      if (successCount > 0 && errorCount === 0) {
+        toast.success(`${successCount} ${successCount === 1 ? 'documento enviado' : 'documentos enviados'} com sucesso!`);
+      } else if (successCount > 0 && errorCount > 0) {
+        toast.warning(`${successCount} ${successCount === 1 ? 'documento enviado' : 'documentos enviados'}, ${errorCount} ${errorCount === 1 ? 'erro' : 'erros'}`);
+      } else {
+        toast.error(`Erro ao enviar ${totalFiles === 1 ? 'documento' : 'documentos'}`);
+      }
       
-      if (dbError) throw dbError;
-      
-      toast.success("Documento enviado com sucesso!");
       await fetchDocuments();
       setProgress(100);
     } catch (error: any) {
-      console.error("Error uploading document:", error);
-      toast.error(`Erro ao enviar documento: ${error.message}`);
+      console.error("Error uploading documents:", error);
+      toast.error(`Erro ao enviar documentos: ${error.message}`);
     } finally {
       setIsUploading(false);
       setTimeout(() => setProgress(0), 1000);
@@ -99,36 +134,90 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ leadId }) => {
     }
   };
 
-  const handleDelete = async (document: Document) => {
+  const handleDeleteClick = (document: Document, e?: React.MouseEvent) => {
+    // Prevenir propagação de eventos
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    
+    // Se tiver senha administrativa configurada, pedir confirmação
+    if (hasAdminPwd) {
+      setDocumentToDelete(document);
+      setShowAdminPasswordDialog(true);
+      return;
+    }
+    
+    // Se não tiver senha configurada, deletar diretamente
+    executeDelete(document);
+  };
+
+  const confirmDeleteDocument = async () => {
+    const docToDelete = documentToDelete;
+    if (docToDelete) {
+      await executeDelete(docToDelete);
+      setDocumentToDelete(null);
+    }
+  };
+
+  const executeDelete = async (document: Document) => {
     try {
+      if (!document || !document.id || !document.file_path) {
+        throw new Error('Dados do documento inválidos');
+      }
+
       const { error: storageError } = await supabase.storage
         .from("lead-documents")
         .remove([document.file_path]);
         
-      if (storageError) throw storageError;
+      if (storageError) {
+        console.error('Erro ao remover do storage:', storageError);
+        throw storageError;
+      }
       
       const { error: dbError } = await supabase
         .from("documents")
         .delete()
         .eq("id", document.id);
-        
-      if (dbError) throw dbError;
+      
+      if (dbError) {
+        console.error('Erro ao deletar do banco:', dbError);
+        throw dbError;
+      }
+      
+      // Atualizar lista de documentos
+      setDocuments(prevDocs => prevDocs.filter(doc => doc.id !== document.id));
+      
+      // Remover URL da imagem se existir
+      if (imageUrls[document.id]) {
+        setImageUrls(prevUrls => {
+          const newUrls = { ...prevUrls };
+          delete newUrls[document.id];
+          return newUrls;
+        });
+      }
       
       toast.success("Documento excluído com sucesso!");
-      setDocuments(documents.filter(doc => doc.id !== document.id));
+      
+      // Recarregar documentos para garantir sincronização
+      await fetchDocuments();
+      
     } catch (error: any) {
       console.error("Error deleting document:", error);
-      toast.error(`Erro ao excluir documento: ${error.message}`);
+      const errorMessage = error?.message || 'Erro desconhecido ao excluir documento';
+      toast.error(`Erro ao excluir documento: ${errorMessage}`);
+      throw error; // Re-throw para que o chamador possa tratar
     }
   };
 
-  const getDocumentIcon = (type: string) => {
+  const getDocumentIcon = (type: string, size: "small" | "large" = "small") => {
+    const sizeClass = size === "large" ? "h-16 w-16" : "h-5 w-5";
     if (type.startsWith("image/")) {
-      return <Image className="h-5 w-5 text-blue-500" />;
+      return <Image className={`${sizeClass} text-blue-500`} />;
     } else if (type.includes("pdf")) {
-      return <FileText className="h-5 w-5 text-red-500" />;
+      return <FileText className={`${sizeClass} text-red-500`} />;
     } else {
-      return <File className="h-5 w-5 text-gray-500" />;
+      return <File className={`${sizeClass} text-gray-500`} />;
     }
   };
 
@@ -139,6 +228,38 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ leadId }) => {
       
     return data?.signedUrl;
   };
+
+  // Carregar URLs das imagens para preview
+  useEffect(() => {
+    const loadImageUrls = async () => {
+      const imageDocs = documents.filter(doc => doc.file_type.startsWith("image/"));
+      if (imageDocs.length === 0) return;
+
+      const urls: Record<string, string> = {};
+      const loading: Record<string, boolean> = {};
+
+      for (const doc of imageDocs) {
+        loading[doc.id] = true;
+        setLoadingImages(prev => ({ ...prev, [doc.id]: true }));
+        try {
+          const url = await getFileUrl(doc.file_path);
+          if (url) {
+            urls[doc.id] = url;
+          }
+        } catch (error) {
+          console.error(`Error loading image for ${doc.id}:`, error);
+        }
+        loading[doc.id] = false;
+        setLoadingImages(prev => ({ ...prev, [doc.id]: false }));
+      }
+
+      setImageUrls(prev => ({ ...prev, ...urls }));
+    };
+
+    if (documents.length > 0) {
+      loadImageUrls();
+    }
+  }, [documents]);
 
   const handleDocumentClick = async (document: Document) => {
     try {
@@ -178,6 +299,7 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ leadId }) => {
             onChange={handleFileChange}
             disabled={isUploading}
             accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.xls,.xlsx"
+            multiple
           />
           <Button
             variant="outline"
@@ -188,13 +310,18 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ leadId }) => {
             onClick={() => fileInputRef.current?.click()}
           >
             <Paperclip className="mr-2 h-4 w-4" />
-            {isUploading ? `Enviando... ${progress}%` : "Anexar documento"}
+            {isUploading ? `Enviando... ${progress}%` : "Anexar documentos"}
           </Button>
         </div>
       </div>
 
-      <Dialog open={isDocumentsDialogOpen} onOpenChange={setIsDocumentsDialogOpen}>
-        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+      <Dialog 
+        open={isDocumentsDialogOpen} 
+        onOpenChange={setIsDocumentsDialogOpen}
+      >
+        <DialogContent 
+          className="sm:max-w-4xl max-h-[90vh] overflow-y-auto"
+        >
           <DialogHeader>
             <DialogTitle>Documentos Anexados</DialogTitle>
             <DialogDescription>
@@ -202,41 +329,105 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ leadId }) => {
             </DialogDescription>
           </DialogHeader>
 
+
           <div className="space-y-4 mt-4">
             {documents.length > 0 ? (
-              <div className="space-y-2">
-                {documents.map((document) => (
-                  <div 
-                    key={document.id} 
-                    className="flex items-center justify-between p-3 bg-gray-50 rounded-md hover:bg-gray-100 border border-gray-200"
-                  >
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {documents.map((document) => {
+                  const isImage = document.file_type.startsWith("image/");
+                  const imageUrl = imageUrls[document.id];
+                  const isLoading = loadingImages[document.id];
+
+                  return (
                     <div 
-                      className="flex items-center flex-1 cursor-pointer"
-                      onClick={() => handleDocumentClick(document)}
-                    >
-                      {getDocumentIcon(document.file_type)}
-                      <span className="ml-3 text-sm font-medium truncate">
-                        {document.file_name}
-                      </span>
-                      <span className="ml-2 text-xs text-gray-500">
-                        ({new Date(document.created_at).toLocaleDateString('pt-BR')})
-                      </span>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
-                      onClick={() => {
-                        handleDelete(document);
-                        if (documents.length === 1) {
-                          setIsDocumentsDialogOpen(false);
+                      key={document.id} 
+                      className="relative group bg-gray-50 rounded-lg border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all overflow-hidden"
+                      onClick={(e) => {
+                        // Prevenir clique no card se estiver clicando no botão de deletar
+                        const target = e.target as HTMLElement;
+                        const button = target.closest('button');
+                        if (button && button.type === 'button' && button.classList.contains('bg-red-500')) {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          return;
                         }
                       }}
                     >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
+                      {/* Preview de imagem ou ícone */}
+                      <div 
+                        className="w-full aspect-square bg-white flex items-center justify-center cursor-pointer overflow-hidden"
+                        onClick={() => handleDocumentClick(document)}
+                      >
+                        {isImage ? (
+                          isLoading ? (
+                            <Loader2 className="h-12 w-12 text-gray-400 animate-spin" />
+                          ) : imageUrl ? (
+                            <img 
+                              src={imageUrl} 
+                              alt={document.file_name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <Image className="h-12 w-12 text-gray-400" />
+                          )
+                        ) : (
+                          <div className="flex flex-col items-center justify-center p-4 h-full">
+                            {getDocumentIcon(document.file_type, "large")}
+                            <span className="mt-3 text-xs text-gray-600 text-center px-2 line-clamp-2 font-medium">
+                              {document.file_name}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Overlay com informações e botão de deletar */}
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
+                        <div className="flex flex-col items-center gap-2">
+                          <span className="text-white text-xs font-medium text-center px-2 line-clamp-2">
+                            {document.file_name}
+                          </span>
+                          <span className="text-white/80 text-xs">
+                            {new Date(document.created_at).toLocaleDateString('pt-BR')}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Botão de deletar */}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        type="button"
+                        className="absolute top-2 right-2 h-8 w-8 p-0 bg-red-500/90 hover:bg-red-600 text-white opacity-0 group-hover:opacity-100 transition-opacity z-50"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          try {
+                            if (e.nativeEvent && typeof (e.nativeEvent as any).stopImmediatePropagation === 'function') {
+                              (e.nativeEvent as any).stopImmediatePropagation();
+                            }
+                          } catch (err) {
+                            // Ignorar
+                          }
+                          handleDeleteClick(document, e);
+                        }}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                        }}
+                        onPointerDown={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                        }}
+                        onTouchStart={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                        }}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  );
+                })}
               </div>
             ) : (
               <div className="text-center py-8">
@@ -249,6 +440,27 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ leadId }) => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Dialog de confirmação com senha administrativa - EXATAMENTE como no NotesBlock */}
+      {hasAdminPwd && (
+        <AdminPasswordDialog
+          open={showAdminPasswordDialog}
+          onOpenChange={(open) => {
+            setShowAdminPasswordDialog(open);
+            if (!open) {
+              setDocumentToDelete(null);
+            }
+          }}
+          onConfirm={() => {
+            if (documentToDelete) {
+              confirmDeleteDocument();
+            }
+          }}
+          title="Confirmar Exclusão de Documento"
+          description="Esta ação é irreversível. Digite sua senha administrativa para confirmar a exclusão."
+          itemName={documentToDelete?.file_name}
+        />
+      )}
     </>
   );
 };
