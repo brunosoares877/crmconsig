@@ -183,10 +183,10 @@ const Employees = () => {
     }
     
     // Se não tiver senha configurada, deletar diretamente
-    confirmDeleteEmployee();
+    executeDeleteEmployee();
   };
 
-  const confirmDeleteEmployee = async () => {
+  const executeDeleteEmployee = async () => {
     if (!employeeToDelete) return;
 
     try {
@@ -487,7 +487,7 @@ const Employees = () => {
       <AdminPasswordDialog
         open={showAdminPasswordDialog}
         onOpenChange={setShowAdminPasswordDialog}
-        onConfirm={confirmDeleteEmployee}
+        onConfirm={executeDeleteEmployee}
         title="Confirmar Exclusão de Funcionário"
         description="Esta ação é irreversível. Digite sua senha administrativa para confirmar a exclusão."
         itemName={employeeToDelete?.name}
