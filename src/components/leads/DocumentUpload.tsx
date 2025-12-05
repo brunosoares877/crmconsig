@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useLayoutEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Paperclip, X, File, FileText, Image, Loader2, Eye } from "lucide-react";
@@ -60,6 +60,14 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ leadId }) => {
     }
     hasAdminPassword().then(setHasAdminPwd);
   }, [leadId]);
+
+  // Garantir que o dialog principal permaneça aberto quando o dialog de senha estiver aberto
+  useLayoutEffect(() => {
+    if (showAdminPasswordDialog && !isDocumentsDialogOpen) {
+      // Se o dialog de senha está aberto mas o dialog principal está fechado, reabrir o principal
+      setIsDocumentsDialogOpen(true);
+    }
+  }, [showAdminPasswordDialog, isDocumentsDialogOpen]);
 
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -135,16 +143,27 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ leadId }) => {
   };
 
   const handleDeleteClick = (document: Document, e?: React.MouseEvent) => {
-    // Prevenir propagação de eventos
+    // Prevenir propagação de eventos de forma agressiva
     if (e) {
       e.preventDefault();
       e.stopPropagation();
+      // Prevenir propagação imediata também
+      if (e.nativeEvent) {
+        try {
+          (e.nativeEvent as any).stopImmediatePropagation();
+        } catch (err) {
+          // Ignorar se não suportado
+        }
+      }
     }
     
     // Se tiver senha administrativa configurada, pedir confirmação
     if (hasAdminPwd) {
-      setDocumentToDelete(document);
-      setShowAdminPasswordDialog(true);
+      // Usar setTimeout para garantir que o estado seja atualizado após o evento ser processado
+      setTimeout(() => {
+        setDocumentToDelete(document);
+        setShowAdminPasswordDialog(true);
+      }, 0);
       return;
     }
     
@@ -477,11 +496,8 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ leadId }) => {
           }}
           onConfirm={async () => {
             if (documentToDelete) {
-              // Fechar o dialog de senha primeiro
-              setShowAdminPasswordDialog(false);
-              // Aguardar um pouco para garantir que o estado foi atualizado
-              await new Promise(resolve => setTimeout(resolve, 100));
-              // Executar a exclusão
+              // Executar a exclusão diretamente
+              // O AdminPasswordDialog já fecha o dialog antes de chamar onConfirm
               await confirmDeleteDocument();
             }
           }}

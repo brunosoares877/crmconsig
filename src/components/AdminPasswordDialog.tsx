@@ -149,7 +149,6 @@ export const AdminPasswordDialog: React.FC<AdminPasswordDialogProps> = ({
           if (!allowCloseRef.current) {
             // IGNORAR completamente - não fazer nada
             // O dialog permanecerá aberto porque o estado 'open' não muda
-            console.log('❌ FECHAMENTO BLOQUEADO - use o botão Cancelar ou Confirmar');
             // NÃO chamar onOpenChange - isso mantém o dialog aberto
             return;
           }
@@ -157,7 +156,8 @@ export const AdminPasswordDialog: React.FC<AdminPasswordDialogProps> = ({
           allowCloseRef.current = false; // Resetar flag
           onOpenChange(false);
         } else {
-          // Quando abrindo, sempre permitir
+          // Quando abrindo, sempre permitir e resetar flag
+          allowCloseRef.current = false;
           onOpenChange(true);
         }
       }}
