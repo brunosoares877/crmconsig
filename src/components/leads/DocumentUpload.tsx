@@ -473,13 +473,15 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ leadId }) => {
         </DialogContent>
       </Dialog>
 
-      {/* Dialog de confirmação com senha administrativa */}
-      {hasAdminPwd && (
+      {/* Dialog de confirmação com senha administrativa - Renderizado FORA do dialog principal */}
+      {hasAdminPwd && showAdminPasswordDialog && (
         <AdminPasswordDialog
           open={showAdminPasswordDialog}
           onOpenChange={(open) => {
-            setShowAdminPasswordDialog(open);
+            // Só permitir fechar se o usuário explicitamente cancelar ou confirmar
+            // O AdminPasswordDialog já controla isso internamente
             if (!open) {
+              setShowAdminPasswordDialog(false);
               setDocumentToDelete(null);
             }
           }}
@@ -488,6 +490,7 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ leadId }) => {
               // Executar a exclusão diretamente
               // O AdminPasswordDialog já fecha o dialog antes de chamar onConfirm
               await confirmDeleteDocument();
+              setShowAdminPasswordDialog(false);
             }
           }}
           title="Confirmar Exclusão de Documento"
