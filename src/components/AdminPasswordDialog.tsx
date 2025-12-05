@@ -163,7 +163,7 @@ export const AdminPasswordDialog: React.FC<AdminPasswordDialogProps> = ({
       }}
     >
       <DialogContent 
-        className="sm:max-w-md"
+        className="sm:max-w-md z-[100]"
         onInteractOutside={(e) => {
           // BLOQUEAR completamente o fechamento ao clicar fora
           if (!allowCloseRef.current) {

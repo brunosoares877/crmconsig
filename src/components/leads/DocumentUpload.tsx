@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useLayoutEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Paperclip, X, File, FileText, Image, Loader2, Eye } from "lucide-react";
@@ -60,6 +60,14 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ leadId }) => {
     }
     hasAdminPassword().then(setHasAdminPwd);
   }, [leadId]);
+
+  // Garantir que o dialog principal permaneça aberto quando o dialog de senha estiver aberto
+  useLayoutEffect(() => {
+    if (showAdminPasswordDialog && !isDocumentsDialogOpen) {
+      // Se o dialog de senha está aberto mas o dialog principal está fechado, reabrir o principal
+      setIsDocumentsDialogOpen(true);
+    }
+  }, [showAdminPasswordDialog, isDocumentsDialogOpen]);
 
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -135,10 +143,18 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ leadId }) => {
   };
 
   const handleDeleteClick = (document: Document, e?: React.MouseEvent) => {
-    // Prevenir propagação de eventos
+    // Prevenir propagação de eventos de forma agressiva
     if (e) {
       e.preventDefault();
       e.stopPropagation();
+      // Prevenir propagação imediata também
+      if (e.nativeEvent) {
+        try {
+          (e.nativeEvent as any).stopImmediatePropagation();
+        } catch (err) {
+          // Ignorar se não suportado
+        }
+      }
     }
     
     // Se tiver senha administrativa configurada, pedir confirmação
@@ -317,10 +333,34 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ leadId }) => {
 
       <Dialog 
         open={isDocumentsDialogOpen} 
-        onOpenChange={setIsDocumentsDialogOpen}
+        onOpenChange={(open) => {
+          // NÃO permitir fechar o dialog principal se o dialog de senha estiver aberto
+          if (!open && showAdminPasswordDialog) {
+            return; // Ignorar tentativa de fechar
+          }
+          setIsDocumentsDialogOpen(open);
+        }}
       >
         <DialogContent 
           className="sm:max-w-4xl max-h-[90vh] overflow-y-auto"
+          onInteractOutside={(e) => {
+            // Prevenir fechamento ao clicar fora se o dialog de senha estiver aberto
+            if (showAdminPasswordDialog) {
+              e.preventDefault();
+            }
+          }}
+          onPointerDownOutside={(e) => {
+            // Prevenir fechamento ao clicar fora se o dialog de senha estiver aberto
+            if (showAdminPasswordDialog) {
+              e.preventDefault();
+            }
+          }}
+          onEscapeKeyDown={(e) => {
+            // Prevenir fechamento com ESC se o dialog de senha estiver aberto
+            if (showAdminPasswordDialog) {
+              e.preventDefault();
+            }
+          }}
         >
           <DialogHeader>
             <DialogTitle>Documentos Anexados</DialogTitle>
@@ -451,9 +491,14 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ leadId }) => {
               setDocumentToDelete(null);
             }
           }}
-          onConfirm={() => {
+          onConfirm={async () => {
             if (documentToDelete) {
-              confirmDeleteDocument();
+              // Fechar o dialog de senha primeiro
+              setShowAdminPasswordDialog(false);
+              // Aguardar um pouco para garantir que o estado foi atualizado
+              await new Promise(resolve => setTimeout(resolve, 100));
+              // Executar a exclusão
+              await confirmDeleteDocument();
             }
           }}
           title="Confirmar Exclusão de Documento"
