@@ -143,27 +143,16 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ leadId }) => {
   };
 
   const handleDeleteClick = (document: Document, e?: React.MouseEvent) => {
-    // Prevenir propagação de eventos de forma agressiva
+    // Prevenir propagação de eventos
     if (e) {
       e.preventDefault();
       e.stopPropagation();
-      // Prevenir propagação imediata também
-      if (e.nativeEvent) {
-        try {
-          (e.nativeEvent as any).stopImmediatePropagation();
-        } catch (err) {
-          // Ignorar se não suportado
-        }
-      }
     }
     
     // Se tiver senha administrativa configurada, pedir confirmação
     if (hasAdminPwd) {
-      // Usar setTimeout para garantir que o estado seja atualizado após o evento ser processado
-      setTimeout(() => {
-        setDocumentToDelete(document);
-        setShowAdminPasswordDialog(true);
-      }, 0);
+      setDocumentToDelete(document);
+      setShowAdminPasswordDialog(true);
       return;
     }
     

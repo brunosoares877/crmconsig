@@ -41,9 +41,15 @@ export const AdminPasswordDialog: React.FC<AdminPasswordDialogProps> = ({
   // Garantir que o dialog permaneça aberto quando aberto
   useEffect(() => {
     if (open) {
-      allowCloseRef.current = false; // Não permitir fechar quando abre
+      // Resetar flag imediatamente quando abre
+      allowCloseRef.current = false;
       setPassword(''); // Limpar senha quando abre
       setError(null); // Limpar erros quando abre
+      
+      // Forçar o dialog a permanecer aberto usando requestAnimationFrame
+      requestAnimationFrame(() => {
+        allowCloseRef.current = false;
+      });
     }
   }, [open]);
   
@@ -138,29 +144,31 @@ export const AdminPasswordDialog: React.FC<AdminPasswordDialogProps> = ({
     onOpenChange(false);
   };
 
+  const handleOpenChange = (openValue: boolean) => {
+    // BLOQUEAR COMPLETAMENTE qualquer tentativa de fechar automaticamente
+    // O dialog só fecha quando allowCloseRef.current for true (via handleClose ou após confirmar)
+    if (!openValue) {
+      // Verificar se está permitido fechar
+      if (!allowCloseRef.current) {
+        // IGNORAR completamente - não fazer nada
+        // O dialog permanecerá aberto porque o estado 'open' não muda
+        // NÃO chamar onOpenChange - isso mantém o dialog aberto
+        return;
+      }
+      // Só fechar se permitido
+      allowCloseRef.current = false; // Resetar flag
+      onOpenChange(false);
+    } else {
+      // Quando abrindo, sempre permitir e resetar flag
+      allowCloseRef.current = false;
+      onOpenChange(true);
+    }
+  };
+
   return (
     <Dialog 
       open={open} 
-      onOpenChange={(openValue) => {
-        // BLOQUEAR COMPLETAMENTE qualquer tentativa de fechar automaticamente
-        // O dialog só fecha quando allowCloseRef.current for true (via handleClose ou após confirmar)
-        if (!openValue) {
-          // Verificar se está permitido fechar
-          if (!allowCloseRef.current) {
-            // IGNORAR completamente - não fazer nada
-            // O dialog permanecerá aberto porque o estado 'open' não muda
-            // NÃO chamar onOpenChange - isso mantém o dialog aberto
-            return;
-          }
-          // Só fechar se permitido
-          allowCloseRef.current = false; // Resetar flag
-          onOpenChange(false);
-        } else {
-          // Quando abrindo, sempre permitir e resetar flag
-          allowCloseRef.current = false;
-          onOpenChange(true);
-        }
-      }}
+      onOpenChange={handleOpenChange}
     >
       <DialogContent 
         className="sm:max-w-md z-[100]"
@@ -169,6 +177,13 @@ export const AdminPasswordDialog: React.FC<AdminPasswordDialogProps> = ({
           if (!allowCloseRef.current) {
             e.preventDefault();
             e.stopPropagation();
+            try {
+              if ((e as any).nativeEvent?.stopImmediatePropagation) {
+                (e as any).nativeEvent.stopImmediatePropagation();
+              }
+            } catch (err) {
+              // Ignorar
+            }
           }
         }}
         onPointerDownOutside={(e) => {
@@ -176,6 +191,13 @@ export const AdminPasswordDialog: React.FC<AdminPasswordDialogProps> = ({
           if (!allowCloseRef.current) {
             e.preventDefault();
             e.stopPropagation();
+            try {
+              if ((e as any).nativeEvent?.stopImmediatePropagation) {
+                (e as any).nativeEvent.stopImmediatePropagation();
+              }
+            } catch (err) {
+              // Ignorar
+            }
           }
         }}
         onEscapeKeyDown={(e) => {
@@ -183,7 +205,18 @@ export const AdminPasswordDialog: React.FC<AdminPasswordDialogProps> = ({
           if (!allowCloseRef.current) {
             e.preventDefault();
             e.stopPropagation();
+            try {
+              if ((e as any).nativeEvent?.stopImmediatePropagation) {
+                (e as any).nativeEvent.stopImmediatePropagation();
+              }
+            } catch (err) {
+              // Ignorar
+            }
           }
+        }}
+        onOpenAutoFocus={(e) => {
+          // Prevenir que o foco cause problemas
+          e.preventDefault();
         }}
       >
         <DialogHeader>
