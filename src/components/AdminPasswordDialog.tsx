@@ -36,35 +36,23 @@ export const AdminPasswordDialog: React.FC<AdminPasswordDialogProps> = ({
   const [showPassword, setShowPassword] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const allowCloseRef = useRef(false);
   
-  // Garantir que o dialog permaneça aberto quando aberto
+  // Estado interno controlado - força o dialog a permanecer aberto
+  const [internalOpen, setInternalOpen] = useState(false);
+  const canCloseRef = useRef(false);
+  
+  // Sincronizar estado externo com interno
   useEffect(() => {
     if (open) {
-      // Resetar flag imediatamente quando abre
-      allowCloseRef.current = false;
-      setPassword(''); // Limpar senha quando abre
-      setError(null); // Limpar erros quando abre
-      
-      // Forçar o dialog a permanecer aberto usando requestAnimationFrame
-      requestAnimationFrame(() => {
-        allowCloseRef.current = false;
-      });
-    }
-  }, [open]);
-  
-  // Forçar o dialog a permanecer aberto se tentar fechar sem permissão
-  useEffect(() => {
-    if (open && !allowCloseRef.current) {
-      // Monitorar e forçar a permanência aberta
-      const checkInterval = setInterval(() => {
-        if (open && !allowCloseRef.current) {
-          // Se o dialog está aberto mas não deveria fechar, garantir que permanece aberto
-          // Isso é uma proteção extra
-        }
-      }, 100);
-      
-      return () => clearInterval(checkInterval);
+      // Quando abre externamente, abrir internamente e resetar flag
+      setInternalOpen(true);
+      canCloseRef.current = false;
+      setPassword('');
+      setError(null);
+    } else if (canCloseRef.current) {
+      // Só fechar internamente se permitido
+      setInternalOpen(false);
+      canCloseRef.current = false;
     }
   }, [open]);
 
@@ -122,9 +110,12 @@ export const AdminPasswordDialog: React.FC<AdminPasswordDialogProps> = ({
       toast.success('Senha confirmada com sucesso!');
       setPassword('');
       setError(null);
-      allowCloseRef.current = true; // Permitir fechar após confirmar
-      // Fechar dialog antes de chamar onConfirm
+      
+      // Permitir fechar e fechar
+      canCloseRef.current = true;
+      setInternalOpen(false);
       onOpenChange(false);
+      
       // Chamar callback de confirmação
       onConfirm();
 
@@ -140,83 +131,70 @@ export const AdminPasswordDialog: React.FC<AdminPasswordDialogProps> = ({
   const handleClose = () => {
     setPassword('');
     setError(null);
-    allowCloseRef.current = true; // Permitir fechar apenas quando chamado explicitamente
+    canCloseRef.current = true;
+    setInternalOpen(false);
     onOpenChange(false);
   };
 
-  const handleOpenChange = (openValue: boolean) => {
-    // BLOQUEAR COMPLETAMENTE qualquer tentativa de fechar automaticamente
-    // O dialog só fecha quando allowCloseRef.current for true (via handleClose ou após confirmar)
-    if (!openValue) {
-      // Verificar se está permitido fechar
-      if (!allowCloseRef.current) {
-        // IGNORAR completamente - não fazer nada
-        // O dialog permanecerá aberto porque o estado 'open' não muda
-        // NÃO chamar onOpenChange - isso mantém o dialog aberto
-        return;
-      }
-      // Só fechar se permitido
-      allowCloseRef.current = false; // Resetar flag
-      onOpenChange(false);
+  const handleInternalOpenChange = (newOpen: boolean) => {
+    // Só permitir fechar se canCloseRef permitir
+    if (!newOpen && !canCloseRef.current) {
+      // FORÇAR a permanecer aberto - não atualizar o estado
+      return;
+    }
+    
+    if (newOpen) {
+      setInternalOpen(true);
+      canCloseRef.current = false;
     } else {
-      // Quando abrindo, sempre permitir e resetar flag
-      allowCloseRef.current = false;
-      onOpenChange(true);
+      setInternalOpen(false);
+      canCloseRef.current = false;
+      onOpenChange(false);
     }
   };
 
   return (
     <Dialog 
-      open={open} 
-      onOpenChange={handleOpenChange}
+      open={internalOpen} 
+      onOpenChange={handleInternalOpenChange}
     >
       <DialogContent 
         className="sm:max-w-md z-[100]"
         onInteractOutside={(e) => {
-          // BLOQUEAR completamente o fechamento ao clicar fora
-          if (!allowCloseRef.current) {
-            e.preventDefault();
-            e.stopPropagation();
-            try {
-              if ((e as any).nativeEvent?.stopImmediatePropagation) {
-                (e as any).nativeEvent.stopImmediatePropagation();
-              }
-            } catch (err) {
-              // Ignorar
+          // SEMPRE bloquear cliques fora
+          e.preventDefault();
+          e.stopPropagation();
+          try {
+            if ((e as any).nativeEvent?.stopImmediatePropagation) {
+              (e as any).nativeEvent.stopImmediatePropagation();
             }
+          } catch (err) {
+            // Ignorar
           }
         }}
         onPointerDownOutside={(e) => {
-          // BLOQUEAR também eventos de pointer
-          if (!allowCloseRef.current) {
-            e.preventDefault();
-            e.stopPropagation();
-            try {
-              if ((e as any).nativeEvent?.stopImmediatePropagation) {
-                (e as any).nativeEvent.stopImmediatePropagation();
-              }
-            } catch (err) {
-              // Ignorar
+          // SEMPRE bloquear eventos de pointer
+          e.preventDefault();
+          e.stopPropagation();
+          try {
+            if ((e as any).nativeEvent?.stopImmediatePropagation) {
+              (e as any).nativeEvent.stopImmediatePropagation();
             }
+          } catch (err) {
+            // Ignorar
           }
         }}
         onEscapeKeyDown={(e) => {
-          // BLOQUEAR ESC se não estiver permitido fechar
-          if (!allowCloseRef.current) {
-            e.preventDefault();
-            e.stopPropagation();
-            try {
-              if ((e as any).nativeEvent?.stopImmediatePropagation) {
-                (e as any).nativeEvent.stopImmediatePropagation();
-              }
-            } catch (err) {
-              // Ignorar
-            }
-          }
-        }}
-        onOpenAutoFocus={(e) => {
-          // Prevenir que o foco cause problemas
+          // SEMPRE bloquear ESC - só fecha com botão Cancelar ou Confirmar
           e.preventDefault();
+          e.stopPropagation();
+          try {
+            if ((e as any).nativeEvent?.stopImmediatePropagation) {
+              (e as any).nativeEvent.stopImmediatePropagation();
+            }
+          } catch (err) {
+            // Ignorar
+          }
         }}
       >
         <DialogHeader>
@@ -312,4 +290,3 @@ export const AdminPasswordDialog: React.FC<AdminPasswordDialogProps> = ({
     </Dialog>
   );
 };
-
