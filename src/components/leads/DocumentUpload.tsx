@@ -38,6 +38,13 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ leadId }) => {
   const [loadingImages, setLoadingImages] = useState<Record<string, boolean>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
   
+  // Manter o modal principal aberto enquanto o dialog de senha estiver ativo
+  useEffect(() => {
+    if (showAdminPasswordDialog && !isDocumentsDialogOpen) {
+      setIsDocumentsDialogOpen(true);
+    }
+  }, [showAdminPasswordDialog, isDocumentsDialogOpen]);
+  
   const fetchDocuments = async () => {
     try {
       const { data, error } = await supabase
@@ -144,6 +151,7 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ leadId }) => {
     if (hasAdminPwd) {
       setDocumentToDelete(document);
       setShowAdminPasswordDialog(true);
+      setIsDocumentsDialogOpen(true); // garantir que o modal principal permanece aberto
       return;
     }
     
@@ -317,17 +325,34 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ leadId }) => {
       <Dialog
         open={isDocumentsDialogOpen || showAdminPasswordDialog}
         onOpenChange={(open) => {
+          // Não permitir fechar enquanto o dialog de senha estiver aberto
+          if (!open && showAdminPasswordDialog) {
+            return;
+          }
+          setIsDocumentsDialogOpen(open);
           if (!open) {
-            setIsDocumentsDialogOpen(false);
             setShowAdminPasswordDialog(false);
             setDocumentToDelete(null);
-          } else {
-            setIsDocumentsDialogOpen(true);
           }
         }}
       >
         <DialogContent
           className="sm:max-w-4xl max-h-[90vh] overflow-y-auto"
+          onInteractOutside={(e) => {
+            if (showAdminPasswordDialog) {
+              e.preventDefault();
+            }
+          }}
+          onPointerDownOutside={(e) => {
+            if (showAdminPasswordDialog) {
+              e.preventDefault();
+            }
+          }}
+          onEscapeKeyDown={(e) => {
+            if (showAdminPasswordDialog) {
+              e.preventDefault();
+            }
+          }}
         >
           <DialogHeader>
             <DialogTitle>Documentos Anexados</DialogTitle>
