@@ -61,6 +61,13 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ leadId }) => {
     hasAdminPassword().then(setHasAdminPwd);
   }, [leadId]);
 
+  // Manter o dialog principal aberto enquanto o de senha estiver aberto
+  useEffect(() => {
+    if (showAdminPasswordDialog && !isDocumentsDialogOpen) {
+      setIsDocumentsDialogOpen(true);
+    }
+  }, [showAdminPasswordDialog, isDocumentsDialogOpen]);
+
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
@@ -85,26 +92,26 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ leadId }) => {
         
         try {
           const filePath = `${userId}/${leadId}/${Date.now()}_${i}_${file.name}`;
-          
+      
           const { error: uploadError } = await supabase.storage
-            .from("lead-documents")
-            .upload(filePath, file, {
-              cacheControl: "3600",
-              upsert: false
-            });
-            
-          if (uploadError) throw uploadError;
-          
-          const { error: dbError } = await supabase.from("documents").insert({
-            lead_id: leadId,
-            user_id: userId,
-            file_name: file.name,
-            file_path: filePath,
-            file_type: file.type,
-          });
-          
-          if (dbError) throw dbError;
-          
+        .from("lead-documents")
+        .upload(filePath, file, {
+          cacheControl: "3600",
+          upsert: false
+        });
+        
+      if (uploadError) throw uploadError;
+      
+      const { error: dbError } = await supabase.from("documents").insert({
+        lead_id: leadId,
+        user_id: userId,
+        file_name: file.name,
+        file_path: filePath,
+        file_type: file.type,
+      });
+      
+      if (dbError) throw dbError;
+      
           successCount++;
         } catch (fileError: any) {
           console.error(`Error uploading file ${file.name}:`, fileError);
@@ -178,7 +185,7 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ leadId }) => {
         .from("documents")
         .delete()
         .eq("id", document.id);
-      
+        
       if (dbError) {
         console.error('Erro ao deletar do banco:', dbError);
         throw dbError;
@@ -316,10 +323,30 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ leadId }) => {
 
       <Dialog
         open={isDocumentsDialogOpen}
-        onOpenChange={setIsDocumentsDialogOpen}
+        onOpenChange={(open) => {
+          if (!open && showAdminPasswordDialog) {
+            return; // não fecha enquanto senha estiver aberta
+          }
+          setIsDocumentsDialogOpen(open);
+        }}
       >
         <DialogContent
           className="sm:max-w-4xl max-h-[90vh] overflow-y-auto"
+          onInteractOutside={(e) => {
+            if (showAdminPasswordDialog) {
+              e.preventDefault();
+            }
+          }}
+          onPointerDownOutside={(e) => {
+            if (showAdminPasswordDialog) {
+              e.preventDefault();
+            }
+          }}
+          onEscapeKeyDown={(e) => {
+            if (showAdminPasswordDialog) {
+              e.preventDefault();
+            }
+          }}
         >
           <DialogHeader>
             <DialogTitle>Documentos Anexados</DialogTitle>
@@ -338,8 +365,8 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ leadId }) => {
                   const isLoading = loadingImages[document.id];
 
                   return (
-                    <div 
-                      key={document.id} 
+                  <div 
+                    key={document.id} 
                       className="relative group bg-gray-50 rounded-lg border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all overflow-hidden"
                       onClick={(e) => {
                         // Prevenir clique no card se estiver clicando no botão de deletar
@@ -353,10 +380,10 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ leadId }) => {
                       }}
                     >
                       {/* Preview de imagem ou ícone */}
-                      <div 
+                    <div 
                         className="w-full aspect-square bg-white flex items-center justify-center cursor-pointer overflow-hidden"
-                        onClick={() => handleDocumentClick(document)}
-                      >
+                      onClick={() => handleDocumentClick(document)}
+                    >
                         {isImage ? (
                           isLoading ? (
                             <Loader2 className="h-12 w-12 text-gray-400 animate-spin" />
@@ -383,18 +410,18 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ leadId }) => {
                       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
                         <div className="flex flex-col items-center gap-2">
                           <span className="text-white text-xs font-medium text-center px-2 line-clamp-2">
-                            {document.file_name}
-                          </span>
+                        {document.file_name}
+                      </span>
                           <span className="text-white/80 text-xs">
                             {new Date(document.created_at).toLocaleDateString('pt-BR')}
-                          </span>
-                        </div>
+                      </span>
+                    </div>
                       </div>
 
                       {/* Botão de deletar */}
-                      <Button
-                        variant="ghost"
-                        size="sm"
+                    <Button
+                      variant="ghost"
+                      size="sm"
                         type="button"
                         className="absolute top-2 right-2 h-8 w-8 p-0 bg-red-500/90 hover:bg-red-600 text-white opacity-0 group-hover:opacity-100 transition-opacity z-50"
                         onClick={(e) => {
@@ -420,11 +447,11 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ leadId }) => {
                         onTouchStart={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
-                        }}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
+                      }}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
                   );
                 })}
               </div>
