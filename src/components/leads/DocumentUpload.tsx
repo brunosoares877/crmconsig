@@ -36,15 +36,24 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ leadId }) => {
   const [hasAdminPwd, setHasAdminPwd] = useState(false);
   const [imageUrls, setImageUrls] = useState<Record<string, string>>({});
   const [loadingImages, setLoadingImages] = useState<Record<string, boolean>>({});
+  const [hasDocumentsFlag, setHasDocumentsFlag] = useState(false);
+  const [docsLoaded, setDocsLoaded] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  // Manter o modal principal aberto enquanto o dialog de senha estiver ativo
-  useEffect(() => {
-    if (showAdminPasswordDialog && !isDocumentsDialogOpen) {
-      setIsDocumentsDialogOpen(true);
+  const fetchDocumentCount = async () => {
+    try {
+      const { count, error } = await supabase
+        .from("documents")
+        .select("id", { count: "exact", head: true })
+        .eq("lead_id", leadId);
+
+      if (error) throw error;
+      setHasDocumentsFlag(!!count && count > 0);
+    } catch (error: any) {
+      console.error("Error counting documents:", error);
     }
-  }, [showAdminPasswordDialog, isDocumentsDialogOpen]);
-  
+  };
+
   const fetchDocuments = async () => {
     try {
       const { data, error } = await supabase
@@ -54,16 +63,26 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ leadId }) => {
         
       if (error) throw error;
       
-      setDocuments(data || []);
+      const docs = data || [];
+      setDocuments(docs);
+      setHasDocumentsFlag(docs.length > 0);
     } catch (error: any) {
       console.error("Error fetching documents:", error);
       toast.error(`Erro ao buscar documentos: ${error.message}`);
     }
   };
   
+  // Manter o modal principal aberto enquanto o dialog de senha estiver ativo
+  useEffect(() => {
+    if (showAdminPasswordDialog && !isDocumentsDialogOpen) {
+      setIsDocumentsDialogOpen(true);
+    }
+  }, [showAdminPasswordDialog, isDocumentsDialogOpen]);
+
   useEffect(() => {
     if (leadId) {
-      fetchDocuments();
+      fetchDocumentCount();
+      setDocsLoaded(false);
     }
     hasAdminPassword().then(setHasAdminPwd);
   }, [leadId]);
@@ -130,6 +149,7 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ leadId }) => {
       
       await fetchDocuments();
       setProgress(100);
+      setHasDocumentsFlag(true);
     } catch (error: any) {
       console.error("Error uploading documents:", error);
       toast.error(`Erro ao enviar documentos: ${error.message}`);
@@ -192,8 +212,12 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ leadId }) => {
         throw dbError;
       }
       
-      // Atualizar lista de documentos
-      setDocuments(prevDocs => prevDocs.filter(doc => doc.id !== document.id));
+      // Atualizar lista de documentos e flag localmente (sem novo fetch pesado)
+      setDocuments(prevDocs => {
+        const next = prevDocs.filter(doc => doc.id !== document.id);
+        setHasDocumentsFlag(next.length > 0);
+        return next;
+      });
       
       // Remover URL da imagem se existir
       if (imageUrls[document.id]) {
@@ -205,9 +229,6 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ leadId }) => {
       }
       
       toast.success("Documento excluído com sucesso!");
-      
-      // Recarregar documentos para garantir sincronização
-      await fetchDocuments();
       
     } catch (error: any) {
       console.error("Error deleting document:", error);
@@ -279,7 +300,7 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ leadId }) => {
     }
   };
 
-  const hasDocuments = documents.length > 0;
+  const hasDocuments = hasDocumentsFlag || documents.length > 0;
 
   return (
     <>
@@ -333,6 +354,12 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ leadId }) => {
           if (!open) {
             setShowAdminPasswordDialog(false);
             setDocumentToDelete(null);
+            setDocsLoaded(false);
+          } else {
+            if (!docsLoaded) {
+              setDocsLoaded(true);
+              fetchDocuments().catch(() => setDocsLoaded(false));
+            }
           }
         }}
       >
