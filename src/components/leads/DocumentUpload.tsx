@@ -81,6 +81,7 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ leadId }) => {
   useEffect(() => {
     if (leadId) {
       fetchDocumentCount();
+      fetchDocuments();
     }
     hasAdminPassword().then(setHasAdminPwd);
   }, [leadId]);
