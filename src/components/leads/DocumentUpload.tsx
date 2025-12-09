@@ -37,7 +37,6 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ leadId }) => {
   const [imageUrls, setImageUrls] = useState<Record<string, string>>({});
   const [loadingImages, setLoadingImages] = useState<Record<string, boolean>>({});
   const [hasDocumentsFlag, setHasDocumentsFlag] = useState(false);
-  const [docsLoaded, setDocsLoaded] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const fetchDocumentCount = async () => {
@@ -82,7 +81,6 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ leadId }) => {
   useEffect(() => {
     if (leadId) {
       fetchDocumentCount();
-      setDocsLoaded(false);
     }
     hasAdminPassword().then(setHasAdminPwd);
   }, [leadId]);
@@ -354,12 +352,8 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ leadId }) => {
           if (!open) {
             setShowAdminPasswordDialog(false);
             setDocumentToDelete(null);
-            setDocsLoaded(false);
           } else {
-            if (!docsLoaded) {
-              setDocsLoaded(true);
-              fetchDocuments().catch(() => setDocsLoaded(false));
-            }
+            fetchDocuments().catch(() => {});
           }
         }}
       >
