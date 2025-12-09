@@ -61,13 +61,6 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ leadId }) => {
     hasAdminPassword().then(setHasAdminPwd);
   }, [leadId]);
 
-  // Manter o dialog principal aberto enquanto o de senha estiver aberto
-  useEffect(() => {
-    if (showAdminPasswordDialog && !isDocumentsDialogOpen) {
-      setIsDocumentsDialogOpen(true);
-    }
-  }, [showAdminPasswordDialog, isDocumentsDialogOpen]);
-
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
@@ -151,6 +144,8 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ leadId }) => {
     if (hasAdminPwd) {
       setDocumentToDelete(document);
       setShowAdminPasswordDialog(true);
+      // Evitar nested dialogs: fechar o modal principal enquanto a senha está aberta
+      setIsDocumentsDialogOpen(false);
       return;
     }
     
@@ -323,30 +318,10 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ leadId }) => {
 
       <Dialog
         open={isDocumentsDialogOpen}
-        onOpenChange={(open) => {
-          if (!open && showAdminPasswordDialog) {
-            return; // não fecha enquanto senha estiver aberta
-          }
-          setIsDocumentsDialogOpen(open);
-        }}
+        onOpenChange={setIsDocumentsDialogOpen}
       >
         <DialogContent
           className="sm:max-w-4xl max-h-[90vh] overflow-y-auto"
-          onInteractOutside={(e) => {
-            if (showAdminPasswordDialog) {
-              e.preventDefault();
-            }
-          }}
-          onPointerDownOutside={(e) => {
-            if (showAdminPasswordDialog) {
-              e.preventDefault();
-            }
-          }}
-          onEscapeKeyDown={(e) => {
-            if (showAdminPasswordDialog) {
-              e.preventDefault();
-            }
-          }}
         >
           <DialogHeader>
             <DialogTitle>Documentos Anexados</DialogTitle>
