@@ -81,6 +81,25 @@ export const getBankName = (bankCode: string | null | undefined) => {
     return customBanks[bankCode];
   }
 
+  // Buscar bancos customizados salvos localmente (configBanks / editedBanks)
+  try {
+    const configBanks = JSON.parse(localStorage.getItem("configBanks") || "[]") as { code?: string; name?: string }[];
+    const editedBanks = JSON.parse(localStorage.getItem("editedBanks") || "[]") as { code?: string; name?: string }[];
+    const allCustomBanks = [...configBanks, ...editedBanks];
+
+    const byCode = allCustomBanks.find(
+      (b) => b.code && b.code.toLowerCase() === bankCode.toLowerCase()
+    );
+    if (byCode?.name) return byCode.name;
+
+    const byName = allCustomBanks.find(
+      (b) => b.name && b.name.toLowerCase() === bankCode.toLowerCase()
+    );
+    if (byName?.name) return byName.name;
+  } catch (err) {
+    console.warn("Falha ao ler bancos customizados do localStorage:", err);
+  }
+
   // Heurística para códigos atípicos numéricos com mais de 3 dígitos (ex.: "8887"): 
   // tenta casar pelos 3 primeiros ou 3 últimos dígitos.
   let onlyDigits = bankCode.replace(/\D/g, "");
