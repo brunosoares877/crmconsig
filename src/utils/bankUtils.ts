@@ -95,6 +95,6 @@ export const getBankName = (bankCode: string | null | undefined) => {
     if (numericBanks[last3]) return numericBanks[last3];
   }
 
-  // Se não encontrou, retorna o código original
-  return bankCode;
+  // Se não encontrou, retorna de forma amigável sem exibir só o número cru
+  return `Banco (código ${bankCode})`;
 }; 
