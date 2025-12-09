@@ -17,6 +17,7 @@ import DocumentUpload from "./leads/DocumentUpload";
 import WhatsAppButton from "./WhatsAppButton";
 import { cn } from "@/lib/utils";
 import { getBankName } from "@/utils/bankUtils";
+import { useBanks } from "@/hooks/useBanks";
 import { formatLeadDate } from "@/utils/dateUtils";
 import CommissionConfigSelector from "@/components/forms/CommissionConfigSelector";
 import { CommissionCalculationResult } from "@/hooks/useCommissionConfig";
@@ -111,6 +112,7 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete, isSelecte
   const [showAdminPasswordDialog, setShowAdminPasswordDialog] = useState(false);
   const [pendingAction, setPendingAction] = useState<'delete' | 'edit' | null>(null);
   const [hasAdminPwd, setHasAdminPwd] = useState(false);
+  const { banks } = useBanks();
 
   useEffect(() => {
     getEmployees().then(setEmployeeList);
@@ -147,6 +149,15 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete, isSelecte
     if (!employeeId || employeeId === "none") return "Nenhum funcionário";
     const emp = list.find(e => e.id === employeeId);
     return emp ? emp.name : "Funcionário não encontrado";
+  };
+
+  const resolveBankName = (bankCode?: string) => {
+    if (!bankCode) return "Banco não especificado";
+    const byCode = banks.find(b => b.code && b.code.toLowerCase() === bankCode.toLowerCase());
+    if (byCode) return byCode.name;
+    const byName = banks.find(b => b.name && b.name.toLowerCase() === bankCode.toLowerCase());
+    if (byName) return byName.name;
+    return getBankName(bankCode);
   };
 
   // Debug apenas quando necessário
@@ -842,7 +853,7 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete, isSelecte
             {(lead as any).bank && (
               <div className="flex items-center gap-1 text-xs text-muted-foreground">
                 <Building2 className="h-3 w-3" />
-                <span>{getBankName((lead as any).bank)}</span>
+                <span>{resolveBankName((lead as any).bank)}</span>
               </div>
             )}
             
