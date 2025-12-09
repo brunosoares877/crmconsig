@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 // Default banks from LeadsConfig
 const DEFAULT_BANKS = [
@@ -69,6 +70,26 @@ export const useBanks = () => {
       const removedBankIds = getRemovedIds('removedBanks');
       const editedBanks = getEditedItems<ConfigBank>('editedBanks');
       const allBanks: Bank[] = [];
+
+      // Tenta carregar bancos do Supabase (persistência multi-dispositivo)
+      let supabaseBanks: Bank[] = [];
+      try {
+        const { data: userData } = await supabase.auth.getUser();
+        if (userData.user) {
+          const { data, error } = await supabase
+            .from('banks')
+            .select('name, code')
+            .eq('user_id', userData.user.id)
+            .order('name');
+          if (error) throw error;
+          supabaseBanks = (data || []).map((b: any) => ({
+            name: b.name,
+            code: b.code || "",
+          }));
+        }
+      } catch (err: any) {
+        console.warn('Falha ao carregar bancos do Supabase (usando localStorage):', err?.message || err);
+      }
       
       // Add default banks with generated IDs
       DEFAULT_BANKS.forEach(bank => {
@@ -89,6 +110,14 @@ export const useBanks = () => {
         const exists = allBanks.find(bank => bank.code === configBank.code || bank.name === configBank.name);
         if (!exists) {
           allBanks.push({ code: configBank.code, name: configBank.name });
+        }
+      });
+
+      // Add bancos do Supabase
+      supabaseBanks.forEach((sb) => {
+        const exists = allBanks.find(bank => bank.code === sb.code || bank.name === sb.name);
+        if (!exists) {
+          allBanks.push(sb);
         }
       });
 

@@ -152,6 +152,30 @@ const LeadsConfig = () => {
   const [editingBank, setEditingBank] = useState<string | null>(null);
   const [editingBenefit, setEditingBenefit] = useState<number | null>(null);
 
+  // Persistência em Supabase (fallback se tabela não existir)
+  const persistBanksSupabase = async (banksToPersist: Bank[]) => {
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) return;
+      // limpa bancos existentes do usuário e insere os novos
+      const { error: delErr } = await supabase.from('banks').delete().eq('user_id', userData.user.id);
+      if (delErr) throw delErr;
+      if (banksToPersist.length > 0) {
+        const payload = banksToPersist.map((b) => ({
+          id: b.id.startsWith('user-') ? b.id : undefined,
+          name: b.name,
+          code: b.code || "",
+          user_id: userData.user.id,
+        }));
+        const { error: insErr } = await supabase.from('banks').insert(payload);
+        if (insErr) throw insErr;
+      }
+    } catch (err: any) {
+      // se tabela não existir ou der erro, não quebra fluxo
+      console.warn("Persistência de bancos no Supabase falhou (usando apenas localStorage):", err?.message || err);
+    }
+  };
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -167,6 +191,27 @@ const LeadsConfig = () => {
       const removedBankIds = getRemovedIds('removedBanks');
       const editedBanks = getEditedItems<Bank>('editedBanks');
       const allBanks: Bank[] = [];
+
+      // Buscar bancos do Supabase (se tabela existir)
+      let supabaseBanks: Bank[] = [];
+      try {
+        const { data: userData } = await supabase.auth.getUser();
+        if (userData.user) {
+          const { data, error } = await supabase
+            .from('banks')
+            .select('id, name, code')
+            .eq('user_id', userData.user.id)
+            .order('name');
+          if (error) throw error;
+          supabaseBanks = (data || []).map((b: any) => ({
+            id: b.id,
+            name: b.name,
+            code: b.code || "",
+          }));
+        }
+      } catch (err: any) {
+        console.warn("Falha ao carregar bancos do Supabase (usando localStorage):", err?.message || err);
+      }
       
       // Add default banks with generated IDs
       DEFAULT_BANKS.forEach(bank => {
@@ -198,6 +243,20 @@ const LeadsConfig = () => {
         
         if (!exists) {
           allBanks.push(configBank);
+        }
+      });
+
+      // Add bancos do Supabase (se existirem e não duplicados)
+      supabaseBanks.forEach(sb => {
+        const exists = allBanks.find(bank => {
+          if (sb.code && bank.code) {
+            return bank.code.toLowerCase() === sb.code.toLowerCase() ||
+                   bank.name.toLowerCase() === sb.name.toLowerCase();
+          }
+          return bank.name.toLowerCase() === sb.name.toLowerCase();
+        });
+        if (!exists) {
+          allBanks.push(sb);
         }
       });
       
@@ -304,7 +363,7 @@ const LeadsConfig = () => {
     }
   };
 
-  const addBank = () => {
+  const addBank = async () => {
     if (!newBankName.trim()) {
       toast.error("Nome do banco é obrigatório");
       return;
@@ -345,8 +404,9 @@ const LeadsConfig = () => {
     try {
       localStorage.setItem('configBanks', JSON.stringify(userBanks));
       console.log('Bancos salvos no localStorage:', userBanks);
+      await persistBanksSupabase(userBanks);
     } catch (error) {
-      console.error('Erro ao salvar no localStorage:', error);
+      console.error('Erro ao salvar no localStorage/Supabase:', error);
       toast.error('Erro ao salvar banco. Tente novamente.');
       return;
     }
@@ -359,7 +419,7 @@ const LeadsConfig = () => {
     toast.success("Banco adicionado com sucesso!");
   };
 
-  const deleteBank = (id: string) => {
+  const deleteBank = async (id: string) => {
     const updatedBanks = banks.filter(b => b.id !== id);
     setBanks(updatedBanks);
     
@@ -376,8 +436,9 @@ const LeadsConfig = () => {
       try {
         localStorage.setItem('configBanks', JSON.stringify(userBanks));
         console.log('Bancos salvos após deletar:', userBanks);
+        await persistBanksSupabase(userBanks);
       } catch (error) {
-        console.error('Erro ao salvar no localStorage:', error);
+        console.error('Erro ao salvar no localStorage/Supabase:', error);
         toast.error('Erro ao remover banco. Tente novamente.');
         return;
       }
@@ -391,7 +452,7 @@ const LeadsConfig = () => {
 
   // Funções de produtos removidas - funcionalidade desabilitada
 
-  const editBank = (id: string, newName: string, newCode: string) => {
+  const editBank = async (id: string, newName: string, newCode: string) => {
     const updatedBanks = banks.map(bank =>
       bank.id === id ? { ...bank, name: newName, code: newCode } : bank
     );
@@ -412,8 +473,9 @@ const LeadsConfig = () => {
       try {
         localStorage.setItem('configBanks', JSON.stringify(userBanks));
         console.log('Bancos salvos após editar:', userBanks);
+        await persistBanksSupabase(userBanks);
       } catch (error) {
-        console.error('Erro ao salvar no localStorage:', error);
+        console.error('Erro ao salvar no localStorage/Supabase:', error);
         toast.error('Erro ao editar banco. Tente novamente.');
         return;
       }
