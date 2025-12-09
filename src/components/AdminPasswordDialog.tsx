@@ -137,20 +137,17 @@ export const AdminPasswordDialog: React.FC<AdminPasswordDialogProps> = ({
   };
 
   const handleInternalOpenChange = (newOpen: boolean) => {
-    // Só permitir fechar se canCloseRef permitir
-    if (!newOpen && !canCloseRef.current) {
-      // FORÇAR a permanecer aberto - não atualizar o estado
+    // Permitir fechamento explícito (ex.: botão X do dialog)
+    if (!newOpen) {
+      canCloseRef.current = true; // libera o fechamento
+      setInternalOpen(false);
+      onOpenChange(false);
       return;
     }
-    
-    if (newOpen) {
-      setInternalOpen(true);
-      canCloseRef.current = false;
-    } else {
-      setInternalOpen(false);
-      canCloseRef.current = false;
-      onOpenChange(false);
-    }
+
+    // Abrindo novamente: resetar proteção
+    setInternalOpen(true);
+    canCloseRef.current = false;
   };
 
   return (
