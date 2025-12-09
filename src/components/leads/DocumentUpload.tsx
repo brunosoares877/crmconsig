@@ -144,8 +144,6 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ leadId }) => {
     if (hasAdminPwd) {
       setDocumentToDelete(document);
       setShowAdminPasswordDialog(true);
-      // Evitar nested dialogs: fechar o modal principal enquanto a senha está aberta
-      setIsDocumentsDialogOpen(false);
       return;
     }
     
@@ -317,8 +315,16 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ leadId }) => {
       </div>
 
       <Dialog
-        open={isDocumentsDialogOpen}
-        onOpenChange={setIsDocumentsDialogOpen}
+        open={isDocumentsDialogOpen || showAdminPasswordDialog}
+        onOpenChange={(open) => {
+          if (!open) {
+            setIsDocumentsDialogOpen(false);
+            setShowAdminPasswordDialog(false);
+            setDocumentToDelete(null);
+          } else {
+            setIsDocumentsDialogOpen(true);
+          }
+        }}
       >
         <DialogContent
           className="sm:max-w-4xl max-h-[90vh] overflow-y-auto"
