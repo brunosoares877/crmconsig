@@ -36,6 +36,7 @@ const StickyQuickNote: React.FC = () => {
   const [notes, setNotes] = useState<QuickNote[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
   const [hasUser, setHasUser] = useState<boolean | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
   const dragStart = useRef<{ id: string; offsetX: number; offsetY: number } | null>(null);
   const resizeStart = useRef<{ id: string; startX: number; startY: number; startHeight: number; startWidth: number } | null>(null);
 
@@ -62,15 +63,45 @@ const StickyQuickNote: React.FC = () => {
     supabase.auth.getUser().then(({ data }) => {
       if (!active) return;
       setHasUser(!!data?.user);
+      setUserId(data?.user?.id ?? null);
     });
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
       setHasUser(!!session?.user);
+      setUserId(session?.user?.id ?? null);
     });
     return () => {
       active = false;
       sub?.subscription?.unsubscribe();
     };
   }, []);
+
+  // Função para buscar notas no Supabase
+  const fetchRemoteNotes = useCallback(
+    async (uid: string) => {
+      const { data, error } = await supabase
+        .from(STICKY_TABLE)
+        .select("id, content, right, y, width, height, minimized")
+        .eq("user_id", uid)
+        .order("created_at", { ascending: true });
+
+      if (!error && data) {
+        return data.map((n: any) => ({
+          id: n.id,
+          content: n.content || "",
+          right: typeof n.right === "number" ? n.right : EDGE_PADDING,
+          y: typeof n.y === "number" ? n.y : EDGE_PADDING,
+          width: typeof n.width === "number" ? n.width : NOTE_WIDTH,
+          height: typeof n.height === "number" ? n.height : DEFAULT_HEIGHT,
+          minimized: !!n.minimized,
+        })) as QuickNote[];
+      }
+      if (error) {
+        console.warn("Falha ao buscar notas rápidas no Supabase:", error.message);
+      }
+      return null;
+    },
+    []
+  );
 
   useEffect(() => {
     if (!hasUser) return; // só carrega para usuários logados
@@ -79,23 +110,9 @@ const StickyQuickNote: React.FC = () => {
         // Tenta carregar do Supabase (sincronizado entre dispositivos)
         const { data: userData } = await supabase.auth.getUser();
         if (userData?.user) {
-          const { data, error } = await supabase
-            .from(STICKY_TABLE)
-            .select("id, content, right, y, width, height, minimized")
-            .eq("user_id", userData.user.id)
-            .order("created_at", { ascending: true });
-
-          if (!error && data && data.length > 0) {
-            const hydrated = data.map((n: any) => ({
-              id: n.id,
-              content: n.content || "",
-              right: typeof n.right === "number" ? n.right : EDGE_PADDING,
-              y: typeof n.y === "number" ? n.y : EDGE_PADDING,
-              width: typeof n.width === "number" ? n.width : NOTE_WIDTH,
-              height: typeof n.height === "number" ? n.height : DEFAULT_HEIGHT,
-              minimized: !!n.minimized,
-            }));
-            setNotes(hydrated);
+          const remote = await fetchRemoteNotes(userData.user.id);
+          if (remote && remote.length > 0) {
+            setNotes(remote);
             setIsLoaded(true);
             return;
           }
@@ -135,12 +152,12 @@ const StickyQuickNote: React.FC = () => {
     };
 
     load();
-  }, [createDefaultNote, hasUser]);
+  }, [createDefaultNote, hasUser, fetchRemoteNotes]);
 
   // Persistir estado
   // Salvar em localStorage e Supabase (quando possível)
   useEffect(() => {
-    if (!isLoaded || !hasUser) return;
+    if (!isLoaded || !hasUser || !userId) return;
     try {
       localStorage.setItem(STORAGE_NOTES_KEY, JSON.stringify(notes));
     } catch (error) {
@@ -149,12 +166,9 @@ const StickyQuickNote: React.FC = () => {
 
     const saveCloud = async () => {
       try {
-        const { data: userData } = await supabase.auth.getUser();
-        if (!userData?.user) return;
-
         const payload = notes.map((n) => ({
           id: n.id,
-          user_id: userData.user.id,
+          user_id: userId,
           content: n.content ?? "",
           right: n.right ?? EDGE_PADDING,
           y: n.y,
@@ -173,7 +187,38 @@ const StickyQuickNote: React.FC = () => {
     };
 
     saveCloud();
-  }, [notes, isLoaded, hasUser]);
+  }, [notes, isLoaded, hasUser, userId]);
+
+  // Realtime: atualizar quando outro device alterar
+  useEffect(() => {
+    if (!hasUser || !userId) return;
+    const channel = supabase
+      .channel(`sticky-notes-${userId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: STICKY_TABLE, filter: `user_id=eq.${userId}` },
+        async () => {
+          const remote = await fetchRemoteNotes(userId);
+          if (remote) setNotes(remote);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [hasUser, userId, fetchRemoteNotes]);
+
+  // Atualizar ao focar a janela
+  useEffect(() => {
+    if (!hasUser || !userId) return;
+    const handler = async () => {
+      const remote = await fetchRemoteNotes(userId);
+      if (remote) setNotes(remote);
+    };
+    window.addEventListener("focus", handler);
+    return () => window.removeEventListener("focus", handler);
+  }, [hasUser, userId, fetchRemoteNotes]);
 
   const clampHeight = useCallback(
     (height: number) => Math.min(Math.max(height, MIN_HEIGHT), MAX_HEIGHT),
@@ -349,10 +394,13 @@ const StickyQuickNote: React.FC = () => {
     });
 
     // Tentar remover do Supabase (best-effort)
-    supabase.auth.getUser().then(({ data }) => {
-      if (!data?.user) return;
-      supabase.from(STICKY_TABLE).delete().eq("id", id).eq("user_id", data.user.id);
-    }).catch(() => {});
+    supabase.auth
+      .getUser()
+      .then(({ data }) => {
+        if (!data?.user) return;
+        supabase.from(STICKY_TABLE).delete().eq("id", id).eq("user_id", data.user.id);
+      })
+      .catch(() => {});
   };
 
   const saveToNotes = async (note: QuickNote) => {
