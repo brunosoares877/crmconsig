@@ -7,6 +7,7 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as SonnerToaster } from "sonner";
 import { Loader2 } from "lucide-react";
+import StickyQuickNote from "@/components/StickyQuickNote";
 
 // Loading component
 const LoadingSpinner = () => (
@@ -104,6 +105,7 @@ function App() {
               </Suspense>
               <Toaster />
               <SonnerToaster />
+              <StickyQuickNote />
             </SubscriptionProvider>
           </ThemeProvider>
         </AuthProvider>

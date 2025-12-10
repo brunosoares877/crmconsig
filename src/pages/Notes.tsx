@@ -3,6 +3,7 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import Header from "@/components/Header";
 import NotesBlock from "@/components/NotesBlock";
+import StickyQuickNote from "@/components/StickyQuickNote";
 
 const Notes = () => {
   return (
@@ -37,6 +38,7 @@ const Notes = () => {
             </div>
           </main>
         </div>
+        <StickyQuickNote />
       </div>
     </SidebarProvider>
   );
