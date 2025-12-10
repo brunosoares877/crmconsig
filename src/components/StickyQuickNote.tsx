@@ -35,6 +35,7 @@ type QuickNote = {
 const StickyQuickNote: React.FC = () => {
   const [notes, setNotes] = useState<QuickNote[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [hasUser, setHasUser] = useState<boolean | null>(null);
   const dragStart = useRef<{ id: string; offsetX: number; offsetY: number } | null>(null);
   const resizeStart = useRef<{ id: string; startX: number; startY: number; startHeight: number; startWidth: number } | null>(null);
 
@@ -55,7 +56,24 @@ const StickyQuickNote: React.FC = () => {
   }, []);
 
   // Carregar estado salvo
+  // Detectar usuário logado; só renderizar quando logado
   useEffect(() => {
+    let active = true;
+    supabase.auth.getUser().then(({ data }) => {
+      if (!active) return;
+      setHasUser(!!data?.user);
+    });
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      setHasUser(!!session?.user);
+    });
+    return () => {
+      active = false;
+      sub?.subscription?.unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!hasUser) return; // só carrega para usuários logados
     const load = async () => {
       try {
         // Tenta carregar do Supabase (sincronizado entre dispositivos)
@@ -117,12 +135,12 @@ const StickyQuickNote: React.FC = () => {
     };
 
     load();
-  }, [createDefaultNote]);
+  }, [createDefaultNote, hasUser]);
 
   // Persistir estado
   // Salvar em localStorage e Supabase (quando possível)
   useEffect(() => {
-    if (!isLoaded) return;
+    if (!isLoaded || !hasUser) return;
     try {
       localStorage.setItem(STORAGE_NOTES_KEY, JSON.stringify(notes));
     } catch (error) {
@@ -155,7 +173,7 @@ const StickyQuickNote: React.FC = () => {
     };
 
     saveCloud();
-  }, [notes, isLoaded]);
+  }, [notes, isLoaded, hasUser]);
 
   const clampHeight = useCallback(
     (height: number) => Math.min(Math.max(height, MIN_HEIGHT), MAX_HEIGHT),
@@ -378,6 +396,8 @@ const StickyQuickNote: React.FC = () => {
 
   return (
     <>
+      {!hasUser ? null : (
+    <>
       <button
         className="fixed right-3 bottom-3 z-50 bg-amber-400 text-amber-900 shadow-lg rounded-full p-2 hover:bg-amber-300 transition-colors border border-amber-500"
         onClick={() => {
@@ -497,6 +517,8 @@ const StickyQuickNote: React.FC = () => {
             </div>
           </div>
         )
+      )}
+    </>
       )}
     </>
   );
