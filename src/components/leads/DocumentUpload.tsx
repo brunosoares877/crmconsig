@@ -52,7 +52,7 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ leadId }) => {
       console.error("Error counting documents:", error);
     }
   };
-
+  
   const fetchDocuments = async () => {
     try {
       const { data, error } = await supabase
@@ -77,7 +77,7 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({ leadId }) => {
       setIsDocumentsDialogOpen(true);
     }
   }, [showAdminPasswordDialog, isDocumentsDialogOpen]);
-
+  
   useEffect(() => {
     if (leadId) {
       fetchDocumentCount();
