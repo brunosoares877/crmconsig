@@ -128,35 +128,33 @@ const StickyQuickNote: React.FC = () => {
         const { data: userData } = await supabase.auth.getUser();
         if (userData?.user) {
           const remote = await fetchRemoteNotes(userData.user.id);
-          if (remote && remote.length > 0) {
-            setNotes(remote);
+          if (remote) {
+            setNotes(remote); // pode ser [] se usuário quiser nenhuma nota
             setIsLoaded(true);
             return;
           }
         }
 
-        // Fallback: carregar do localStorage
+        // Fallback: carregar do localStorage (inclusive array vazio)
         const saved = localStorage.getItem(STORAGE_NOTES_KEY);
         if (saved) {
           const parsed = JSON.parse(saved) as QuickNote[];
-          if (parsed.length > 0) {
-            const hydrated = parsed.map((n) => {
-              const safeId = ensureUuid(n.id);
-              if (typeof n.right === "number") {
-                return { ...n, id: safeId, width: n.width ?? NOTE_WIDTH, height: n.height ?? DEFAULT_HEIGHT };
-              }
-              if (typeof window !== "undefined") {
-                const width = n.width ?? NOTE_WIDTH;
-                const left = typeof n.x === "number" ? n.x : window.innerWidth - width - EDGE_PADDING;
-                const right = Math.max(EDGE_PADDING, window.innerWidth - width - left);
-                return { ...n, id: safeId, right, height: n.height ?? DEFAULT_HEIGHT, width };
-              }
-              return { ...n, id: safeId, right: EDGE_PADDING, height: n.height ?? DEFAULT_HEIGHT, width: n.width ?? NOTE_WIDTH };
-            });
-            setNotes(hydrated);
-            setIsLoaded(true);
-            return;
-          }
+          const hydrated = parsed.map((n) => {
+            const safeId = ensureUuid(n.id);
+            if (typeof n.right === "number") {
+              return { ...n, id: safeId, width: n.width ?? NOTE_WIDTH, height: n.height ?? DEFAULT_HEIGHT };
+            }
+            if (typeof window !== "undefined") {
+              const width = n.width ?? NOTE_WIDTH;
+              const left = typeof n.x === "number" ? n.x : window.innerWidth - width - EDGE_PADDING;
+              const right = Math.max(EDGE_PADDING, window.innerWidth - width - left);
+              return { ...n, id: safeId, right, height: n.height ?? DEFAULT_HEIGHT, width };
+            }
+            return { ...n, id: safeId, right: EDGE_PADDING, height: n.height ?? DEFAULT_HEIGHT, width: n.width ?? NOTE_WIDTH };
+          });
+          setNotes(hydrated);
+          setIsLoaded(true);
+          return;
         }
 
         // Estado inicial: uma nota no canto inferior direito
@@ -195,6 +193,10 @@ const StickyQuickNote: React.FC = () => {
 
     const saveCloud = async () => {
       try {
+        if (sanitized.length === 0) {
+          // nada para upsert; última exclusão já removeu no Supabase
+          return;
+        }
         const payload = sanitized.map((n) => ({
           id: n.id,
           user_id: userId,
@@ -216,7 +218,7 @@ const StickyQuickNote: React.FC = () => {
     };
 
     saveCloud();
-  }, [notes, isLoaded, hasUser, userId]);
+  }, [notes, isLoaded, hasUser, userId, ensureUuid]);
 
   // Realtime: atualizar quando outro device alterar
   useEffect(() => {
@@ -236,6 +238,7 @@ const StickyQuickNote: React.FC = () => {
         async () => {
           const remote = await fetchRemoteNotes(userId);
           if (remote) setNotes(remote);
+          else setNotes([]);
         }
       )
       .subscribe();
@@ -257,6 +260,7 @@ const StickyQuickNote: React.FC = () => {
     const handler = async () => {
       const remote = await fetchRemoteNotes(userId);
       if (remote) setNotes(remote);
+      else setNotes([]);
     };
     window.addEventListener("focus", handler);
     return () => window.removeEventListener("focus", handler);
@@ -427,13 +431,7 @@ const StickyQuickNote: React.FC = () => {
   };
 
   const deleteNote = async (id: string) => {
-    setNotes((prev) => {
-      const remaining = prev.filter((n) => n.id !== id);
-      if (remaining.length === 0) {
-        return [createDefaultNote()];
-      }
-      return remaining;
-    });
+    setNotes((prev) => prev.filter((n) => n.id !== id));
 
     try {
       const { data: userData } = await supabase.auth.getUser();
@@ -442,7 +440,7 @@ const StickyQuickNote: React.FC = () => {
       if (error) {
         toast.error("Erro ao excluir nota rápida (Supabase).");
         const remote = await fetchRemoteNotes(userData.user.id);
-        if (remote) setNotes(remote.length ? remote : [createDefaultNote()]);
+        if (remote) setNotes(remote);
       }
     } catch (error: any) {
       console.error("Erro ao excluir nota rápida:", error);
