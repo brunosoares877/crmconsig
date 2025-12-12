@@ -176,6 +176,17 @@ const StickyQuickNote: React.FC = () => {
   // Salvar em localStorage e Supabase (quando possível)
   useEffect(() => {
     if (!isLoaded || !hasUser || !userId) return;
+
+    // Garantir que todos os IDs são UUID antes de salvar
+    const sanitized = notes.map((n) => ({ ...n, id: ensureUuid(n.id) }));
+    const changed =
+      sanitized.length !== notes.length ||
+      sanitized.some((n, idx) => n.id !== notes[idx].id);
+    if (changed) {
+      setNotes(sanitized);
+      return; // salvar na próxima execução com estado já saneado
+    }
+
     try {
       localStorage.setItem(STORAGE_NOTES_KEY, JSON.stringify(notes));
     } catch (error) {
@@ -184,7 +195,7 @@ const StickyQuickNote: React.FC = () => {
 
     const saveCloud = async () => {
       try {
-        const payload = notes.map((n) => ({
+        const payload = sanitized.map((n) => ({
           id: n.id,
           user_id: userId,
           content: n.content ?? "",
@@ -415,7 +426,7 @@ const StickyQuickNote: React.FC = () => {
     );
   };
 
-  const deleteNote = (id: string) => {
+  const deleteNote = async (id: string) => {
     setNotes((prev) => {
       const remaining = prev.filter((n) => n.id !== id);
       if (remaining.length === 0) {
@@ -424,14 +435,18 @@ const StickyQuickNote: React.FC = () => {
       return remaining;
     });
 
-    // Tentar remover do Supabase (best-effort)
-    supabase.auth
-      .getUser()
-      .then(({ data }) => {
-        if (!data?.user) return;
-        supabase.from(STICKY_TABLE).delete().eq("id", id).eq("user_id", data.user.id);
-      })
-      .catch(() => {});
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData?.user) return;
+      const { error } = await supabase.from(STICKY_TABLE).delete().eq("id", id).eq("user_id", userData.user.id);
+      if (error) {
+        toast.error("Erro ao excluir nota rápida (Supabase).");
+        const remote = await fetchRemoteNotes(userData.user.id);
+        if (remote) setNotes(remote.length ? remote : [createDefaultNote()]);
+      }
+    } catch (error: any) {
+      console.error("Erro ao excluir nota rápida:", error);
+    }
   };
 
   const saveToNotes = async (note: QuickNote) => {
