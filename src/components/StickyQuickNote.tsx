@@ -17,7 +17,7 @@ const STACK_GAP = 32;
 const STICKY_TABLE = "sticky_notes";
 
 type QuickNote = {
-  id: string;
+  id: string; // deve ser UUID (tabela Supabase usa uuid)
   content: string;
   right?: number; // distância até a borda direita (preferencial)
   x?: number; // legado
@@ -37,16 +37,33 @@ const StickyQuickNote: React.FC = () => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [hasUser, setHasUser] = useState<boolean | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const dragStart = useRef<{ id: string; offsetX: number; offsetY: number } | null>(null);
   const resizeStart = useRef<{ id: string; startX: number; startY: number; startHeight: number; startWidth: number } | null>(null);
 
+  const generateId = useCallback(() => {
+    if (typeof crypto !== "undefined" && crypto.randomUUID) {
+      return crypto.randomUUID();
+    }
+    return `note-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  }, []);
+
+  const ensureUuid = useCallback(
+    (id: string) => {
+      const uuidRegex =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      return uuidRegex.test(id) ? id : generateId();
+    },
+    [generateId]
+  );
+
   const createDefaultNote = useCallback((): QuickNote => {
     if (typeof window === "undefined") {
-      return { id: `note-${Date.now()}`, content: "", minimized: false, right: EDGE_PADDING, y: 16, height: DEFAULT_HEIGHT, width: NOTE_WIDTH };
+      return { id: generateId(), content: "", minimized: false, right: EDGE_PADDING, y: 16, height: DEFAULT_HEIGHT, width: NOTE_WIDTH };
     }
     const noteHeight = DEFAULT_HEIGHT;
     return {
-      id: `note-${Date.now()}`,
+      id: generateId(),
       content: "",
       minimized: false,
       right: Math.max(EDGE_PADDING, EDGE_PADDING),
@@ -54,7 +71,7 @@ const StickyQuickNote: React.FC = () => {
       height: DEFAULT_HEIGHT,
       width: NOTE_WIDTH,
     };
-  }, []);
+  }, [generateId]);
 
   // Carregar estado salvo
   // Detectar usuário logado; só renderizar quando logado
@@ -86,7 +103,7 @@ const StickyQuickNote: React.FC = () => {
 
       if (!error && data) {
         return data.map((n: any) => ({
-          id: n.id,
+          id: ensureUuid(n.id),
           content: n.content || "",
           right: typeof n.right === "number" ? n.right : EDGE_PADDING,
           y: typeof n.y === "number" ? n.y : EDGE_PADDING,
@@ -100,7 +117,7 @@ const StickyQuickNote: React.FC = () => {
       }
       return null;
     },
-    []
+    [ensureUuid]
   );
 
   useEffect(() => {
@@ -124,16 +141,17 @@ const StickyQuickNote: React.FC = () => {
           const parsed = JSON.parse(saved) as QuickNote[];
           if (parsed.length > 0) {
             const hydrated = parsed.map((n) => {
+              const safeId = ensureUuid(n.id);
               if (typeof n.right === "number") {
-                return { ...n, width: n.width ?? NOTE_WIDTH, height: n.height ?? DEFAULT_HEIGHT };
+                return { ...n, id: safeId, width: n.width ?? NOTE_WIDTH, height: n.height ?? DEFAULT_HEIGHT };
               }
               if (typeof window !== "undefined") {
                 const width = n.width ?? NOTE_WIDTH;
                 const left = typeof n.x === "number" ? n.x : window.innerWidth - width - EDGE_PADDING;
                 const right = Math.max(EDGE_PADDING, window.innerWidth - width - left);
-                return { ...n, right, height: n.height ?? DEFAULT_HEIGHT, width };
+                return { ...n, id: safeId, right, height: n.height ?? DEFAULT_HEIGHT, width };
               }
-              return { ...n, right: EDGE_PADDING, height: n.height ?? DEFAULT_HEIGHT, width: n.width ?? NOTE_WIDTH };
+              return { ...n, id: safeId, right: EDGE_PADDING, height: n.height ?? DEFAULT_HEIGHT, width: n.width ?? NOTE_WIDTH };
             });
             setNotes(hydrated);
             setIsLoaded(true);
@@ -152,7 +170,7 @@ const StickyQuickNote: React.FC = () => {
     };
 
     load();
-  }, [createDefaultNote, hasUser, fetchRemoteNotes]);
+  }, [createDefaultNote, hasUser, fetchRemoteNotes, ensureUuid]);
 
   // Persistir estado
   // Salvar em localStorage e Supabase (quando possível)
@@ -192,8 +210,15 @@ const StickyQuickNote: React.FC = () => {
   // Realtime: atualizar quando outro device alterar
   useEffect(() => {
     if (!hasUser || !userId) return;
+
+    // Evitar múltiplas inscrições: remove canal anterior antes de criar outro
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+    }
+
     const channel = supabase
-      .channel(`sticky-notes-${userId}`)
+      .channel(`sticky-notes-${userId}-${Date.now()}`)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: STICKY_TABLE, filter: `user_id=eq.${userId}` },
@@ -203,9 +228,15 @@ const StickyQuickNote: React.FC = () => {
         }
       )
       .subscribe();
+    channelRef.current = channel;
 
     return () => {
-      supabase.removeChannel(channel);
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      } else {
+        supabase.removeChannel(channel);
+      }
     };
   }, [hasUser, userId, fetchRemoteNotes]);
 
@@ -349,7 +380,7 @@ const StickyQuickNote: React.FC = () => {
       const nextY = maxBottom + STACK_GAP;
 
       const next = {
-        id: `note-${Date.now()}`,
+        id: generateId(),
         content: "",
         minimized: false,
         height: DEFAULT_HEIGHT,
