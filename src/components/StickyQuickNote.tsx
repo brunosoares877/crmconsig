@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
+import { createPortal } from "react-dom";
 import { StickyNote, Minimize2, Plus, Save, Trash2 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -102,15 +103,17 @@ const StickyQuickNote: React.FC = () => {
         .order("created_at", { ascending: true });
 
       if (!error && data) {
-        return data.map((n: any) => ({
-          id: ensureUuid(n.id),
-          content: n.content || "",
-          right: typeof n.right === "number" ? n.right : EDGE_PADDING,
-          y: typeof n.y === "number" ? n.y : EDGE_PADDING,
-          width: typeof n.width === "number" ? n.width : NOTE_WIDTH,
-          height: typeof n.height === "number" ? n.height : DEFAULT_HEIGHT,
-          minimized: !!n.minimized,
-        })) as QuickNote[];
+        return data.map((n: any) =>
+          normalizeNote({
+            id: ensureUuid(n.id),
+            content: n.content || "",
+            right: typeof n.right === "number" ? n.right : EDGE_PADDING,
+            y: typeof n.y === "number" ? n.y : EDGE_PADDING,
+            width: typeof n.width === "number" ? n.width : NOTE_WIDTH,
+            height: typeof n.height === "number" ? n.height : DEFAULT_HEIGHT,
+            minimized: !!n.minimized,
+          })
+        ) as QuickNote[];
       }
       if (error) {
         console.warn("Falha ao buscar notas rápidas no Supabase:", error.message);
@@ -142,15 +145,15 @@ const StickyQuickNote: React.FC = () => {
           const hydrated = parsed.map((n) => {
             const safeId = ensureUuid(n.id);
             if (typeof n.right === "number") {
-              return { ...n, id: safeId, width: n.width ?? NOTE_WIDTH, height: n.height ?? DEFAULT_HEIGHT };
+              return normalizeNote({ ...n, id: safeId, width: n.width ?? NOTE_WIDTH, height: n.height ?? DEFAULT_HEIGHT });
             }
             if (typeof window !== "undefined") {
               const width = n.width ?? NOTE_WIDTH;
               const left = typeof n.x === "number" ? n.x : window.innerWidth - width - EDGE_PADDING;
               const right = Math.max(EDGE_PADDING, window.innerWidth - width - left);
-              return { ...n, id: safeId, right, height: n.height ?? DEFAULT_HEIGHT, width };
+              return normalizeNote({ ...n, id: safeId, right, height: n.height ?? DEFAULT_HEIGHT, width });
             }
-            return { ...n, id: safeId, right: EDGE_PADDING, height: n.height ?? DEFAULT_HEIGHT, width: n.width ?? NOTE_WIDTH };
+            return normalizeNote({ ...n, id: safeId, right: EDGE_PADDING, height: n.height ?? DEFAULT_HEIGHT, width: n.width ?? NOTE_WIDTH });
           });
           setNotes(hydrated);
           setIsLoaded(true);
@@ -290,6 +293,25 @@ const StickyQuickNote: React.FC = () => {
       };
     },
     [clampWidth]
+  );
+
+  const normalizeNote = useCallback(
+    (note: QuickNote): QuickNote => {
+      const width = clampWidth(note.width ?? NOTE_WIDTH);
+      const height = clampHeight(note.height ?? DEFAULT_HEIGHT);
+      const preferredRight = typeof note.right === "number" ? note.right : EDGE_PADDING;
+      const snapRight = preferredRight <= EDGE_PADDING + 8 ? EDGE_PADDING : preferredRight;
+      const { right, y } = clampPos(snapRight, note.y ?? EDGE_PADDING, note.minimized, height, width);
+      return {
+        ...note,
+        id: ensureUuid(note.id),
+        width,
+        height,
+        right,
+        y,
+      };
+    },
+    [clampHeight, clampPos, clampWidth, ensureUuid]
   );
 
   const startDrag = (id: string, clientX: number, clientY: number) => {
@@ -486,12 +508,18 @@ const StickyQuickNote: React.FC = () => {
     return () => document.removeEventListener("mousedown", handleOutside);
   }, []);
 
-  return (
-    <>
-      {!hasUser ? null : (
+  if (!hasUser) return null;
+
+  const portalRoot = typeof document !== "undefined" ? document.body : null;
+
+  const content = (
     <>
       <button
-        className="fixed right-3 bottom-3 z-50 bg-amber-400 text-amber-900 shadow-lg rounded-full p-2 hover:bg-amber-300 transition-colors border border-amber-500"
+        className="fixed right-3 bottom-3 z-[9999] bg-amber-400 text-amber-900 shadow-lg rounded-full p-2 hover:bg-amber-300 transition-colors border border-amber-500"
+        style={{ pointerEvents: "auto" }}
+        onMouseDownCapture={(e) => {
+          e.stopPropagation();
+        }}
         onClick={() => {
           if (!notes.length) {
             setNotes([createDefaultNote()]);
@@ -510,13 +538,16 @@ const StickyQuickNote: React.FC = () => {
           <button
             key={note.id}
             aria-label="Abrir nota rápida"
+            onMouseDownCapture={(e) => {
+              e.stopPropagation();
+            }}
             onClick={() => toggleMinimize(note.id, false)}
             onMouseDown={(e) => {
               startDrag(note.id, e.clientX, e.clientY);
               e.stopPropagation();
             }}
-            style={{ right: note.right ?? EDGE_PADDING, top: note.y }}
-            className="fixed z-50 bg-amber-100 text-amber-800 border border-amber-200 shadow-lg rounded-full px-3 py-2 hover:bg-amber-50 transition-colors cursor-move flex items-center gap-2 text-sm font-medium"
+            style={{ right: note.right ?? EDGE_PADDING, top: note.y, pointerEvents: "auto" }}
+            className="fixed z-[9999] bg-amber-100 text-amber-800 border border-amber-200 shadow-lg rounded-full px-3 py-2 hover:bg-amber-50 transition-colors cursor-move flex items-center gap-2 text-sm font-medium"
             data-sticky-note
           >
             <StickyNote className="h-4 w-4" />
@@ -525,8 +556,11 @@ const StickyQuickNote: React.FC = () => {
         ) : (
           <div
             key={note.id}
-            className="fixed z-50 bg-amber-50 border border-amber-200 shadow-2xl rounded-2xl overflow-hidden ring-1 ring-amber-200/60 cursor-move"
-            style={{ right: note.right ?? EDGE_PADDING, top: note.y, width: clampWidth(note.width ?? NOTE_WIDTH) }}
+            className="fixed z-[9999] bg-amber-50 border border-amber-200 shadow-2xl rounded-2xl overflow-hidden ring-1 ring-amber-200/60 cursor-move"
+            style={{ right: note.right ?? EDGE_PADDING, top: note.y, width: clampWidth(note.width ?? NOTE_WIDTH), pointerEvents: "auto" }}
+            onMouseDownCapture={(e) => {
+              e.stopPropagation();
+            }}
             onMouseDown={(e) => {
               startDrag(note.id, e.clientX, e.clientY);
               e.stopPropagation();
@@ -611,9 +645,9 @@ const StickyQuickNote: React.FC = () => {
         )
       )}
     </>
-      )}
-    </>
   );
+
+  return portalRoot ? createPortal(content, portalRoot) : content;
 };
 
 export default StickyQuickNote;
