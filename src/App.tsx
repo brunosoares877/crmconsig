@@ -44,6 +44,9 @@ const CommissionSettings = lazy(() => import("@/pages/CommissionSettings"));
 const Notes = lazy(() => import("@/pages/Notes"));
 const Settings = lazy(() => import("@/pages/Settings"));
 const Employees = lazy(() => import("@/pages/Employees"));
+const Roteiros = lazy(() => import("@/pages/Roteiros"));
+const RoteirosDetalhes = lazy(() => import("@/pages/RoteirosDetalhes"));
+const RoteirosAdmin = lazy(() => import("@/pages/RoteirosAdmin"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
 function App() {
@@ -100,6 +103,9 @@ function App() {
                   <Route path="/notes" element={<Notes />} />
                   <Route path="/settings" element={<Settings />} />
                   <Route path="/employees" element={<Employees />} />
+                  <Route path="/roteiros" element={<Roteiros />} />
+                  <Route path="/roteiros/admin" element={<RoteirosAdmin />} />
+                  <Route path="/roteiros/:banco" element={<RoteirosDetalhes />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </Suspense>
