@@ -15,8 +15,6 @@ const Sales = () => {
     const plansSection = document.getElementById('planos');
     if (plansSection) {
       plansSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    } else {
-      navigate("/login");
     }
   };
 
@@ -31,33 +29,33 @@ const Sales = () => {
   const features = [
     {
       icon: Users,
-      title: "Gerenciamento de Leads",
-      description: "Nunca mais perca uma oportunidade de venda com nosso sistema intuitivo que organiza seus contatos do primeiro clique à conversão."
+      title: "Controle Total de Leads",
+      description: "Centralize todos os seus contatos em um fluxo lógico. Nunca mais perca uma venda por esquecer de responder um WhatsApp ou perder um papel."
     },
     {
       icon: Award,
-      title: "Gestão de Equipe",
-      description: "Controle completo de funcionários e vendedores. Acompanhe performance individual, atribua leads e gerencie sua equipe de forma eficiente."
+      title: "Sua Equipe na Palma da Mão",
+      description: "Monitore a performance de cada vendedor em tempo real. Atribua metas, gerencie acessos e escale seu time com dados concretos."
     },
     {
       icon: BarChart3,
-      title: "Dashboard Analítico",
-      description: "Visualize métricas importantes e tome decisões baseadas em dados reais em tempo real para maximizar seus resultados."
+      title: "Inteligência de Vendas",
+      description: "Dashboard analítico com métricas reais. Saiba exatamente qual convênio ou produto está trazendo mais lucro para sua operação."
     },
     {
       icon: Bell,
-      title: "Lembretes e Agendamentos",
-      description: "Nunca mais perca um compromisso ou prazo importante com nosso sistema de lembretes inteligente."
+      title: "Agendamento Sem Falhas",
+      description: "O sistema te avisa o momento exato de retornar para o seu cliente. Mais organização significa mais conversão no final do mês."
     },
     {
       icon: Calculator,
-      title: "Controle de Comissões",
-      description: "Gerencie comissões de vendedores automaticamente com facilidade e transparência total."
+      title: "Comissões Automatizadas",
+      description: "Elimine as planilhas complexas. Calcule a comissão do seu time automaticamente com transparência total e zero erros."
     },
     {
       icon: Shield,
-      title: "Segurança de Dados",
-      description: "Seus dados estão protegidos com as mais modernas práticas de segurança e criptografia."
+      title: "Proteção Nível Bancário",
+      description: "Seus dados são seu maior patrimônio. Utilizamos criptografia de ponta para garantir que suas informações estejam sempre protegidas."
     }
   ];
 
@@ -80,8 +78,8 @@ const Sales = () => {
             <Button variant="ghost" className="text-blue-700 hover:text-blue-900 text-sm sm:text-base px-3 sm:px-4" onClick={() => navigate("/login")}>
               Entrar
             </Button>
-            <Button className="bg-blue-600 hover:bg-blue-700 text-white text-sm sm:text-base px-3 sm:px-4" onClick={handleStartTrial}>
-              Criar Grátis
+            <Button className="bg-blue-600 hover:bg-blue-700 text-white text-sm sm:text-base px-3 sm:px-4 shadow-md font-semibold" onClick={handleStartTrial}>
+              Assinar Agora
             </Button>
           </div>
         </div>
@@ -94,21 +92,21 @@ const Sales = () => {
         <div className="absolute top-20 sm:top-40 right-5 sm:right-10 w-48 sm:w-72 h-48 sm:h-72 bg-purple-200 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse delay-1000" />
         <div className="container mx-auto text-center relative z-10">
           <Badge className="mb-6 sm:mb-8 bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 px-4 sm:px-6 py-2 text-xs sm:text-sm font-semibold shadow-lg">
-            <Zap className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-            7 dias de garantia - COMECE AGORA!
+            <Shield className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+            7 DIAS DE GARANTIA TOTAL
           </Badge>
           <h1 className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-bold text-gray-900 mb-6 sm:mb-8 leading-tight px-2">
-            CRM completo para corbans:<br />
-            <span className="text-blue-span font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Aumente suas vendas</span> e<br />
-            <span className="text-blue-span font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">otimize sua gestão</span>
+            CRM de Alta Performance para Corbans:<br />
+            <span className="text-blue-span font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Multiplique suas Vendas</span> e<br />
+            <span className="text-blue-span font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Domine sua Gestão</span>
           </h1>
           <p className="text-lg sm:text-xl md:text-2xl text-gray-600 mb-8 sm:mb-12 max-w-3xl mx-auto font-light leading-relaxed px-4">
-            Feito de corban para corban. Transforme leads em vendas com o sistema mais completo do mercado.
+            A ferramenta definitiva para correspondentes que buscam escala. Transforme sua operação em uma máquina de resultados previsíveis.
           </p>
           <div className="mb-6 sm:mb-8">
-            <Button size="lg" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 sm:px-10 py-3 sm:py-4 text-base sm:text-lg shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300 w-full sm:w-auto" onClick={handleStartTrial}>
+            <Button size="lg" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 sm:px-10 py-3 sm:py-4 text-base sm:text-lg shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300 w-full sm:w-auto font-bold" onClick={handleStartTrial}>
               <Play className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-              Começar agora mesmo
+              Garantir Meu Acesso Agora
             </Button>
           </div>
           <div className="flex flex-col sm:flex-row flex-wrap justify-center items-center gap-4 sm:gap-8 text-xs sm:text-sm text-gray-500">
@@ -124,6 +122,52 @@ const Sales = () => {
               <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-green-500" />
               <span>Suporte rápido</span>
             </div>
+          </div>
+        </div>
+      </section>
+      {/* Problem Section - Agitation */}
+      <section className="py-12 sm:py-20 bg-white relative z-10">
+        <div className="container mx-auto px-4 sm:px-6">
+          <div className="max-w-4xl mx-auto text-center mb-12 sm:mb-16">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-gray-900 mb-6 drop-shadow-sm">
+              Por que a maioria dos Corbans <span className="text-red-600">para de crescer?</span>
+            </h2>
+            <p className="text-lg text-gray-600 font-medium">
+              A verdade é dolorosa: planilhas e cadernos são os maiores inimigos do seu lucro.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="p-6 rounded-2xl bg-red-50 border border-red-100">
+              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4">
+                <Users className="w-6 h-6 text-red-600" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Leads Perdidos</h3>
+              <p className="text-gray-600 text-sm leading-relaxed">Cada lead que você esquece de retornar é dinheiro que vai para o bolso do seu concorrente. Sem sistema, o prejuízo é invisível, mas real.</p>
+            </div>
+
+            <div className="p-6 rounded-2xl bg-red-50 border border-red-100">
+              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4">
+                <Calculator className="w-6 h-6 text-red-600" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Caos Financeiro</h3>
+              <p className="text-gray-600 text-sm leading-relaxed">Calcular comissões na mão gera erros, desconfiança do time e perda de tempo precioso que deveria ser usado vendendo.</p>
+            </div>
+
+            <div className="p-6 rounded-2xl bg-red-50 border border-red-100">
+              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4">
+                <TrendingUp className="w-6 h-6 text-red-600" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Falta de Escala</h3>
+              <p className="text-gray-600 text-sm leading-relaxed">Você não consegue crescer porque não sabe de onde vêm seus melhores resultados. Sem dados, você está dirigindo no escuro.</p>
+            </div>
+          </div>
+
+          <div className="mt-12 text-center">
+            <p className="text-gray-900 font-bold text-lg mb-6">Chegou a hora de profissionalizar sua operação.</p>
+            <Button variant="outline" className="border-2 border-blue-600 text-blue-600 hover:bg-blue-50 font-bold" onClick={handleStartTrial}>
+              Quero Sair do Amadorismo
+            </Button>
           </div>
         </div>
       </section>
@@ -208,12 +252,12 @@ const Sales = () => {
       <section id="planos" className="py-20 px-4 bg-gradient-to-br from-white to-blue-50/30">
         <div className="container mx-auto">
           <div className="text-center mb-16">
-            <Badge className="mb-4 bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-600 hover:to-emerald-600 px-6 py-2 text-sm font-semibold shadow-lg">
+            <Badge className="mb-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-2 text-sm font-semibold shadow-lg">
               <Zap className="w-4 h-4 mr-2" />
-              EXPERIMENTE AGORA MESMO
+              ACESSO IMEDIATO
             </Badge>
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">Escolha o plano <span className="text-blue-600">ideal</span> para você</h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">Comece e escolha seu plano quando estiver pronto. Todos os planos incluem suporte completo.</p>
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">Escolha o plano <span className="text-blue-600">ideal</span> para sua operação</h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">Invista na ferramenta que vai colocar ordem na sua casa e lucro no seu bolso.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 max-w-5xl mx-auto">
             {/* Plano Mensal */}
@@ -399,11 +443,11 @@ const Sales = () => {
             ÚLTIMA CHANCE
           </Badge>
           <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-6 sm:mb-8 leading-tight px-2">
-            Pronto para <span className="text-yellow-300">revolucionar</span><br />
-            suas vendas?
+            Retome o <span className="text-yellow-300">controle</span> da sua<br />
+            operação hoje mesmo
           </h2>
           <p className="text-lg sm:text-xl md:text-2xl mb-8 sm:mb-12 font-light opacity-90 max-w-3xl mx-auto px-4">
-            Experimente nosso CRM e veja como podemos ajudar sua empresa a crescer exponencialmente.
+            Não deixe mais nenhum lead escapar. Assine agora e tenha acesso imediato à ferramenta que vai transformar o seu faturamento.
           </p>
           <div className="mb-8 sm:mb-12">
             <Button
@@ -412,22 +456,22 @@ const Sales = () => {
               className="!bg-white !text-blue-600 hover:!bg-blue-50 hover:!text-blue-700 font-bold text-base sm:text-lg md:text-xl px-8 sm:px-12 md:px-16 py-3 sm:py-4 rounded-xl sm:rounded-2xl shadow-2xl hover:shadow-3xl transform hover:scale-105 transition-all duration-300 !border-2 !border-white hover:!border-blue-200 w-full sm:w-auto"
               onClick={handleStartTrial}
             >
-              <Play className="w-5 h-5 sm:w-6 sm:h-6 mr-2 sm:mr-3" />
-              Começar agora mesmo
+              <CreditCard className="w-5 h-5 sm:w-6 sm:h-6 mr-2 sm:mr-3" />
+              Garantir Meu Acesso Imediato
             </Button>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 max-w-2xl mx-auto">
             <div className="flex flex-col items-center p-3 sm:p-4 rounded-xl bg-white/10 backdrop-blur-sm">
               <CheckCircle className="w-6 h-6 sm:w-8 sm:h-8 mb-2 text-green-300" />
-              <span className="font-semibold text-sm sm:text-base">7 dias grátis</span>
+              <span className="font-semibold text-sm sm:text-base">Acesso Imediato</span>
             </div>
             <div className="flex flex-col items-center p-3 sm:p-4 rounded-xl bg-white/10 backdrop-blur-sm">
               <CheckCircle className="w-6 h-6 sm:w-8 sm:h-8 mb-2 text-green-300" />
-              <span className="font-semibold text-sm sm:text-base">Sem cartão de crédito</span>
+              <span className="font-semibold text-sm sm:text-base">Pagamento Seguro</span>
             </div>
             <div className="flex flex-col items-center p-3 sm:p-4 rounded-xl bg-white/10 backdrop-blur-sm sm:col-span-2 md:col-span-1">
               <CheckCircle className="w-6 h-6 sm:w-8 sm:h-8 mb-2 text-green-300" />
-              <span className="font-semibold text-sm sm:text-base">Cancele quando quiser</span>
+              <span className="font-semibold text-sm sm:text-base">Suporte VIP</span>
             </div>
           </div>
         </div>
