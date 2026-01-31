@@ -38,13 +38,13 @@ export const useCommissionConfig = (productName?: string) => {
       setLoading(true);
 
       // Sempre carregar todas as configurações - o filtro será feito no componente
-      let ratesQuery = supabase
+      const ratesQuery = supabase
         .from('commission_rates')
         .select('*')
         .eq('active', true)
         .order('created_at', { ascending: true });
 
-      let tiersQuery = supabase
+      const tiersQuery = supabase
         .from('commission_tiers')
         .select('*')
         .eq('active', true)

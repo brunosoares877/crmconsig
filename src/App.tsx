@@ -8,6 +8,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as SonnerToaster } from "sonner";
 import { Loader2 } from "lucide-react";
 import StickyQuickNote from "@/components/StickyQuickNote";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 // Loading component
 const LoadingSpinner = () => (
@@ -44,6 +45,9 @@ const CommissionSettings = lazy(() => import("@/pages/CommissionSettings"));
 const Notes = lazy(() => import("@/pages/Notes"));
 const Settings = lazy(() => import("@/pages/Settings"));
 const Employees = lazy(() => import("@/pages/Employees"));
+const Roteiros = lazy(() => import("@/pages/Roteiros"));
+const RoteirosDetalhes = lazy(() => import("@/pages/RoteirosDetalhes"));
+const RoteirosAdmin = lazy(() => import("@/pages/RoteirosAdmin"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
 function App() {
@@ -75,31 +79,37 @@ function App() {
               <Suspense fallback={<LoadingSpinner />}>
                 <Routes>
                   <Route path="/" element={<Sales />} />
-                  <Route path="/dashboard" element={<Index />} />
+                  {/* Rotas protegidas - requerem assinatura ou trial ativo */}
+                  <Route path="/dashboard" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+                  <Route path="/leads" element={<ProtectedRoute><Leads /></ProtectedRoute>} />
+                  <Route path="/leads/new" element={<ProtectedRoute><LeadNew /></ProtectedRoute>} />
+                  <Route path="/leads/import" element={<ProtectedRoute><LeadImport /></ProtectedRoute>} />
+                  <Route path="/leads/config" element={<ProtectedRoute><LeadsConfig /></ProtectedRoute>} />
+                  <Route path="/leads/scheduled" element={<ProtectedRoute><LeadScheduling /></ProtectedRoute>} />
+                  <Route path="/leads/trash" element={<ProtectedRoute><LeadsTrash /></ProtectedRoute>} />
+                  <Route path="/portability" element={<ProtectedRoute><Portability /></ProtectedRoute>} />
+                  <Route path="/reminders" element={<ProtectedRoute><Reminders /></ProtectedRoute>} />
+                  <Route path="/reminders/calendar" element={<ProtectedRoute><RemindersCalendar /></ProtectedRoute>} />
+                  <Route path="/commission" element={<ProtectedRoute><Commission /></ProtectedRoute>} />
+                  <Route path="/commission/settings" element={<ProtectedRoute><CommissionSettings /></ProtectedRoute>} />
+                  <Route path="/notes" element={<ProtectedRoute><Notes /></ProtectedRoute>} />
+                  <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+                  <Route path="/employees" element={<ProtectedRoute><Employees /></ProtectedRoute>} />
+                  <Route path="/roteiros" element={<ProtectedRoute><Roteiros /></ProtectedRoute>} />
+                  <Route path="/roteiros/admin" element={<ProtectedRoute><RoteirosAdmin /></ProtectedRoute>} />
+                  <Route path="/roteiros/:banco" element={<ProtectedRoute><RoteirosDetalhes /></ProtectedRoute>} />
+
+                  {/* Rotas públicas - não requerem assinatura */}
                   <Route path="/plans" element={<Plans />} />
                   <Route path="/subscription-success" element={<SubscriptionSuccess />} />
                   <Route path="/subscription-cancelled" element={<SubscriptionCancelled />} />
-                  <Route path="/leads" element={<Leads />} />
                   <Route path="/maquina-de-leads" element={<MaquinaDeLeads />} />
-                  <Route path="/leads/new" element={<LeadNew />} />
-                  <Route path="/leads/import" element={<LeadImport />} />
-                  <Route path="/leads/config" element={<LeadsConfig />} />
-                  <Route path="/leads/scheduled" element={<LeadScheduling />} />
-                  <Route path="/leads/trash" element={<LeadsTrash />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/reset-password" element={<ResetPassword />} />
                   <Route path="/reset-admin-password" element={<ResetAdminPassword />} />
                   <Route path="/sales" element={<Sales />} />
-                  <Route path="/portability" element={<Portability />} />
-                  <Route path="/reminders" element={<Reminders />} />
-                  <Route path="/reminders/calendar" element={<RemindersCalendar />} />
                   <Route path="/traffic-premium" element={<TrafficPremium />} />
                   <Route path="/curso-trafego-pago" element={<CursoTrafegoPago />} />
-                  <Route path="/commission" element={<Commission />} />
-                  <Route path="/commission/settings" element={<CommissionSettings />} />
-                  <Route path="/notes" element={<Notes />} />
-                  <Route path="/settings" element={<Settings />} />
-                  <Route path="/employees" element={<Employees />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </Suspense>

@@ -28,7 +28,8 @@ import {
   Edit,
   Cog,
   Briefcase,
-  FileText
+  FileText,
+  FolderOpen
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -36,6 +37,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import logger from "@/utils/logger";
 
 // Menu agrupado por seções
 const items = [
@@ -100,6 +102,12 @@ const items = [
     icon: DollarSign,
     group: "NEGÓCIOS"
   },
+  {
+    title: "Roteiros Operacionais",
+    url: "/roteiros",
+    icon: FolderOpen,
+    group: "ROTEIROS"
+  },
 
   {
     title: "Funcionários",
@@ -133,14 +141,14 @@ export function AppSidebar() {
   useEffect(() => {
     const loadProfileImage = async () => {
       if (!user) return;
-      
+
       try {
         // Tentar buscar no bucket avatars primeiro
         const avatarPath = `${user.id}/profile.jpg`;
         const { data: avatarData } = supabase.storage
           .from('avatars')
           .getPublicUrl(avatarPath);
-        
+
         // Check if image exists by making a HEAD request
         if (avatarData?.publicUrl) {
           const response = await fetch(avatarData.publicUrl, { method: 'HEAD' });
@@ -149,13 +157,13 @@ export function AppSidebar() {
             return;
           }
         }
-        
+
         // Fallback: tentar buscar no lead-documents
         const fallbackPath = `${user.id}/profile/profile.jpg`;
         const { data: fallbackData } = supabase.storage
           .from('lead-documents')
           .getPublicUrl(fallbackPath);
-        
+
         if (fallbackData?.publicUrl) {
           const fallbackResponse = await fetch(fallbackData.publicUrl, { method: 'HEAD' });
           if (fallbackResponse.ok) {
@@ -163,7 +171,7 @@ export function AppSidebar() {
             return;
           }
         }
-        
+
         // Tentar outras extensões comuns
         const extensions = ['png', 'gif', 'webp'];
         for (const ext of extensions) {
@@ -171,7 +179,7 @@ export function AppSidebar() {
           const { data } = supabase.storage
             .from('avatars')
             .getPublicUrl(path);
-          
+
           if (data?.publicUrl) {
             const response = await fetch(data.publicUrl, { method: 'HEAD' });
             if (response.ok) {
@@ -180,12 +188,12 @@ export function AppSidebar() {
             }
           }
         }
-        
+
       } catch (error) {
-        console.log('No existing profile image found');
+        logger.debug('No existing profile image found');
       }
     };
-    
+
     loadProfileImage();
   }, [user]);
 
@@ -193,7 +201,7 @@ export function AppSidebar() {
     try {
       setUploading(true);
       const file = event.target.files?.[0];
-      
+
       if (!file) {
         toast.error("Nenhum arquivo selecionado");
         return;
@@ -223,7 +231,7 @@ export function AppSidebar() {
       // Usar estrutura de pastas: userId/fileName
       const filePath = `${user.id}/${fileName}`;
 
-      console.log('Uploading file:', { fileName, fileType: file.type, fileSize: file.size, filePath });
+      logger.info('Uploading file:', { fileName, fileType: file.type, fileSize: file.size, filePath });
 
       // Tentar fazer upload para o bucket avatars
       const { error: uploadError } = await supabase.storage
@@ -234,34 +242,34 @@ export function AppSidebar() {
         });
 
       if (uploadError) {
-        console.error('Upload error:', uploadError);
-        
+        logger.error('Upload error:', uploadError);
+
         // Se falhar no avatars, tentar no lead-documents como fallback
-        console.log('Trying fallback upload to lead-documents...');
+        logger.warn('Trying fallback upload to lead-documents...');
         const fallbackPath = `${user.id}/profile/${fileName}`;
-        
+
         const { error: fallbackError } = await supabase.storage
           .from('lead-documents')
           .upload(fallbackPath, file, {
             upsert: true,
             contentType: file.type
           });
-        
+
         if (fallbackError) {
           throw fallbackError;
         }
-        
+
         // Usar URL do fallback
         const { data: fallbackData } = supabase.storage
           .from('lead-documents')
           .getPublicUrl(fallbackPath);
-        
+
         if (fallbackData?.publicUrl) {
           setProfileImage(fallbackData.publicUrl);
           toast.success("Foto de perfil atualizada com sucesso!");
           return;
         }
-        
+
         throw new Error("Erro ao obter URL da imagem");
       }
 
@@ -278,8 +286,8 @@ export function AppSidebar() {
       }
 
     } catch (error: any) {
-      console.error('Error uploading file:', error);
-      
+      logger.error('Error uploading file:', error);
+
       if (error.message?.includes('Bucket not found')) {
         toast.error("Storage não configurado. Entre em contato com o suporte.");
       } else if (error.message?.includes('new row violates row-level security') || error.message?.includes('policy')) {
@@ -310,11 +318,11 @@ export function AppSidebar() {
     }
   };
 
-      return (
-      <Sidebar className="bg-gradient-to-br from-blue-900 via-blue-800 to-indigo-900 border-r border-blue-700/50 sidebar-responsive">
+  return (
+    <Sidebar className="bg-gradient-to-br from-blue-900 via-blue-800 to-indigo-900 border-r border-blue-700/50 sidebar-responsive">
 
-      
-              <SidebarContent className="flex-1 pt-3 notebook:pt-4 lg:pt-4">
+
+      <SidebarContent className="flex-1 pt-3 notebook:pt-4 lg:pt-4">
         {Object.entries(groupedItems).map(([group, groupItems]) => (
           <SidebarGroup key={group}>
             <SidebarGroupLabel className="text-xs font-semibold text-blue-200/80 uppercase tracking-wider">
@@ -340,12 +348,12 @@ export function AppSidebar() {
                       <Link to={item.url} className="flex items-center gap-3 px-3 py-2">
                         <item.icon className={
                           "h-4 w-4 transition-colors duration-200 " +
-                          (item.highlight ? "!text-white" : 
+                          (item.highlight ? "!text-white" :
                             location.pathname === item.url ? "text-white" : "text-blue-200")
                         } />
                         <span className={
                           "font-medium transition-colors duration-200 " +
-                          (item.highlight ? "!text-white" : 
+                          (item.highlight ? "!text-white" :
                             location.pathname === item.url ? "text-white" : "text-blue-100")
                         }>
                           {item.title}
@@ -364,10 +372,9 @@ export function AppSidebar() {
           <div className="flex flex-col items-center space-y-3 px-3">
             {/* Profile Image/Selfie Section */}
             <div className="relative">
-              <Avatar 
-                className={`h-16 w-16 cursor-pointer ring-2 ring-blue-400/30 transition-all duration-300 relative ${
-                  isAvatarHovered ? 'ring-blue-300/80 shadow-lg shadow-blue-500/20' : ''
-                }`}
+              <Avatar
+                className={`h-16 w-16 cursor-pointer ring-2 ring-blue-400/30 transition-all duration-300 relative ${isAvatarHovered ? 'ring-blue-300/80 shadow-lg shadow-blue-500/20' : ''
+                  }`}
                 onClick={handleAvatarClick}
                 tabIndex={0}
                 onKeyDown={e => {
@@ -392,9 +399,8 @@ export function AppSidebar() {
                   </AvatarFallback>
                 )}
                 {/* Botão de editar sobreposto (ícone lápis) visível apenas ao hover diretamente no avatar */}
-                <div className={`absolute inset-0 bg-black/60 rounded-full flex items-center justify-center transition-opacity duration-300 pointer-events-none z-10 ${
-                  isAvatarHovered ? 'opacity-100' : 'opacity-0'
-                }`}>
+                <div className={`absolute inset-0 bg-black/60 rounded-full flex items-center justify-center transition-opacity duration-300 pointer-events-none z-10 ${isAvatarHovered ? 'opacity-100' : 'opacity-0'
+                  }`}>
                   <Edit className="h-6 w-6 text-white drop-shadow-lg" />
                 </div>
               </Avatar>
@@ -409,7 +415,7 @@ export function AppSidebar() {
                 disabled={uploading}
               />
             </div>
-            
+
             {/* User Email */}
             <div className="text-center w-full">
               <p className="text-sm font-medium truncate px-2 text-white">

@@ -5,6 +5,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import type { PostgrestError } from "@/types/database.types";
+import logger from "@/utils/logger";
 
 import {
   Form,
@@ -104,8 +106,9 @@ export default function NewCommissionForm({ leads, onSuccess, onCancel }: NewCom
         if (data) {
           setCommissionTiers(data as CommissionTier[]);
         }
-      } catch (error: any) {
-        console.error("Error fetching commission tiers:", error);
+      } catch (error) {
+        const err = error as PostgrestError;
+        logger.error("Error fetching commission tiers", err);
       }
     }
 
@@ -126,8 +129,9 @@ export default function NewCommissionForm({ leads, onSuccess, onCancel }: NewCom
           });
           setFlatRates(rateMap);
         }
-      } catch (error: any) {
-        console.error("Error fetching commission rates:", error);
+      } catch (error) {
+        const err = error as PostgrestError;
+        logger.error("Error fetching commission rates", err);
       }
     }
 
@@ -154,13 +158,13 @@ export default function NewCommissionForm({ leads, onSuccess, onCancel }: NewCom
   const calculateCommission = (amount: number, product: string) => {
     // First check if there are any tiers for this product
     const productTiers = commissionTiers.filter(tier => tier.product === product);
-    
+
     if (productTiers.length > 0) {
       // Find the applicable tier
       const applicableTier = productTiers.find(tier => {
         const minAmount = tier.min_amount;
         const maxAmount = tier.max_amount;
-        
+
         if (maxAmount === null) {
           // No maximum, just check minimum
           return amount >= minAmount;
@@ -169,14 +173,14 @@ export default function NewCommissionForm({ leads, onSuccess, onCancel }: NewCom
           return amount >= minAmount && amount <= maxAmount;
         }
       });
-      
+
       if (applicableTier) {
         const commission = (amount * applicableTier.percentage) / 100;
         setCalculatedCommission(commission);
         return;
       }
     }
-    
+
     // If no tiers found or no applicable tier, use flat rate
     if (flatRates[product]) {
       const commission = (amount * flatRates[product]) / 100;
@@ -194,7 +198,7 @@ export default function NewCommissionForm({ leads, onSuccess, onCancel }: NewCom
       if (userError) throw userError;
 
       const amount = parseFloat(values.amount.replace(/\./g, "").replace(",", "."));
-      
+
       // If we have a calculated commission, use that as the commission amount
       const commissionAmount = calculatedCommission !== null ? calculatedCommission : amount;
 
@@ -211,12 +215,13 @@ export default function NewCommissionForm({ leads, onSuccess, onCancel }: NewCom
       });
 
       if (error) throw error;
-      
+
       toast.success("Comissão cadastrada com sucesso!");
       onSuccess();
-    } catch (error: any) {
-      console.error("Error creating commission:", error);
-      toast.error(`Erro ao cadastrar comissão: ${error.message}`);
+    } catch (error) {
+      const err = error as PostgrestError;
+      logger.error("Error creating commission", err);
+      toast.error(`Erro ao cadastrar comissão: ${err.message}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -224,12 +229,12 @@ export default function NewCommissionForm({ leads, onSuccess, onCancel }: NewCom
 
   const formatCurrencyInput = (value: string) => {
     // Remove all non-digit characters
-    let digits = value.replace(/\D/g, "");
-    
+    const digits = value.replace(/\D/g, "");
+
     // Convert to number and back to string to remove leading zeros
-    let number = parseInt(digits, 10) || 0;
+    const number = parseInt(digits, 10) || 0;
     let formatted = number.toString();
-    
+
     // Add thousands separators
     if (formatted.length > 3) {
       formatted = formatted.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
@@ -242,7 +247,7 @@ export default function NewCommissionForm({ leads, onSuccess, onCancel }: NewCom
 
     return formatted;
   };
-  
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -324,7 +329,7 @@ export default function NewCommissionForm({ leads, onSuccess, onCancel }: NewCom
         {calculatedCommission !== null && (
           <div className="p-3 bg-green-50 border border-green-200 rounded-md">
             <p className="text-sm font-medium">
-              Comissão calculada: 
+              Comissão calculada:
               <span className="text-green-600 ml-2">
                 R$ {calculatedCommission.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
               </span>

@@ -46,8 +46,10 @@ import { AppSidebar } from "@/components/AppSidebar";
 import Header from "@/components/Header";
 import { CustomCalendar } from "@/components/ui/custom-calendar";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import logger from "@/utils/logger";
+import { PostgrestError } from "@/types/database.types";
 
-type AppointmentStatus = "all" | "completed" | "overdue" | "pending";
+type AppointmentFilterStatus = "all" | "completed" | "overdue" | "pending";
 
 const LeadScheduling = () => {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -57,7 +59,7 @@ const LeadScheduling = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [currentStatus, setCurrentStatus] = useState<AppointmentStatus>("all");
+  const [currentStatus, setCurrentStatus] = useState<AppointmentFilterStatus>("all");
 
   // Form state
   const [title, setTitle] = useState("");
@@ -80,30 +82,31 @@ const LeadScheduling = () => {
         .from("leads")
         .select("id, name, cpf")
         .order("name");
-      
+
       if (leadsError) throw leadsError;
-      
+
       const leadsWithCpf = leadsData as Lead[];
       setLeads(leadsWithCpf);
       setFilteredLeads(leadsWithCpf);
-      
+
       // Fetch appointments
       const { data: appointmentsData, error: appointmentsError } = await supabase
         .from("appointments")
         .select("*")
         .order("date");
-        
+
       if (appointmentsError) throw appointmentsError;
       setAppointments(appointmentsData as Appointment[]);
       setFilteredAppointments(appointmentsData as Appointment[]);
-    } catch (error: any) {
-      console.error("Error fetching data:", error);
-      toast.error(`Erro ao carregar dados: ${error.message}`);
+    } catch (error) {
+      const err = error as PostgrestError;
+      logger.error("Error fetching data", err);
+      toast.error(`Erro ao carregar dados: ${err.message}`);
     } finally {
       setIsLoading(false);
     }
   };
-  
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -124,8 +127,8 @@ const LeadScheduling = () => {
       setFilteredLeads(leads);
       return;
     }
-    
-    const filtered = leads.filter(lead => 
+
+    const filtered = leads.filter(lead =>
       lead.name.toLowerCase().includes(searchValue.toLowerCase()) ||
       (lead.cpf && lead.cpf.includes(searchValue.replace(/\D/g, '')))
     );
@@ -141,22 +144,22 @@ const LeadScheduling = () => {
     return lead.name;
   };
 
-  const filterAppointments = (status: AppointmentStatus) => {
+  const filterAppointments = (status: AppointmentFilterStatus) => {
     setCurrentStatus(status);
-    
+
     if (status === "all") {
       setFilteredAppointments(appointments);
       return;
     }
-    
+
     const now = new Date();
     // Remover os segundos e milissegundos para comparação mais precisa
     now.setSeconds(0, 0);
-    
+
     const filtered = appointments.filter(appointment => {
       const appointmentDate = new Date(`${appointment.date} ${appointment.time}`);
       appointmentDate.setSeconds(0, 0);
-      
+
       if (status === "completed") {
         return appointment.status === "completed";
       } else if (status === "overdue") {
@@ -164,10 +167,10 @@ const LeadScheduling = () => {
       } else if (status === "pending") {
         return appointment.status === "scheduled" && appointmentDate >= now;
       }
-      
+
       return false;
     });
-    
+
     setFilteredAppointments(filtered);
   };
 
@@ -176,14 +179,14 @@ const LeadScheduling = () => {
       toast.error("Preencha todos os campos obrigatórios");
       return;
     }
-    
+
     setIsSubmitting(true);
     try {
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) throw new Error("Usuário não autenticado");
-      
+
       const formattedDate = format(date, "yyyy-MM-dd");
-      
+
       if (editingAppointment) {
         // Update existing appointment
         const { error } = await supabase
@@ -198,7 +201,7 @@ const LeadScheduling = () => {
             updated_at: new Date().toISOString()
           })
           .eq("id", editingAppointment.id);
-          
+
         if (error) throw error;
         toast.success("Agendamento atualizado com sucesso!");
       } else {
@@ -214,17 +217,19 @@ const LeadScheduling = () => {
             status,
             user_id: userData.user.id
           });
-          
+
         if (error) throw error;
         toast.success("Agendamento criado com sucesso!");
       }
-      
+
       setIsDialogOpen(false);
       resetForm();
       await fetchData();
-    } catch (error: any) {
-      console.error("Error submitting appointment:", error);
-      toast.error(`Erro ao ${editingAppointment ? "atualizar" : "criar"} agendamento: ${error.message}`);
+      await fetchData();
+    } catch (error) {
+      const err = error as PostgrestError;
+      logger.error("Error submitting appointment", err);
+      toast.error(`Erro ao ${editingAppointment ? "atualizar" : "criar"} agendamento: ${err.message}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -247,14 +252,17 @@ const LeadScheduling = () => {
         .from("appointments")
         .delete()
         .eq("id", id);
-        
+
       if (error) throw error;
-      
+
       setAppointments(appointments.filter(a => a.id !== id));
       toast.success("Agendamento excluído com sucesso!");
-    } catch (error: any) {
-      console.error("Error deleting appointment:", error);
-      toast.error(`Erro ao excluir agendamento: ${error.message}`);
+      setAppointments(appointments.filter(a => a.id !== id));
+      toast.success("Agendamento excluído com sucesso!");
+    } catch (error) {
+      const err = error as PostgrestError;
+      logger.error("Error deleting appointment", err);
+      toast.error(`Erro ao excluir agendamento: ${err.message}`);
     }
   };
 
@@ -262,27 +270,29 @@ const LeadScheduling = () => {
     try {
       const { error } = await supabase
         .from("appointments")
-        .update({ 
+        .update({
           status: newStatus,
           updated_at: new Date().toISOString()
         })
         .eq("id", appointment.id);
-        
+
       if (error) throw error;
-      
+
       // Atualizar o estado local
-      const updatedAppointments = appointments.map(a => 
+      const updatedAppointments = appointments.map(a =>
         a.id === appointment.id ? { ...a, status: newStatus } : a
       );
       setAppointments(updatedAppointments);
-      
+
       // Recarregar os dados para garantir que tudo esteja sincronizado
       await fetchData();
-      
+
       toast.success(`Status atualizado para ${getStatusText(newStatus)}`);
-    } catch (error: any) {
-      console.error("Error updating status:", error);
-      toast.error(`Erro ao atualizar status: ${error.message}`);
+      toast.success(`Status atualizado para ${getStatusText(newStatus)}`);
+    } catch (error) {
+      const err = error as PostgrestError;
+      logger.error("Error updating status", err);
+      toast.error(`Erro ao atualizar status: ${err.message}`);
     }
   };
 
@@ -377,7 +387,7 @@ const LeadScheduling = () => {
             <Clock className="h-4 w-4 ml-2" />
             <span>{appointment.time}</span>
           </div>
-          
+
           {appointment.notes && (
             <div className="text-sm text-muted-foreground">
               {appointment.notes}
@@ -393,7 +403,7 @@ const LeadScheduling = () => {
               <Edit className="h-4 w-4 mr-1" />
               Editar
             </Button>
-            
+
             {appointment.status !== "completed" && (
               <Button
                 variant="outline"
@@ -404,7 +414,7 @@ const LeadScheduling = () => {
                 Concluir
               </Button>
             )}
-            
+
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button
@@ -425,7 +435,7 @@ const LeadScheduling = () => {
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                  <AlertDialogAction 
+                  <AlertDialogAction
                     onClick={() => handleDeleteAppointment(appointment.id)}
                     className="bg-red-600 hover:bg-red-700"
                   >
@@ -450,307 +460,307 @@ const LeadScheduling = () => {
             <div className="p-6 space-y-6">
               {/* Header moderno customizado */}
               <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700 text-white rounded-xl mb-8 shadow-xl">
-        <div className="p-8">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="bg-white/20 backdrop-blur-sm rounded-full p-3">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold">Agendamentos</h1>
-                <p className="text-blue-100 text-lg mt-1">Gerencie seus agendamentos com clientes</p>
-              </div>
-            </div>
-            <div className="hidden md:flex items-center space-x-4">
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg px-4 py-2">
-                <div className="text-sm text-blue-100">Total de Agendamentos</div>
-                <div className="text-2xl font-bold">
-                  {appointments.length}
+                <div className="p-8">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      <div className="bg-white/20 backdrop-blur-sm rounded-full p-3">
+                        <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                      </div>
+                      <div>
+                        <h1 className="text-3xl font-bold">Agendamentos</h1>
+                        <p className="text-blue-100 text-lg mt-1">Gerencie seus agendamentos com clientes</p>
+                      </div>
+                    </div>
+                    <div className="hidden md:flex items-center space-x-4">
+                      <div className="bg-white/10 backdrop-blur-sm rounded-lg px-4 py-2">
+                        <div className="text-sm text-blue-100">Total de Agendamentos</div>
+                        <div className="text-2xl font-bold">
+                          {appointments.length}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
                 </div>
               </div>
-            </div>
-          </div>
-          
-        </div>
-      </div>
 
-      {/* Botões fora do header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Button onClick={openNewAppointmentDialog} className="bg-blue-600 hover:bg-blue-700 text-white">
-            <Plus className="mr-2 h-4 w-4" />
-            Novo Agendamento
-          </Button>
-        </div>
-      </div>
-
-      <div className="flex flex-col gap-8">
-
-        <Tabs defaultValue="all" className="w-full" onValueChange={(value) => filterAppointments(value as AppointmentStatus)}>
-          <TabsList className="grid w-full grid-cols-4 md:w-auto">
-            <TabsTrigger value="all">Todos</TabsTrigger>
-            <TabsTrigger value="pending">Pendentes</TabsTrigger>
-            <TabsTrigger value="completed">Concluídos</TabsTrigger>
-            <TabsTrigger value="overdue">Atrasados</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="all" className="mt-4">
-            <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
-              {isLoading ? (
-                <div className="col-span-full flex justify-center">
-                  <Loader2 className="h-8 w-8 animate-spin" />
+              {/* Botões fora do header */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Button onClick={openNewAppointmentDialog} className="bg-blue-600 hover:bg-blue-700 text-white">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Novo Agendamento
+                  </Button>
                 </div>
-              ) : filteredAppointments.length === 0 ? (
-                <div className="col-span-full">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Nenhum agendamento encontrado</CardTitle>
-                      <CardDescription>
-                        Clique no botão "Novo Agendamento" para criar um agendamento
-                      </CardDescription>
-                    </CardHeader>
-                  </Card>
-                </div>
-              ) : (
-                                filteredAppointments.map(renderAppointmentCard)
-              )}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="pending" className="mt-4">
-            <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
-              {isLoading ? (
-                <div className="col-span-full flex justify-center">
-                  <Loader2 className="h-8 w-8 animate-spin" />
-                </div>
-              ) : filteredAppointments.length === 0 ? (
-                <div className="col-span-full">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Nenhum agendamento pendente</CardTitle>
-                      <CardDescription>
-                        Todos os agendamentos estão em dia
-                      </CardDescription>
-                    </CardHeader>
-                  </Card>
-                </div>
-              ) : (
-                filteredAppointments.map(renderAppointmentCard)
-              )}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="completed" className="mt-4">
-            <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
-              {isLoading ? (
-                <div className="col-span-full flex justify-center">
-                  <Loader2 className="h-8 w-8 animate-spin" />
-                </div>
-              ) : filteredAppointments.length === 0 ? (
-                <div className="col-span-full">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Nenhum agendamento concluído</CardTitle>
-                      <CardDescription>
-                        Não há agendamentos concluídos
-                      </CardDescription>
-                    </CardHeader>
-                  </Card>
-                </div>
-              ) : (
-                filteredAppointments.map(renderAppointmentCard)
-              )}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="overdue" className="mt-4">
-            <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
-              {isLoading ? (
-                <div className="col-span-full flex justify-center">
-                  <Loader2 className="h-8 w-8 animate-spin" />
-                </div>
-              ) : filteredAppointments.length === 0 ? (
-                <div className="col-span-full">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Nenhum agendamento atrasado</CardTitle>
-                      <CardDescription>
-                        Todos os agendamentos estão em dia
-                      </CardDescription>
-                    </CardHeader>
-                  </Card>
-                </div>
-              ) : (
-                filteredAppointments.map(renderAppointmentCard)
-              )}
-            </div>
-          </TabsContent>
-        </Tabs>
-
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>
-                {editingAppointment ? "Editar Agendamento" : "Novo Agendamento"}
-              </DialogTitle>
-              <DialogDescription>
-                Preencha os dados do agendamento abaixo
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label htmlFor="title">Título</Label>
-                <Input
-                  id="title"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Ex: Visita ao cliente"
-                />
               </div>
 
-              <div className="grid gap-2">
-                <Label htmlFor="lead">Cliente</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      className={cn(
-                        "w-full justify-between text-left font-normal",
-                        !leadId ? "text-muted-foreground" : ""
+              <div className="flex flex-col gap-8">
+
+                <Tabs defaultValue="all" className="w-full" onValueChange={(value) => filterAppointments(value as AppointmentFilterStatus)}>
+                  <TabsList className="grid w-full grid-cols-4 md:w-auto">
+                    <TabsTrigger value="all">Todos</TabsTrigger>
+                    <TabsTrigger value="pending">Pendentes</TabsTrigger>
+                    <TabsTrigger value="completed">Concluídos</TabsTrigger>
+                    <TabsTrigger value="overdue">Atrasados</TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="all" className="mt-4">
+                    <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+                      {isLoading ? (
+                        <div className="col-span-full flex justify-center">
+                          <Loader2 className="h-8 w-8 animate-spin" />
+                        </div>
+                      ) : filteredAppointments.length === 0 ? (
+                        <div className="col-span-full">
+                          <Card>
+                            <CardHeader>
+                              <CardTitle>Nenhum agendamento encontrado</CardTitle>
+                              <CardDescription>
+                                Clique no botão "Novo Agendamento" para criar um agendamento
+                              </CardDescription>
+                            </CardHeader>
+                          </Card>
+                        </div>
+                      ) : (
+                        filteredAppointments.map(renderAppointmentCard)
                       )}
-                    >
-                      {leadId 
-                        ? (() => {
-                            const selectedLead = leads.find(lead => lead.id === leadId);
-                            return selectedLead ? formatClientDisplay(selectedLead) : "Cliente não encontrado";
-                          })()
-                        : "Selecione um cliente"
-                      }
-                      <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-full p-0" align="start">
-                    <Command>
-                      <CommandInput 
-                        placeholder="Buscar por nome ou CPF..." 
-                        value={clientSearch}
-                        onValueChange={handleClientSearch}
-                      />
-                      <CommandList>
-                        <CommandEmpty>Nenhum cliente encontrado.</CommandEmpty>
-                        <CommandGroup>
-                          {filteredLeads.map((lead) => (
-                            <CommandItem
-                              key={lead.id}
-                              value={formatClientDisplay(lead)}
-                              onSelect={() => {
-                                setLeadId(lead.id);
-                                setClientSearch("");
-                              }}
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="pending" className="mt-4">
+                    <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+                      {isLoading ? (
+                        <div className="col-span-full flex justify-center">
+                          <Loader2 className="h-8 w-8 animate-spin" />
+                        </div>
+                      ) : filteredAppointments.length === 0 ? (
+                        <div className="col-span-full">
+                          <Card>
+                            <CardHeader>
+                              <CardTitle>Nenhum agendamento pendente</CardTitle>
+                              <CardDescription>
+                                Todos os agendamentos estão em dia
+                              </CardDescription>
+                            </CardHeader>
+                          </Card>
+                        </div>
+                      ) : (
+                        filteredAppointments.map(renderAppointmentCard)
+                      )}
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="completed" className="mt-4">
+                    <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+                      {isLoading ? (
+                        <div className="col-span-full flex justify-center">
+                          <Loader2 className="h-8 w-8 animate-spin" />
+                        </div>
+                      ) : filteredAppointments.length === 0 ? (
+                        <div className="col-span-full">
+                          <Card>
+                            <CardHeader>
+                              <CardTitle>Nenhum agendamento concluído</CardTitle>
+                              <CardDescription>
+                                Não há agendamentos concluídos
+                              </CardDescription>
+                            </CardHeader>
+                          </Card>
+                        </div>
+                      ) : (
+                        filteredAppointments.map(renderAppointmentCard)
+                      )}
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="overdue" className="mt-4">
+                    <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+                      {isLoading ? (
+                        <div className="col-span-full flex justify-center">
+                          <Loader2 className="h-8 w-8 animate-spin" />
+                        </div>
+                      ) : filteredAppointments.length === 0 ? (
+                        <div className="col-span-full">
+                          <Card>
+                            <CardHeader>
+                              <CardTitle>Nenhum agendamento atrasado</CardTitle>
+                              <CardDescription>
+                                Todos os agendamentos estão em dia
+                              </CardDescription>
+                            </CardHeader>
+                          </Card>
+                        </div>
+                      ) : (
+                        filteredAppointments.map(renderAppointmentCard)
+                      )}
+                    </div>
+                  </TabsContent>
+                </Tabs>
+
+                <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                  <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                      <DialogTitle>
+                        {editingAppointment ? "Editar Agendamento" : "Novo Agendamento"}
+                      </DialogTitle>
+                      <DialogDescription>
+                        Preencha os dados do agendamento abaixo
+                      </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="grid gap-4 py-4">
+                      <div className="grid gap-2">
+                        <Label htmlFor="title">Título</Label>
+                        <Input
+                          id="title"
+                          value={title}
+                          onChange={(e) => setTitle(e.target.value)}
+                          placeholder="Ex: Visita ao cliente"
+                        />
+                      </div>
+
+                      <div className="grid gap-2">
+                        <Label htmlFor="lead">Cliente</Label>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              role="combobox"
+                              className={cn(
+                                "w-full justify-between text-left font-normal",
+                                !leadId ? "text-muted-foreground" : ""
+                              )}
                             >
-                              <Check
-                                className={cn(
-                                  "mr-2 h-4 w-4",
-                                  leadId === lead.id ? "opacity-100" : "opacity-0"
-                                )}
+                              {leadId
+                                ? (() => {
+                                  const selectedLead = leads.find(lead => lead.id === leadId);
+                                  return selectedLead ? formatClientDisplay(selectedLead) : "Cliente não encontrado";
+                                })()
+                                : "Selecione um cliente"
+                              }
+                              <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-full p-0" align="start">
+                            <Command>
+                              <CommandInput
+                                placeholder="Buscar por nome ou CPF..."
+                                value={clientSearch}
+                                onValueChange={handleClientSearch}
                               />
-                              <div className="flex flex-col">
-                                <span className="font-medium">{lead.name}</span>
-                                {lead.cpf && (
-                                  <span className="text-sm text-gray-500">
-                                    CPF: {lead.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4')}
-                                  </span>
-                                )}
-                              </div>
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-              </div>
+                              <CommandList>
+                                <CommandEmpty>Nenhum cliente encontrado.</CommandEmpty>
+                                <CommandGroup>
+                                  {filteredLeads.map((lead) => (
+                                    <CommandItem
+                                      key={lead.id}
+                                      value={formatClientDisplay(lead)}
+                                      onSelect={() => {
+                                        setLeadId(lead.id);
+                                        setClientSearch("");
+                                      }}
+                                    >
+                                      <Check
+                                        className={cn(
+                                          "mr-2 h-4 w-4",
+                                          leadId === lead.id ? "opacity-100" : "opacity-0"
+                                        )}
+                                      />
+                                      <div className="flex flex-col">
+                                        <span className="font-medium">{lead.name}</span>
+                                        {lead.cpf && (
+                                          <span className="text-sm text-gray-500">
+                                            CPF: {lead.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4')}
+                                          </span>
+                                        )}
+                                      </div>
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+                      </div>
 
-              <div className="grid gap-2">
-                <Label>Data</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "justify-start text-left font-normal",
-                        !date && "text-muted-foreground"
+                      <div className="grid gap-2">
+                        <Label>Data</Label>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              className={cn(
+                                "justify-start text-left font-normal",
+                                !date && "text-muted-foreground"
+                              )}
+                            >
+                              <CalendarIcon className="mr-2 h-4 w-4" />
+                              {date ? format(date, "PPP", { locale: ptBR }) : "Selecione uma data"}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0">
+                            <CustomCalendar
+                              selected={date}
+                              onSelect={setDate}
+                              currentMonth={currentMonth}
+                              onMonthChange={setCurrentMonth}
+                              size="sm"
+                              className="p-4"
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+
+                      <div className="grid gap-2">
+                        <Label htmlFor="time">Horário</Label>
+                        <Input
+                          id="time"
+                          type="time"
+                          value={time}
+                          onChange={(e) => setTime(e.target.value)}
+                        />
+                      </div>
+
+                      <div className="grid gap-2">
+                        <Label htmlFor="notes">Observações</Label>
+                        <Textarea
+                          id="notes"
+                          value={notes}
+                          onChange={(e) => setNotes(e.target.value)}
+                          placeholder="Adicione observações sobre o agendamento"
+                        />
+                      </div>
+
+                      {editingAppointment && (
+                        <div className="grid gap-2">
+                          <Label htmlFor="status">Status</Label>
+                          <Select value={status} onValueChange={(value) => setStatus(value as "scheduled" | "completed" | "cancelled")}>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="scheduled">Agendado</SelectItem>
+                              <SelectItem value="completed">Concluído</SelectItem>
+                              <SelectItem value="cancelled">Cancelado</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
                       )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {date ? format(date, "PPP", { locale: ptBR }) : "Selecione uma data"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
-                    <CustomCalendar
-                      selected={date}
-                      onSelect={setDate}
-                      currentMonth={currentMonth}
-                      onMonthChange={setCurrentMonth}
-                      size="sm"
-                      className="p-4"
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
+                    </div>
 
-              <div className="grid gap-2">
-                <Label htmlFor="time">Horário</Label>
-                <Input
-                  id="time"
-                  type="time"
-                  value={time}
-                  onChange={(e) => setTime(e.target.value)}
-                />
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="notes">Observações</Label>
-                <Textarea
-                  id="notes"
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Adicione observações sobre o agendamento"
-                />
-              </div>
-
-              {editingAppointment && (
-                <div className="grid gap-2">
-                  <Label htmlFor="status">Status</Label>
-                  <Select value={status} onValueChange={(value: any) => setStatus(value)}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="scheduled">Agendado</SelectItem>
-                      <SelectItem value="completed">Concluído</SelectItem>
-                      <SelectItem value="cancelled">Cancelado</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-            </div>
-
-            <DialogFooter>
-              <Button variant="outline" onClick={closeDialog}>
-                Cancelar
-              </Button>
-              <Button onClick={handleSubmit} disabled={isSubmitting}>
-                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {editingAppointment ? "Salvar" : "Criar"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+                    <DialogFooter>
+                      <Button variant="outline" onClick={closeDialog}>
+                        Cancelar
+                      </Button>
+                      <Button onClick={handleSubmit} disabled={isSubmitting}>
+                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        {editingAppointment ? "Salvar" : "Criar"}
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
               </div>
             </div>
           </main>

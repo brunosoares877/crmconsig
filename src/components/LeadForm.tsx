@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -17,6 +17,8 @@ import EmployeeSelect from "@/components/EmployeeSelect";
 import CommissionConfigSelector from "@/components/forms/CommissionConfigSelector";
 import { useAuth } from "@/contexts/AuthContext";
 import { getEmployees, Employee } from "@/utils/employees";
+import type { CommissionConfig } from "@/types/database.types";
+import logger from "@/utils/logger";
 
 const formSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
@@ -40,7 +42,7 @@ type FormData = z.infer<typeof formSchema>;
 
 // Adicionar campo para configuração de comissão
 type ProcessedFormData = FormData & {
-  commission_config?: any;
+  commission_config?: CommissionConfig;
 };
 
 interface LeadFormProps {
@@ -66,16 +68,18 @@ function formatBRL(value: string) {
   let v = value.replace(/\D/g, "");
   v = (parseInt(v, 10) || 0).toString();
   v = v.padStart(3, "0");
-  let cents = v.slice(-2);
+  const cents = v.slice(-2);
   let reais = v.slice(0, -2);
   reais = reais.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
   return reais + "," + cents;
 }
 
 const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, isEditing = false, isLoading = false }) => {
-  const { user } = useAuth ? useAuth() : { user: null };
+  // FIXED: Call hooks unconditionally at the top level
+  const { user } = useAuth();
+
   const [isInitialized, setIsInitialized] = useState(false);
-  const [selectedCommissionConfig, setSelectedCommissionConfig] = useState<any>(null);
+  const [selectedCommissionConfig, setSelectedCommissionConfig] = useState<CommissionConfig | null>(null);
   const [availableProducts, setAvailableProducts] = useState<string[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(false);
   const [employeeList, setEmployeeList] = useState<Employee[]>([]);
@@ -104,14 +108,14 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
 
     // Para edição, processar dados corretamente
     // Processar employee: se tiver valor (não null, não undefined, não "none", não vazio), usar ele, senão "none"
-    const employeeValue = initialData?.employee && 
-                          initialData.employee !== null && 
-                          initialData.employee !== undefined &&
-                          initialData.employee !== "none" && 
-                          initialData.employee !== "" 
-                          ? initialData.employee 
-                          : "none";
-    
+    const employeeValue = initialData?.employee &&
+      initialData.employee !== null &&
+      initialData.employee !== undefined &&
+      initialData.employee !== "none" &&
+      initialData.employee !== ""
+      ? initialData.employee
+      : "none";
+
     const values = {
       name: initialData?.name || "",
       cpf: initialData?.cpf || "",
@@ -129,12 +133,12 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
       date: initialData?.date || new Date().toISOString().slice(0, 10),
       payment_period: initialData?.payment_period || "",
     };
-    
-    console.log("🔧 Form initialized with:", {
+
+    logger.debug("🔧 Form initialized with", {
       employee: values.employee,
       originalEmployee: initialData?.employee
     });
-    
+
     return values;
   };
 
@@ -154,11 +158,11 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
       const employeeId = initialData.employee;
       const employeeExists = employeeList.find(emp => emp.id === employeeId);
       const currentFormValue = watch("employee");
-      
+
       // Apenas atualizar se o valor atual não corresponder ao valor esperado
       if (currentFormValue !== employeeId) {
         if (employeeExists) {
-          console.log("🔄 Sincronizando employee no formulário:", employeeId, "→", employeeExists.name);
+          logger.debug("🔄 Sincronizando employee no formulário:", employeeId, "→", employeeExists.name);
           setValue("employee", employeeId, { shouldValidate: false, shouldDirty: false });
         } else {
           console.warn("⚠️ Funcionário não encontrado na lista:", employeeId);
@@ -175,7 +179,7 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
   const loadAvailableProducts = async () => {
     try {
       setLoadingProducts(true);
-      
+
       // Buscar produtos das comissões fixas
       const { data: ratesData, error: ratesError } = await supabase
         .from('commission_rates')
@@ -197,13 +201,13 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
 
       // Combinar produtos únicos
       const allProducts = new Set<string>();
-      
+
       if (ratesData) {
         ratesData.forEach(rate => {
           if (rate.product) allProducts.add(rate.product);
         });
       }
-      
+
       if (tiersData) {
         tiersData.forEach(tier => {
           if (tier.product) allProducts.add(tier.product);
@@ -212,9 +216,9 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
 
       const uniqueProducts = Array.from(allProducts).sort();
       setAvailableProducts(uniqueProducts);
-      
-      console.log('📦 Produtos encontrados nas configurações:', uniqueProducts);
-      
+
+      logger.debug('📦 Produtos encontrados nas configurações:', uniqueProducts);
+
       if (uniqueProducts.length === 0) {
         toast.info("Nenhum produto encontrado nas configurações de comissão. Configure produtos em 'Comissões → Configurar Comissões'");
       }
@@ -230,18 +234,18 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
   useEffect(() => {
     if (isEditing && initialData && isInitialized) {
       const values = getInitialValues();
-      console.log("🔄 Resetando formulário com valores:", {
+      logger.debug("🔄 Resetando formulário com valores", {
         employee: values.employee,
         originalEmployee: initialData?.employee,
         employeeListLength: employeeList.length
       });
       reset(values);
-      
+
       // Se houver employee e a lista já estiver carregada, garantir que o valor seja definido
       if (values.employee && values.employee !== "none" && employeeList.length > 0) {
         setTimeout(() => {
           setValue("employee", values.employee);
-          console.log("✅ Employee definido após reset:", values.employee);
+          logger.debug("✅ Employee definido após reset:", values.employee);
         }, 100);
       }
     }
@@ -257,8 +261,8 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
   }, []);
 
   const onFormSubmit = (data: FormData) => {
-    console.log("🚀 LeadForm - Submitting data:", data);
-    
+    logger.debug("🚀 LeadForm - Submitting data", data);
+
     if (!data.name || data.name.trim() === "") {
       toast.error("Nome é obrigatório");
       return;
@@ -268,7 +272,7 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
     // Garantir que o employee seja o valor atual do watch, não apenas do data
     const currentEmployee = watch("employee");
     const employeeValue = currentEmployee && currentEmployee !== "none" && currentEmployee !== "" ? currentEmployee : null;
-    
+
     const processedData: ProcessedFormData = {
       name: data.name,
       cpf: data.cpf,
@@ -281,18 +285,18 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
       notes: data.notes || "",
       benefit_type: data.benefit_type && data.benefit_type !== "none" ? data.benefit_type : null,
       representative_mode: data.representative_mode || "nao",
-      representative_name: data.representative_mode === "sim" && data.representative_name 
-        ? data.representative_name 
+      representative_name: data.representative_mode === "sim" && data.representative_name
+        ? data.representative_name
         : null,
-      representative_cpf: data.representative_mode === "sim" && data.representative_cpf 
-        ? data.representative_cpf 
+      representative_cpf: data.representative_mode === "sim" && data.representative_cpf
+        ? data.representative_cpf
         : null,
       date: data.date || format(new Date(), "yyyy-MM-dd"),
       payment_period: data.payment_period || null,
       commission_config: selectedCommissionConfig,
     };
 
-    console.log("📤 LeadForm - Processed data to send:", {
+    logger.debug("📤 LeadForm - Processed data to send", {
       employee: processedData.employee,
       employeeType: typeof processedData.employee,
       name: processedData.name,
@@ -362,7 +366,7 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
 
         <div>
           <Label htmlFor="product">Produto</Label>
-          <Select 
+          <Select
             onValueChange={(value) => {
               setValue("product", value === "none" ? "" : value);
               setSelectedCommissionConfig(null); // Limpar configuração quando produto mudar
@@ -404,7 +408,7 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
 
         <div>
           <Label htmlFor="payment_period">Prazo de Pagamento (parcelas)</Label>
-          <Select 
+          <Select
             onValueChange={(value) => setValue("payment_period", value === "none" ? "" : value)}
             value={watch("payment_period") === "" || !watch("payment_period") ? "none" : watch("payment_period")}
           >
@@ -427,7 +431,7 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
           <EmployeeSelect
             value={watch("employee") || "none"}
             onValueChange={(value) => {
-              console.log("🎯 Employee changed to (id):", value);
+              logger.debug("🎯 Employee changed to (id):", value);
               setValue("employee", value);
             }}
             placeholder="Selecione o funcionário"
@@ -481,7 +485,7 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
           </div>
           <div>
             <Label htmlFor="representative_cpf">CPF do Representante</Label>
-            <Input id="representative_cpf" {...register("representative_cpf")} 
+            <Input id="representative_cpf" {...register("representative_cpf")}
               placeholder="000.000.000-00"
               maxLength={14}
               onChange={e => setValue("representative_cpf", formatCPF(e.target.value))}

@@ -24,6 +24,8 @@ import { CommissionCalculationResult } from "@/hooks/useCommissionConfig";
 import { getEmployees, Employee } from "@/utils/employees";
 import { AdminPasswordDialog } from "@/components/AdminPasswordDialog";
 import { hasAdminPassword } from "@/utils/adminPassword";
+import type { PostgrestError } from "@/types/database.types";
+import logger from "@/utils/logger";
 
 interface LeadTag {
   tag_id: string;
@@ -123,7 +125,7 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete, isSelecte
   // Verificar se o lead tem comissão gerada
   useEffect(() => {
     const checkCommission = async () => {
-      if (lead.status === 'concluido') {
+      if (lead.status === 'convertido') {
         try {
           const { data: userData } = await supabase.auth.getUser();
           if (userData.user) {
@@ -162,7 +164,7 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete, isSelecte
 
   // Debug apenas quando necessário
   if (lead.employee) {
-    console.log("LeadCard - Employee:", lead.employee);
+    logger.debug("LeadCard - Employee:", lead.employee);
   }
 
   useEffect(() => {
@@ -180,20 +182,21 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete, isSelecte
 
         // Novamente: filtrar apenas onde lead_tags é um objeto válido, não erro.
         const validTags = (Array.isArray(data) ? data : []).filter(
-          (t: any) =>
-            t.lead_tags &&
-            typeof t.lead_tags === "object" &&
-            typeof t.lead_tags.id === "string" &&
-            typeof t.lead_tags.name === "string" &&
-            typeof t.lead_tags.color === "string"
-        ).map((t: any) => ({
-          tag_id: t.tag_id,
-          lead_tags: {
-            id: t.lead_tags.id,
-            name: t.lead_tags.name,
-            color: t.lead_tags.color,
+          (t): t is { tag_id: string; lead_tags: { id: string; name: string; color: string } } => {
+            const tag = t.lead_tags as any;
+            return tag && typeof tag === 'object' && 'id' in tag && 'name' in tag && 'color' in tag;
           }
-        }));
+        ).map((t) => {
+          const tag = t.lead_tags as any;
+          return {
+            tag_id: t.tag_id,
+            lead_tags: {
+              id: tag.id,
+              name: tag.name,
+              color: tag.color,
+            }
+          };
+        });
 
         setTags(validTags);
       } catch (error) {
@@ -205,14 +208,15 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete, isSelecte
     fetchTags();
   }, [lead.id]);
 
-  const handleUpdateLead = async (values: any) => {
+  const handleUpdateLead = async (values: unknown) => {
+    const typedValues = values as Partial<Lead> & { selectedTags?: string[] };
     setIsUpdating(true);
     try {
       const { data: userData, error: userError } = await supabase.auth.getUser();
       if (userError) throw userError;
 
       // Separate selectedTags from lead data
-      const { selectedTags, ...leadData } = values;
+      const { selectedTags, ...leadData } = typedValues;
 
       // Garantir que o campo employee seja tratado corretamente
       // Se for "none" ou vazio, deve ser null
@@ -220,10 +224,9 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete, isSelecte
         leadData.employee = null;
       }
 
-      console.log("📤 Updating lead - Dados enviados:", {
+      logger.debug("Updating lead", {
         employee: leadData.employee,
         employeeType: typeof leadData.employee,
-        allData: leadData,
         hasSelectedTags: selectedTags && selectedTags.length > 0
       });
 
@@ -240,7 +243,7 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete, isSelecte
         throw error;
       }
 
-      console.log("Lead updated successfully:", data);
+      logger.debug("Lead updated successfully", { id: data.id });
 
       // Handle tag assignments separately
       if (selectedTags) {
@@ -277,9 +280,10 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete, isSelecte
       onUpdate(updatedLead);
       toast.success("Lead atualizado com sucesso!");
       setIsEditDialogOpen(false);
-    } catch (error: any) {
-      console.error("Error updating lead:", error);
-      toast.error(`Erro ao atualizar lead: ${error.message}`);
+    } catch (error) {
+      const err = error as PostgrestError;
+      logger.error("Error updating lead", err);
+      toast.error(`Erro ao atualizar lead: ${err.message}`);
     } finally {
       setIsUpdating(false);
     }
@@ -292,7 +296,7 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete, isSelecte
       setShowAdminPasswordDialog(true);
       return;
     }
-    
+
     // Se não tiver senha configurada, deletar diretamente
     confirmDeleteLead();
   };
@@ -360,10 +364,11 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete, isSelecte
       toast.success("Lead movido para a lixeira com sucesso!");
       setIsDeleteDialogOpen(false);
       setPendingAction(null);
-    } catch (error: any) {
-      console.error("Error moving lead to trash:", error);
+    } catch (error) {
+      const err = error as PostgrestError;
+      logger.error("Error moving lead to trash", err);
       setPendingAction(null);
-      toast.error(`Erro ao mover lead para lixeira: ${error.message}`);
+      toast.error(`Erro ao mover lead para lixeira: ${err.message}`);
     }
   };
 
@@ -427,11 +432,11 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete, isSelecte
       // Converter valor corretamente removendo caracteres não numéricos
       const cleanAmount = lead.amount.replace(/[^\d,]/g, '').replace(',', '.');
       const leadAmount = parseFloat(cleanAmount) || 0;
-      
+
       // Usar o novo sistema integrado de comissões
       const { mapProductToCommissionConfig } = await import('@/utils/productMapping');
       const mappedProduct = mapProductToCommissionConfig(lead.product || '');
-      
+
       let commissionValue = 0;
       let percentage = 5; // Padrão
 
@@ -466,8 +471,8 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete, isSelecte
             for (const tier of periodTiers) {
               const tierData = tier as any;
               const period = parseInt(lead.payment_period.toString());
-              if (tierData.min_period <= period && 
-                  (!tierData.max_period || period <= tierData.max_period)) {
+              if (tierData.min_period <= period &&
+                (!tierData.max_period || period <= tierData.max_period)) {
                 if (tierData.commission_type === 'fixed') {
                   commissionValue = tierData.fixed_value || 0;
                   percentage = leadAmount > 0 ? (commissionValue / leadAmount) * 100 : 0;
@@ -479,14 +484,14 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete, isSelecte
               }
             }
           }
-          
+
           // Se não encontrou por período, tentar por valor
           if (commissionValue === 0) {
             const valueTiers = tiers.filter((t: any) => !t.tier_type || t.tier_type === 'value');
             for (const tier of valueTiers) {
               const tierData = tier as any;
-              if (tierData.min_amount <= leadAmount && 
-                  (!tierData.max_amount || leadAmount <= tierData.max_amount)) {
+              if (tierData.min_amount <= leadAmount &&
+                (!tierData.max_amount || leadAmount <= tierData.max_amount)) {
                 if (tierData.commission_type === 'fixed') {
                   commissionValue = tierData.fixed_value || 0;
                   percentage = leadAmount > 0 ? (commissionValue / leadAmount) * 100 : 0;
@@ -499,7 +504,7 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete, isSelecte
             }
           }
         }
-        
+
         // Taxa padrão se não encontrou nenhuma configuração
         if (commissionValue === 0) {
           commissionValue = (leadAmount * 5) / 100;
@@ -515,7 +520,7 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete, isSelecte
 
       // Primeiro atualizar o status do lead
       await updateLeadStatus(newStatus);
-      
+
       // Se for concluído, criar comissão automaticamente e navegar para página de comissões
       if (newStatus === 'concluido') {
         await createCommissionAndNavigate(commissionValue, percentage, leadAmount);
@@ -524,9 +529,10 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete, isSelecte
         setIsCommissionDialogOpen(true);
       }
 
-    } catch (error: any) {
-      console.error("Error calculating commission:", error);
-      toast.error(`Erro ao calcular comissão: ${error.message}`);
+    } catch (error) {
+      const err = error as PostgrestError;
+      logger.error("Error calculating commission", err);
+      toast.error(`Erro ao calcular comissão: ${err.message}`);
       // Em caso de erro, atualizar o status mesmo assim
       await updateLeadStatus(newStatus);
     } finally {
@@ -554,9 +560,10 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete, isSelecte
       onUpdate(updatedLead);
       const statusLabel = statusLabels[newStatus as keyof typeof statusLabels] || newStatus;
       toast.success(`Lead marcado como ${statusLabel}!`);
-    } catch (error: any) {
-      console.error("Error updating lead status:", error);
-      toast.error(`Erro ao atualizar status: ${error.message}`);
+    } catch (error) {
+      const err = error as PostgrestError;
+      logger.error("Error updating lead status", err);
+      toast.error(`Erro ao atualizar status: ${err.message}`);
     } finally {
       setIsUpdating(false);
     }
@@ -594,15 +601,16 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete, isSelecte
       if (error) throw error;
 
       toast.success(`Comissão de R$ ${commissionValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} gerada com sucesso!`);
-      
+
       // Navegar para a página de comissões após um pequeno delay para o toast aparecer
       setTimeout(() => {
         navigate('/commission');
       }, 1000);
 
-    } catch (error: any) {
-      console.error("Error creating commission:", error);
-      toast.error(`Erro ao gerar comissão: ${error.message}`);
+    } catch (error) {
+      const err = error as PostgrestError;
+      logger.error("Error creating commission", err);
+      toast.error(`Erro ao gerar comissão: ${err.message}`);
     } finally {
       setIsUpdating(false);
     }
@@ -645,9 +653,10 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete, isSelecte
         navigate('/commission');
       }, 1000);
 
-    } catch (error: any) {
-      console.error("Error creating commission:", error);
-      toast.error(`Erro ao gerar comissão: ${error.message}`);
+    } catch (error) {
+      const err = error as PostgrestError;
+      logger.error("Error creating commission", err);
+      toast.error(`Erro ao gerar comissão: ${err.message}`);
     } finally {
       setIsUpdating(false);
     }
@@ -745,7 +754,7 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete, isSelecte
                 <DropdownMenuContent align="end">
                   {lead.amount && (
                     <>
-                      <DropdownMenuItem 
+                      <DropdownMenuItem
                         onClick={() => handleStatusChange('negociando')}
                         disabled={isUpdating}
                         className="text-blue-600"
@@ -753,7 +762,7 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete, isSelecte
                         <Clock className="mr-2 h-4 w-4" />
                         Marcar como Em Andamento
                       </DropdownMenuItem>
-                      <DropdownMenuItem 
+                      <DropdownMenuItem
                         onClick={() => handleStatusChange('pendente')}
                         disabled={isUpdating}
                         className="text-yellow-600"
@@ -761,7 +770,7 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete, isSelecte
                         <AlertTriangle className="mr-2 h-4 w-4" />
                         Marcar como Pendente
                       </DropdownMenuItem>
-                      <DropdownMenuItem 
+                      <DropdownMenuItem
                         onClick={() => handleStatusChange('concluido')}
                         disabled={isUpdating}
                         className="text-green-600"
@@ -769,7 +778,7 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete, isSelecte
                         <CheckCircle className="mr-2 h-4 w-4" />
                         Marcar como Concluído
                       </DropdownMenuItem>
-                      <DropdownMenuItem 
+                      <DropdownMenuItem
                         onClick={() => handleStatusChange('cancelado')}
                         disabled={isUpdating}
                         className="text-red-600"
@@ -791,7 +800,7 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete, isSelecte
                     <Edit className="mr-2 h-4 w-4" />
                     Editar
                   </DropdownMenuItem>
-                  <DropdownMenuItem 
+                  <DropdownMenuItem
                     onClick={() => setIsDeleteDialogOpen(true)}
                     className="text-red-600"
                   >
@@ -803,7 +812,7 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete, isSelecte
             </div>
           </div>
         </CardHeader>
-        
+
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 gap-3 text-sm">
             {lead.phone && (
@@ -813,7 +822,7 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete, isSelecte
                   <span className="font-medium">Telefone:</span>
                   <span>{formatPhone(lead.phone)}</span>
                 </div>
-                <WhatsAppButton 
+                <WhatsAppButton
                   phoneNumber={lead.phone}
                   message={`Olá ${lead.name}, sou da equipe LeadConsig. Como posso ajudá-lo?`}
                   variant="regular"
@@ -830,8 +839,8 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete, isSelecte
                   <span className="font-medium">CPF:</span>
                   <span className="font-mono text-sm">{formatCPF(lead.cpf)}</span>
                 </div>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   size="sm"
                   onClick={() => copyToClipboard(lead.cpf, "CPF")}
                   className="h-7 text-xs px-2 flex items-center gap-1"
@@ -841,7 +850,7 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete, isSelecte
                 </Button>
               </div>
             )}
-            
+
             {lead.email && (
               <div className="flex items-center gap-2">
                 <Mail className="h-4 w-4 text-green-500" />
@@ -849,14 +858,14 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete, isSelecte
                 <span className="truncate">{lead.email}</span>
               </div>
             )}
-            
+
             {(lead as any).bank && (
               <div className="flex items-center gap-1 text-xs text-muted-foreground">
                 <Building2 className="h-3 w-3" />
                 <span>{resolveBankName((lead as any).bank)}</span>
               </div>
             )}
-            
+
             {lead.product && (
               <div className="flex items-center gap-2">
                 <Package className="h-4 w-4 text-blue-500" />
@@ -864,7 +873,7 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete, isSelecte
                 <span className="font-medium">{lead.product}</span>
               </div>
             )}
-            
+
             {lead.amount && (
               <div className="flex items-center gap-2">
                 <DollarSign className="h-4 w-4 text-green-600" />
@@ -874,7 +883,7 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete, isSelecte
                 </span>
               </div>
             )}
-            
+
             <div className="flex items-center gap-2">
               <User className="h-4 w-4 text-orange-500" />
               <span className="font-medium">Responsável:</span>
@@ -943,13 +952,13 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete, isSelecte
               isLoading={isUpdating}
               isEditing={true}
             />
-            
+
             {/* Seletor de Comissão na Edição */}
             {lead.product && (
               <div className="mt-6 w-full">
                 <CommissionConfigSelector
                   selectedProduct={lead.product}
-                  onConfigSelect={() => {}}
+                  onConfigSelect={() => { }}
                   selectedConfig={lead.commission_config}
                 />
               </div>
@@ -987,7 +996,7 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete, isSelecte
               O lead foi marcado como <strong>Concluído</strong>. Deseja gerar a comissão automaticamente?
             </DialogDescription>
           </DialogHeader>
-          
+
           {calculatedCommission && (
             <div className="space-y-4 py-4">
               <div className="bg-gray-50 rounded-lg p-4 space-y-2">
@@ -1028,8 +1037,8 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete, isSelecte
           )}
 
           <DialogFooter className="gap-2">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => {
                 setIsCommissionDialogOpen(false);
                 setCalculatedCommission(null);
@@ -1038,7 +1047,7 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete, isSelecte
             >
               Agora Não
             </Button>
-            <Button 
+            <Button
               onClick={handleCreateCommission}
               disabled={isUpdating}
               className="bg-green-600 hover:bg-green-700"
@@ -1073,7 +1082,7 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete, isSelecte
             <AlertDialogCancel onClick={() => setPendingNewStatus(null)}>
               Cancelar
             </AlertDialogCancel>
-            <AlertDialogAction 
+            <AlertDialogAction
               onClick={handleConfirmStatusChange}
               className="bg-amber-600 hover:bg-amber-700"
             >
@@ -1102,7 +1111,7 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete, isSelecte
         }}
         title={pendingAction === 'delete' ? "Confirmar Exclusão de Lead" : "Confirmar Edição de Lead Concluído"}
         description={
-          pendingAction === 'delete' 
+          pendingAction === 'delete'
             ? "Esta ação é irreversível. Digite sua senha administrativa para confirmar a exclusão."
             : "Este lead está marcado como concluído. Digite sua senha administrativa para editá-lo."
         }

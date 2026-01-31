@@ -1,23 +1,16 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, PhoneCall, CalendarCheck, TrendingUp, TrendingDown, User, Search, BarChart3, DollarSign, Calendar, FileText, Clock, AlertTriangle, CheckCircle, X } from "lucide-react";
+import { Users, PhoneCall, FileText, Clock, AlertTriangle, CheckCircle, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { format, startOfToday, endOfToday, startOfMonth, endOfMonth, differenceInMinutes, startOfWeek, endOfWeek } from "date-fns";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { startOfToday, endOfToday, startOfMonth, endOfMonth, differenceInMinutes, startOfWeek, endOfWeek } from "date-fns";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import MetricsCard from "@/components/dashboard/MetricsCard";
 import ProductionCard from "@/components/dashboard/ProductionCard";
 import EmployeePerformanceCard from "@/components/dashboard/EmployeePerformanceCard";
 import LatestLeadsCard from "@/components/dashboard/LatestLeadsCard";
 import { formatLeadDate } from "@/utils/dateUtils";
 import { getEmployees, Employee } from "@/utils/employees";
-
-function isUUID(str) {
-  // Regex para UUID v4 padrão
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
-}
+import type { Lead } from "@/types/database.types";
+import logger from "@/utils/logger";
 
 const Dashboard = () => {
   const [metrics, setMetrics] = useState({
@@ -38,12 +31,10 @@ const Dashboard = () => {
     canceladoValue: 0
   });
   const [isLoading, setIsLoading] = useState(true);
-  const [dailyProduction, setDailyProduction] = useState([]);
-  const [employeeSales, setEmployeeSales] = useState([]);
-  const [latestLeads, setLatestLeads] = useState([]);
-  const [employeeMap, setEmployeeMap] = useState<{ [id: string]: string }>({});
-  const [employeeMapLoaded, setEmployeeMapLoaded] = useState(false);
-  const [employeeSalesMap, setEmployeeSalesMap] = useState({});
+  const [dailyProduction, setDailyProduction] = useState<Lead[]>([]);
+  const [latestLeads, setLatestLeads] = useState<Lead[]>([]);
+  const [employeeMap, setEmployeeMap] = useState<Record<string, string>>({});
+  const [employeeSalesMap, setEmployeeSalesMap] = useState<Record<string, { totalLeadsWithAmount: number; convertedSales: number; totalValue: number }>>({});
 
   useEffect(() => {
     const fetchMetrics = async () => {
@@ -177,7 +168,7 @@ const Dashboard = () => {
         }, 0);
 
         // Calculate weekly conversion rate
-        const weeklyConversionRate = weeklyLeadsCount > 0 ? 
+        const weeklyConversionRate = weeklyLeadsCount > 0 ?
           ((weeklyConvertedCount || 0) / weeklyLeadsCount * 100) : 0;
 
         // Process employee data
@@ -221,13 +212,13 @@ const Dashboard = () => {
         });
 
         // Set state
-        setDailyProduction(dailyData);
+        setDailyProduction(dailyData as unknown as Lead[]);
         setEmployeeSalesMap(employeeSalesMap);
-        const formattedLatestLeads = latestLeadsData.map(lead => ({
+        const formattedLatestLeads = latestLeadsData.map((lead) => ({
           ...lead,
-          createdAt: formatLeadDate((lead as any).date ? (lead as any).date : lead.created_at)
+          createdAt: formatLeadDate((lead as { date?: string }).date || lead.created_at)
         }));
-        setLatestLeads(formattedLatestLeads);
+        setLatestLeads(formattedLatestLeads as unknown as Lead[]);
 
         // Update metrics
         setMetrics({
@@ -248,22 +239,11 @@ const Dashboard = () => {
           canceladoValue: statusSums.canceladoValue
         });
 
-        console.log("Updated metrics:", {
+        logger.debug("Updated metrics", {
           leadsToday: leadsToday || 0,
           leadsThisMonth: leadsThisMonth || 0,
-          averageLeadsPerDay: averageLeadsPerDay,
-          averageTimeBetweenLeads: averageTimeBetweenLeads,
-          monthlyProduction: monthlyProduction,
-          weeklyConversionRate: weeklyConversionRate,
-          proposalsDigitatedToday: proposalsDigitatedToday || 0,
-          emAndamento: emAndamento || 0,
-          emAndamentoValue: statusSums.emAndamentoValue,
-          pendente: pendente || 0,
-          pendenteValue: statusSums.pendenteValue,
-          pago: pago || 0,
-          pagoValue: statusSums.pagoValue,
-          cancelado: cancelado || 0,
-          canceladoValue: statusSums.canceladoValue
+          monthlyProduction,
+          weeklyConversionRate
         });
 
       } catch (error) {
@@ -273,9 +253,9 @@ const Dashboard = () => {
         setIsLoading(false);
       }
     };
-    
+
     fetchMetrics();
-    
+
     // Refresh metrics every 30 seconds for real-time updates
     const interval = setInterval(fetchMetrics, 30 * 1000);
     return () => clearInterval(interval);
@@ -284,25 +264,14 @@ const Dashboard = () => {
   useEffect(() => {
     // Buscar funcionários ativos e montar o mapa id -> nome
     getEmployees().then((list: Employee[]) => {
-      const map: { [id: string]: string } = {};
+      const map: Record<string, string> = {};
       list.forEach(emp => { map[emp.id] = emp.name; });
       setEmployeeMap(map);
-      setEmployeeMapLoaded(true);
-      console.log('Mapa de funcionários carregado:', map);
+      logger.debug('Mapa de funcionários carregado', { count: list.length });
     });
   }, []);
 
-  const calculateChange = (current: number, previous: number) => {
-    if (!previous) return {
-      value: "+0%",
-      positive: true
-    };
-    const change = (current - previous) / previous * 100;
-    return {
-      value: `${change > 0 ? "+" : ""}${change.toFixed(1)}%`,
-      positive: change >= 0
-    };
-  };
+
 
   const metricsData = [
     {
@@ -381,23 +350,19 @@ const Dashboard = () => {
   const otherMetrics = metricsData.slice(3);
 
   const employeeSalesArray = useMemo(() => {
-    return Object.entries(employeeSalesMap).map(([employeeId, data]) => {
-      const d = data as any;
-      // Buscar o nome do funcionário no mapa, ou usar o ID como fallback
+    const array = Object.entries(employeeSalesMap).map(([employeeId, data]) => {
       const employeeName = employeeMap[employeeId] || employeeId;
       return {
-        employee: employeeName, // Exibe o nome do funcionário
+        employee: employeeName,
         id: employeeId,
-        count: d.totalLeadsWithAmount,
-        convertedSales: d.convertedSales,
-        totalValue: d.totalValue
+        count: data.totalLeadsWithAmount,
+        convertedSales: data.convertedSales,
+        totalValue: data.totalValue
       };
     });
+    // Sort by total value (highest first)
+    return array.sort((a, b) => b.totalValue - a.totalValue);
   }, [employeeSalesMap, employeeMap]);
-
-  // Sort by total value (highest first)
-  employeeSalesArray.sort((a, b) => b.totalValue - a.totalValue);
-  console.log("Employee sales array final:", employeeSalesArray);
 
   return (
     <div className="w-full px-2 sm:px-4 md:px-0 lg:px-0 space-y-4 sm:space-y-6">
@@ -411,11 +376,11 @@ const Dashboard = () => {
       {/* Main Content Grid */}
       <div className="w-full grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6">
         <div className="flex flex-col gap-4 sm:gap-6">
-          <ProductionCard 
+          <ProductionCard
             dailyProduction={dailyProduction}
             isLoading={isLoading}
           />
-          
+
           {/* Três principais cards de métricas abaixo do ProductionCard */}
           <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 md:gap-4 lg:gap-6">
             {mainMetrics.map((metric, index) => (
@@ -423,16 +388,16 @@ const Dashboard = () => {
             ))}
           </div>
         </div>
-        
-        <EmployeePerformanceCard 
+
+        <EmployeePerformanceCard
           employeeSales={employeeSalesArray}
           isLoading={isLoading}
         />
       </div>
-      
+
       {/* Latest Leads Full Width */}
       <div className="w-full">
-        <LatestLeadsCard 
+        <LatestLeadsCard
           latestLeads={latestLeads}
           isLoading={isLoading}
         />

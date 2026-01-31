@@ -7,6 +7,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { CommissionTier } from "@/types/models";
+import type { PostgrestError } from "@/types/database.types";
+import logger from "@/utils/logger";
 
 interface VariableRateFormProps {
   onCancel: () => void;
@@ -33,7 +35,7 @@ const VariableRateForm: React.FC<VariableRateFormProps> = ({ onCancel, onSave, i
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!product || !name) {
       toast.error("Produto e nome são obrigatórios");
       return;
@@ -95,9 +97,10 @@ const VariableRateForm: React.FC<VariableRateFormProps> = ({ onCancel, onSave, i
 
       toast.success(`Taxa de comissão ${initialData ? 'atualizada' : 'criada'} com sucesso!`);
       onSave();
-    } catch (error: any) {
-      console.error("Error saving commission tier:", error);
-      toast.error(`Erro ao ${initialData ? 'atualizar' : 'criar'} taxa de comissão: ${error.message}`);
+    } catch (error) {
+      const err = error as PostgrestError;
+      logger.error("Error saving commission tier", err);
+      toast.error(`Erro ao ${initialData ? 'atualizar' : 'criar'} taxa de comissão: ${err.message}`);
     } finally {
       setLoading(false);
     }
@@ -129,8 +132,8 @@ const VariableRateForm: React.FC<VariableRateFormProps> = ({ onCancel, onSave, i
 
       <div className="space-y-4">
         <Label>Tipo de Faixa *</Label>
-        <RadioGroup 
-          value={tierType} 
+        <RadioGroup
+          value={tierType}
           onValueChange={(value: 'value' | 'period') => setTierType(value)}
           className="flex flex-col space-y-3"
         >
@@ -145,7 +148,7 @@ const VariableRateForm: React.FC<VariableRateFormProps> = ({ onCancel, onSave, i
               </p>
             </div>
           </div>
-          
+
           <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-gray-50">
             <RadioGroupItem value="period" id="tier-period" />
             <div className="flex-1">
@@ -229,8 +232,8 @@ const VariableRateForm: React.FC<VariableRateFormProps> = ({ onCancel, onSave, i
 
       <div className="space-y-4">
         <Label>Tipo de Comissão *</Label>
-        <RadioGroup 
-          value={commissionType} 
+        <RadioGroup
+          value={commissionType}
           onValueChange={(value: 'percentage' | 'fixed') => setCommissionType(value)}
           className="flex flex-col space-y-3"
         >
@@ -245,7 +248,7 @@ const VariableRateForm: React.FC<VariableRateFormProps> = ({ onCancel, onSave, i
               </p>
             </div>
           </div>
-          
+
           <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-gray-50">
             <RadioGroupItem value="fixed" id="fixed" />
             <div className="flex-1">

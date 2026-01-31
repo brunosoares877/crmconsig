@@ -1,8 +1,8 @@
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { Bell, Menu, Settings, User } from "lucide-react";
+import { Bell, Menu } from "lucide-react";
 import { useSidebar } from "@/components/ui/sidebar";
 import { useIsMobile } from "@/hooks/use-mobile";
 import SupportButton from "@/components/SupportButton";
@@ -11,29 +11,34 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import type { PostgrestError } from "@/types/database.types";
+
+interface Notification {
+  id: string;
+  title: string;
+  type: "reminder" | "appointment";
+  href: string;
+  dueAt: Date;
+}
 
 const Header = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const { user, signOut } = useAuth();
-  const [notifications, setNotifications] = useState<{ id: string; title: string; type: "reminder" | "appointment"; href: string; dueAt: Date }[]>([]);
-  const [loadingNotifs, setLoadingNotifs] = useState(false);
 
-  // Safely try to use sidebar context
-  let sidebar = null;
-  try {
-    sidebar = useSidebar();
-  } catch (error) {
-    // useSidebar is not available, component is being used outside SidebarProvider
-    console.log("Header used outside SidebarProvider context");
-  }
+  // FIXED: Call hooks unconditionally at the top level
+  const sidebar = useSidebar();
+
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loadingNotifs, setLoadingNotifs] = useState(false);
 
   const handleLogout = async () => {
     try {
       await signOut();
       navigate("/login");
-    } catch (error: any) {
-      console.error("Erro ao fazer logout:", error.message);
+    } catch (error) {
+      const err = error as PostgrestError;
+      console.error("Erro ao fazer logout:", err.message);
     }
   };
 
@@ -97,7 +102,8 @@ const Header = () => {
           .sort((a, b) => a.dueAt.getTime() - b.dueAt.getTime());
 
         setNotifications(all);
-      } catch (err: any) {
+      } catch (error) {
+        const err = error as PostgrestError;
         console.error("Erro ao carregar notificações:", err);
         toast.error("Erro ao carregar notificações");
       } finally {
@@ -116,16 +122,16 @@ const Header = () => {
     <header className="border-b py-2 px-3 md:py-3 md:px-4 flex justify-between items-center bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 w-full">
       <div className="flex items-center gap-2">
         {isMobile && sidebar && (
-          <Button 
-            variant="ghost" 
-            size="icon" 
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => sidebar?.setOpenMobile(true)}
             className="h-8 w-8 md:h-10 md:w-10"
           >
             <Menu className="h-4 w-4 md:h-5 md:w-5" />
           </Button>
         )}
-        
+
         {/* Logo aumentada com cores brancas elegantes */}
         <div className="flex items-center">
           <div className="w-10 h-10 md:w-12 md:h-12 bg-white border-2 border-gray-200 rounded-xl flex items-center justify-center mr-3 md:mr-4 shadow-md">
@@ -139,8 +145,8 @@ const Header = () => {
         <SupportButton />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               size="icon"
               className="relative h-8 w-8 md:h-10 md:w-10"
             >
@@ -182,12 +188,12 @@ const Header = () => {
             ))}
           </DropdownMenuContent>
         </DropdownMenu>
-        
+
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button 
-              variant="ghost" 
-              size="icon" 
+            <Button
+              variant="ghost"
+              size="icon"
               className="rounded-full h-8 w-8 md:h-10 md:w-10"
             >
               <Avatar className="h-6 w-6 md:h-8 md:w-8">

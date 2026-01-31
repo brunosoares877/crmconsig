@@ -8,6 +8,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { getEmployees, Employee } from "@/utils/employees";
+import logger from "@/utils/logger";
 
 interface EmployeeSelectProps {
   value?: string;
@@ -22,17 +23,17 @@ const EmployeeSelect = ({ value, onValueChange, disabled, placeholder = "Selecio
 
   // Log apenas quando há valor específico para debug
   if (value && value !== "none") {
-    console.log("EmployeeSelect - Employee value:", value);
+    logger.debug("EmployeeSelect - Employee value:", value);
   }
 
   useEffect(() => {
     const fetchEmployees = async () => {
       try {
         const data = await getEmployees();
-        console.log("EmployeeSelect - Fetched employees:", data);
+        logger.debug("EmployeeSelect - Fetched employees:", data);
         setEmployees(data);
       } catch (error) {
-        console.error("Error fetching employees:", error);
+        logger.error("Error fetching employees:", error);
       } finally {
         setLoading(false);
       }
@@ -52,17 +53,17 @@ const EmployeeSelect = ({ value, onValueChange, disabled, placeholder = "Selecio
   }
 
   if (employees.length === 0) {
-    console.warn("⚠️ EmployeeSelect - Nenhum funcionário encontrado");
-    console.warn("💡 Verifique se há funcionários cadastrados em: Menu → Funcionários");
+    logger.warn("EmployeeSelect - Nenhum funcionário encontrado");
+    logger.warn("Verifique se há funcionários cadastrados em: Menu → Funcionários");
   }
 
   const handleValueChange = (newValue: string) => {
-    console.log("🔄 EmployeeSelect handleValueChange:", newValue);
+    logger.debug("EmployeeSelect handleValueChange:", newValue);
     onValueChange(newValue);
   };
 
   const currentValue = value || "none";
-  console.log("🎯 EmployeeSelect rendering with value:", currentValue);
+  logger.debug("EmployeeSelect rendering with value:", currentValue);
 
   return (
     <Select value={currentValue} onValueChange={handleValueChange} disabled={disabled}>

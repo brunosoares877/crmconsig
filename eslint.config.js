@@ -23,7 +23,32 @@ export default tseslint.config(
         "warn",
         { allowConstantExport: true },
       ],
-      "@typescript-eslint/no-unused-vars": "off",
+
+      // TypeScript rules - mais inteligentes
+      "@typescript-eslint/no-explicit-any": ["warn", {
+        "fixToUnknown": false,
+        "ignoreRestArgs": true // Permite ...args: any[]
+      }],
+
+      "@typescript-eslint/no-unused-vars": ["warn", {
+        "argsIgnorePattern": "^_",
+        "varsIgnorePattern": "^_",
+        "caughtErrorsIgnorePattern": "^_"
+      }],
+
+      // Permitir any em catch blocks (comum e seguro)
+      "@typescript-eslint/no-unsafe-assignment": "off",
+      "@typescript-eslint/no-unsafe-member-access": "off",
+      "@typescript-eslint/no-unsafe-call": "off",
+
+      // Avisar sobre console.log (mas permitir warn e error)
+      "no-console": ["warn", { allow: ["warn", "error", "info"] }],
+
+      // Permitir objetos vazios temporariamente
+      "@typescript-eslint/no-empty-object-type": "off",
+
+      // Permitir require em configs
+      "@typescript-eslint/no-require-imports": "off",
     },
   }
 );

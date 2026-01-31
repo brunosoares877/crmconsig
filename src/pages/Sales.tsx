@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, Users, BarChart3, Bell, Calculator, Shield, Target, Star, MessageCircle, ArrowRight, Play, Zap, TrendingUp, Award, BookOpen, Gift, CreditCard } from "lucide-react";
 import Testimonials from "@/components/sales/Testimonials";
+import ParticleBackground from "@/components/ParticleBackground";
 
 const Sales = () => {
   const navigate = useNavigate();
@@ -67,7 +68,10 @@ const Sales = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 relative">
+      {/* Particle Background Effect */}
+      <ParticleBackground />
+
       {/* Header */}
       <header className="bg-white/80 backdrop-blur-md border-b border-blue-100 sticky top-0 z-50">
         <div className="container mx-auto px-4 sm:px-6 py-3 sm:py-4 flex justify-between items-center">
@@ -84,7 +88,7 @@ const Sales = () => {
       </header>
 
       {/* Hero Section */}
-      <section className="py-12 sm:py-16 md:py-24 px-4 sm:px-6 relative overflow-hidden">
+      <section className="py-12 sm:py-16 md:py-24 px-4 sm:px-6 relative overflow-hidden z-10">
         <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-indigo-50/50 to-purple-50/30" />
         <div className="absolute top-10 sm:top-20 left-5 sm:left-10 w-48 sm:w-72 h-48 sm:h-72 bg-blue-200 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse" />
         <div className="absolute top-20 sm:top-40 right-5 sm:right-10 w-48 sm:w-72 h-48 sm:h-72 bg-purple-200 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse delay-1000" />
@@ -104,8 +108,8 @@ const Sales = () => {
           <div className="mb-6 sm:mb-8">
             <Button size="lg" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 sm:px-10 py-3 sm:py-4 text-base sm:text-lg shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300 w-full sm:w-auto" onClick={handleStartTrial}>
               <Play className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-            Começar agora mesmo
-          </Button>
+              Começar agora mesmo
+            </Button>
           </div>
           <div className="flex flex-col sm:flex-row flex-wrap justify-center items-center gap-4 sm:gap-8 text-xs sm:text-sm text-gray-500">
             <div className="flex items-center">
@@ -125,9 +129,9 @@ const Sales = () => {
       </section>
 
       {/* Stats Section */}
-      <section className="py-12 sm:py-16 md:py-20 bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 relative overflow-hidden">
+      <section className="py-12 sm:py-16 md:py-20 bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 relative overflow-hidden z-10">
         <div className="absolute inset-0 opacity-10">
-          <div className="w-full h-full bg-repeat" style={{backgroundImage: "radial-gradient(circle, white 2px, transparent 2px)", backgroundSize: "40px 40px sm:60px 60px"}} />
+          <div className="w-full h-full bg-repeat" style={{ backgroundImage: "radial-gradient(circle, white 2px, transparent 2px)", backgroundSize: "40px 40px sm:60px 60px" }} />
         </div>
         <div className="container mx-auto px-4 sm:px-6 relative">
           <div className="text-center mb-8 sm:mb-12">
@@ -156,7 +160,7 @@ const Sales = () => {
       </section>
 
       {/* Features Section */}
-      <section className="py-12 sm:py-16 md:py-20 px-4 sm:px-6 bg-gradient-to-br from-slate-50 to-blue-50/30">
+      <section className="py-12 sm:py-16 md:py-20 px-4 sm:px-6 bg-gradient-to-br from-slate-50 to-blue-50/30 relative z-10">
         <div className="container mx-auto">
           <div className="text-center mb-10 sm:mb-12 md:mb-16">
             <Badge className="mb-3 sm:mb-4 bg-blue-100 text-blue-800 hover:bg-blue-200 px-4 sm:px-6 py-2 text-xs sm:text-sm">
@@ -288,33 +292,33 @@ const Sales = () => {
               {/* Decorative Elements */}
               <div className="absolute top-0 right-0 w-32 h-32 bg-orange-200/20 rounded-full blur-3xl"></div>
               <div className="absolute bottom-0 left-0 w-24 h-24 bg-yellow-200/20 rounded-full blur-2xl"></div>
-              
+
               <CardHeader className="text-center p-5 sm:p-7 relative z-10">
                 <Badge className="w-fit mx-auto bg-gradient-to-r from-yellow-500 to-orange-500 text-white mb-3 text-xs sm:text-sm px-3 sm:px-4 py-1 font-bold shadow-lg">
                   <BookOpen className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 inline" />
                   Curso em PDF
                 </Badge>
-                
+
                 <CardTitle className="text-2xl sm:text-3xl md:text-4xl font-black text-gray-900 mb-6 leading-tight">
                   Curso de Tráfego Pago<br />
                   <span className="text-blue-600">para Corbans</span>
                 </CardTitle>
-                
-              {/* Preço Destacado */}
-              <div className="my-6 bg-white/80 backdrop-blur-sm rounded-xl p-5 border-2 border-orange-200 shadow-lg">
-                <div className="flex items-baseline justify-center gap-2 mb-2">
-                  <span className="text-4xl sm:text-5xl font-black text-orange-600">R$ 197</span>
-                  <span className="text-xl sm:text-2xl font-bold text-gray-600">,00</span>
+
+                {/* Preço Destacado */}
+                <div className="my-6 bg-white/80 backdrop-blur-sm rounded-xl p-5 border-2 border-orange-200 shadow-lg">
+                  <div className="flex items-baseline justify-center gap-2 mb-2">
+                    <span className="text-4xl sm:text-5xl font-black text-orange-600">R$ 197</span>
+                    <span className="text-xl sm:text-2xl font-bold text-gray-600">,00</span>
+                  </div>
+                  <div className="flex items-center justify-center gap-2 mb-3">
+                    <p className="text-sm text-gray-500 line-through">De R$597,00</p>
+                    <Badge className="bg-gradient-to-r from-red-600 to-red-700 text-white text-xs px-3 py-1 font-bold shadow-md">
+                      67% OFF
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-gray-600 font-medium">Economize R$400,00</p>
                 </div>
-                <div className="flex items-center justify-center gap-2 mb-3">
-                  <p className="text-sm text-gray-500 line-through">De R$597,00</p>
-                  <Badge className="bg-gradient-to-r from-red-600 to-red-700 text-white text-xs px-3 py-1 font-bold shadow-md">
-                    67% OFF
-                  </Badge>
-                </div>
-                <p className="text-xs text-gray-600 font-medium">Economize R$400,00</p>
-              </div>
-                
+
                 {/* Bônus - SUPER DESTACADO */}
                 <div className="bg-gradient-to-r from-green-500 via-emerald-500 to-green-600 border-3 border-green-700 rounded-xl p-5 mb-5 shadow-2xl transform hover:scale-[1.02] transition-all relative overflow-hidden">
                   <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full blur-xl"></div>
@@ -325,14 +329,14 @@ const Sales = () => {
                         BÔNUS EXCLUSIVO AO COMPRAR!
                       </h3>
                     </div>
-                  <div className="bg-white/25 backdrop-blur-md rounded-lg p-4 border border-white/30">
-                    <p className="text-white font-black text-lg sm:text-xl text-center mb-2 drop-shadow-md">
-                      🎁 1 MÊS GRÁTIS DO CRM LEADCONSIG
-                    </p>
-                    <p className="text-white/95 text-sm text-center font-medium">
-                      Sistema completo de gestão de leads, comissões e vendas para correspondentes bancários
-                    </p>
-                  </div>
+                    <div className="bg-white/25 backdrop-blur-md rounded-lg p-4 border border-white/30">
+                      <p className="text-white font-black text-lg sm:text-xl text-center mb-2 drop-shadow-md">
+                        🎁 1 MÊS GRÁTIS DO CRM LEADCONSIG
+                      </p>
+                      <p className="text-white/95 text-sm text-center font-medium">
+                        Sistema completo de gestão de leads, comissões e vendas para correspondentes bancários
+                      </p>
+                    </div>
                   </div>
                 </div>
 
@@ -368,8 +372,8 @@ const Sales = () => {
                 </div>
               </CardHeader>
               <CardFooter className="p-5 sm:p-7 relative z-10">
-                <Button 
-                  className="w-full bg-gradient-to-r from-orange-600 via-orange-500 to-orange-600 hover:from-orange-700 hover:via-orange-600 hover:to-orange-700 text-white text-base sm:text-lg py-4 sm:py-5 font-black shadow-2xl hover:shadow-3xl transform hover:scale-105 transition-all rounded-xl" 
+                <Button
+                  className="w-full bg-gradient-to-r from-orange-600 via-orange-500 to-orange-600 hover:from-orange-700 hover:via-orange-600 hover:to-orange-700 text-white text-base sm:text-lg py-4 sm:py-5 font-black shadow-2xl hover:shadow-3xl transform hover:scale-105 transition-all rounded-xl"
                   onClick={() => navigate("/curso-trafego-pago")}
                 >
                   <CreditCard className="w-5 h-5 mr-2 inline" />
@@ -385,7 +389,7 @@ const Sales = () => {
       {/* CTA Final */}
       <section className="py-16 sm:py-20 md:py-24 bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 text-white relative overflow-hidden">
         <div className="absolute inset-0 opacity-10">
-          <div className="w-full h-full bg-repeat" style={{backgroundImage: "radial-gradient(circle, white 1px, transparent 1px)", backgroundSize: "30px 30px sm:40px 40px"}} />
+          <div className="w-full h-full bg-repeat" style={{ backgroundImage: "radial-gradient(circle, white 1px, transparent 1px)", backgroundSize: "30px 30px sm:40px 40px" }} />
         </div>
         <div className="absolute top-5 sm:top-10 left-5 sm:left-10 w-48 sm:w-64 h-48 sm:h-64 bg-purple-400 rounded-full mix-blend-multiply filter blur-2xl opacity-20 animate-pulse" />
         <div className="absolute bottom-5 sm:bottom-10 right-5 sm:right-10 w-60 sm:w-80 h-60 sm:h-80 bg-pink-400 rounded-full mix-blend-multiply filter blur-2xl opacity-20 animate-pulse delay-1000" />
@@ -402,10 +406,10 @@ const Sales = () => {
             Experimente nosso CRM e veja como podemos ajudar sua empresa a crescer exponencialmente.
           </p>
           <div className="mb-8 sm:mb-12">
-            <Button 
-              variant="outline" 
-              size="lg" 
-              className="!bg-white !text-blue-600 hover:!bg-blue-50 hover:!text-blue-700 font-bold text-base sm:text-lg md:text-xl px-8 sm:px-12 md:px-16 py-3 sm:py-4 rounded-xl sm:rounded-2xl shadow-2xl hover:shadow-3xl transform hover:scale-105 transition-all duration-300 !border-2 !border-white hover:!border-blue-200 w-full sm:w-auto" 
+            <Button
+              variant="outline"
+              size="lg"
+              className="!bg-white !text-blue-600 hover:!bg-blue-50 hover:!text-blue-700 font-bold text-base sm:text-lg md:text-xl px-8 sm:px-12 md:px-16 py-3 sm:py-4 rounded-xl sm:rounded-2xl shadow-2xl hover:shadow-3xl transform hover:scale-105 transition-all duration-300 !border-2 !border-white hover:!border-blue-200 w-full sm:w-auto"
               onClick={handleStartTrial}
             >
               <Play className="w-5 h-5 sm:w-6 sm:h-6 mr-2 sm:mr-3" />
@@ -431,7 +435,7 @@ const Sales = () => {
 
       {/* WhatsApp Float Button */}
       <div className="fixed bottom-4 sm:bottom-6 right-4 sm:right-6 z-50">
-        <a 
+        <a
           href="https://wa.me/5584991850149?text=Olá!%20Gostaria%20de%20saber%20mais%20sobre%20o%20sistema%20LeadConsig"
           target="_blank"
           rel="noopener noreferrer"
@@ -441,7 +445,7 @@ const Sales = () => {
           <Button className="rounded-full w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-green-400 to-green-600 hover:from-green-500 hover:to-green-700 shadow-2xl hover:shadow-3xl transform hover:scale-110 transition-all duration-300 border-2 sm:border-4 border-white animate-bounce">
             <MessageCircle className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
           </Button>
-          
+
           {/* Tooltip - apenas em telas maiores */}
           <div className="hidden sm:block absolute bottom-full right-0 mb-2 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
             Fale conosco no WhatsApp

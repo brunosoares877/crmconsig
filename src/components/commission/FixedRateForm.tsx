@@ -7,6 +7,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { CommissionRate } from "@/types/models";
+import type { PostgrestError } from "@/types/database.types";
+import logger from "@/utils/logger";
 
 interface FixedRateFormProps {
   onCancel: () => void;
@@ -26,7 +28,7 @@ const FixedRateForm: React.FC<FixedRateFormProps> = ({ onCancel, onSave, initial
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!product || !name) {
       toast.error("Produto e nome são obrigatórios");
       return;
@@ -73,9 +75,10 @@ const FixedRateForm: React.FC<FixedRateFormProps> = ({ onCancel, onSave, initial
 
       toast.success(`Taxa de comissão ${initialData ? 'atualizada' : 'criada'} com sucesso!`);
       onSave();
-    } catch (error: any) {
-      console.error("Error saving commission rate:", error);
-      toast.error(`Erro ao ${initialData ? 'atualizar' : 'criar'} taxa de comissão: ${error.message}`);
+    } catch (error) {
+      const err = error as PostgrestError;
+      logger.error("Error saving commission rate", err);
+      toast.error(`Erro ao ${initialData ? 'atualizar' : 'criar'} taxa de comissão: ${err.message}`);
     } finally {
       setLoading(false);
     }
@@ -107,8 +110,8 @@ const FixedRateForm: React.FC<FixedRateFormProps> = ({ onCancel, onSave, initial
 
       <div className="space-y-4">
         <Label>Tipo de Comissão *</Label>
-        <RadioGroup 
-          value={commissionType} 
+        <RadioGroup
+          value={commissionType}
           onValueChange={(value: 'percentage' | 'fixed') => setCommissionType(value)}
           className="flex flex-col space-y-3"
         >
@@ -123,7 +126,7 @@ const FixedRateForm: React.FC<FixedRateFormProps> = ({ onCancel, onSave, initial
               </p>
             </div>
           </div>
-          
+
           <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-gray-50">
             <RadioGroupItem value="fixed" id="fixed" />
             <div className="flex-1">

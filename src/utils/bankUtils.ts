@@ -102,7 +102,7 @@ export const getBankName = (bankCode: string | null | undefined) => {
 
   // Heurística para códigos atípicos numéricos com mais de 3 dígitos (ex.: "8887"): 
   // tenta casar pelos 3 primeiros ou 3 últimos dígitos.
-  let onlyDigits = bankCode.replace(/\D/g, "");
+  const onlyDigits = bankCode.replace(/\D/g, "");
   if (onlyDigits.length < 3 && onlyDigits.length > 0) {
     const padded = onlyDigits.padStart(3, "0");
     if (numericBanks[padded]) return numericBanks[padded];

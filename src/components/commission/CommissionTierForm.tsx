@@ -102,10 +102,10 @@ export default function CommissionTierForm({ initialData, onCancel, onSave }: Co
 
   const formatCurrencyInput = (value: string) => {
     // Remove all non-digit characters
-    let digits = value.replace(/\D/g, "");
+    const digits = value.replace(/\D/g, "");
     
     // Convert to number and back to string to remove leading zeros
-    let number = parseInt(digits, 10) || 0;
+    const number = parseInt(digits, 10) || 0;
     let formatted = number.toString();
     
     // Add thousands separators

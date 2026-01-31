@@ -50,8 +50,11 @@ import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import {
   Lead,
-  type Commission as CommissionType
+  type Commission as CommissionType,
+  type CommissionRate,
+  type CommissionTier
 } from "@/types/models";
+import type { PostgrestError, LeadStatus } from "@/types/database.types";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
@@ -62,6 +65,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { Checkbox } from "@/components/ui/checkbox";
 import { AdminPasswordDialog } from "@/components/AdminPasswordDialog";
+import logger from "@/utils/logger";
 
 // Declarar tipo para autoTable
 declare module 'jspdf' {
@@ -74,6 +78,15 @@ declare module 'jspdf' {
 }
 
 const Commission = () => {
+  // Interface local para o relatório de pagamento
+  interface PaymentReport {
+    employee: string;
+    commissions: CommissionType[];
+    totalAmount: number;
+    totalCommissionValue: number;
+    totalLeads: number;
+  }
+
   const [loading, setLoading] = useState(false);
   const [leads, setLeads] = useState<Partial<Lead>[]>([]);
   const [commissions, setCommissions] = useState<CommissionType[]>([]);
@@ -103,12 +116,12 @@ const Commission = () => {
   const [reportEmployee, setReportEmployee] = useState<string>("all");
   const [reportDateFrom, setReportDateFrom] = useState<string>("");
   const [reportDateTo, setReportDateTo] = useState<string>("");
-  const [paymentReport, setPaymentReport] = useState<any>(null);
+  const [paymentReport, setPaymentReport] = useState<PaymentReport | PaymentReport[] | null>(null);
   const [generatingReport, setGeneratingReport] = useState(false);
 
   // Estados para personalização do PDF
   const [showPdfCustomization, setShowPdfCustomization] = useState(false);
-  const [pdfReportData, setPdfReportData] = useState<any>(null);
+  const [pdfReportData, setPdfReportData] = useState<PaymentReport | null>(null);
   const [pdfColumns, setPdfColumns] = useState({
     numero: true,
     cliente: true,
@@ -126,7 +139,7 @@ const Commission = () => {
 
   // Estados para configuração do WhatsApp
   const [showWhatsAppConfig, setShowWhatsAppConfig] = useState(false);
-  const [currentReportForWhatsApp, setCurrentReportForWhatsApp] = useState<any>(null);
+  const [currentReportForWhatsApp, setCurrentReportForWhatsApp] = useState<PaymentReport | null>(null);
   const [whatsAppConfig, setWhatsAppConfig] = useState({
     includeCommissionValues: true,
     includePercentages: true,
@@ -147,28 +160,29 @@ const Commission = () => {
     try {
       const employeeList = await getEmployees();
       setEmployees(employeeList.map(employee => employee.name));
-      
+
       // Criar mapa de ID -> Nome para exibir nomes ao invés de UUIDs
       const map: Record<string, string> = {};
       employeeList.forEach(employee => {
         map[employee.id] = employee.name;
       });
       setEmployeeMap(map);
-    } catch (error: any) {
-      console.error("Error fetching employees:", error);
+    } catch (error) {
+      const err = error as PostgrestError;
+      logger.error("Error fetching employees", err);
     }
   };
 
   const fetchCommissions = async () => {
     try {
       setLoading(true);
-      
+
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) {
         toast.error("Usuário não autenticado");
         return;
       }
-      
+
       let query = supabase
         .from("commissions")
         .select(`
@@ -188,61 +202,83 @@ const Commission = () => {
       }
 
       query = query.order("created_at", { ascending: false });
-      
+
       const { data, error } = await query;
-      
+
       if (error) {
         throw error;
       }
-      
+
       if (data) {
-        console.log("🔍 DEBUG: Dados brutos das comissões do banco:", data);
-        
+        logger.debug("Dados brutos das comissões do banco", { count: data.length });
+
         let processedCommissions = data.map((item, index) => {
-          const commission = item as any;
-          
-          console.log(`🔍 DEBUG Comissão ${index + 1}:`, {
-            id: commission.id,
-            employee_commission: commission.employee,
-            lead_data: commission.lead,
-            lead_employee: commission.lead?.employee,
-            final_employee: commission.employee || commission.lead?.employee || 'Não informado'
-          });
-          
-          const amount = typeof commission.amount === 'number' ? commission.amount : 0;
-          
+          // Cast inicial para dicionário genérico para acessar propriedades com segurança
+          const rawItem = item as unknown as Record<string, unknown>;
+          const leadDataRaw = rawItem.lead as Record<string, unknown> | null;
+
+          const commissionId = rawItem.id as string;
+          const commissionEmployee = rawItem.employee as string | null;
+          const leadEmployee = leadDataRaw?.employee as string | null;
+          const finalEmployee = commissionEmployee || leadEmployee || 'Não informado';
+
+          // Safely access amount
+          const rawAmount = rawItem.amount;
+          const amount = typeof rawAmount === 'number' ? rawAmount : 0;
+
           let commissionValue = 0;
           let percentageValue = 0;
-          
+
           // Se existir commission_value na base, usar ele
-          if (commission.commission_value !== undefined && commission.commission_value !== null) {
-            commissionValue = Number(commission.commission_value) || 0;
+          const rawCommValue = rawItem.commission_value;
+          if (rawCommValue !== undefined && rawCommValue !== null) {
+            commissionValue = Number(rawCommValue) || 0;
           } else {
             // Calcular comissão padrão (5% se não tiver configuração específica)
             commissionValue = amount * 0.05; // 5% padrão
           }
-          
+
           // Se existir percentage na base, usar ele
-          if (commission.percentage !== undefined && commission.percentage !== null) {
-            percentageValue = Number(commission.percentage) || 0;
+          const rawPercentage = rawItem.percentage;
+          if (rawPercentage !== undefined && rawPercentage !== null) {
+            percentageValue = Number(rawPercentage) || 0;
           } else {
             percentageValue = 5; // 5% padrão
           }
-          
-          let leadData = commission.lead;
-          if (leadData && typeof leadData.status === 'string') {
+
+          let leadData: Lead | undefined = undefined;
+
+          if (leadDataRaw) {
+            // Construir objeto Lead com type safety
             leadData = {
-              ...leadData,
-              status: leadData.status as any
-            };
+              id: leadDataRaw.id as string,
+              name: leadDataRaw.name as string,
+              amount: (leadDataRaw.amount as string) || undefined,
+              status: (leadDataRaw.status as LeadStatus) || 'novo',
+              employee: leadDataRaw.employee as string | undefined,
+              date: leadDataRaw.date as string | undefined,
+              created_at: leadDataRaw.created_at as string | undefined,
+              product: leadDataRaw.product as string | undefined,
+              // Adicionar outros campos conforme necessário para o tipo Lead
+            } as Lead;
           }
-          
+
+          // Construir objeto CommissionType
           return {
-            ...commission,
+            id: commissionId,
+            user_id: rawItem.user_id as string,
+            lead_id: rawItem.lead_id as string,
+            amount: amount,
             commission_value: commissionValue,
             percentage: percentageValue,
-            lead: leadData,
-            employee: commission.employee || leadData?.employee || 'Não informado'
+            product: (rawItem.product as string) || 'Não informado',
+            status: (rawItem.status as CommissionType['status']) || 'pending',
+            payment_period: rawItem.payment_period as string | undefined,
+            payment_date: rawItem.payment_date as string | undefined,
+            created_at: rawItem.created_at as string,
+            updated_at: rawItem.updated_at as string,
+            employee: finalEmployee,
+            lead: leadData
           } as CommissionType;
         });
 
@@ -250,11 +286,11 @@ const Commission = () => {
         if (dateFrom || dateTo) {
           processedCommissions = processedCommissions.filter(commission => {
             if (!commission.lead) return false;
-            
+
             // Usar a data personalizada do lead, ou created_at como fallback
             const leadDateStr = commission.lead.date || commission.lead.created_at;
             if (!leadDateStr) return false;
-            
+
             // Converter para data local sem problemas de timezone
             let leadDate;
             if (commission.lead.date) {
@@ -265,11 +301,11 @@ const Commission = () => {
               // Se é created_at, usar Date normal
               leadDate = new Date(leadDateStr);
             }
-            
+
             if (dateFrom && leadDate < dateFrom) {
               return false;
             }
-            
+
             if (dateTo) {
               const endDate = new Date(dateTo);
               endDate.setHours(23, 59, 59, 999);
@@ -277,17 +313,17 @@ const Commission = () => {
                 return false;
               }
             }
-            
+
             return true;
           });
         }
-        
+
         setCommissions(processedCommissions);
-        
+
         // Extrair produtos únicos para filtro
         const uniqueProducts = [...new Set(processedCommissions.map(c => c.product).filter(Boolean))];
         setProducts(uniqueProducts);
-        
+
         const inProgressTotal = processedCommissions
           .filter(c => c.status === "in_progress")
           .reduce((acc, curr) => acc + (Number(curr.commission_value) || 0), 0);
@@ -295,15 +331,15 @@ const Commission = () => {
         const pendingTotal = processedCommissions
           .filter(c => c.status === "pending")
           .reduce((acc, curr) => acc + (Number(curr.commission_value) || 0), 0);
-          
+
         const completedTotal = processedCommissions
           .filter(c => c.status === "completed" || c.status === "approved" || c.status === "paid")
           .reduce((acc, curr) => acc + (Number(curr.commission_value) || 0), 0);
-          
+
         const cancelledTotal = processedCommissions
           .filter(c => c.status === "cancelled")
           .reduce((acc, curr) => acc + (Number(curr.commission_value) || 0), 0);
-        
+
         setTotalCommissionsPending(pendingTotal);
         setTotalCommissionsApproved(completedTotal);
         setTotalCommissionsPaid(inProgressTotal);
@@ -321,8 +357,9 @@ const Commission = () => {
     try {
       // Mapear produto do lead para produto da configuração
       const mappedProduct = mapProductToCommissionConfig(leadProduct);
-      
+
       console.log(`Calculando comissão: ${leadProduct} → ${mappedProduct}, valor: R$ ${amount}, prazo: ${paymentPeriod}x`);
+
 
       // Buscar taxa fixa primeiro
       const { data: rates } = await supabase
@@ -332,16 +369,16 @@ const Commission = () => {
         .eq('active', true);
 
       if (rates && rates.length > 0) {
-        const rate = rates[0] as any;
-        console.log(`Taxa fixa encontrada:`, rate);
-        
+        const rate = rates[0] as unknown as CommissionRate;
+        logger.debug(`Taxa fixa encontrada`, rate);
+
         if (rate.commission_type === 'fixed') {
           const commission = rate.fixed_value || 0;
-          console.log(`Comissão fixa: R$ ${commission}`);
+          logger.debug(`Comissão fixa: R$ ${commission}`);
           return commission;
         } else {
           const commission = (amount * rate.percentage) / 100;
-          console.log(`Comissão percentual: ${rate.percentage}% = R$ ${commission}`);
+          logger.debug(`Comissão percentual: ${rate.percentage}% = R$ ${commission}`);
           return commission;
         }
       }
@@ -356,21 +393,20 @@ const Commission = () => {
       if (tiers && tiers.length > 0) {
         // Buscar primeiro por faixas de período se o prazo estiver disponível
         if (paymentPeriod && paymentPeriod > 0) {
-          const periodTiers = tiers.filter((tier: any) => tier.tier_type === 'period');
-          
+          const periodTiers = (tiers as unknown as CommissionTier[]).filter(tier => tier.tier_type === 'period');
+
           for (const tier of periodTiers) {
-            const tierData = tier as any;
-            if (tierData.min_period <= paymentPeriod && 
-                (tierData.max_period === null || paymentPeriod <= tierData.max_period)) {
-              console.log(`Faixa de período encontrada:`, tierData);
-              
-              if (tierData.commission_type === 'fixed') {
-                const commission = tierData.fixed_value || 0;
-                console.log(`Comissão fixa por prazo: R$ ${commission}`);
+            if (tier.min_period !== undefined && tier.min_period <= paymentPeriod &&
+              (tier.max_period === null || tier.max_period === undefined || paymentPeriod <= tier.max_period)) {
+              logger.debug(`Faixa de período encontrada`, tier);
+
+              if (tier.commission_type === 'fixed') {
+                const commission = tier.fixed_value || 0;
+                logger.debug(`Comissão fixa por prazo: R$ ${commission}`);
                 return commission;
               } else {
-                const commission = (amount * tierData.percentage) / 100;
-                console.log(`Comissão percentual por prazo: ${tierData.percentage}% = R$ ${commission}`);
+                const commission = (amount * tier.percentage) / 100;
+                logger.debug(`Comissão percentual por prazo: ${tier.percentage}% = R$ ${commission}`);
                 return commission;
               }
             }
@@ -378,23 +414,22 @@ const Commission = () => {
         }
 
         // Se não encontrou por período, buscar por faixas de valor
-        const valueTiers = tiers.filter((tier: any) => 
+        const valueTiers = (tiers as unknown as CommissionTier[]).filter(tier =>
           !tier.tier_type || tier.tier_type === 'value'
         );
 
         for (const tier of valueTiers) {
-          const tierData = tier as any;
-          if (tierData.min_amount <= amount && 
-              (tierData.max_amount === null || amount <= tierData.max_amount)) {
-            console.log(`Faixa de valor encontrada:`, tierData);
-            
-            if (tierData.commission_type === 'fixed') {
-              const commission = tierData.fixed_value || 0;
-              console.log(`Comissão fixa por faixa: R$ ${commission}`);
+          if (tier.min_amount <= amount &&
+            (tier.max_amount === null || amount <= tier.max_amount)) {
+            logger.debug(`Faixa de valor encontrada`, tier);
+
+            if (tier.commission_type === 'fixed') {
+              const commission = tier.fixed_value || 0;
+              logger.debug(`Comissão fixa por faixa: R$ ${commission}`);
               return commission;
             } else {
-              const commission = (amount * tierData.percentage) / 100;
-              console.log(`Comissão percentual por faixa: ${tierData.percentage}% = R$ ${commission}`);
+              const commission = (amount * tier.percentage) / 100;
+              logger.debug(`Comissão percentual por faixa: ${tier.percentage}% = R$ ${commission}`);
               return commission;
             }
           }
@@ -403,7 +438,7 @@ const Commission = () => {
 
       // Comissões padrão específicas por produto quando não há configuração
       let defaultPercentage = 5; // Taxa padrão geral
-      
+
       if (mappedProduct === 'CREDITO FGTS' || leadProduct.includes('SAQUE') || leadProduct.includes('FGTS')) {
         defaultPercentage = 15; // 15% para FGTS
         console.log(`Taxa padrão para FGTS aplicada: ${defaultPercentage}%`);
@@ -442,7 +477,7 @@ const Commission = () => {
 
     try {
       setDeletingCommission(commissionToDelete);
-      
+
       const { error } = await supabase
         .from("commissions")
         .delete()
@@ -483,7 +518,7 @@ const Commission = () => {
 
   const filteredCommissions = commissions.filter((commission) => {
     const searchTerm = search.toLowerCase();
-    const matchesSearch = 
+    const matchesSearch =
       commission.lead?.name?.toLowerCase().includes(searchTerm) ||
       commission.product?.toLowerCase().includes(searchTerm) ||
       commission.status?.toLowerCase().includes(searchTerm) ||
@@ -492,12 +527,12 @@ const Commission = () => {
       commission.lead?.employee?.toLowerCase().includes(searchTerm) ||
       String(commission.amount).toLowerCase().includes(searchTerm) ||
       String(commission.commission_value).toLowerCase().includes(searchTerm);
-    
+
     // Filtro por funcionário/responsável
-    const matchesEmployee = employeeFilter === "" || employeeFilter === "all" || 
-      (commission.employee && (commission.employee === employeeFilter || employeeMap[commission.employee] === employeeFilter)) || 
+    const matchesEmployee = employeeFilter === "" || employeeFilter === "all" ||
+      (commission.employee && (commission.employee === employeeFilter || employeeMap[commission.employee] === employeeFilter)) ||
       (commission.lead?.employee && (commission.lead.employee === employeeFilter || employeeMap[commission.lead.employee] === employeeFilter));
-    
+
     return matchesSearch && matchesEmployee;
   });
 
@@ -538,9 +573,7 @@ const Commission = () => {
         return;
       }
 
-      console.log(`🔍 Gerando relatório de pagamento`);
-      console.log(`📅 Período: ${reportDateFrom} até ${reportDateTo}`);
-      console.log(`👤 Funcionário: ${reportEmployee}`);
+      logger.debug(`Gerando relatório de pagamento`, { from: reportDateFrom, to: reportDateTo, employee: reportEmployee });
 
       // Buscar todas as comissões do usuário
       const { data: allCommissionsData, error } = await supabase
@@ -553,58 +586,56 @@ const Commission = () => {
 
       if (error) throw error;
 
-      console.log(`📊 Total de comissões encontradas: ${allCommissionsData?.length || 0}`);
-      
-      // Debug: verificar dados da primeira comissão
-      if (allCommissionsData && allCommissionsData.length > 0) {
-        console.log('🔍 DEBUG: Primeira comissão completa:', allCommissionsData[0]);
-        console.log('🔍 DEBUG: Lead da primeira comissão:', allCommissionsData[0].lead);
-        
-        if (allCommissionsData[0].lead) {
-          console.log('🔍 DEBUG: Campos disponíveis no lead:');
-          Object.keys(allCommissionsData[0].lead).forEach(key => {
-            console.log(`   ${key}: ${allCommissionsData[0].lead[key]}`);
-          });
-        }
-      }
+      logger.debug(`Total de comissões encontradas: ${allCommissionsData?.length || 0}`);
+
+      // Cast para tipo correto
+      const typedCommissions = (allCommissionsData || []).map(item => {
+        const rawItem = item as unknown as Record<string, unknown>;
+        const leadRaw = rawItem.lead as Record<string, unknown> | null;
+
+        return {
+          ...rawItem,
+          lead: leadRaw ? {
+            ...leadRaw,
+            status: (leadRaw.status as LeadStatus) || 'novo'
+          } as Lead : undefined
+        } as CommissionType;
+      });
 
       // Filtrar por funcionário usando a função melhorada
-      let commissionsByEmployee = filterCommissionsByEmployee(allCommissionsData || [], reportEmployee);
+      const commissionsByEmployee = filterCommissionsByEmployee(typedCommissions, reportEmployee);
 
       // Filtrar por data do lead
-      let commissionsData = commissionsByEmployee.filter(commission => {
+      const commissionsData = commissionsByEmployee.filter(commission => {
         if (!commission.lead) return false;
-        
+
+        const lead = commission.lead;
         // Usar a data personalizada do lead, ou created_at como fallback
-        const leadDateStr = (commission.lead as any).date || commission.lead.created_at;
+        const leadDateStr = lead.date || lead.created_at;
         if (!leadDateStr) return false;
-        
+
         // Converter para data local
         let leadDate;
-        if ((commission.lead as any).date) {
-          const [year, month, day] = (commission.lead as any).date.split('-');
+        if (lead.date) {
+          const [year, month, day] = lead.date.split('-');
           leadDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
         } else {
           leadDate = new Date(leadDateStr);
         }
-        
+
         const startDate = new Date(reportDateFrom);
         const endDate = new Date(reportDateTo);
         endDate.setHours(23, 59, 59, 999);
-        
+
         const isInRange = leadDate >= startDate && leadDate <= endDate;
-        
-        if (isInRange) {
-          console.log(`📅 Incluindo: ${commission.lead.name} (${leadDate.toLocaleDateString('pt-BR')})`);
-        }
-        
+
         return isInRange;
       });
 
-      console.log(`🎯 Comissões após todos os filtros: ${commissionsData.length}`);
+      logger.debug(`Comissões após todos os filtros: ${commissionsData.length}`);
 
       if (commissionsData.length === 0) {
-        console.log(`⚠️ Nenhuma comissão encontrada para os filtros aplicados`);
+        logger.info(`Nenhuma comissão encontrada para os filtros aplicados`);
         toast.info('Nenhuma comissão encontrada para o período e funcionário selecionados');
         setPaymentReport(null);
         return;
@@ -613,13 +644,10 @@ const Commission = () => {
       if (reportEmployee && reportEmployee !== "all") {
         // Relatório individual
         const employeeCommissions = commissionsData;
-        const totalAmount = employeeCommissions.reduce((sum: number, c: any) => sum + (parseFloat(c.amount) || 0), 0);
-        const totalCommissionValue = employeeCommissions.reduce((sum: number, c: any) => sum + (parseFloat(c.commission_value) || 0), 0);
+        const totalAmount = employeeCommissions.reduce((sum, c) => sum + (Number(c.amount) || 0), 0);
+        const totalCommissionValue = employeeCommissions.reduce((sum, c) => sum + (Number(c.commission_value) || 0), 0);
 
-        console.log(`📋 Relatório individual para ${reportEmployee}:`);
-        console.log(`   - Total de vendas: ${employeeCommissions.length}`);
-        console.log(`   - Valor total: R$ ${totalAmount.toFixed(2)}`);
-        console.log(`   - Comissões: R$ ${totalCommissionValue.toFixed(2)}`);
+        logger.debug(`Relatório individual para ${reportEmployee}`, { totalLeads: employeeCommissions.length, totalAmount });
 
         setPaymentReport({
           employee: reportEmployee,
@@ -630,7 +658,7 @@ const Commission = () => {
         });
       } else {
         // Relatório de todos os funcionários
-        const employeeGroups = commissionsData.reduce((groups: any, commission: any) => {
+        const employeeGroups = commissionsData.reduce((groups, commission) => {
           const empId = commission.employee || commission.lead?.employee;
           const emp = empId ? (employeeMap[empId] || empId) : 'Não informado';
           if (!groups[emp]) {
@@ -638,29 +666,25 @@ const Commission = () => {
           }
           groups[emp].push(commission);
           return groups;
-        }, {});
+        }, {} as Record<string, CommissionType[]>);
 
-        const reports = Object.entries(employeeGroups).map(([emp, comms]: [string, any]) => ({
+        const reports: PaymentReport[] = Object.entries(employeeGroups).map(([emp, comms]) => ({
           employee: emp,
           commissions: comms,
-          totalAmount: comms.reduce((sum: number, c: any) => sum + (parseFloat(c.amount) || 0), 0),
-          totalCommissionValue: comms.reduce((sum: number, c: any) => sum + (parseFloat(c.commission_value) || 0), 0),
+          totalAmount: comms.reduce((sum, c) => sum + (Number(c.amount) || 0), 0),
+          totalCommissionValue: comms.reduce((sum, c) => sum + (Number(c.commission_value) || 0), 0),
           totalLeads: comms.length
         }));
-
-        console.log(`📋 Relatório de todos os funcionários:`);
-        reports.forEach(report => {
-          console.log(`   - ${report.employee}: ${report.totalLeads} vendas, R$ ${report.totalCommissionValue.toFixed(2)}`);
-        });
 
         setPaymentReport(reports);
       }
 
       const totalFound = commissionsData.length;
       toast.success(`Relatório gerado! ${totalFound} ${totalFound === 1 ? 'comissão encontrada' : 'comissões encontradas'}.`);
-    } catch (error: any) {
-      console.error('Error generating payment report:', error);
-      toast.error(`Erro ao gerar relatório: ${error.message}`);
+    } catch (error) {
+      const err = error as PostgrestError;
+      logger.error('Error generating payment report', err);
+      toast.error(`Erro ao gerar relatório: ${err.message}`);
     } finally {
       setGeneratingReport(false);
     }
@@ -671,7 +695,7 @@ const Commission = () => {
     try {
       const { error } = await supabase
         .from('commissions')
-        .update({ 
+        .update({
           status: newStatus,
           ...(newStatus === 'paid' ? { payment_date: new Date().toISOString() } : {})
         })
@@ -681,51 +705,52 @@ const Commission = () => {
 
       toast.success(`Status alterado para: ${newStatus}`);
       fetchCommissions(); // Recarregar dados da tabela principal
-      
-      // Se estiver com relatório aberto, recarregar também
+
       if (paymentReport) {
         generatePaymentReport();
       }
-    } catch (error: any) {
-      console.error('Error changing commission status:', error);
-      toast.error(`Erro ao alterar status: ${error.message}`);
+    } catch (error) {
+      const err = error as PostgrestError;
+      logger.error('Error changing commission status', err);
+      toast.error(`Erro ao alterar status: ${err.message}`);
     }
   };
 
   // Função para gerar mensagem do WhatsApp
-  const generateWhatsAppMessage = (report: any, config = whatsAppConfig): string => {
+  const generateWhatsAppMessage = (report: PaymentReport, config = whatsAppConfig): string => {
     const periodText = `${format(new Date(reportDateFrom), 'dd/MM/yyyy')} a ${format(new Date(reportDateTo), 'dd/MM/yyyy')}`;
-    
+
     let message = `*RELATÓRIO DE VENDAS*\n\n`;
-    
+
     // Informações do funcionário
     message += `*Funcionário:* ${report.employee}\n`;
     message += `*Período:* ${periodText}\n\n`;
-    
+
     // Resumo executivo
     message += `*RESUMO EXECUTIVO*\n`;
     message += `Total de Vendas: *${report.totalLeads}*\n`;
     message += `Valor Total Vendido: *R$ ${report.totalAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}*\n`;
-    
+
     if (config.includeTotal) {
       message += `Total de Comissões: *R$ ${report.totalCommissionValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}*\n`;
     }
-    
+
     message += `\n`;
-    
+
     // Detalhamento das vendas
     if (config.includeIndividualCommissions) {
       message += `*DETALHAMENTO DAS VENDAS*\n\n`;
-      
-      report.commissions.forEach((commission: any, index: number) => {
-        const leadDate = commission.lead?.date || commission.lead?.created_at;
+
+      report.commissions.forEach((commission, index) => {
+        const lead = commission.lead;
+        const leadDate = lead?.date || lead?.created_at;
         const dateFormatted = leadDate ? format(new Date(leadDate), 'dd/MM/yyyy') : 'N/A';
-        
-        message += `*${index + 1}. ${commission.lead?.name || 'Cliente'}*\n`;
+
+        message += `*${index + 1}. ${lead?.name || 'Cliente'}*\n`;
         message += `Data: ${dateFormatted}\n`;
         message += `Produto: ${commission.product}\n`;
         message += `Valor da Venda: R$ ${(commission.amount || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}\n`;
-        
+
         if (config.includeCommissionValues || config.includePercentages) {
           let commissionLine = 'Comissão: ';
           if (config.includePercentages) {
@@ -739,7 +764,7 @@ const Commission = () => {
           }
           message += `${commissionLine}\n`;
         }
-        
+
         // Status sem emoji
         let statusText = '';
         switch (commission.status) {
@@ -764,11 +789,11 @@ const Commission = () => {
         message += `Status: *${statusText}*\n\n`;
       });
     }
-    
+
     // Status geral
-    const allPaid = report.commissions.every((c: any) => c.status === 'paid');
-    const someApproved = report.commissions.some((c: any) => c.status === 'approved' || c.status === 'completed');
-    
+    const allPaid = report.commissions.every(c => c.status === 'paid');
+    const someApproved = report.commissions.some(c => c.status === 'approved' || c.status === 'completed');
+
     if (allPaid) {
       message += `*STATUS GERAL: TOTALMENTE PAGO*\n`;
     } else if (someApproved) {
@@ -776,15 +801,15 @@ const Commission = () => {
     } else {
       message += `*STATUS GERAL: PENDENTE DE PAGAMENTO*\n`;
     }
-    
+
     message += `\n*LeadConsig CRM*\n`;
     message += `Gerado em: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`;
-    
+
     return message;
   };
 
   // Função para abrir configuração do WhatsApp
-  const openWhatsAppConfig = (report: any) => {
+  const openWhatsAppConfig = (report: PaymentReport) => {
     setCurrentReportForWhatsApp(report);
     setShowWhatsAppConfig(true);
   };
@@ -792,11 +817,11 @@ const Commission = () => {
   // Função para enviar relatório via WhatsApp com configurações personalizadas
   const sendWhatsAppReportWithConfig = () => {
     if (!currentReportForWhatsApp) return;
-    
+
     const message = generateWhatsAppMessage(currentReportForWhatsApp, whatsAppConfig);
     const encodedMessage = encodeURIComponent(message);
     const url = `https://wa.me/?text=${encodedMessage}`;
-    
+
     window.open(url, '_blank');
     toast.success(`Relatório preparado para envio via WhatsApp!`);
     setShowWhatsAppConfig(false);
@@ -804,7 +829,7 @@ const Commission = () => {
   };
 
   // Função para enviar relatório via WhatsApp (compatibilidade)
-  const sendWhatsAppReport = (report: any) => {
+  const sendWhatsAppReport = (report: PaymentReport) => {
     openWhatsAppConfig(report);
   };
 
@@ -813,7 +838,7 @@ const Commission = () => {
     try {
       const { error } = await supabase
         .from('commissions')
-        .update({ 
+        .update({
           status: 'paid',
           payment_date: new Date().toISOString()
         })
@@ -824,16 +849,17 @@ const Commission = () => {
       toast.success(`Comissões de ${employeeName} marcadas como pagas!`);
       fetchCommissions(); // Recarregar dados
       generatePaymentReport(); // Atualizar relatório
-    } catch (error: any) {
-      console.error('Error marking commissions as paid:', error);
-      toast.error(`Erro ao marcar como pago: ${error.message}`);
+    } catch (error) {
+      const err = error as PostgrestError;
+      logger.error('Error marking commissions as paid', err);
+      toast.error(`Erro ao marcar como pago: ${err.message}`);
     }
   };
 
   const generateCommissionsForLeads = async () => {
     try {
       setLoading(true);
-      
+
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) {
         toast.error("Usuário não autenticado");
@@ -893,7 +919,7 @@ const Commission = () => {
         // Converter valor corretamente removendo caracteres não numéricos
         const cleanAmount = String(lead.amount).replace(/[^\d,]/g, '').replace(',', '.');
         const leadAmount = parseFloat(cleanAmount) || 0;
-        
+
         console.log(`🔍 Gerando comissão para: ${lead.name}`);
         console.log(`   Produto: ${lead.product}`);
         console.log(`   Valor: R$ ${leadAmount}`);
@@ -902,10 +928,10 @@ const Commission = () => {
         // Buscar configuração de comissão específica para o produto
         const paymentPeriod = (lead as any).payment_period ? parseInt((lead as any).payment_period.toString()) : undefined;
         const calculatedValue = await calculateCommissionValue(lead.product, leadAmount, paymentPeriod);
-        
+
         // Calcular percentual correto baseado no valor calculado
         const calculatedPercentage = leadAmount > 0 ? (calculatedValue / leadAmount) * 100 : 0;
-        
+
         console.log(`   Comissão calculada: R$ ${calculatedValue.toFixed(2)} (${calculatedPercentage.toFixed(2)}%)`);
 
         commissionsToCreate.push({
@@ -936,7 +962,7 @@ const Commission = () => {
         }
 
         toast.success(`${commissionsToCreate.length} comissões geradas com sucesso!`);
-        
+
         // Recarregar dados
         fetchCommissions();
       }
@@ -986,9 +1012,9 @@ const Commission = () => {
             filteredCommissions.map((commission) => {
               // Formatear a data do lead
               const leadDateStr = commission.lead?.date || commission.lead?.created_at;
-              const leadDateFormatted = leadDateStr ? 
+              const leadDateFormatted = leadDateStr ?
                 new Date(leadDateStr).toLocaleDateString('pt-BR') : '-';
-              
+
               return (
                 <TableRow key={commission.id}>
                   <TableCell>{commission.lead?.name || 'Sem lead'}</TableCell>
@@ -1030,8 +1056,8 @@ const Commission = () => {
                   <TableCell className="text-right">
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button 
-                          variant="outline" 
+                        <Button
+                          variant="outline"
                           size="sm"
                           className="text-red-500 hover:text-red-600 hover:bg-red-50"
                           disabled={deletingCommission === commission.id}
@@ -1073,34 +1099,32 @@ const Commission = () => {
   };
 
   // Função para gerar PDF das comissões
-  const generatePDFReport = (report: any) => {
+  const generatePDFReport = (report: PaymentReport) => {
     try {
-      console.log('📄 Iniciando geração de PDF...');
-      console.log('Dados do relatório:', report);
-      console.log('Comissões encontradas:', report.commissions?.length || 0);
+      logger.debug('Iniciando geração de PDF', { employee: report.employee, comms: report.commissions?.length || 0 });
 
       const doc = new jsPDF();
       const pageWidth = doc.internal.pageSize.width;
-      
+
       // Configurar fonte para suportar caracteres especiais
       doc.setFont('helvetica');
-      
+
       // Título principal
       doc.setFontSize(20);
       doc.setTextColor(40, 116, 240); // Azul
       const title = 'RELATORIO DE COMISSOES';
       doc.text(title, pageWidth / 2, 20, { align: 'center' });
-      
+
       // Linha divisória
       doc.setDrawColor(40, 116, 240);
       doc.setLineWidth(1);
       doc.line(20, 25, pageWidth - 20, 25);
-      
+
       // Informações do funcionário
       doc.setFontSize(14);
       doc.setTextColor(0, 0, 0);
       doc.text(`Funcionario: ${report.employee || 'N/A'}`, 20, 40);
-      
+
       // Verificar se as datas existem
       let periodText = 'Periodo nao informado';
       try {
@@ -1108,65 +1132,64 @@ const Commission = () => {
           periodText = `Periodo: ${format(new Date(reportDateFrom), 'dd/MM/yyyy')} a ${format(new Date(reportDateTo), 'dd/MM/yyyy')}`;
         }
       } catch (dateError) {
-        console.warn('Erro ao formatar datas:', dateError);
+        logger.warn('Erro ao formatar datas', dateError);
       }
-      
+
       doc.text(periodText, 20, 50);
-      
+
       // Resumo geral
       doc.setFontSize(12);
       doc.setFillColor(240, 248, 255); // Azul claro
       doc.rect(20, 60, pageWidth - 40, 35, 'F');
       doc.setTextColor(0, 0, 0);
-      
+
       const resumoY = 75;
       const totalLeads = report.totalLeads || 0;
       const totalAmount = report.totalAmount || 0;
       const totalCommissionValue = report.totalCommissionValue || 0;
-      
+
       doc.text(`Total de Vendas: ${totalLeads}`, 30, resumoY);
       doc.text(`Valor Total Vendido: R$ ${totalAmount.toFixed(2).replace('.', ',')}`, 30, resumoY + 10);
       doc.text(`Total de Comissoes: R$ ${totalCommissionValue.toFixed(2).replace('.', ',')}`, 30, resumoY + 20);
-      
+
       // Detalhamento das vendas
-      let currentY = 110;
+      const currentY = 110;
       doc.setFontSize(14);
       doc.setTextColor(40, 116, 240);
       doc.text('DETALHAMENTO DAS VENDAS', 20, currentY);
-      
+
       // Verificar se há comissões
       if (!report.commissions || !Array.isArray(report.commissions) || report.commissions.length === 0) {
         doc.setFontSize(12);
         doc.setTextColor(0, 0, 0);
         doc.text('Nenhuma comissao encontrada para este periodo.', 20, currentY + 20);
       } else {
-        console.log('📋 Processando comissões para a tabela...');
-        
+        logger.debug('Processando comissões para a tabela');
+
         // Preparar dados para a tabela com verificação detalhada
         const tableData: string[][] = [];
-        
-        report.commissions.forEach((commission: any, index: number) => {
+
+        report.commissions.forEach((commission, index) => {
           try {
-            console.log(`Processando comissão ${index + 1}:`, commission);
-            
             // Data do lead
-            const leadDate = commission.lead?.date || commission.lead?.created_at;
+            const lead = commission.lead;
+            const leadDate = lead?.date || lead?.created_at;
             let dateFormatted = 'N/A';
             if (leadDate) {
               try {
                 dateFormatted = format(new Date(leadDate), 'dd/MM/yyyy');
-              } catch (e) {
+              } catch {
                 dateFormatted = leadDate.toString().substring(0, 10) || 'N/A';
               }
             }
-            
+
             // Dados básicos
-            const clientName = commission.lead?.name || `Cliente ${index + 1}`;
+            const clientName = lead?.name || `Cliente ${index + 1}`;
             const product = commission.product || 'N/A';
-            const amount = parseFloat(commission.amount?.toString() || '0') || 0;
-            const percentage = parseFloat(commission.percentage?.toString() || '0') || 0;
-            const commissionValue = parseFloat(commission.commission_value?.toString() || '0') || 0;
-            
+            const amount = typeof commission.amount === 'number' ? commission.amount : parseFloat(commission.amount as unknown as string) || 0;
+            const percentage = typeof commission.percentage === 'number' ? commission.percentage : parseFloat(commission.percentage as unknown as string) || 0;
+            const commissionValue = typeof commission.commission_value === 'number' ? commission.commission_value : parseFloat(commission.commission_value as unknown as string) || 0;
+
             // Status
             let status = 'Em Andamento';
             switch (commission.status) {
@@ -1176,9 +1199,7 @@ const Commission = () => {
               case 'pending': status = 'Pendente'; break;
               case 'cancelled': status = 'Cancelado'; break;
             }
-            
-            console.log(`Cliente: ${clientName}, Produto: ${product}, Valor: ${amount}`);
-            
+
             // Adicionar linha à tabela
             tableData.push([
               (index + 1).toString(),
@@ -1190,9 +1211,9 @@ const Commission = () => {
               `R$ ${commissionValue.toFixed(2).replace('.', ',')}`,
               status
             ]);
-            
+
           } catch (itemError) {
-            console.error(`Erro ao processar comissão ${index + 1}:`, itemError);
+            logger.error(`Erro ao processar comissão ${index + 1}`, itemError);
             tableData.push([
               (index + 1).toString(),
               'Erro nos dados',
@@ -1206,12 +1227,8 @@ const Commission = () => {
           }
         });
 
-        console.log('📊 Dados da tabela preparados:', tableData);
-
         // Adicionar tabela usando autoTable
         try {
-          console.log('📊 Dados da tabela preparados:', tableData);
-          
           doc.autoTable({
             startY: currentY + 10,
             head: [['#', 'Cliente', 'Data', 'Produto', 'Valor Venda', '% Com.', 'Valor Com.', 'Status']],
@@ -1239,17 +1256,17 @@ const Commission = () => {
             },
             margin: { left: 20, right: 20 }
           });
-          
-          console.log('✅ Tabela criada com sucesso');
-          
+
+          logger.debug('Tabela criada com sucesso');
+
         } catch (tableError) {
-          console.error('❌ Erro ao criar tabela:', tableError);
-          
+          logger.error('Erro ao criar tabela', tableError);
+
           // Fallback: criar tabela manualmente
           doc.setFontSize(10);
           doc.setTextColor(0, 0, 0);
           let y = currentY + 20;
-          
+
           // Cabeçalho manual
           doc.setFontSize(9);
           doc.setFont('helvetica', 'bold');
@@ -1261,17 +1278,17 @@ const Commission = () => {
           doc.text('%', 150, y);
           doc.text('Comissão', 160, y);
           doc.text('Status', 180, y);
-          
+
           y += 10;
           doc.setFont('helvetica', 'normal');
-          
+
           // Linhas de dados
           tableData.forEach((row, index) => {
             if (y > 250) { // Nova página se necessário
               doc.addPage();
               y = 30;
             }
-            
+
             doc.text(row[0], 25, y);
             doc.text(row[1], 35, y);
             doc.text(row[2], 70, y);
@@ -1280,33 +1297,33 @@ const Commission = () => {
             doc.text(row[5], 150, y);
             doc.text(row[6], 160, y);
             doc.text(row[7], 180, y);
-            
+
             y += 8;
           });
-          
-          console.log('✅ Tabela manual criada como fallback');
+
+          logger.warn('Tabela manual criada como fallback');
         }
       }
 
       // Rodapé com informações adicionais
       const finalY = Math.max(doc.lastAutoTable?.finalY || currentY + 50, currentY + 100);
-      
+
       // Status geral
       doc.setFontSize(12);
       doc.setTextColor(0, 100, 0); // Verde
-      const allPaid = report.commissions?.every((c: any) => c.status === 'paid') || false;
+      const allPaid = report.commissions?.every(c => c.status === 'paid') || false;
       const statusText = allPaid ? 'STATUS: TOTALMENTE PAGO' : 'STATUS: PENDENTE DE PAGAMENTO';
       doc.text(statusText, pageWidth / 2, finalY + 10, { align: 'center' });
-      
+
       // Assinatura/Sistema
       doc.setFontSize(10);
       doc.setTextColor(128, 128, 128);
       doc.text('Gerado pelo LeadConsig CRM', pageWidth / 2, finalY + 25, { align: 'center' });
-      
+
       try {
         const currentDate = format(new Date(), 'dd/MM/yyyy HH:mm');
         doc.text(`Data de geracao: ${currentDate}`, pageWidth / 2, finalY + 35, { align: 'center' });
-      } catch (dateError) {
+      } catch {
         doc.text('Data de geracao: N/A', pageWidth / 2, finalY + 35, { align: 'center' });
       }
 
@@ -1314,35 +1331,34 @@ const Commission = () => {
       const employeeName = (report.employee || 'funcionario').replace(/[^a-zA-Z0-9]/g, '_');
       const timestamp = format(new Date(), 'yyyyMMdd_HHmm');
       const fileName = `comissoes_${employeeName}_${timestamp}.pdf`;
-      
-      console.log('💾 Salvando PDF:', fileName);
+
+      logger.debug('Salvando PDF', { fileName });
       doc.save(fileName);
-      
+
       toast.success(`✅ PDF gerado com sucesso: ${fileName}`);
-      
-    } catch (error: any) {
-      console.error('❌ Erro completo ao gerar PDF:', error);
-      console.error('Stack trace:', error.stack);
-      toast.error(`Erro ao gerar PDF: ${error.message || 'Erro desconhecido'}`);
+
+    } catch (error) {
+      const err = error as Error;
+      logger.error('Erro completo ao gerar PDF', err);
+      toast.error(`Erro ao gerar PDF: ${err.message || 'Erro desconhecido'}`);
     }
   };
 
   // Função melhorada para filtrar por funcionário
-  const filterCommissionsByEmployee = (commissions: any[], employeeName: string) => {
+  const filterCommissionsByEmployee = (commissions: CommissionType[], employeeName: string) => {
     if (!employeeName || employeeName === "all") return commissions;
-    
-    console.log(`🔍 Filtrando comissões para: "${employeeName}"`);
-    console.log(`📊 Total de comissões antes do filtro: ${commissions.length}`);
-    
+
+    logger.debug(`Filtrando comissões para: "${employeeName}"`, { total: commissions.length });
+
     const filtered = commissions.filter(commission => {
       // Verificar tanto commission.employee quanto lead.employee
       const commissionEmployeeId = commission.employee || '';
       const leadEmployeeId = commission.lead?.employee || '';
-      
+
       // Buscar nomes no mapa
       const commissionEmployeeName = employeeMap[commissionEmployeeId] || commissionEmployeeId;
       const leadEmployeeName = employeeMap[leadEmployeeId] || leadEmployeeId;
-      
+
       // Múltiplas verificações para maior precisão (por ID e por nome)
       const matches = [
         commissionEmployeeId === employeeName,
@@ -1356,20 +1372,16 @@ const Commission = () => {
         employeeName.includes(commissionEmployeeName) && commissionEmployeeName.length > 2,
         employeeName.includes(leadEmployeeName) && leadEmployeeName.length > 2
       ].some(Boolean);
-      
-      if (matches) {
-        console.log(`✅ Incluindo: ${commission.lead?.name} (emp: "${commissionEmployeeName}", lead: "${leadEmployeeName}")`);
-      }
-      
+
       return matches;
     });
-    
-    console.log(`🎯 Comissões após filtro: ${filtered.length}`);
+
+    logger.debug(`Comissões após filtro`, { count: filtered.length });
     return filtered;
   };
 
   // Função para abrir modal de personalização do PDF
-  const openPdfCustomization = (report: any) => {
+  const openPdfCustomization = (report: PaymentReport) => {
     setPdfReportData(report);
     setShowPdfCustomization(true);
   };
@@ -1377,35 +1389,35 @@ const Commission = () => {
   // Função para gerar PDF personalizado (versão simplificada)
   const generateCustomizedPDFReport = () => {
     try {
+      if (!pdfReportData) {
+        toast.error("Nenhum dado para gerar relatório");
+        return;
+      }
       const report = pdfReportData;
-      console.log('📄 ======================');
-      console.log('📄 GERANDO PDF PERSONALIZADO');
-      console.log('📄 ======================');
-      console.log('Colunas selecionadas:', pdfColumns);
-      console.log('Total de comissões:', report.commissions?.length || 0);
+      logger.debug('Gerando PDF personalizado', { columns: pdfColumns, totalCommissions: report.commissions?.length || 0 });
 
       const doc = new jsPDF();
       const pageWidth = doc.internal.pageSize.width;
-      
+
       // Configurar fonte para suportar caracteres especiais
       doc.setFont('helvetica');
-      
+
       // Título principal
       doc.setFontSize(20);
       doc.setTextColor(40, 116, 240); // Azul
       const title = 'RELATORIO DE COMISSOES';
       doc.text(title, pageWidth / 2, 20, { align: 'center' });
-      
+
       // Linha divisória
       doc.setDrawColor(40, 116, 240);
       doc.setLineWidth(1);
       doc.line(20, 25, pageWidth - 20, 25);
-      
+
       // Informações do funcionário
       doc.setFontSize(14);
       doc.setTextColor(0, 0, 0);
       doc.text(`Funcionario: ${reportEmployee || 'Todos'}`, 20, 40);
-      
+
       // Período
       let periodText = 'Periodo nao informado';
       try {
@@ -1413,32 +1425,32 @@ const Commission = () => {
           periodText = `Periodo: ${format(new Date(reportDateFrom), 'dd/MM/yyyy')} a ${format(new Date(reportDateTo), 'dd/MM/yyyy')}`;
         }
       } catch (dateError) {
-        console.warn('Erro ao formatar datas:', dateError);
+        logger.warn('Erro ao formatar datas', dateError);
       }
-      
+
       doc.text(periodText, 20, 50);
-      
+
       // Resumo geral
       doc.setFontSize(12);
       doc.setFillColor(240, 248, 255); // Azul claro
       doc.rect(20, 60, pageWidth - 40, 35, 'F');
       doc.setTextColor(0, 0, 0);
-      
+
       const resumoY = 75;
       const totalLeads = report.totalLeads || 0;
       const totalAmount = report.totalAmount || 0;
       const totalCommissionValue = report.totalCommissionValue || 0;
-      
+
       doc.text(`Total de Vendas: ${totalLeads}`, 30, resumoY);
       doc.text(`Valor Total Vendido: R$ ${totalAmount.toFixed(2).replace('.', ',')}`, 30, resumoY + 10);
       doc.text(`Total de Comissoes: R$ ${totalCommissionValue.toFixed(2).replace('.', ',')}`, 30, resumoY + 20);
-      
+
       // Detalhamento das vendas (versão simplificada sem autoTable)
       let currentY = 110;
       doc.setFontSize(14);
       doc.setTextColor(40, 116, 240);
       doc.text('DETALHAMENTO DAS VENDAS', 20, currentY);
-      
+
       // Verificar se há comissões
       if (!report.commissions || !Array.isArray(report.commissions) || report.commissions.length === 0) {
         doc.setFontSize(12);
@@ -1446,16 +1458,16 @@ const Commission = () => {
         doc.text('Nenhuma comissao encontrada para este periodo.', 20, currentY + 20);
       } else {
         console.log('📋 Gerando lista de comissões...');
-        
+
         // Cabeçalho manual simples
         currentY += 20;
         doc.setFontSize(10);
         doc.setTextColor(0, 0, 0);
         doc.text('# | Cliente | Data | Produto | Valor | Comissao | CPF | Telefone', 20, currentY);
         doc.line(20, currentY + 2, pageWidth - 20, currentY + 2);
-        
+
         currentY += 10;
-        
+
         // Processar cada comissão
         report.commissions.forEach((commission: any, index: number) => {
           try {
@@ -1470,13 +1482,13 @@ const Commission = () => {
               doc.line(20, currentY + 2, pageWidth - 20, currentY + 2);
               currentY += 10;
             }
-            
+
             // Dados básicos
             const clientName = commission.lead?.name || `Cliente ${index + 1}`;
             const product = commission.product || 'N/A';
             const amount = parseFloat(commission.amount?.toString() || '0') || 0;
             const commissionValue = parseFloat(commission.commission_value?.toString() || '0') || 0;
-            
+
             // Data do lead
             const leadDate = commission.lead?.date || commission.lead?.created_at;
             let dateFormatted = 'N/A';
@@ -1487,15 +1499,15 @@ const Commission = () => {
                 dateFormatted = leadDate.toString().substring(0, 10) || 'N/A';
               }
             }
-            
+
             // CPF e telefone
             let cpf = 'N/A';
             let telefone = 'N/A';
-            
+
             if (commission.lead) {
               cpf = commission.lead.cpf || commission.lead.document || commission.lead.doc || 'N/A';
               telefone = commission.lead.phone || commission.lead.telefone || commission.lead.contact || 'N/A';
-              
+
               // Log apenas para primeira comissão
               if (index === 0) {
                 console.log('🔍 DEBUG CPF/TELEFONE:');
@@ -1505,10 +1517,10 @@ const Commission = () => {
                 console.log('   Telefone final:', telefone);
               }
             }
-            
+
             // Montar linha de texto baseada nas colunas selecionadas
             let linha = '';
-            
+
             if (pdfColumns.numero) linha += `${index + 1} | `;
             if (pdfColumns.cliente) linha += `${clientName.substring(0, 15)} | `;
             if (pdfColumns.data) linha += `${dateFormatted} | `;
@@ -1523,16 +1535,16 @@ const Commission = () => {
               linha += `${telefone.substring(0, 12)} | `;
               console.log(`📞 Telefone incluído na linha ${index + 1}: '${telefone}'`);
             }
-            
+
             // Remover último separador
             linha = linha.replace(/ \| $/, '');
-            
+
             doc.setFontSize(8);
             doc.text(linha, 20, currentY);
             currentY += 8;
-            
+
             console.log(`📋 Linha ${index + 1} adicionada: ${linha}`);
-            
+
           } catch (itemError) {
             console.error(`❌ Erro ao processar comissão ${index + 1}:`, itemError);
             doc.text(`Erro na linha ${index + 1}`, 20, currentY);
@@ -1543,19 +1555,19 @@ const Commission = () => {
 
       // Rodapé
       const finalY = Math.max(currentY + 20, 200);
-      
+
       // Status geral
       doc.setFontSize(12);
       doc.setTextColor(0, 100, 0);
       const allPaid = report.commissions?.every((c: any) => c.status === 'paid') || false;
       const statusText = allPaid ? 'STATUS: TOTALMENTE PAGO' : 'STATUS: PENDENTE DE PAGAMENTO';
       doc.text(statusText, pageWidth / 2, finalY + 10, { align: 'center' });
-      
+
       // Assinatura
       doc.setFontSize(10);
       doc.setTextColor(128, 128, 128);
       doc.text('Gerado pelo LeadConsig CRM', pageWidth / 2, finalY + 25, { align: 'center' });
-      
+
       try {
         const currentDate = format(new Date(), 'dd/MM/yyyy HH:mm');
         doc.text(`Data de geracao: ${currentDate}`, pageWidth / 2, finalY + 35, { align: 'center' });
@@ -1567,13 +1579,13 @@ const Commission = () => {
       const employeeName = (reportEmployee || 'funcionario').replace(/[^a-zA-Z0-9]/g, '_');
       const timestamp = format(new Date(), 'yyyyMMdd_HHmm');
       const fileName = `comissoes_${employeeName}_${timestamp}.pdf`;
-      
+
       console.log('💾 Salvando PDF:', fileName);
       doc.save(fileName);
-      
+
       toast.success(`✅ PDF personalizado gerado: ${fileName}`);
       setShowPdfCustomization(false);
-      
+
     } catch (error: any) {
       console.error('❌ ERRO COMPLETO:', error);
       toast.error(`Erro ao gerar PDF: ${error.message || 'Erro desconhecido'}`);
@@ -1596,7 +1608,7 @@ const Commission = () => {
             <div className="flex items-center space-x-4">
               <div className="bg-white/20 backdrop-blur-sm rounded-full p-3">
                 <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/>
+                  <path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z" />
                 </svg>
               </div>
               <div>
@@ -1626,178 +1638,178 @@ const Commission = () => {
             </svg>
             Filtros e Controles
           </h2>
-          
+
           <div className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-6">
-            <div className="relative">
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-blue-500" />
-              <Input
-                type="text"
-                placeholder="Buscar comissões..."
-                value={search}
-                onChange={handleSearch}
-                className="pl-10"
-              />
-            </div>
-            <div>
-              <Select value={employeeFilter} onValueChange={setEmployeeFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Funcionário" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  {employees.map(employee => (
-                    <SelectItem key={employee} value={employee}>
-                      {employee}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="in_progress">Em Andamento</SelectItem>
-                  <SelectItem value="pending">Pendente</SelectItem>
-                  <SelectItem value="completed">Concluído</SelectItem>
-                  <SelectItem value="approved">Aprovado</SelectItem>
-                  <SelectItem value="paid">Pago</SelectItem>
-                  <SelectItem value="cancelled">Cancelado</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Select value={productFilter} onValueChange={setProductFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Produto" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  {products.map(product => (
-                    <SelectItem key={product} value={product}>
-                      {product}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Button onClick={handleSearchClick} variant="default" className="w-full">
-                <Search className="h-4 w-4 mr-2" />
-                Buscar
-              </Button>
-            </div>
-            <div>
-              <Button onClick={clearFilters} variant="outline" className="w-full">
-                Limpar
-              </Button>
-            </div>
-          </div>
-          
-          {/* Botões de ação */}
-          <div className="flex flex-wrap gap-2">
-            <Button 
-              onClick={() => window.location.href = '/commission/settings'} 
-              variant="outline"
-              className="px-4 py-2 bg-white border-2 border-purple-300 text-purple-700 hover:bg-purple-50 hover:border-purple-400 font-medium rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
-            >
-              <Settings className="h-4 w-4 mr-2" />
-              Configurar Comissões
-            </Button>
-
-            <Button 
-              onClick={() => {
-                // Definir data padrão (mês atual)
-                const now = new Date();
-                const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-                const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-                
-                setReportDateFrom(format(firstDay, 'yyyy-MM-dd'));
-                setReportDateTo(format(lastDay, 'yyyy-MM-dd'));
-                setShowPaymentReport(true);
-              }}
-              className="relative px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 border-0"
-            >
-              <div className="flex items-center">
-                <div className="bg-white/20 rounded-full p-1 mr-3">
-                  <FileText className="h-4 w-4" />
-                </div>
-                <div className="flex flex-col items-start">
-                  <span className="text-sm font-bold">📊 Relatório de Pagamento</span>
-                  <span className="text-xs opacity-90">Gerar relatórios detalhados</span>
-                </div>
+              <div className="relative">
+                <Search className="absolute left-3 top-2.5 h-4 w-4 text-blue-500" />
+                <Input
+                  type="text"
+                  placeholder="Buscar comissões..."
+                  value={search}
+                  onChange={handleSearch}
+                  className="pl-10"
+                />
               </div>
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 to-purple-600/20 rounded-lg blur-lg -z-10"></div>
-            </Button>
-          </div>
-          
-          <div className="grid gap-4 md:grid-cols-2">
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                Data Inicial do Lead
-                <span className="text-xs text-gray-500 block">Filtra pela data do lead, não da comissão</span>
-              </label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !dateFrom && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {dateFrom ? format(dateFrom, "dd/MM/yyyy", { locale: ptBR }) : "Selecionar data inicial"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <CustomCalendar
-                    selected={dateFrom}
-                    onSelect={setDateFrom}
-                    currentMonth={currentMonth}
-                    onMonthChange={setCurrentMonth}
-                    size="sm"
-                    className="p-4"
-                  />
-                </PopoverContent>
-              </Popover>
+              <div>
+                <Select value={employeeFilter} onValueChange={setEmployeeFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Funcionário" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    {employees.map(employee => (
+                      <SelectItem key={employee} value={employee}>
+                        {employee}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    <SelectItem value="in_progress">Em Andamento</SelectItem>
+                    <SelectItem value="pending">Pendente</SelectItem>
+                    <SelectItem value="completed">Concluído</SelectItem>
+                    <SelectItem value="approved">Aprovado</SelectItem>
+                    <SelectItem value="paid">Pago</SelectItem>
+                    <SelectItem value="cancelled">Cancelado</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Select value={productFilter} onValueChange={setProductFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Produto" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    {products.map(product => (
+                      <SelectItem key={product} value={product}>
+                        {product}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Button onClick={handleSearchClick} variant="default" className="w-full">
+                  <Search className="h-4 w-4 mr-2" />
+                  Buscar
+                </Button>
+              </div>
+              <div>
+                <Button onClick={clearFilters} variant="outline" className="w-full">
+                  Limpar
+                </Button>
+              </div>
             </div>
-            
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                Data Final do Lead
-                <span className="text-xs text-gray-500 block">Filtra pela data do lead, não da comissão</span>
-              </label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !dateTo && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {dateTo ? format(dateTo, "dd/MM/yyyy", { locale: ptBR }) : "Selecionar data final"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <CustomCalendar
-                    selected={dateTo}
-                    onSelect={setDateTo}
-                    currentMonth={currentMonth}
-                    onMonthChange={setCurrentMonth}
-                    size="sm"
-                    className="p-4"
-                  />
-                </PopoverContent>
-              </Popover>
+
+            {/* Botões de ação */}
+            <div className="flex flex-wrap gap-2">
+              <Button
+                onClick={() => window.location.href = '/commission/settings'}
+                variant="outline"
+                className="px-4 py-2 bg-white border-2 border-purple-300 text-purple-700 hover:bg-purple-50 hover:border-purple-400 font-medium rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
+              >
+                <Settings className="h-4 w-4 mr-2" />
+                Configurar Comissões
+              </Button>
+
+              <Button
+                onClick={() => {
+                  // Definir data padrão (mês atual)
+                  const now = new Date();
+                  const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+                  const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+                  setReportDateFrom(format(firstDay, 'yyyy-MM-dd'));
+                  setReportDateTo(format(lastDay, 'yyyy-MM-dd'));
+                  setShowPaymentReport(true);
+                }}
+                className="relative px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 border-0"
+              >
+                <div className="flex items-center">
+                  <div className="bg-white/20 rounded-full p-1 mr-3">
+                    <FileText className="h-4 w-4" />
+                  </div>
+                  <div className="flex flex-col items-start">
+                    <span className="text-sm font-bold">📊 Relatório de Pagamento</span>
+                    <span className="text-xs opacity-90">Gerar relatórios detalhados</span>
+                  </div>
+                </div>
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 to-purple-600/20 rounded-lg blur-lg -z-10"></div>
+              </Button>
             </div>
-          </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Data Inicial do Lead
+                  <span className="text-xs text-gray-500 block">Filtra pela data do lead, não da comissão</span>
+                </label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !dateFrom && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {dateFrom ? format(dateFrom, "dd/MM/yyyy", { locale: ptBR }) : "Selecionar data inicial"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <CustomCalendar
+                      selected={dateFrom}
+                      onSelect={setDateFrom}
+                      currentMonth={currentMonth}
+                      onMonthChange={setCurrentMonth}
+                      size="sm"
+                      className="p-4"
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Data Final do Lead
+                  <span className="text-xs text-gray-500 block">Filtra pela data do lead, não da comissão</span>
+                </label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !dateTo && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {dateTo ? format(dateTo, "dd/MM/yyyy", { locale: ptBR }) : "Selecionar data final"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <CustomCalendar
+                      selected={dateTo}
+                      onSelect={setDateTo}
+                      currentMonth={currentMonth}
+                      onMonthChange={setCurrentMonth}
+                      size="sm"
+                      className="p-4"
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -1933,7 +1945,7 @@ const Commission = () => {
                   <Checkbox
                     id="numero"
                     checked={pdfColumns.numero}
-                    onCheckedChange={(checked) => setPdfColumns(prev => ({...prev, numero: checked as boolean}))}
+                    onCheckedChange={(checked) => setPdfColumns(prev => ({ ...prev, numero: checked as boolean }))}
                   />
                   <label htmlFor="numero" className="text-sm font-medium">
                     # (Número)
@@ -1944,7 +1956,7 @@ const Commission = () => {
                   <Checkbox
                     id="cliente"
                     checked={pdfColumns.cliente}
-                    onCheckedChange={(checked) => setPdfColumns(prev => ({...prev, cliente: checked as boolean}))}
+                    onCheckedChange={(checked) => setPdfColumns(prev => ({ ...prev, cliente: checked as boolean }))}
                   />
                   <label htmlFor="cliente" className="text-sm font-medium">
                     Cliente
@@ -1955,7 +1967,7 @@ const Commission = () => {
                   <Checkbox
                     id="data"
                     checked={pdfColumns.data}
-                    onCheckedChange={(checked) => setPdfColumns(prev => ({...prev, data: checked as boolean}))}
+                    onCheckedChange={(checked) => setPdfColumns(prev => ({ ...prev, data: checked as boolean }))}
                   />
                   <label htmlFor="data" className="text-sm font-medium">
                     Data
@@ -1966,7 +1978,7 @@ const Commission = () => {
                   <Checkbox
                     id="produto"
                     checked={pdfColumns.produto}
-                    onCheckedChange={(checked) => setPdfColumns(prev => ({...prev, produto: checked as boolean}))}
+                    onCheckedChange={(checked) => setPdfColumns(prev => ({ ...prev, produto: checked as boolean }))}
                   />
                   <label htmlFor="produto" className="text-sm font-medium">
                     Produto
@@ -1977,7 +1989,7 @@ const Commission = () => {
                   <Checkbox
                     id="status"
                     checked={pdfColumns.status}
-                    onCheckedChange={(checked) => setPdfColumns(prev => ({...prev, status: checked as boolean}))}
+                    onCheckedChange={(checked) => setPdfColumns(prev => ({ ...prev, status: checked as boolean }))}
                   />
                   <label htmlFor="status" className="text-sm font-medium">
                     Status
@@ -1994,7 +2006,7 @@ const Commission = () => {
                   <Checkbox
                     id="valorVenda"
                     checked={pdfColumns.valorVenda}
-                    onCheckedChange={(checked) => setPdfColumns(prev => ({...prev, valorVenda: checked as boolean}))}
+                    onCheckedChange={(checked) => setPdfColumns(prev => ({ ...prev, valorVenda: checked as boolean }))}
                   />
                   <label htmlFor="valorVenda" className="text-sm font-medium">
                     Valor da Venda
@@ -2005,7 +2017,7 @@ const Commission = () => {
                   <Checkbox
                     id="percentagem"
                     checked={pdfColumns.percentagem}
-                    onCheckedChange={(checked) => setPdfColumns(prev => ({...prev, percentagem: checked as boolean}))}
+                    onCheckedChange={(checked) => setPdfColumns(prev => ({ ...prev, percentagem: checked as boolean }))}
                   />
                   <label htmlFor="percentagem" className="text-sm font-medium">
                     % Comissão
@@ -2016,7 +2028,7 @@ const Commission = () => {
                   <Checkbox
                     id="valorComissao"
                     checked={pdfColumns.valorComissao}
-                    onCheckedChange={(checked) => setPdfColumns(prev => ({...prev, valorComissao: checked as boolean}))}
+                    onCheckedChange={(checked) => setPdfColumns(prev => ({ ...prev, valorComissao: checked as boolean }))}
                   />
                   <label htmlFor="valorComissao" className="text-sm font-medium">
                     Valor Comissão
@@ -2033,7 +2045,7 @@ const Commission = () => {
                   <Checkbox
                     id="cpf"
                     checked={pdfColumns.cpf}
-                    onCheckedChange={(checked) => setPdfColumns(prev => ({...prev, cpf: checked as boolean}))}
+                    onCheckedChange={(checked) => setPdfColumns(prev => ({ ...prev, cpf: checked as boolean }))}
                   />
                   <label htmlFor="cpf" className="text-sm font-medium">
                     CPF
@@ -2044,7 +2056,7 @@ const Commission = () => {
                   <Checkbox
                     id="telefone"
                     checked={pdfColumns.telefone}
-                    onCheckedChange={(checked) => setPdfColumns(prev => ({...prev, telefone: checked as boolean}))}
+                    onCheckedChange={(checked) => setPdfColumns(prev => ({ ...prev, telefone: checked as boolean }))}
                   />
                   <label htmlFor="telefone" className="text-sm font-medium">
                     Telefone
@@ -2055,7 +2067,7 @@ const Commission = () => {
                   <Checkbox
                     id="banco"
                     checked={pdfColumns.banco}
-                    onCheckedChange={(checked) => setPdfColumns(prev => ({...prev, banco: checked as boolean}))}
+                    onCheckedChange={(checked) => setPdfColumns(prev => ({ ...prev, banco: checked as boolean }))}
                   />
                   <label htmlFor="banco" className="text-sm font-medium">
                     Banco
@@ -2066,7 +2078,7 @@ const Commission = () => {
                   <Checkbox
                     id="observacoes"
                     checked={pdfColumns.observacoes}
-                    onCheckedChange={(checked) => setPdfColumns(prev => ({...prev, observacoes: checked as boolean}))}
+                    onCheckedChange={(checked) => setPdfColumns(prev => ({ ...prev, observacoes: checked as boolean }))}
                   />
                   <label htmlFor="observacoes" className="text-sm font-medium">
                     Observações
@@ -2126,7 +2138,7 @@ const Commission = () => {
                 <Checkbox
                   id="includeTotal"
                   checked={whatsAppConfig.includeTotal}
-                  onCheckedChange={(checked) => setWhatsAppConfig(prev => ({...prev, includeTotal: checked as boolean}))}
+                  onCheckedChange={(checked) => setWhatsAppConfig(prev => ({ ...prev, includeTotal: checked as boolean }))}
                 />
                 <label htmlFor="includeTotal" className="text-sm font-medium">
                   💰 Incluir total de comissões no resumo
@@ -2137,7 +2149,7 @@ const Commission = () => {
                 <Checkbox
                   id="includeIndividualCommissions"
                   checked={whatsAppConfig.includeIndividualCommissions}
-                  onCheckedChange={(checked) => setWhatsAppConfig(prev => ({...prev, includeIndividualCommissions: checked as boolean}))}
+                  onCheckedChange={(checked) => setWhatsAppConfig(prev => ({ ...prev, includeIndividualCommissions: checked as boolean }))}
                 />
                 <label htmlFor="includeIndividualCommissions" className="text-sm font-medium">
                   📋 Incluir detalhamento individual das vendas
@@ -2150,7 +2162,7 @@ const Commission = () => {
                     <Checkbox
                       id="includePercentages"
                       checked={whatsAppConfig.includePercentages}
-                      onCheckedChange={(checked) => setWhatsAppConfig(prev => ({...prev, includePercentages: checked as boolean}))}
+                      onCheckedChange={(checked) => setWhatsAppConfig(prev => ({ ...prev, includePercentages: checked as boolean }))}
                     />
                     <label htmlFor="includePercentages" className="text-sm">
                       📊 Incluir percentuais (ex: 5.0%)
@@ -2161,7 +2173,7 @@ const Commission = () => {
                     <Checkbox
                       id="includeCommissionValues"
                       checked={whatsAppConfig.includeCommissionValues}
-                      onCheckedChange={(checked) => setWhatsAppConfig(prev => ({...prev, includeCommissionValues: checked as boolean}))}
+                      onCheckedChange={(checked) => setWhatsAppConfig(prev => ({ ...prev, includeCommissionValues: checked as boolean }))}
                     />
                     <label htmlFor="includeCommissionValues" className="text-sm">
                       💵 Incluir valores de comissão (ex: R$ 150,00)
@@ -2328,7 +2340,7 @@ const Commission = () => {
             {report.commissions.slice(0, 5).map((commission: any, index: number) => {
               const leadDate = commission.lead?.date || commission.lead?.created_at;
               const dateFormatted = leadDate ? format(new Date(leadDate), 'dd/MM/yyyy') : 'N/A';
-              
+
               return (
                 <div key={commission.id} className="bg-gray-50 border rounded p-2 text-sm">
                   <div className="flex justify-between items-start">
@@ -2338,7 +2350,7 @@ const Commission = () => {
                     <div className="text-xs text-gray-500">{dateFormatted}</div>
                   </div>
                   <div className="text-xs text-gray-600 mt-1">
-                    {commission.product} • R$ {(commission.amount || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} • 
+                    {commission.product} • R$ {(commission.amount || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} •
                     <span className="font-semibold text-green-600 ml-1">
                       R$ {(commission.commission_value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                     </span>
@@ -2391,7 +2403,7 @@ const Commission = () => {
                   const commissionIds = report.commissions
                     .filter((c: any) => c.status !== 'approved' && c.status !== 'paid')
                     .map((c: any) => c.id);
-                  
+
                   if (commissionIds.length > 0) {
                     Promise.all(
                       commissionIds.map((id: string) => changeCommissionStatus(id, 'approved'))

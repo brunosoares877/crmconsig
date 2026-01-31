@@ -16,6 +16,8 @@ import LeadForm from "./LeadForm";
 import { Link } from "react-router-dom";
 import LeadImportButton from "@/components/leads/LeadImportButton";
 import { formatLeadDate } from "@/utils/dateUtils";
+import type { PostgrestError } from "@/types/database.types";
+import logger from "@/utils/logger";
 
 interface LeadListProps {
   searchQuery?: string;
@@ -41,7 +43,7 @@ const LeadList: React.FC<LeadListProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [isOpenSheet, setIsOpenSheet] = useState(false);
   const [internalSearchQuery, setInternalSearchQuery] = useState(searchQuery);
-  
+
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const [totalLeads, setTotalLeads] = useState(0);
@@ -82,12 +84,12 @@ const LeadList: React.FC<LeadListProps> = ({
       }
 
       const { count, error: countError } = await countQuery;
-      
+
       if (countError) {
         console.error('Count error:', countError);
         throw countError;
       }
-      
+
       setTotalLeads(count || 0);
       setTotalPages(Math.ceil((count || 0) / LEADS_PER_PAGE));
 
@@ -118,7 +120,7 @@ const LeadList: React.FC<LeadListProps> = ({
         .range(from, to)
         .order("date", { ascending: false })
         .order("created_at", { ascending: false });
-      
+
       if (error) {
         console.error('Data error:', error);
         throw error;
@@ -126,24 +128,25 @@ const LeadList: React.FC<LeadListProps> = ({
 
       const formattedLeads = (data || []).map(lead => ({
         ...lead,
-        createdAt: formatLeadDate((lead as any).date ? (lead as any).date : lead.created_at),
+        createdAt: formatLeadDate((lead as { date?: string }).date || lead.created_at),
         status: lead.status || "novo"
       })) as Lead[];
 
       setLeads(formattedLeads);
       setFilteredLeads(formattedLeads);
-    } catch (error: any) {
-      console.error("Error fetching leads:", error);
-      
+    } catch (error) {
+      const err = error as PostgrestError;
+      logger.error("Error fetching leads", err);
+
       // Melhor tratamento de erro
-      if (error.message?.includes('Failed to fetch')) {
+      if (err.message?.includes('Failed to fetch')) {
         toast.error("Erro de conexão. Verifique sua internet e tente novamente.");
-      } else if (error.message?.includes('JWT')) {
+      } else if (err.message?.includes('JWT')) {
         toast.error("Sessão expirada. Faça login novamente.");
       } else {
-        toast.error(`Erro ao carregar leads: ${error.message || 'Erro desconhecido'}`);
+        toast.error(`Erro ao carregar leads: ${err.message || 'Erro desconhecido'}`);
       }
-      
+
       // Em caso de erro, definir estados seguros
       setLeads([]);
       setFilteredLeads([]);
@@ -173,7 +176,7 @@ const LeadList: React.FC<LeadListProps> = ({
 
       if (tagError) throw tagError;
 
-      const leadIds = tagAssignments?.map((assignment: any) => assignment.lead_id) || [];
+      const leadIds = tagAssignments?.map((assignment: { lead_id: string }) => assignment.lead_id) || [];
 
       if (leadIds.length === 0) {
         setLeads([]);
@@ -207,12 +210,12 @@ const LeadList: React.FC<LeadListProps> = ({
 
       // Get total count for filtered leads
       const { count, error: countError } = await countQuery;
-      
+
       if (countError) {
         console.error('Count error:', countError);
         throw countError;
       }
-      
+
       setTotalLeads(count || 0);
       setTotalPages(Math.ceil((count || 0) / LEADS_PER_PAGE));
 
@@ -244,7 +247,7 @@ const LeadList: React.FC<LeadListProps> = ({
         .range(from, to)
         .order("date", { ascending: false })
         .order("created_at", { ascending: false });
-      
+
       if (error) {
         console.error('Data error:', error);
         throw error;
@@ -252,24 +255,25 @@ const LeadList: React.FC<LeadListProps> = ({
 
       const formattedLeads = (data || []).map(lead => ({
         ...lead,
-        createdAt: formatLeadDate((lead as any).date ? (lead as any).date : lead.created_at),
+        createdAt: formatLeadDate((lead as { date?: string }).date || lead.created_at),
         status: lead.status || "novo"
       })) as Lead[];
 
       setLeads(formattedLeads);
       setFilteredLeads(formattedLeads);
-    } catch (error: any) {
-      console.error("Error fetching leads with tags:", error);
-      
+    } catch (error) {
+      const err = error as PostgrestError;
+      logger.error("Error fetching leads with tags", err);
+
       // Melhor tratamento de erro
-      if (error.message?.includes('Failed to fetch')) {
+      if (err.message?.includes('Failed to fetch')) {
         toast.error("Erro de conexão. Verifique sua internet e tente novamente.");
-      } else if (error.message?.includes('JWT')) {
+      } else if (err.message?.includes('JWT')) {
         toast.error("Sessão expirada. Faça login novamente.");
       } else {
-        toast.error(`Erro ao carregar leads: ${error.message || 'Erro desconhecido'}`);
+        toast.error(`Erro ao carregar leads: ${err.message || 'Erro desconhecido'}`);
       }
-      
+
       // Em caso de erro, definir estados seguros
       setLeads([]);
       setFilteredLeads([]);
@@ -300,12 +304,12 @@ const LeadList: React.FC<LeadListProps> = ({
     const searchTerms = internalSearchQuery || searchQuery;
     if (searchTerms) {
       const searchLower = searchTerms.toLowerCase();
-      result = result.filter(lead => 
-        lead.name && lead.name.toLowerCase().includes(searchLower) || 
-        lead.phone && lead.phone.includes(searchTerms) || 
-        lead.phone2 && lead.phone2.includes(searchTerms) || 
-        lead.phone3 && lead.phone3.includes(searchTerms) || 
-        lead.cpf && lead.cpf.includes(searchTerms) || 
+      result = result.filter(lead =>
+        lead.name && lead.name.toLowerCase().includes(searchLower) ||
+        lead.phone && lead.phone.includes(searchTerms) ||
+        lead.phone2 && lead.phone2.includes(searchTerms) ||
+        lead.phone3 && lead.phone3.includes(searchTerms) ||
+        lead.cpf && lead.cpf.includes(searchTerms) ||
         lead.email && lead.email?.toLowerCase().includes(searchLower)
       );
     }
@@ -316,7 +320,7 @@ const LeadList: React.FC<LeadListProps> = ({
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    
+
     if (selectedTags.length > 0) {
       fetchLeadsWithTags(page);
     } else {
@@ -324,26 +328,27 @@ const LeadList: React.FC<LeadListProps> = ({
     }
   };
 
-  const handleLeadSubmit = async (values: any) => {
-    console.log("New lead submission:", values);
-    
+  const handleLeadSubmit = async (values: unknown) => {
+    const typedValues = values as { name: string; selectedTags?: string[]; payment_period?: string;[key: string]: unknown };
+    logger.debug("New lead submission", typedValues);
+
     try {
       const { data: userData, error: userError } = await supabase.auth.getUser();
       if (userError) throw userError;
 
-      const { selectedTags, ...leadData } = values;
-      
+      const { selectedTags, ...leadData } = typedValues;
+
       // Processar payment_period para evitar erro de integer
       const processedLeadData = {
         ...leadData,
-        payment_period: leadData.payment_period && leadData.payment_period !== "" && leadData.payment_period !== "none" 
-          ? parseInt(leadData.payment_period) 
+        payment_period: leadData.payment_period && leadData.payment_period !== "" && leadData.payment_period !== "none"
+          ? parseInt(leadData.payment_period as string)
           : undefined
       };
-      
+
       // Debug: verificar se o campo está sendo processado corretamente
-      console.log("Lead data to insert:", processedLeadData);
-      console.log("Payment period conversion:", {
+      logger.debug("Lead data to insert", processedLeadData);
+      logger.debug("Payment period conversion", {
         original: leadData.payment_period,
         processed: processedLeadData.payment_period,
         type: typeof processedLeadData.payment_period
@@ -363,7 +368,7 @@ const LeadList: React.FC<LeadListProps> = ({
         throw leadError;
       }
 
-      console.log("Lead inserted successfully:", leadInsertData);
+      logger.info("Lead inserted successfully:", leadInsertData);
 
       // Save tag assignments if any tags were selected
       if (selectedTags && selectedTags.length > 0) {
@@ -382,21 +387,22 @@ const LeadList: React.FC<LeadListProps> = ({
           toast.error('Lead salvo, mas erro ao aplicar etiquetas');
         }
       }
-      
-      console.log("Lead saved successfully:", leadInsertData);
+
+      logger.debug("Lead saved successfully", { id: leadInsertData.id });
       toast.success("Lead cadastrado com sucesso!");
       setIsOpenSheet(false);
-      
+
       // Refresh leads based on current filters
       if (selectedTags.length > 0) {
         fetchLeadsWithTags(currentPage);
       } else {
         fetchLeads(currentPage);
       }
-      
-    } catch (error: any) {
-      console.error("Error creating lead:", error);
-      toast.error(`Erro ao cadastrar lead: ${error.message}`);
+
+    } catch (error) {
+      const err = error as PostgrestError;
+      logger.error("Error creating lead", err);
+      toast.error(`Erro ao cadastrar lead: ${err.message}`);
     }
   };
 
@@ -475,13 +481,13 @@ const LeadList: React.FC<LeadListProps> = ({
           product: lead.product,
           employee: lead.employee,
           created_at: lead.created_at,
-          date: (lead as any).date,
-          bank: (lead as any).bank,
-          benefit_type: (lead as any).benefit_type,
-          payment_period: (lead as any).payment_period,
-          representative_mode: (lead as any).representative_mode,
-          representative_name: (lead as any).representative_name,
-          representative_cpf: (lead as any).representative_cpf
+          date: (lead as { date?: string }).date,
+          bank: (lead as { bank?: string }).bank,
+          benefit_type: (lead as { benefit_type?: string }).benefit_type,
+          payment_period: (lead as { payment_period?: number }).payment_period,
+          representative_mode: (lead as { representative_mode?: string }).representative_mode,
+          representative_name: (lead as { representative_name?: string }).representative_name,
+          representative_cpf: (lead as { representative_cpf?: string }).representative_cpf
         },
         deleted_at: new Date().toISOString(),
         expires_at: expiresAt.toISOString()
@@ -509,9 +515,10 @@ const LeadList: React.FC<LeadListProps> = ({
       setIsDeleteDialogOpen(false);
 
       toast.success(`${selectedLeads.size} leads movidos para a lixeira com sucesso!`);
-    } catch (error: any) {
-      console.error("Error deleting multiple leads:", error);
-      toast.error(`Erro ao deletar leads: ${error.message}`);
+    } catch (error) {
+      const err = error as PostgrestError;
+      logger.error("Error deleting multiple leads", err);
+      toast.error(`Erro ao deletar leads: ${err.message}`);
     } finally {
       setIsDeletingMultiple(false);
     }
@@ -568,9 +575,9 @@ const LeadList: React.FC<LeadListProps> = ({
           <LeadImportButton />
         </div>
       </div>
-      
+
       {/* REMOVIDO: Filtros antigos duplicados */}
-      
+
       {isLoading ? (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
           {[1, 2, 3].map(i => (
@@ -581,10 +588,10 @@ const LeadList: React.FC<LeadListProps> = ({
         <>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
             {filteredLeads.map(lead => (
-              <LeadCard 
-                key={lead.id} 
-                lead={lead} 
-                onUpdate={handleLeadUpdate} 
+              <LeadCard
+                key={lead.id}
+                lead={lead}
+                onUpdate={handleLeadUpdate}
                 onDelete={handleLeadDelete}
                 isSelected={selectedLeads.has(lead.id)}
                 onSelect={handleSelectLead}
@@ -592,7 +599,7 @@ const LeadList: React.FC<LeadListProps> = ({
               />
             ))}
           </div>
-          
+
           {/* Pagination Controls */}
           {totalPages > 1 && (
             <div className="flex items-center justify-center space-x-6 py-4">
@@ -604,20 +611,20 @@ const LeadList: React.FC<LeadListProps> = ({
                   ({totalLeads} leads no total)
                 </p>
               </div>
-              
+
               <Pagination>
                 <PaginationContent>
                   <PaginationItem>
-                    <PaginationPrevious 
+                    <PaginationPrevious
                       onClick={() => currentPage > 1 && handlePageChange(currentPage - 1)}
                       className={currentPage <= 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
                     />
                   </PaginationItem>
-                  
+
                   {[...Array(Math.min(5, totalPages))].map((_, index) => {
                     const pageNumber = Math.max(1, currentPage - 2) + index;
                     if (pageNumber > totalPages) return null;
-                    
+
                     return (
                       <PaginationItem key={pageNumber}>
                         <PaginationLink
@@ -630,9 +637,9 @@ const LeadList: React.FC<LeadListProps> = ({
                       </PaginationItem>
                     );
                   })}
-                  
+
                   <PaginationItem>
-                    <PaginationNext 
+                    <PaginationNext
                       onClick={() => currentPage < totalPages && handlePageChange(currentPage + 1)}
                       className={currentPage >= totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
                     />
@@ -652,14 +659,14 @@ const LeadList: React.FC<LeadListProps> = ({
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir Leads Selecionados</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja mover {selectedLeads.size} lead{selectedLeads.size > 1 ? 's' : ''} para a lixeira? 
+              Tem certeza que deseja mover {selectedLeads.size} lead{selectedLeads.size > 1 ? 's' : ''} para a lixeira?
               Os leads ficarão disponíveis por 30 dias na lixeira antes de serem excluídos automaticamente.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isDeletingMultiple}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleMultipleDelete} 
+            <AlertDialogAction
+              onClick={handleMultipleDelete}
               className="bg-red-600 hover:bg-red-700"
               disabled={isDeletingMultiple}
             >

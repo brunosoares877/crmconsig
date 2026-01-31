@@ -29,7 +29,7 @@ import { AdminPasswordDialog } from "@/components/AdminPasswordDialog";
 
 const getBankName = (bankCode: string | null | undefined) => {
   if (!bankCode) return "Não informado";
-  
+
   const banks: { [key: string]: string } = {
     "caixa": "Caixa Econômica Federal",
     "bb": "Banco do Brasil",
@@ -53,7 +53,7 @@ const getBankName = (bankCode: string | null | undefined) => {
     "sicoob": "Sicoob",
     "outro": "Outro banco"
   };
-  
+
   return banks[bankCode] || bankCode;
 };
 
@@ -79,11 +79,14 @@ interface Lead {
 
 type ReminderStatus = "all" | "completed" | "overdue" | "pending";
 
+import logger from "@/utils/logger";
+import { PostgrestError } from "@/types/database.types";
+
 const REMINDERS_PER_PAGE = 10;
 
 const Reminders = () => {
-  console.log("🚀 === LEMBRETES COMPLETO ===");
-  
+  // console.log("🚀 === LEMBRETES COMPLETO ===");
+
   const [reminders, setReminders] = useState<Reminder[]>([]);
   const [filteredReminders, setFilteredReminders] = useState<Reminder[]>([]);
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -121,10 +124,10 @@ const Reminders = () => {
     setClientSearch(searchValue);
     if (!searchValue.trim()) {
       setFilteredLeads(leads);
-        return;
-      }
+      return;
+    }
 
-    const filtered = leads.filter(lead => 
+    const filtered = leads.filter(lead =>
       lead.name.toLowerCase().includes(searchValue.toLowerCase()) ||
       (lead.cpf && lead.cpf.includes(searchValue.replace(/\D/g, '')))
     );
@@ -154,7 +157,7 @@ const Reminders = () => {
         .order("name");
 
       if (leadsError) throw leadsError;
-      
+
       const leadsWithCpf = (leadsData || []) as Lead[];
       setLeads(leadsWithCpf);
       setFilteredLeads(leadsWithCpf);
@@ -162,17 +165,18 @@ const Reminders = () => {
       // Fetch employees
       const employeeList = await getEmployees();
       setEmployees(employeeList);
-      
+
       // Criar mapa de ID -> Nome
       const map: Record<string, string> = {};
       employeeList.forEach(emp => {
         map[emp.id] = emp.name;
       });
       setEmployeeMap(map);
-      
-    } catch (error: any) {
-      console.error("Erro ao buscar dados:", error);
-      toast.error(`Erro ao carregar dados: ${error.message}`);
+
+    } catch (error) {
+      const err = error as PostgrestError | Error;
+      logger.error("Erro ao buscar dados:", err);
+      toast.error(`Erro ao carregar dados: ${err.message}`);
     } finally {
       setIsLoading(false);
     }
@@ -204,22 +208,22 @@ const Reminders = () => {
 
   const filterReminders = (status: ReminderStatus, remindersToFilter = reminders) => {
     setCurrentStatus(status);
-    
+
     if (!Array.isArray(remindersToFilter)) {
       setFilteredReminders([]);
       return;
     }
-    
+
     let filtered = [];
-    
+
     if (status === "all") {
       filtered = [...remindersToFilter];
     } else {
       const now = new Date();
-      
+
       filtered = remindersToFilter.filter(reminder => {
         const dueDate = new Date(reminder.due_date);
-        
+
         if (status === "completed") {
           return reminder.is_completed;
         } else if (status === "overdue") {
@@ -227,37 +231,37 @@ const Reminders = () => {
         } else if (status === "pending") {
           return !reminder.is_completed && dueDate >= now;
         }
-        
+
         return true;
       });
     }
-    
+
     // Ordenar por prioridade: Alta -> Média -> Baixa (se a coluna existir)
     const priorityOrder = { 'alta': 1, 'media': 2, 'baixa': 3 };
-    
+
     filtered.sort((a, b) => {
       // Verificar se a coluna priority existe nos dados
       const hasPriority = 'priority' in a && 'priority' in b;
-      
+
       if (hasPriority) {
-        const priorityA = (a as any).priority || 'media';
-        const priorityB = (b as any).priority || 'media';
-        
+        const priorityA = a.priority || 'media';
+        const priorityB = b.priority || 'media';
+
         const orderA = priorityOrder[priorityA as keyof typeof priorityOrder] || 2;
         const orderB = priorityOrder[priorityB as keyof typeof priorityOrder] || 2;
-        
+
         // Se as prioridades são diferentes, ordena por prioridade
         if (orderA !== orderB) {
           return orderA - orderB;
         }
       }
-      
+
       // Se as prioridades são iguais ou não existem, ordena por data (mais próximas primeiro)
       const dateA = new Date(a.due_date).getTime();
       const dateB = new Date(b.due_date).getTime();
       return dateA - dateB;
     });
-    
+
     setFilteredReminders(filtered);
   };
 
@@ -282,16 +286,16 @@ const Reminders = () => {
       toast.error("Preencha todos os campos obrigatórios");
       return;
     }
-    
+
     setIsSubmitting(true);
     try {
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) throw new Error("Usuário não autenticado");
-      
+
       const [hours, minutes] = time.split(':').map(Number);
       const finalDate = setMinutes(setHours(date, hours), minutes);
-      
-      const reminderData: any = {
+
+      const reminderData: Partial<Reminder> = {
         title,
         lead_id: leadId && leadId !== "none" ? leadId : null,
         notes: notes || null,
@@ -308,24 +312,25 @@ const Reminders = () => {
           .from("reminders")
           .update(reminderData)
           .eq("id", editingReminder.id);
-        
+
         if (error) throw error;
         toast.success("Lembrete atualizado com sucesso!");
       } else {
         // Criar novo lembrete
         reminderData.is_completed = false;
         const { error } = await supabase.from("reminders").insert(reminderData);
-        
+
         if (error) throw error;
         toast.success("Lembrete criado com sucesso!");
       }
-      
+
       setIsDialogOpen(false);
       resetForm();
       await fetchReminders(currentPage);
-    } catch (error: any) {
-      console.error("Erro ao salvar lembrete:", error);
-      toast.error(`Erro ao salvar lembrete: ${error.message}`);
+    } catch (error) {
+      const err = error as PostgrestError | Error;
+      logger.error("Erro ao salvar lembrete:", err);
+      toast.error(`Erro ao salvar lembrete: ${err.message}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -337,25 +342,26 @@ const Reminders = () => {
         .from("reminders")
         .update({ is_completed: !reminder.is_completed })
         .eq("id", reminder.id);
-        
+
       if (error) throw error;
-      
+
       if (!Array.isArray(reminders)) {
         await fetchData();
         return;
       }
-      
-      const updatedReminders = reminders.map(r => 
+
+      const updatedReminders = reminders.map(r =>
         r.id === reminder.id ? { ...r, is_completed: !r.is_completed } : r
       );
-      
+
       setReminders(updatedReminders);
       filterReminders(currentStatus, updatedReminders);
-      
+
       toast.success(`Lembrete marcado como ${!reminder.is_completed ? "concluído" : "pendente"}`);
-    } catch (error: any) {
-      console.error("Erro ao atualizar lembrete:", error);
-      toast.error(`Erro ao atualizar lembrete: ${error.message}`);
+    } catch (error) {
+      const err = error as PostgrestError | Error;
+      logger.error("Erro ao atualizar lembrete:", err);
+      toast.error(`Erro ao atualizar lembrete: ${err.message}`);
     }
   };
 
@@ -373,23 +379,24 @@ const Reminders = () => {
         .from("reminders")
         .delete()
         .eq("id", reminderToDelete);
-        
+
       if (error) throw error;
-      
+
       if (!Array.isArray(reminders)) {
         await fetchReminders(currentPage);
         return;
       }
-      
+
       const updatedReminders = reminders.filter(r => r.id !== reminderToDelete);
       setReminders(updatedReminders);
       filterReminders(currentStatus, updatedReminders);
-      
+
       toast.success("Lembrete excluído com sucesso!");
       setReminderToDelete(null);
-    } catch (error: any) {
-      console.error("Erro ao excluir lembrete:", error);
-      toast.error(`Erro ao excluir lembrete: ${error.message}`);
+    } catch (error) {
+      const err = error as PostgrestError | Error;
+      logger.error("Erro ao excluir lembrete:", err);
+      toast.error(`Erro ao excluir lembrete: ${err.message}`);
       setReminderToDelete(null);
     }
   };
@@ -439,71 +446,72 @@ const Reminders = () => {
     try {
       const { error } = await supabase
         .from("reminders")
-        .update({ priority: newPriority } as any)
+        .update({ priority: newPriority })
         .eq("id", reminderId);
-        
+
       if (error) throw error;
-      
+
       // Atualizar estado local
       if (!Array.isArray(reminders)) {
         await fetchData();
         return;
       }
-      
-      const updatedReminders = reminders.map(r => 
+
+      const updatedReminders = reminders.map(r =>
         r.id === reminderId ? { ...r, priority: newPriority } : r
       );
-      
+
       setReminders(updatedReminders);
       filterReminders(currentStatus, updatedReminders);
-      
+
       const priorityNames = {
         'baixa': 'Baixa',
         'media': 'Média',
         'alta': 'Alta'
       };
-      
+
       const priorityEmojis = {
         'baixa': '🟢',
         'media': '🟡',
         'alta': '🔴'
       };
-      
+
       toast.success(`Prioridade alterada para ${priorityEmojis[newPriority as keyof typeof priorityEmojis]} ${priorityNames[newPriority as keyof typeof priorityNames]}`);
-    } catch (error: any) {
-      console.error("Erro ao alterar prioridade:", error);
-      toast.error(`Erro ao alterar prioridade: ${error.message}`);
+    } catch (error) {
+      const err = error as PostgrestError | Error;
+      logger.error("Erro ao alterar prioridade:", err);
+      toast.error(`Erro ao alterar prioridade: ${err.message}`);
     }
   };
 
   const getPriorityBadge = (priority: string | undefined, reminderId?: string, isClickable: boolean = false) => {
     const priorityLevel = priority || "media";
-    
+
     const baseClasses = "text-sm px-4 py-2 font-bold shadow-lg border-2 transition-all duration-200";
-    
+
     if (!isClickable || !reminderId) {
       // Versão não clicável (apenas visual)
-    switch (priorityLevel) {
-      case "alta":
-        return (
+      switch (priorityLevel) {
+        case "alta":
+          return (
             <Badge className={`bg-red-600 text-white border-red-700 ${baseClasses}`}>
               🔴 PRIORIDADE ALTA
-          </Badge>
-        );
-      case "baixa":
-        return (
+            </Badge>
+          );
+        case "baixa":
+          return (
             <Badge className={`bg-green-600 text-white border-green-700 ${baseClasses}`}>
               🟢 PRIORIDADE BAIXA
-          </Badge>
-        );
-      case "media":
-      default:
-        return (
+            </Badge>
+          );
+        case "media":
+        default:
+          return (
             <Badge className={`bg-yellow-600 text-white border-yellow-700 ${baseClasses}`}>
               🟡 PRIORIDADE MÉDIA
-          </Badge>
-        );
-    }
+            </Badge>
+          );
+      }
     }
 
     // Versão clicável com dropdown
@@ -552,12 +560,12 @@ const Reminders = () => {
   };
 
   const headerActions = (
-        <Dialog open={isDialogOpen} onOpenChange={(open) => {
-          setIsDialogOpen(open);
-          if (!open) {
-            resetForm();
-          }
-        }}>
+    <Dialog open={isDialogOpen} onOpenChange={(open) => {
+      setIsDialogOpen(open);
+      if (!open) {
+        resetForm();
+      }
+    }}>
       <DialogTrigger asChild>
         <Button size="lg" className="bg-blue-600 hover:bg-blue-700" onClick={() => {
           resetForm();
@@ -573,12 +581,12 @@ const Reminders = () => {
             {editingReminder ? "Editar Lembrete" : "Criar Novo Lembrete"}
           </DialogTitle>
           <DialogDescription id="dialog-description" className="text-base">
-            {editingReminder 
+            {editingReminder
               ? "Edite os detalhes do lembrete."
               : "Adicione um novo lembrete para acompanhamento de clientes e tarefas."}
           </DialogDescription>
         </DialogHeader>
-        
+
         <div className="space-y-6 py-6">
           <div className="space-y-3">
             <Label htmlFor="title" className="text-sm font-medium">Título*</Label>
@@ -589,7 +597,7 @@ const Reminders = () => {
               className="h-11"
             />
           </div>
-          
+
           <div className="space-y-3">
             <Label className="text-sm font-medium">Cliente</Label>
             <Popover>
@@ -602,11 +610,11 @@ const Reminders = () => {
                     !leadId || leadId === "none" ? "text-muted-foreground" : ""
                   )}
                 >
-                  {leadId && leadId !== "none" 
+                  {leadId && leadId !== "none"
                     ? (() => {
-                        const selectedLead = leads.find(lead => lead.id === leadId);
-                        return selectedLead ? formatClientDisplay(selectedLead) : "Cliente não encontrado";
-                      })()
+                      const selectedLead = leads.find(lead => lead.id === leadId);
+                      return selectedLead ? formatClientDisplay(selectedLead) : "Cliente não encontrado";
+                    })()
                     : "Selecione um cliente (opcional)"
                   }
                   <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -614,8 +622,8 @@ const Reminders = () => {
               </PopoverTrigger>
               <PopoverContent className="w-full p-0" align="start">
                 <Command>
-                  <CommandInput 
-                    placeholder="Buscar por nome ou CPF..." 
+                  <CommandInput
+                    placeholder="Buscar por nome ou CPF..."
                     value={clientSearch}
                     onValueChange={handleClientSearch}
                   />
@@ -685,7 +693,7 @@ const Reminders = () => {
               </SelectContent>
             </Select>
           </div>
-          
+
           <BankSelect
             value={bank}
             onValueChange={setBank}
@@ -694,7 +702,7 @@ const Reminders = () => {
             className="space-y-3"
             showNoneOption={true}
           />
-          
+
           <div className="space-y-3">
             <Label className="text-sm font-medium">Data e Horário*</Label>
             <div className="grid grid-cols-2 gap-4">
@@ -725,7 +733,7 @@ const Reminders = () => {
                   </PopoverContent>
                 </Popover>
               </div>
-              
+
               <div>
                 <Label className="text-xs text-gray-500 mb-2 block">Horário</Label>
                 <Input
@@ -746,36 +754,36 @@ const Reminders = () => {
                 variant={priority === "baixa" ? "default" : "outline"}
                 className={cn(
                   "h-10 text-sm font-medium transition-all",
-                  priority === "baixa" 
-                    ? "bg-green-600 text-white hover:bg-green-700" 
+                  priority === "baixa"
+                    ? "bg-green-600 text-white hover:bg-green-700"
                     : "border-green-200 text-green-700 hover:bg-green-50"
                 )}
                 onClick={() => setPriority("baixa")}
               >
                 Baixa
               </Button>
-              
+
               <Button
                 type="button"
                 variant={priority === "media" ? "default" : "outline"}
                 className={cn(
                   "h-10 text-sm font-medium transition-all",
-                  priority === "media" 
-                    ? "bg-yellow-600 text-white hover:bg-yellow-700" 
+                  priority === "media"
+                    ? "bg-yellow-600 text-white hover:bg-yellow-700"
                     : "border-yellow-200 text-yellow-700 hover:bg-yellow-50"
                 )}
                 onClick={() => setPriority("media")}
               >
                 Média
               </Button>
-              
+
               <Button
                 type="button"
                 variant={priority === "alta" ? "default" : "outline"}
                 className={cn(
                   "h-10 text-sm font-medium transition-all",
-                  priority === "alta" 
-                    ? "bg-red-600 text-white hover:bg-red-700" 
+                  priority === "alta"
+                    ? "bg-red-600 text-white hover:bg-red-700"
                     : "border-red-200 text-red-700 hover:bg-red-50"
                 )}
                 onClick={() => setPriority("alta")}
@@ -794,7 +802,7 @@ const Reminders = () => {
               className="h-11"
             />
           </div>
-          
+
           <div className="space-y-3">
             <Label className="text-sm font-medium">Observações</Label>
             <Textarea
@@ -806,7 +814,7 @@ const Reminders = () => {
             />
           </div>
         </div>
-        
+
         <DialogFooter className="gap-3">
           <Button
             variant="outline"
@@ -860,9 +868,9 @@ const Reminders = () => {
         .from("reminders")
         .select("*", { count: 'exact', head: true })
         .eq("user_id", userData.user.id);
-      
+
       if (countError) throw countError;
-      
+
       setTotalReminders(count || 0);
       setTotalPages(Math.ceil((count || 0) / REMINDERS_PER_PAGE));
 
@@ -922,283 +930,283 @@ const Reminders = () => {
             <div className="p-6 space-y-6">
               {/* Header moderno customizado */}
               <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700 text-white rounded-xl mb-8 shadow-xl">
-        <div className="p-8">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="bg-white/20 backdrop-blur-sm rounded-full p-3">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold">Lembretes</h1>
-                <p className="text-blue-100 text-lg mt-1">Gerencie seus lembretes e nunca perca uma tarefa importante</p>
-              </div>
-            </div>
-            <div className="hidden md:flex items-center space-x-4">
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg px-4 py-2">
-                <div className="text-sm text-blue-100">Total de Lembretes</div>
-                <div className="text-2xl font-bold">
-                  {totalReminders}
-                </div>
-              </div>
-            </div>
-          </div>
-          
-        </div>
-      </div>
-
-      {/* Botões fora do header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          {headerActions}
-        </div>
-      </div>
-
-      <div className="space-y-6">
-        <Tabs 
-          defaultValue="all" 
-          value={currentStatus}
-          className="mb-6" 
-          onValueChange={(value) => filterReminders(value as ReminderStatus)}
-        >
-          <TabsList className="grid w-full grid-cols-4 md:w-auto">
-            <TabsTrigger value="all">Todos</TabsTrigger>
-            <TabsTrigger value="completed">Concluídos</TabsTrigger>
-            <TabsTrigger value="overdue">Atrasados</TabsTrigger>
-            <TabsTrigger value="pending">Pendentes</TabsTrigger>
-          </TabsList>
-        </Tabs>
-
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-gray-900">
-            {filteredReminders.length} {filteredReminders.length === 1 ? 'lembrete' : 'lembretes'}
-          </h3>
-          <p className="text-sm text-gray-500">
-            Página {currentPage} de {totalPages} ({totalReminders} total)
-          </p>
-        </div>
-
-        {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {[1, 2, 3, 4].map(i => (
-              <Card key={i} className="animate-pulse">
-                <div className="h-32 bg-gray-100 rounded-md" />
-              </Card>
-            ))}
-          </div>
-        ) : Array.isArray(filteredReminders) && filteredReminders.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {filteredReminders.map((reminder) => (
-              <Card
-                key={reminder.id}
-                className={cn(
-                  "transition-all duration-200 hover:shadow-lg border-0 shadow-sm",
-                  reminder.is_completed ? "bg-gray-50/50 opacity-70" : "bg-white",
-                  "hover:shadow-xl hover:-translate-y-1"
-                )}
-              >
-                <CardHeader className="pb-4">
-                  <div className="space-y-4">
-                    {/* Linha 1: Título e Status */}
-                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
-                      <div className="flex items-start gap-3 flex-1">
-                        {/* Indicador visual minimalista da prioridade */}
-                        <div className={cn(
-                          "w-1 h-16 rounded-full flex-shrink-0 mt-1",
-                          getPriorityFromReminder(reminder) === 'alta' && "bg-red-500",
-                          getPriorityFromReminder(reminder) === 'media' && "bg-yellow-500", 
-                          getPriorityFromReminder(reminder) === 'baixa' && "bg-green-500"
-                        )} />
-                        <div className="flex-1">
-                          <CardTitle className="text-lg font-medium text-slate-900 leading-tight mb-1">
-                            {reminder.title}
-                          </CardTitle>
-                          <div className="flex items-center gap-2 text-sm text-slate-500">
-                            <span className={cn(
-                              "px-2 py-1 rounded-full text-xs font-medium",
-                              getPriorityFromReminder(reminder) === 'alta' && "bg-red-50 text-red-700",
-                              getPriorityFromReminder(reminder) === 'media' && "bg-yellow-50 text-yellow-700", 
-                              getPriorityFromReminder(reminder) === 'baixa' && "bg-green-50 text-green-700"
-                            )}>
-                              {getPriorityFromReminder(reminder) === 'alta' && "Alta prioridade"}
-                              {getPriorityFromReminder(reminder) === 'media' && "Prioridade média"}
-                              {getPriorityFromReminder(reminder) === 'baixa' && "Baixa prioridade"}
-                            </span>
-                          </div>
-                        </div>
+                <div className="p-8">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      <div className="bg-white/20 backdrop-blur-sm rounded-full p-3">
+                        <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
                       </div>
-                      <div className="flex flex-wrap gap-2">
-                        {getReminderStatusBadge(reminder)}
+                      <div>
+                        <h1 className="text-3xl font-bold">Lembretes</h1>
+                        <p className="text-blue-100 text-lg mt-1">Gerencie seus lembretes e nunca perca uma tarefa importante</p>
                       </div>
                     </div>
-                    
-                    {/* Linha 2: Informações do Cliente e Data */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pl-4">
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-sm text-slate-600">
-                          <User className="h-4 w-4 text-slate-400" />
-                          <span className="font-medium">Cliente:</span>
-                          <span className="text-slate-900 font-medium">{getLeadName(reminder.lead_id)}</span>
-                        </div>
-                        {reminder.bank && (
-                          <div className="flex items-center gap-2 text-sm text-slate-600">
-                            <FileText className="h-4 w-4 text-slate-400" />
-                            <span className="font-medium">Banco:</span>
-                            <span className="text-slate-900 font-medium">{getBankName(reminder.bank)}</span>
-                          </div>
-                        )}
-                        {reminder.employee && (
-                          <div className="flex items-center gap-2 text-sm text-slate-600">
-                            <User className="h-4 w-4 text-slate-400" />
-                            <span className="font-medium">Responsável:</span>
-                            <span className="text-slate-900 font-medium">
-                              {employeeMap[reminder.employee] || reminder.employee}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-sm text-slate-600">
-                          <Clock className="h-4 w-4 text-slate-400" />
-                          <span className="font-medium">Data:</span>
-                          <span className="text-slate-900 font-medium">{formatDate(reminder.due_date)}</span>
+                    <div className="hidden md:flex items-center space-x-4">
+                      <div className="bg-white/10 backdrop-blur-sm rounded-lg px-4 py-2">
+                        <div className="text-sm text-blue-100">Total de Lembretes</div>
+                        <div className="text-2xl font-bold">
+                          {totalReminders}
                         </div>
                       </div>
-                    </div>
-                    
-                    {/* Linha 3: Ações */}
-                    <div className="flex justify-end space-x-2 pt-3 border-t border-slate-100 pl-4">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 text-xs font-medium text-slate-600 hover:text-blue-700 hover:bg-blue-50"
-                        onClick={() => handleOpenEditDialog(reminder)}
-                      >
-                        <Edit3 className="h-3 w-3 mr-1" />
-                        Editar
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className={cn(
-                          "h-8 text-xs font-medium",
-                          reminder.is_completed 
-                            ? "text-green-700 hover:bg-green-50" 
-                            : "text-slate-600 hover:text-green-700 hover:bg-green-50"
-                        )}
-                        onClick={() => handleToggleComplete(reminder)}
-                      >
-                        <Check className="h-3 w-3 mr-1" />
-                        {reminder.is_completed ? "Concluído" : "Concluir"}
-                      </Button>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 text-xs font-medium text-slate-600 hover:text-red-700 hover:bg-red-50"
-                          >
-                            <Trash2 className="h-3 w-3 mr-1" />
-                            Excluir
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Tem certeza?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Esta ação não pode ser desfeita. Isso excluirá permanentemente o lembrete "{reminder.title}".
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                            <AlertDialogAction 
-                              onClick={() => {
-                                // Fechar o AlertDialog primeiro
-                                const event = new Event('close');
-                                window.dispatchEvent(event);
-                                // Abrir dialog de senha administrativa
-                                handleDeleteReminder(reminder.id);
-                              }}
-                              className="bg-red-600 hover:bg-red-700"
-                            >
-                              Sim, excluir
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
                     </div>
                   </div>
-                </CardHeader>
-                
-                {reminder.notes && (
-                  <CardContent className="pt-0 pb-4 pl-7">
-                    <div className="p-3 rounded-lg bg-slate-50 border border-slate-200">
-                      <div className="flex items-center gap-2 mb-2">
-                        <FileText className="h-4 w-4 text-slate-500" />
-                        <span className="text-sm font-medium text-slate-700">Observações</span>
-                      </div>
-                      <p className="text-sm text-slate-600 leading-relaxed break-words">
-                        {reminder.notes}
-                      </p>
-                    </div>
-                  </CardContent>
-                )}
-              </Card>
-            ))}
-          </div>
-        ) : (
-          <Card className="text-center py-16">
-            <CardContent>
-              <AlertCircle className="h-16 w-16 mx-auto text-gray-400 mb-4" />
-              <h3 className="text-xl font-medium text-gray-900 mb-2">Nenhum lembrete</h3>
-              <p className="text-gray-500 text-lg">
-                Não há lembretes disponíveis no momento.
-              </p>
-            </CardContent>
-          </Card>
-        )}
 
-        {/* Pagination Controls */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-center space-x-6 py-4">
-            <Pagination>
-              <PaginationContent>
-                <PaginationItem>
-                  <PaginationPrevious 
-                    onClick={() => currentPage > 1 && handlePageChange(currentPage - 1)}
-                    className={currentPage <= 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                  />
-                </PaginationItem>
-                
-                {[...Array(Math.min(5, totalPages))].map((_, index) => {
-                  const pageNumber = Math.max(1, currentPage - 2) + index;
-                  if (pageNumber > totalPages) return null;
-                  
-                  return (
-                    <PaginationItem key={pageNumber}>
-                      <PaginationLink
-                        onClick={() => handlePageChange(pageNumber)}
-                        isActive={pageNumber === currentPage}
-                        className="cursor-pointer"
+                </div>
+              </div>
+
+              {/* Botões fora do header */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  {headerActions}
+                </div>
+              </div>
+
+              <div className="space-y-6">
+                <Tabs
+                  defaultValue="all"
+                  value={currentStatus}
+                  className="mb-6"
+                  onValueChange={(value) => filterReminders(value as ReminderStatus)}
+                >
+                  <TabsList className="grid w-full grid-cols-4 md:w-auto">
+                    <TabsTrigger value="all">Todos</TabsTrigger>
+                    <TabsTrigger value="completed">Concluídos</TabsTrigger>
+                    <TabsTrigger value="overdue">Atrasados</TabsTrigger>
+                    <TabsTrigger value="pending">Pendentes</TabsTrigger>
+                  </TabsList>
+                </Tabs>
+
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    {filteredReminders.length} {filteredReminders.length === 1 ? 'lembrete' : 'lembretes'}
+                  </h3>
+                  <p className="text-sm text-gray-500">
+                    Página {currentPage} de {totalPages} ({totalReminders} total)
+                  </p>
+                </div>
+
+                {isLoading ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {[1, 2, 3, 4].map(i => (
+                      <Card key={i} className="animate-pulse">
+                        <div className="h-32 bg-gray-100 rounded-md" />
+                      </Card>
+                    ))}
+                  </div>
+                ) : Array.isArray(filteredReminders) && filteredReminders.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {filteredReminders.map((reminder) => (
+                      <Card
+                        key={reminder.id}
+                        className={cn(
+                          "transition-all duration-200 hover:shadow-lg border-0 shadow-sm",
+                          reminder.is_completed ? "bg-gray-50/50 opacity-70" : "bg-white",
+                          "hover:shadow-xl hover:-translate-y-1"
+                        )}
                       >
-                        {pageNumber}
-                      </PaginationLink>
-                    </PaginationItem>
-                  );
-                })}
-                
-                <PaginationItem>
-                  <PaginationNext 
-                    onClick={() => currentPage < totalPages && handlePageChange(currentPage + 1)}
-                    className={currentPage >= totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                  />
-                </PaginationItem>
-              </PaginationContent>
-            </Pagination>
-          </div>
-        )}
+                        <CardHeader className="pb-4">
+                          <div className="space-y-4">
+                            {/* Linha 1: Título e Status */}
+                            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
+                              <div className="flex items-start gap-3 flex-1">
+                                {/* Indicador visual minimalista da prioridade */}
+                                <div className={cn(
+                                  "w-1 h-16 rounded-full flex-shrink-0 mt-1",
+                                  getPriorityFromReminder(reminder) === 'alta' && "bg-red-500",
+                                  getPriorityFromReminder(reminder) === 'media' && "bg-yellow-500",
+                                  getPriorityFromReminder(reminder) === 'baixa' && "bg-green-500"
+                                )} />
+                                <div className="flex-1">
+                                  <CardTitle className="text-lg font-medium text-slate-900 leading-tight mb-1">
+                                    {reminder.title}
+                                  </CardTitle>
+                                  <div className="flex items-center gap-2 text-sm text-slate-500">
+                                    <span className={cn(
+                                      "px-2 py-1 rounded-full text-xs font-medium",
+                                      getPriorityFromReminder(reminder) === 'alta' && "bg-red-50 text-red-700",
+                                      getPriorityFromReminder(reminder) === 'media' && "bg-yellow-50 text-yellow-700",
+                                      getPriorityFromReminder(reminder) === 'baixa' && "bg-green-50 text-green-700"
+                                    )}>
+                                      {getPriorityFromReminder(reminder) === 'alta' && "Alta prioridade"}
+                                      {getPriorityFromReminder(reminder) === 'media' && "Prioridade média"}
+                                      {getPriorityFromReminder(reminder) === 'baixa' && "Baixa prioridade"}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="flex flex-wrap gap-2">
+                                {getReminderStatusBadge(reminder)}
+                              </div>
+                            </div>
+
+                            {/* Linha 2: Informações do Cliente e Data */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pl-4">
+                              <div className="space-y-2">
+                                <div className="flex items-center gap-2 text-sm text-slate-600">
+                                  <User className="h-4 w-4 text-slate-400" />
+                                  <span className="font-medium">Cliente:</span>
+                                  <span className="text-slate-900 font-medium">{getLeadName(reminder.lead_id)}</span>
+                                </div>
+                                {reminder.bank && (
+                                  <div className="flex items-center gap-2 text-sm text-slate-600">
+                                    <FileText className="h-4 w-4 text-slate-400" />
+                                    <span className="font-medium">Banco:</span>
+                                    <span className="text-slate-900 font-medium">{getBankName(reminder.bank)}</span>
+                                  </div>
+                                )}
+                                {reminder.employee && (
+                                  <div className="flex items-center gap-2 text-sm text-slate-600">
+                                    <User className="h-4 w-4 text-slate-400" />
+                                    <span className="font-medium">Responsável:</span>
+                                    <span className="text-slate-900 font-medium">
+                                      {employeeMap[reminder.employee] || reminder.employee}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+
+                              <div className="space-y-2">
+                                <div className="flex items-center gap-2 text-sm text-slate-600">
+                                  <Clock className="h-4 w-4 text-slate-400" />
+                                  <span className="font-medium">Data:</span>
+                                  <span className="text-slate-900 font-medium">{formatDate(reminder.due_date)}</span>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Linha 3: Ações */}
+                            <div className="flex justify-end space-x-2 pt-3 border-t border-slate-100 pl-4">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 text-xs font-medium text-slate-600 hover:text-blue-700 hover:bg-blue-50"
+                                onClick={() => handleOpenEditDialog(reminder)}
+                              >
+                                <Edit3 className="h-3 w-3 mr-1" />
+                                Editar
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className={cn(
+                                  "h-8 text-xs font-medium",
+                                  reminder.is_completed
+                                    ? "text-green-700 hover:bg-green-50"
+                                    : "text-slate-600 hover:text-green-700 hover:bg-green-50"
+                                )}
+                                onClick={() => handleToggleComplete(reminder)}
+                              >
+                                <Check className="h-3 w-3 mr-1" />
+                                {reminder.is_completed ? "Concluído" : "Concluir"}
+                              </Button>
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-8 text-xs font-medium text-slate-600 hover:text-red-700 hover:bg-red-50"
+                                  >
+                                    <Trash2 className="h-3 w-3 mr-1" />
+                                    Excluir
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Tem certeza?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Esta ação não pode ser desfeita. Isso excluirá permanentemente o lembrete "{reminder.title}".
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                    <AlertDialogAction
+                                      onClick={() => {
+                                        // Fechar o AlertDialog primeiro
+                                        const event = new Event('close');
+                                        window.dispatchEvent(event);
+                                        // Abrir dialog de senha administrativa
+                                        handleDeleteReminder(reminder.id);
+                                      }}
+                                      className="bg-red-600 hover:bg-red-700"
+                                    >
+                                      Sim, excluir
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </div>
+                          </div>
+                        </CardHeader>
+
+                        {reminder.notes && (
+                          <CardContent className="pt-0 pb-4 pl-7">
+                            <div className="p-3 rounded-lg bg-slate-50 border border-slate-200">
+                              <div className="flex items-center gap-2 mb-2">
+                                <FileText className="h-4 w-4 text-slate-500" />
+                                <span className="text-sm font-medium text-slate-700">Observações</span>
+                              </div>
+                              <p className="text-sm text-slate-600 leading-relaxed break-words">
+                                {reminder.notes}
+                              </p>
+                            </div>
+                          </CardContent>
+                        )}
+                      </Card>
+                    ))}
+                  </div>
+                ) : (
+                  <Card className="text-center py-16">
+                    <CardContent>
+                      <AlertCircle className="h-16 w-16 mx-auto text-gray-400 mb-4" />
+                      <h3 className="text-xl font-medium text-gray-900 mb-2">Nenhum lembrete</h3>
+                      <p className="text-gray-500 text-lg">
+                        Não há lembretes disponíveis no momento.
+                      </p>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Pagination Controls */}
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-center space-x-6 py-4">
+                    <Pagination>
+                      <PaginationContent>
+                        <PaginationItem>
+                          <PaginationPrevious
+                            onClick={() => currentPage > 1 && handlePageChange(currentPage - 1)}
+                            className={currentPage <= 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                          />
+                        </PaginationItem>
+
+                        {[...Array(Math.min(5, totalPages))].map((_, index) => {
+                          const pageNumber = Math.max(1, currentPage - 2) + index;
+                          if (pageNumber > totalPages) return null;
+
+                          return (
+                            <PaginationItem key={pageNumber}>
+                              <PaginationLink
+                                onClick={() => handlePageChange(pageNumber)}
+                                isActive={pageNumber === currentPage}
+                                className="cursor-pointer"
+                              >
+                                {pageNumber}
+                              </PaginationLink>
+                            </PaginationItem>
+                          );
+                        })}
+
+                        <PaginationItem>
+                          <PaginationNext
+                            onClick={() => currentPage < totalPages && handlePageChange(currentPage + 1)}
+                            className={currentPage >= totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                          />
+                        </PaginationItem>
+                      </PaginationContent>
+                    </Pagination>
+                  </div>
+                )}
               </div>
             </div>
           </main>

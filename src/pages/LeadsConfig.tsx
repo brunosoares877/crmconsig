@@ -8,6 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Plus, Trash2, Edit, Save, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { PostgrestError } from "@/types/database.types";
+import logger from "@/utils/logger";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
@@ -141,13 +143,13 @@ const LeadsConfig = () => {
   const [banks, setBanks] = useState<Bank[]>([]);
   const [benefitTypes, setBenefitTypes] = useState<BenefitType[]>([]);
   const [loading, setLoading] = useState(true);
-  
+
   // Form states
   const [newBankName, setNewBankName] = useState("");
   const [newBankCode, setNewBankCode] = useState("");
   const [newBenefitName, setNewBenefitName] = useState("");
   const [newBenefitCode, setNewBenefitCode] = useState("");
-  
+
   // Edit states
   const [editingBank, setEditingBank] = useState<string | null>(null);
   const [editingBenefit, setEditingBenefit] = useState<number | null>(null);
@@ -158,7 +160,7 @@ const LeadsConfig = () => {
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) return;
       // limpa bancos existentes do usuário e insere os novos
-      const { error: delErr } = await supabase.from('banks').delete().eq('user_id', userData.user.id);
+      const { error: delErr } = await (supabase.from('banks' as any)).delete().eq('user_id', userData.user.id);
       if (delErr) throw delErr;
       if (banksToPersist.length > 0) {
         const payload = banksToPersist.map((b) => ({
@@ -167,12 +169,13 @@ const LeadsConfig = () => {
           code: b.code || "",
           user_id: userData.user.id,
         }));
-        const { error: insErr } = await supabase.from('banks').insert(payload);
+        const { error: insErr } = await (supabase.from('banks' as any)).insert(payload);
         if (insErr) throw insErr;
       }
-    } catch (err: any) {
+    } catch (err) {
+      const error = err as PostgrestError | Error;
       // se tabela não existir ou der erro, não quebra fluxo
-      console.warn("Persistência de bancos no Supabase falhou (usando apenas localStorage):", err?.message || err);
+      logger.warn("Persistência de bancos no Supabase falhou (usando apenas localStorage):", error.message);
     }
   };
 
@@ -183,11 +186,11 @@ const LeadsConfig = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      
+
       // --- BANCOS ---
       const savedBanks = localStorage.getItem('configBanks');
       const configuredBanks = savedBanks ? JSON.parse(savedBanks) : [];
-      console.log('Bancos carregados do localStorage:', configuredBanks);
+      logger.debug('Bancos carregados do localStorage:', configuredBanks);
       const removedBankIds = getRemovedIds('removedBanks');
       const editedBanks = getEditedItems<Bank>('editedBanks');
       const allBanks: Bank[] = [];
@@ -197,22 +200,22 @@ const LeadsConfig = () => {
       try {
         const { data: userData } = await supabase.auth.getUser();
         if (userData.user) {
-          const { data, error } = await supabase
-            .from('banks')
+          const { data, error } = await (supabase.from('banks' as any))
             .select('id, name, code')
             .eq('user_id', userData.user.id)
             .order('name');
           if (error) throw error;
-          supabaseBanks = (data || []).map((b: any) => ({
+          supabaseBanks = (data || []).map((b) => ({
             id: b.id,
             name: b.name,
             code: b.code || "",
           }));
         }
-      } catch (err: any) {
-        console.warn("Falha ao carregar bancos do Supabase (usando localStorage):", err?.message || err);
+      } catch (err) {
+        const error = err as PostgrestError | Error;
+        logger.warn("Falha ao carregar bancos do Supabase (usando localStorage):", error.message);
       }
-      
+
       // Add default banks with generated IDs
       DEFAULT_BANKS.forEach(bank => {
         const id = `default-${bank.code}`;
@@ -226,7 +229,7 @@ const LeadsConfig = () => {
           allBanks.push({ id, name: bank.name, code: bank.code });
         }
       });
-      
+
       // Add configured banks (user-added banks)
       configuredBanks.forEach((configBank: Bank) => {
         // Verificar se não existe duplicado
@@ -234,13 +237,13 @@ const LeadsConfig = () => {
         const exists = allBanks.find(bank => {
           // Se ambos têm código, verifica código OU nome
           if (configBank.code && bank.code) {
-            return bank.code.toLowerCase() === configBank.code.toLowerCase() || 
-                   bank.name.toLowerCase() === configBank.name.toLowerCase();
+            return bank.code.toLowerCase() === configBank.code.toLowerCase() ||
+              bank.name.toLowerCase() === configBank.name.toLowerCase();
           }
           // Se algum não tem código, compara apenas nome
           return bank.name.toLowerCase() === configBank.name.toLowerCase();
         });
-        
+
         if (!exists) {
           allBanks.push(configBank);
         }
@@ -251,7 +254,7 @@ const LeadsConfig = () => {
         const exists = allBanks.find(bank => {
           if (sb.code && bank.code) {
             return bank.code.toLowerCase() === sb.code.toLowerCase() ||
-                   bank.name.toLowerCase() === sb.name.toLowerCase();
+              bank.name.toLowerCase() === sb.name.toLowerCase();
           }
           return bank.name.toLowerCase() === sb.name.toLowerCase();
         });
@@ -259,10 +262,10 @@ const LeadsConfig = () => {
           allBanks.push(sb);
         }
       });
-      
+
       // Ordenar bancos por nome
       allBanks.sort((a, b) => a.name.localeCompare(b.name));
-      
+
       setBanks(allBanks);
 
       // --- PRODUTOS REMOVIDOS ---
@@ -298,7 +301,7 @@ const LeadsConfig = () => {
       setBenefitTypes(allBenefits);
 
     } catch (error) {
-      console.error('Error fetching data:', error);
+      logger.error('Error fetching data:', error);
       toast.error("Erro ao carregar configurações");
     } finally {
       setLoading(false);
@@ -327,9 +330,10 @@ const LeadsConfig = () => {
       setNewBenefitName("");
       setNewBenefitCode("");
       toast.success("Tipo de benefício adicionado com sucesso!");
-    } catch (error: any) {
-      console.error('Error adding benefit:', error);
-      toast.error(`Erro ao adicionar tipo de benefício: ${error.message}`);
+    } catch (error) {
+      const err = error as PostgrestError | Error;
+      logger.error('Error adding benefit:', err);
+      toast.error(`Erro ao adicionar tipo de benefício: ${err.message}`);
     }
   };
 
@@ -357,9 +361,10 @@ const LeadsConfig = () => {
         }
         toast.success("Tipo de benefício removido com sucesso!");
       }
-    } catch (error: any) {
-      console.error('Error deleting benefit:', error);
-      toast.error(`Erro ao remover tipo de benefício: ${error.message}`);
+    } catch (error) {
+      const err = error as PostgrestError | Error;
+      logger.error('Error deleting benefit:', err);
+      toast.error(`Erro ao remover tipo de benefício: ${err.message}`);
     }
   };
 
@@ -376,13 +381,13 @@ const LeadsConfig = () => {
     const exists = banks.some(bank => {
       // Se tem código, verifica código E nome
       if (bankCode) {
-        return (bank.code.toLowerCase() === bankCode.toLowerCase()) || 
-               (bank.name.toLowerCase() === bankName.toLowerCase());
+        return (bank.code.toLowerCase() === bankCode.toLowerCase()) ||
+          (bank.name.toLowerCase() === bankName.toLowerCase());
       }
       // Se não tem código, verifica apenas nome
       return bank.name.toLowerCase() === bankName.toLowerCase();
     });
-    
+
     if (exists) {
       toast.error("Já existe um banco com este código ou nome");
       return;
@@ -396,24 +401,24 @@ const LeadsConfig = () => {
 
     const updatedBanks = [...banks, newBank];
     setBanks(updatedBanks);
-    
+
     // Save only user-added banks to localStorage (todos os que começam com 'user-')
     const userBanks = updatedBanks.filter(bank => bank.id.startsWith('user-'));
-    
+
     // Garantir que está salvando corretamente
     try {
       localStorage.setItem('configBanks', JSON.stringify(userBanks));
-      console.log('Bancos salvos no localStorage:', userBanks);
+      logger.debug('Bancos salvos no localStorage:', userBanks);
       await persistBanksSupabase(userBanks);
     } catch (error) {
-      console.error('Erro ao salvar no localStorage/Supabase:', error);
+      logger.error('Erro ao salvar no localStorage/Supabase:', error);
       toast.error('Erro ao salvar banco. Tente novamente.');
       return;
     }
-    
+
     // Disparar evento para notificar outros componentes
     window.dispatchEvent(new CustomEvent('configDataChanged'));
-    
+
     setNewBankName("");
     setNewBankCode("");
     toast.success("Banco adicionado com sucesso!");
@@ -422,7 +427,7 @@ const LeadsConfig = () => {
   const deleteBank = async (id: string) => {
     const updatedBanks = banks.filter(b => b.id !== id);
     setBanks(updatedBanks);
-    
+
     // Se for padrão, salva id em removedBanks
     if (id.startsWith('default-')) {
       const removed = getRemovedIds('removedBanks');
@@ -435,18 +440,18 @@ const LeadsConfig = () => {
       const userBanks = updatedBanks.filter(bank => bank.id.startsWith('user-'));
       try {
         localStorage.setItem('configBanks', JSON.stringify(userBanks));
-        console.log('Bancos salvos após deletar:', userBanks);
+        logger.debug('Bancos salvos após deletar:', userBanks);
         await persistBanksSupabase(userBanks);
       } catch (error) {
-        console.error('Erro ao salvar no localStorage/Supabase:', error);
+        logger.error('Erro ao salvar no localStorage/Supabase:', error);
         toast.error('Erro ao remover banco. Tente novamente.');
         return;
       }
     }
-    
+
     // Disparar evento para notificar outros componentes
     window.dispatchEvent(new CustomEvent('configDataChanged'));
-    
+
     toast.success("Banco removido com sucesso!");
   };
 
@@ -472,18 +477,18 @@ const LeadsConfig = () => {
       const userBanks = updatedBanks.filter(bank => bank.id.startsWith('user-'));
       try {
         localStorage.setItem('configBanks', JSON.stringify(userBanks));
-        console.log('Bancos salvos após editar:', userBanks);
+        logger.debug('Bancos salvos após editar:', userBanks);
         await persistBanksSupabase(userBanks);
       } catch (error) {
-        console.error('Erro ao salvar no localStorage/Supabase:', error);
+        logger.error('Erro ao salvar no localStorage/Supabase:', error);
         toast.error('Erro ao editar banco. Tente novamente.');
         return;
       }
     }
-    
+
     // Disparar evento para notificar outros componentes
     window.dispatchEvent(new CustomEvent('configDataChanged'));
-    
+
     toast.success('Banco editado com sucesso!');
   };
 
@@ -520,8 +525,11 @@ const LeadsConfig = () => {
         }
         setEditedItems('editedBenefits', edited);
         toast.success('Tipo de benefício editado com sucesso!');
-      } catch (error: any) {
-        toast.error('Erro ao editar tipo de benefício: ' + error.message);
+        setEditedItems('editedBenefits', edited);
+        toast.success('Tipo de benefício editado com sucesso!');
+      } catch (error) {
+        const err = error as PostgrestError | Error;
+        toast.error('Erro ao editar tipo de benefício: ' + err.message);
       }
     }
   };
@@ -537,8 +545,8 @@ const LeadsConfig = () => {
   }
 
   return (
-    <PageLayout 
-      title="Configurações de Leads" 
+    <PageLayout
+      title="Configurações de Leads"
       subtitle="Gerencie bancos e tipos de benefícios para seus leads"
     >
       <Tabs defaultValue="banks" className="space-y-6">
