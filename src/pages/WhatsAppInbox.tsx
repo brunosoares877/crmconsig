@@ -197,7 +197,9 @@ export default function WhatsAppInbox() {
   useEffect(() => {
     if (selectedConv) {
       fetchMessages(selectedConv.id);
-      supabase.from("whatsapp_conversations").update({ nao_lidas: 0 }).eq("id", selectedConv.id);
+      supabase.from("whatsapp_conversations").update({ nao_lidas: 0 }).eq("id", selectedConv.id).then(() => {
+        setConversations(prev => prev.map(c => c.id === selectedConv.id ? { ...c, nao_lidas: 0 } : c));
+      });
       const interval = setInterval(() => fetchMessages(selectedConv.id), 8000);
       return () => clearInterval(interval);
     }
