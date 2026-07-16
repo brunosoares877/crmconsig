@@ -6,7 +6,7 @@ import {
   MessageSquare, Send, RefreshCw, Search, Phone, CheckCheck,
   Check, Clock, AlertCircle, User, Smile, Paperclip, ArrowLeft,
   Circle, CheckCircle, MoreVertical, Archive, ExternalLink,
-  KanbanSquare, List, X, Tag, Plus, UploadCloud, ImageIcon, FileText, Film
+  KanbanSquare, List, X, Tag, Plus, UploadCloud, ImageIcon, FileText, Film, Zap, Trash2, MessageSquarePlus
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 
 interface Conversation {
   id: string;
@@ -75,7 +76,28 @@ const FUNNEL_STAGES = [
   { id: "perdido", label: "Perdido", color: "border-red-500", bg: "bg-red-900/40" }
 ];
 
-const AVAILABLE_TAGS = ["INSS", "BPC", "FGTS", "Siape", "Quente", "Frio", "Urgente", "Retorno"];
+const AVAILABLE_TAGS = [
+  { id: "INSS", label: "INSS", color: "bg-blue-500/20 text-blue-400 border-blue-500/30" },
+  { id: "BPC", label: "BPC", color: "bg-purple-500/20 text-purple-400 border-purple-500/30" },
+  { id: "FGTS", label: "FGTS", color: "bg-orange-500/20 text-orange-400 border-orange-500/30" },
+  { id: "Siape", label: "Siape", color: "bg-teal-500/20 text-teal-400 border-teal-500/30" },
+  { id: "Quente", label: "Quente", color: "bg-red-500/20 text-red-400 border-red-500/30" },
+  { id: "Frio", label: "Frio", color: "bg-cyan-500/20 text-cyan-400 border-cyan-500/30" },
+  { id: "Urgente", label: "Urgente", color: "bg-rose-500/20 text-rose-400 border-rose-500/30" },
+  { id: "Retorno", label: "Retorno", color: "bg-amber-500/20 text-amber-400 border-amber-500/30" }
+];
+
+const QUICK_REPLIES = [
+  { id: "portabilidade", label: "Portabilidade", text: "Olá! Vi que você tem interesse em fazer a portabilidade do seu contrato. Podemos fazer uma simulação sem compromisso?" },
+  { id: "margem_nova", label: "Margem Nova", text: "Oi! Identificamos que você possui uma nova margem disponível para contratação. Gostaria de conferir os valores?" },
+  { id: "crefaz", label: "Crefaz (Luz)", text: "Olá! Sabia que você pode fazer um empréstimo com desconto direto na conta de luz pela Crefaz? É bem rápido!" },
+  { id: "governo", label: "Governo (Siape)", text: "Oi! Temos condições especiais de crédito consignado para servidores federais (Siape). Vamos simular?" }
+];
+
+const getTagColor = (tagId: string) => {
+  const tag = AVAILABLE_TAGS.find(t => t.id === tagId);
+  return tag ? tag.color : "bg-slate-700 text-slate-300 border-slate-600";
+};
 
 const toBase64 = (file: File) => new Promise<string>((resolve, reject) => {
   const reader = new FileReader();
@@ -98,6 +120,10 @@ export default function WhatsAppInbox() {
   const [viewMode, setViewMode] = useState<"list" | "funnel">("list");
   
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  
+  const [showNewContactModal, setShowNewContactModal] = useState(false);
+  const [newContactPhone, setNewContactPhone] = useState("");
+  const [newContactName, setNewContactName] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -173,6 +199,61 @@ export default function WhatsAppInbox() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  const handleDeleteConversation = async (convId: string) => {
+    if (!window.confirm("Tem certeza que deseja apagar todo o histórico dessa conversa? Essa ação não pode ser desfeita.")) return;
+    try {
+      await supabase.from("whatsapp_conversations").delete().eq("id", convId);
+      setConversations(prev => prev.filter(c => c.id !== convId));
+      if (selectedConv?.id === convId) setSelectedConv(null);
+      toast.success("Conversa excluída");
+    } catch (e) {
+      toast.error("Erro ao excluir conversa");
+    }
+  };
+
+  const handleCreateContact = async () => {
+    if (!newContactName.trim() || !newContactPhone.trim()) {
+      toast.error("Preencha nome e telefone");
+      return;
+    }
+    const digits = newContactPhone.replace(/\D/g, "");
+    if (digits.length < 10) {
+      toast.error("Telefone inválido");
+      return;
+    }
+    const normalized = digits.startsWith("55") ? digits : `55${digits}`;
+    const jid = `${normalized}@s.whatsapp.net`;
+    
+    const inst = instances[0];
+    if (!inst) {
+      toast.error("Nenhuma instância conectada para criar o contato");
+      return;
+    }
+    
+    try {
+      const { data, error } = await supabase.from("whatsapp_conversations").insert({
+        user_id: user?.id,
+        instance_id: inst.id,
+        telefone: jid,
+        nome_contato: newContactName,
+        status: "open",
+        funnel_stage: "novo_contato"
+      }).select("*, whatsapp_instances(instance_name)").single();
+      
+      if (error) throw error;
+      
+      const newConv = { ...data, tags: [], funnel_stage: "novo_contato" };
+      setConversations(prev => [newConv, ...prev]);
+      setSelectedConv(newConv as Conversation);
+      setShowNewContactModal(false);
+      setNewContactPhone("");
+      setNewContactName("");
+      toast.success("Contato adicionado!");
+    } catch (e) {
+      toast.error("Erro ao criar contato (talvez já exista)");
+    }
+  };
 
   const handleUpdateStage = async (convId: string, stage: string) => {
     try {
@@ -317,11 +398,14 @@ export default function WhatsAppInbox() {
     if (!tags || tags.length === 0) return null;
     return (
       <div className="flex flex-wrap gap-1 mt-1">
-        {tags.map(tag => (
-          <span key={tag} className="text-[10px] px-1.5 py-0.5 rounded-sm bg-slate-700/80 text-slate-300 font-medium">
-            {tag}
-          </span>
-        ))}
+        {tags.map(tagId => {
+          const colorClass = getTagColor(tagId);
+          return (
+            <span key={tagId} className={`text-[10px] px-1.5 py-0.5 rounded-sm font-medium border ${colorClass}`}>
+              {tagId}
+            </span>
+          );
+        })}
       </div>
     );
   };
@@ -390,9 +474,14 @@ export default function WhatsAppInbox() {
                 </div>
                 <h1 className="font-bold text-white">Caixa de Entrada</h1>
               </div>
-              <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-slate-400 hover:text-emerald-400" onClick={() => setViewMode("funnel")}>
-                <KanbanSquare className="h-5 w-5" />
-              </Button>
+              <div className="flex gap-1">
+                <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-slate-400 hover:text-emerald-400" onClick={() => setShowNewContactModal(true)}>
+                  <MessageSquarePlus className="h-5 w-5" />
+                </Button>
+                <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-slate-400 hover:text-emerald-400" onClick={() => setViewMode("funnel")}>
+                  <KanbanSquare className="h-5 w-5" />
+                </Button>
+              </div>
             </div>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-500" />
@@ -501,11 +590,14 @@ export default function WhatsAppInbox() {
                     <p className="font-semibold text-white">{selectedConv.nome_contato || selectedConv.telefone}</p>
                     <div className="flex items-center gap-2">
                       <p className="text-xs text-slate-400">{selectedConv.telefone}</p>
-                      {selectedConv.tags?.map(tag => (
-                        <span key={tag} className="text-[10px] px-1.5 rounded-sm bg-emerald-900/40 text-emerald-400 border border-emerald-500/20">
-                          {tag}
-                        </span>
-                      ))}
+                      {selectedConv.tags?.map(tagId => {
+                        const colorClass = getTagColor(tagId);
+                        return (
+                          <span key={tagId} className={`text-[10px] px-1.5 py-0.5 rounded-sm border font-medium ${colorClass}`}>
+                            {tagId}
+                          </span>
+                        );
+                      })}
                     </div>
                   </div>
                 </div>
@@ -544,18 +636,26 @@ export default function WhatsAppInbox() {
                     <DropdownMenuContent className="bg-slate-800 border-slate-700 text-white w-48">
                       <DropdownMenuLabel className="text-xs text-slate-400">Adicionar/Remover Etiqueta</DropdownMenuLabel>
                       <DropdownMenuSeparator className="bg-slate-700" />
-                      {AVAILABLE_TAGS.map(tag => (
+                      {AVAILABLE_TAGS.map(tagObj => (
                         <DropdownMenuItem 
-                          key={tag}
-                          onClick={(e) => { e.preventDefault(); handleToggleTag(selectedConv, tag); }}
+                          key={tagObj.id}
+                          onClick={(e) => { e.preventDefault(); handleToggleTag(selectedConv, tagObj.id); }}
                           className="text-xs cursor-pointer hover:bg-slate-700/50 flex justify-between items-center"
                         >
-                          {tag}
-                          {selectedConv.tags?.includes(tag) && <Check className="h-3.5 w-3.5 text-emerald-400" />}
+                          <div className="flex items-center gap-2">
+                            <div className={`w-2 h-2 rounded-full ${tagObj.color.split(' ')[0]}`}></div>
+                            {tagObj.label}
+                          </div>
+                          {selectedConv.tags?.includes(tagObj.id) && <Check className="h-3.5 w-3.5 text-emerald-400" />}
                         </DropdownMenuItem>
                       ))}
                     </DropdownMenuContent>
                   </DropdownMenu>
+
+                  {/* Lixeira */}
+                  <Button size="sm" variant="outline" className="h-8 bg-red-500/10 border-red-500/20 text-red-400 hover:text-red-300 hover:bg-red-500/20 px-2" onClick={() => handleDeleteConversation(selectedConv.id)}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
 
@@ -637,6 +737,29 @@ export default function WhatsAppInbox() {
                     <Paperclip className="h-5 w-5" />
                   </Button>
 
+                  {/* Respostas Rápidas */}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-10 w-10 shrink-0 text-slate-400 hover:text-emerald-400 hover:bg-slate-800 rounded-full">
+                        <Zap className="h-5 w-5" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="bg-slate-800 border-slate-700 text-white w-64 mb-2">
+                      <DropdownMenuLabel className="text-xs text-slate-400">Mensagens Prontas</DropdownMenuLabel>
+                      <DropdownMenuSeparator className="bg-slate-700" />
+                      {QUICK_REPLIES.map(reply => (
+                        <DropdownMenuItem 
+                          key={reply.id}
+                          onClick={() => setNewMessage(prev => prev + (prev ? " " : "") + reply.text)}
+                          className="text-xs cursor-pointer hover:bg-slate-700/50 flex flex-col items-start gap-1 p-2"
+                        >
+                          <span className="font-semibold text-emerald-400">{reply.label}</span>
+                          <span className="text-slate-300 line-clamp-2">{reply.text}</span>
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+
                   <Textarea
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
@@ -659,6 +782,38 @@ export default function WhatsAppInbox() {
           )}
         </div>
       )}
+
+      <Dialog open={showNewContactModal} onOpenChange={setShowNewContactModal}>
+        <DialogContent className="bg-slate-900 border-slate-700 text-white sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Iniciar Nova Conversa</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-300">Nome do Contato</label>
+              <Input
+                value={newContactName}
+                onChange={(e) => setNewContactName(e.target.value)}
+                placeholder="Ex: João Silva"
+                className="bg-slate-800 border-slate-700 text-white"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-300">Telefone (WhatsApp)</label>
+              <Input
+                value={newContactPhone}
+                onChange={(e) => setNewContactPhone(e.target.value)}
+                placeholder="Ex: 11999999999"
+                className="bg-slate-800 border-slate-700 text-white"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" className="bg-slate-800 border-slate-700 hover:bg-slate-700 text-white" onClick={() => setShowNewContactModal(false)}>Cancelar</Button>
+            <Button className="bg-emerald-600 hover:bg-emerald-700 text-white" onClick={handleCreateContact}>Adicionar Contato</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
