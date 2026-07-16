@@ -400,12 +400,26 @@ export default function WhatsAppInbox() {
   };
 
   const handleSend = async () => {
-    if (!selectedConv || (!newMessage.trim() && !selectedFile) || !user) return;
+    if (!selectedConv || (!newMessage.trim() && !selectedFile && !recordedAudio) || !user) return;
     setSending(true);
 
     const instance = instances.find((i) => i.id === selectedConv.instance_id);
     if (!instance) {
       toast.error("Instância não conectada");
+      setSending(false);
+      return;
+    }
+
+    // Validação de Aquecimento de Chip (Limite Diário)
+    const chipAgeDays = (() => {
+      if (!instance.chip_connected_at) return 0;
+      const diff = Date.now() - new Date(instance.chip_connected_at).getTime();
+      return Math.floor(diff / (1000 * 60 * 60 * 24));
+    })();
+    const dailyLimit = chipAgeDays < 15 ? 20 : (chipAgeDays < 30 ? 65 : 125);
+
+    if (instance.messages_sent_today >= dailyLimit) {
+      toast.error(`Limite diário do chip atingido (${dailyLimit} msgs). Aguarde até amanhã para proteger o chip!`);
       setSending(false);
       return;
     }
@@ -504,6 +518,10 @@ export default function WhatsAppInbox() {
         direcao_ultima: "enviada",
       }).eq("id", selectedConv.id);
 
+      // Incrementar contador de disparos (Aquecimento)
+      await supabase.rpc("increment_messages_sent", { p_instance_id: instance.id });
+      setInstances(prev => prev.map(i => i.id === instance.id ? { ...i, messages_sent_today: (i.messages_sent_today || 0) + 1 } : i));
+
       setNewMessage("");
       setSelectedFile(null);
       setRecordedAudio(null);
@@ -527,6 +545,20 @@ export default function WhatsAppInbox() {
     const instance = instances.find((i) => i.id === selectedConv.instance_id);
     if (!instance) {
       toast.error("Instância não conectada");
+      setSending(false);
+      return;
+    }
+
+    // Validação de Aquecimento de Chip (Limite Diário)
+    const chipAgeDays = (() => {
+      if (!instance.chip_connected_at) return 0;
+      const diff = Date.now() - new Date(instance.chip_connected_at).getTime();
+      return Math.floor(diff / (1000 * 60 * 60 * 24));
+    })();
+    const dailyLimit = chipAgeDays < 15 ? 20 : (chipAgeDays < 30 ? 65 : 125);
+
+    if (instance.messages_sent_today >= dailyLimit) {
+      toast.error(`Limite diário do chip atingido (${dailyLimit} msgs). Aguarde até amanhã para proteger o chip!`);
       setSending(false);
       return;
     }
@@ -578,6 +610,10 @@ export default function WhatsAppInbox() {
         ultima_mensagem_at: new Date().toISOString(),
         direcao_ultima: "enviada",
       }).eq("id", selectedConv.id);
+
+      // Incrementar contador de disparos (Aquecimento)
+      await supabase.rpc("increment_messages_sent", { p_instance_id: instance.id });
+      setInstances(prev => prev.map(i => i.id === instance.id ? { ...i, messages_sent_today: (i.messages_sent_today || 0) + 1 } : i));
 
       toast.success("Etapa enviada!");
       fetchConversations();
