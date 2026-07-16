@@ -310,9 +310,6 @@ export default function WhatsAppConnect() {
             <p className="text-slate-400 text-sm">Gerencie seus chips e instâncias da Evolution API</p>
           </div>
         </div>
-        <Button onClick={handleSyncWebhooks} variant="outline" className="border-slate-700 hover:bg-slate-800 text-slate-300">
-          <RefreshCw className="h-4 w-4 mr-2" /> Forçar Webhooks
-        </Button>
       </div>
 
       {/* Chips overview */}
