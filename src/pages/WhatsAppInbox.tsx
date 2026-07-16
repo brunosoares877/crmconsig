@@ -912,7 +912,7 @@ export default function WhatsAppInbox() {
         <FunnelEnrollModal 
           isOpen={isFunnelModalOpen}
           onClose={() => setIsFunnelModalOpen(false)}
-          leadId={selectedConv.lead_id || selectedConv.id}
+          leadId={selectedConv.lead_id}
           leadName={selectedConv.nome_contato}
           leadPhone={selectedConv.telefone}
           instanceId={selectedConv.instance_id}

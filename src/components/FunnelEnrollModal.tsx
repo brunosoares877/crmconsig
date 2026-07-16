@@ -13,7 +13,7 @@ import { useAuth } from "@/contexts/AuthContext";
 interface FunnelEnrollModalProps {
   isOpen: boolean;
   onClose: () => void;
-  leadId: string;
+  leadId?: string | null;
   leadName?: string;
   leadPhone: string;
   instanceId?: string;
@@ -100,7 +100,7 @@ export function FunnelEnrollModal({ isOpen, onClose, leadId, leadName, leadPhone
         const agendadoPara = new Date(Date.now() + currentDelay * 60000); // Adiciona os minutos
 
         return {
-          lead_id: leadId,
+          lead_id: leadId || null,
           instance_id: selectedInstance,
           telefone: leadPhone,
           status: "pendente",
