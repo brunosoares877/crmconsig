@@ -186,8 +186,8 @@ const Dashboard = () => {
             const amount = parseFloat(cleanAmount);
             if (!isNaN(amount)) {
               employeeSalesMap[lead.employee].totalLeadsWithAmount += 1;
-              employeeSalesMap[lead.employee].totalValue += amount;
               if (lead.status === 'concluido') {
+                employeeSalesMap[lead.employee].totalValue += amount;
                 employeeSalesMap[lead.employee].convertedSales += 1;
               }
             }

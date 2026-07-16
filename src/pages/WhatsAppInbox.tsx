@@ -6,7 +6,7 @@ import {
   MessageSquare, Send, RefreshCw, Search, Phone, CheckCheck,
   Check, Clock, AlertCircle, User, Smile, Paperclip, ArrowLeft,
   Circle, CheckCircle, MoreVertical, Archive, ExternalLink,
-  KanbanSquare, List, X, Tag, Plus, UploadCloud, ImageIcon, FileText, Film, Zap, Trash2, MessageSquarePlus
+  KanbanSquare, List, X, Tag, Plus, UploadCloud, ImageIcon, FileText, Film, Zap, Trash2, MessageSquarePlus, Settings
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
