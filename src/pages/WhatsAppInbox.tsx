@@ -73,7 +73,7 @@ const STATUS_ICONS = {
   falhou: <AlertCircle className="h-3 w-3 text-red-400" />,
 };
 
-const FUNNEL_STAGES = [
+const DEFAULT_FUNNEL_STAGES = [
   { id: "novo_contato", label: "Novo Contato", color: "border-slate-500", bg: "bg-slate-700/50" },
   { id: "em_atendimento", label: "Em Atendimento", color: "border-blue-500", bg: "bg-blue-900/40" },
   { id: "apresentacao", label: "Apresentação", color: "border-purple-500", bg: "bg-purple-900/40" },
@@ -109,12 +109,21 @@ export default function WhatsAppInbox() {
   const fetchCRMConfig = useCallback(async () => {
     if (!user) return;
     try {
-      const [tagsRes, repliesRes] = await Promise.all([
+      const [tagsRes, repliesRes, stagesRes] = await Promise.all([
         supabase.from("whatsapp_tags").select("*").eq("user_id", user.id).order("created_at", { ascending: true }),
-        supabase.from("whatsapp_quick_replies").select("*").eq("user_id", user.id).order("created_at", { ascending: true })
+        supabase.from("whatsapp_quick_replies").select("*").eq("user_id", user.id).order("created_at", { ascending: true }),
+        supabase.from("whatsapp_funnel_stages").select("*").eq("user_id", user.id)
       ]);
       if (tagsRes.data) setTags(tagsRes.data as WhatsAppTag[]);
       if (repliesRes.data) setQuickReplies(repliesRes.data as WhatsAppQuickReply[]);
+      if (stagesRes.data && stagesRes.data.length > 0) {
+        // Mesclar com os padrões
+        const mergedStages = DEFAULT_FUNNEL_STAGES.map(defaultStage => {
+          const customStage = stagesRes.data.find(s => s.stage_id === defaultStage.id);
+          return customStage ? { ...defaultStage, label: customStage.label } : defaultStage;
+        });
+        setFunnelStages(mergedStages);
+      }
     } catch (e) {
       console.error("Erro ao buscar config do CRM:", e);
     }
@@ -131,6 +140,10 @@ export default function WhatsAppInbox() {
   const [showNewContactModal, setShowNewContactModal] = useState(false);
   const [newContactPhone, setNewContactPhone] = useState("");
   const [newContactName, setNewContactName] = useState("");
+
+  const [funnelStages, setFunnelStages] = useState(DEFAULT_FUNNEL_STAGES);
+  const [editingStageId, setEditingStageId] = useState<string | null>(null);
+  const [editingStageLabel, setEditingStageLabel] = useState("");
 
   const [isFunnelModalOpen, setIsFunnelModalOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -423,16 +436,62 @@ export default function WhatsAppInbox() {
     );
   };
 
+  const handleSaveStageName = async (stageId: string) => {
+    if (!editingStageLabel.trim()) {
+      setEditingStageId(null);
+      return;
+    }
+    
+    // Atualização otimista
+    setFunnelStages(prev => prev.map(s => s.id === stageId ? { ...s, label: editingStageLabel } : s));
+    setEditingStageId(null);
+    
+    try {
+      const stageObj = DEFAULT_FUNNEL_STAGES.find(s => s.id === stageId);
+      
+      const { error } = await supabase.from("whatsapp_funnel_stages").upsert({
+        user_id: user?.id,
+        stage_id: stageId,
+        label: editingStageLabel,
+        bg: stageObj?.bg || "",
+        color: stageObj?.color || ""
+      }, { onConflict: "user_id, stage_id" });
+      
+      if (error) throw error;
+      toast.success("Nome da etapa alterado!");
+    } catch (e) {
+      console.error(e);
+      toast.error("Erro ao salvar nome da etapa");
+    }
+  };
+
   // KANBAN VIEW RENDERER
   const renderKanban = () => {
     return (
       <div className="flex-1 flex overflow-x-auto p-4 gap-4 bg-slate-950">
-        {FUNNEL_STAGES.map(stage => {
+        {funnelStages.map(stage => {
           const stageConvs = filteredConvs.filter(c => c.funnel_stage === stage.id);
           return (
             <div key={stage.id} className="flex flex-col w-72 shrink-0 bg-slate-900/60 rounded-xl border border-slate-800/50">
               <div className={`p-3 border-b-2 ${stage.color} bg-slate-800/50 rounded-t-xl flex justify-between items-center`}>
-                <h3 className="font-semibold text-slate-200 text-sm">{stage.label}</h3>
+                {editingStageId === stage.id ? (
+                  <Input 
+                    autoFocus
+                    value={editingStageLabel}
+                    onChange={e => setEditingStageLabel(e.target.value)}
+                    onBlur={() => handleSaveStageName(stage.id)}
+                    onKeyDown={e => { if(e.key === 'Enter') handleSaveStageName(stage.id); if(e.key === 'Escape') setEditingStageId(null); }}
+                    className="h-7 text-sm font-semibold bg-slate-900 border-slate-700 text-slate-200 px-2 mr-2"
+                  />
+                ) : (
+                  <h3 
+                    className="font-semibold text-slate-200 text-sm cursor-text hover:text-emerald-400 transition-colors" 
+                    onClick={() => { setEditingStageId(stage.id); setEditingStageLabel(stage.label); }}
+                    title="Clique para renomear"
+                  >
+                    {stage.label}
+                  </h3>
+                )}
                 <Badge className="bg-slate-700 text-slate-300 hover:bg-slate-700">{stageConvs.length}</Badge>
               </div>
               <div className="flex-1 overflow-y-auto p-2 space-y-2">
@@ -641,13 +700,13 @@ export default function WhatsAppInbox() {
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button size="sm" variant="outline" className="h-8 bg-slate-800 border-slate-700 text-xs text-slate-300 hover:text-white hover:bg-slate-700">
-                        Funil: {FUNNEL_STAGES.find(s => s.id === selectedConv.funnel_stage)?.label || "Novo Contato"}
+                        Funil: {funnelStages.find(s => s.id === selectedConv.funnel_stage)?.label || "Novo Contato"}
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent className="bg-slate-800 border-slate-700 text-white">
                       <DropdownMenuLabel className="text-xs text-slate-400">Alterar Etapa</DropdownMenuLabel>
                       <DropdownMenuSeparator className="bg-slate-700" />
-                      {FUNNEL_STAGES.map(stage => (
+                      {funnelStages.map(stage => (
                         <DropdownMenuItem 
                           key={stage.id} 
                           onClick={() => handleUpdateStage(selectedConv.id, stage.id)}
