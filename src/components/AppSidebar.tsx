@@ -29,8 +29,10 @@ import {
   Cog,
   Briefcase,
   FileText,
-  MessageCircle, // Add import
-  FolderOpen
+  MessageCircle,
+  FolderOpen,
+  Smartphone,
+  Inbox
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -121,6 +123,25 @@ const items = [
     url: "/settings",
     icon: Settings,
     group: "ADMINISTRAÇÃO"
+  },
+  {
+    title: "Conectar Chip",
+    url: "/whatsapp/connect",
+    icon: Smartphone,
+    group: "WHATSAPP"
+  },
+  {
+    title: "Prospecção Kanban",
+    url: "/whatsapp/prospecting",
+    icon: MessageCircle,
+    group: "WHATSAPP",
+    highlight: false
+  },
+  {
+    title: "Caixa de Entrada",
+    url: "/whatsapp/inbox",
+    icon: Inbox,
+    group: "WHATSAPP"
   },
 ];
 
