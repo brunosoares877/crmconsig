@@ -51,6 +51,8 @@ const NotFound = lazy(() => import("@/pages/NotFound"));
 const WhatsAppConnect = lazy(() => import("@/pages/WhatsAppConnect"));
 const WhatsAppProspecting = lazy(() => import("@/pages/WhatsAppProspecting"));
 const WhatsAppInbox = lazy(() => import("@/pages/WhatsAppInbox"));
+const Funnels = lazy(() => import("@/pages/Funnels"));
+const FunnelDetails = lazy(() => import("@/pages/FunnelDetails"));
 
 function App() {
   // Capturar erros globais
@@ -105,6 +107,8 @@ function App() {
                   <Route path="/whatsapp/connect" element={<ProtectedRoute><WhatsAppConnect /></ProtectedRoute>} />
                   <Route path="/whatsapp/prospecting" element={<ProtectedRoute><WhatsAppProspecting /></ProtectedRoute>} />
                   <Route path="/whatsapp/inbox" element={<ProtectedRoute><WhatsAppInbox /></ProtectedRoute>} />
+                  <Route path="/funnels" element={<ProtectedRoute><Funnels /></ProtectedRoute>} />
+                  <Route path="/funnels/:id" element={<ProtectedRoute><FunnelDetails /></ProtectedRoute>} />
 
                   {/* Rotas públicas - não requerem assinatura */}
                   <Route path="/plans" element={<Plans />} />

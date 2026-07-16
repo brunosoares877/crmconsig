@@ -25,21 +25,36 @@ serve(async (req) => {
     console.log("Webhook recebido:", event, "instância:", instance);
 
     // ── Mensagem recebida ──────────────────────────────────────────────────────
-    if (event === "messages.upsert" || event === "message") {
-      const msg = data?.message || data;
-      if (!msg) return new Response("ok", { headers: corsHeaders });
+    if (event === "messages.upsert" || event === "message" || event === "MESSAGES_UPSERT") {
+      // Evolution API pode mandar os dados diretamente no 'data', ou encapsulados dependendo da versão
+      let msgPayload = data;
+      // Se data é um array (Evolution V1 costumava mandar array), pegar o primeiro
+      if (Array.isArray(data)) msgPayload = data[0];
+      // Se veio encapsulado em message (Evolution V2 as vezes)
+      if (data?.message && data?.message?.key) msgPayload = data.message;
 
-      const fromMe = msg?.key?.fromMe || false;
+      const key = msgPayload?.key;
+      if (!key) {
+        console.warn("Payload sem key:", msgPayload);
+        return new Response("ok", { headers: corsHeaders });
+      }
+
+      const fromMe = key?.fromMe || false;
       if (fromMe) return new Response("ok", { headers: corsHeaders }); // Ignorar msgs enviadas
 
-      const phone = msg?.key?.remoteJid?.replace("@s.whatsapp.net", "").replace("@g.us", "");
+      const phone = key?.remoteJid?.replace("@s.whatsapp.net", "").replace("@g.us", "");
       if (!phone) return new Response("ok", { headers: corsHeaders });
 
+      // O conteúdo da mensagem em si
+      const msgContent = msgPayload?.message || msgPayload;
+      
+      const pushName = msgPayload?.pushName || data?.pushName || null;
+      
       const text =
-        msg?.message?.conversation ||
-        msg?.message?.extendedTextMessage?.text ||
-        msg?.message?.imageMessage?.caption ||
-        "[mídia]";
+        msgContent?.conversation ||
+        msgContent?.extendedTextMessage?.text ||
+        msgContent?.imageMessage?.caption ||
+        (msgContent?.audioMessage ? "[Áudio]" : "[mídia]");
 
       // Buscar instância pelo nome
       const { data: instanceData } = await supabase
@@ -74,6 +89,16 @@ serve(async (req) => {
         console.log(`Lead ${lead.nome} movido para Atendimento Manual`);
       }
 
+      // 🔴 INTERRUPÇÃO DO FUNIL: Cancelar mensagens pendentes do robô se o cliente respondeu
+      await supabase
+        .from("message_queue")
+        .update({ status: "cancelado", erro: "Interrompido automaticamente por resposta do cliente" })
+        .eq("telefone", phone)
+        .eq("status", "pendente")
+        .not("funnel_step_id", "is", null);
+
+      const finalContactName = lead?.nome || pushName || phone;
+
       // Buscar ou criar conversa
       let conversationId: string;
       const { data: existingConv } = await supabase
@@ -87,6 +112,7 @@ serve(async (req) => {
         await supabase
           .from("whatsapp_conversations")
           .update({
+            nome_contato: finalContactName,
             ultima_mensagem: text,
             ultima_mensagem_at: new Date().toISOString(),
             direcao_ultima: "recebida",
@@ -104,7 +130,7 @@ serve(async (req) => {
             lead_id: lead?.id || null,
             instance_id: instanceData.id,
             telefone: phone,
-            nome_contato: lead?.nome || phone,
+            nome_contato: finalContactName,
             ultima_mensagem: text,
             ultima_mensagem_at: new Date().toISOString(),
             direcao_ultima: "recebida",
@@ -121,20 +147,20 @@ serve(async (req) => {
       if (conversationId) {
         await supabase.from("whatsapp_messages").insert({
           conversation_id: conversationId,
-          evolution_message_id: msg?.key?.id,
+          evolution_message_id: key?.id,
           direcao: "recebida",
-          tipo: msg?.message?.imageMessage ? "imagem" :
-                msg?.message?.audioMessage ? "audio" :
-                msg?.message?.documentMessage ? "documento" : "texto",
+          tipo: msgContent?.imageMessage ? "imagem" :
+                msgContent?.audioMessage ? "audio" :
+                msgContent?.documentMessage ? "documento" : "texto",
           conteudo: text,
-          status: "recebido",
+          status: "entregue",
           timestamp_whatsapp: new Date().toISOString(),
         });
       }
     }
 
     // ── Status de conexão da instância ────────────────────────────────────────
-    if (event === "connection.update") {
+    if (event === "connection.update" || event === "CONNECTION_UPDATE") {
       const status = data?.state;
       const phoneNumber = data?.phoneNumber || null;
 
@@ -158,7 +184,7 @@ serve(async (req) => {
     }
 
     // ── Confirmação de envio (status da mensagem) ──────────────────────────────
-    if (event === "messages.update") {
+    if (event === "messages.update" || event === "MESSAGES_UPDATE") {
       const updates = Array.isArray(data) ? data : [data];
 
       for (const update of updates) {

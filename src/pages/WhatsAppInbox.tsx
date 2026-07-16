@@ -6,7 +6,7 @@ import {
   MessageSquare, Send, RefreshCw, Search, Phone, CheckCheck,
   Check, Clock, AlertCircle, User, Smile, Paperclip, ArrowLeft,
   Circle, CheckCircle, MoreVertical, Archive, ExternalLink,
-  KanbanSquare, List, X, Tag, Plus, UploadCloud, ImageIcon, FileText, Film, Zap, Trash2, MessageSquarePlus, Settings
+  KanbanSquare, List, X, Tag, Plus, UploadCloud, ImageIcon, FileText, Film, Zap, Trash2, MessageSquarePlus, Settings, GitMerge
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,7 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { WhatsAppCRMSettings, WhatsAppTag, WhatsAppQuickReply } from "@/components/WhatsAppCRMSettings";
+import { FunnelEnrollModal } from "@/components/FunnelEnrollModal";
 
 interface Conversation {
   id: string;
@@ -130,6 +131,8 @@ export default function WhatsAppInbox() {
   const [showNewContactModal, setShowNewContactModal] = useState(false);
   const [newContactPhone, setNewContactPhone] = useState("");
   const [newContactName, setNewContactName] = useState("");
+
+  const [isFunnelModalOpen, setIsFunnelModalOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -630,6 +633,10 @@ export default function WhatsAppInbox() {
                 </div>
 
                 <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
+                  <Button size="sm" variant="outline" className="h-8 bg-slate-800 border-slate-700 text-xs text-blue-400 hover:text-blue-300 hover:bg-slate-700" onClick={() => setIsFunnelModalOpen(true)}>
+                    <GitMerge className="h-3.5 w-3.5 mr-1.5" /> Inscrever no Funil
+                  </Button>
+
                   {/* Dropdown de Funil */}
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -841,6 +848,16 @@ export default function WhatsAppInbox() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      
+      {selectedConv && (
+        <FunnelEnrollModal 
+          isOpen={isFunnelModalOpen}
+          onClose={() => setIsFunnelModalOpen(false)}
+          leadId={selectedConv.lead_id || selectedConv.id}
+          leadName={selectedConv.nome_contato}
+          leadPhone={selectedConv.telefone}
+        />
+      )}
 
       <WhatsAppCRMSettings 
         open={showSettings} 

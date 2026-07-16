@@ -91,7 +91,8 @@ serve(async (req) => {
           *,
           prospecting_leads(*),
           message_campaigns(*),
-          whatsapp_instances(*)
+          whatsapp_instances(*),
+          whatsapp_funnel_steps(*)
         `)
         .eq("id", queue_id)
         .eq("status", "pendente")
@@ -112,7 +113,8 @@ serve(async (req) => {
           *,
           prospecting_leads(*),
           message_campaigns(*),
-          whatsapp_instances(*)
+          whatsapp_instances(*),
+          whatsapp_funnel_steps(*)
         `)
         .eq("status", "pendente")
         .lte("agendado_para", new Date().toISOString())
@@ -160,10 +162,14 @@ serve(async (req) => {
       .eq("id", queueItem.id);
 
     // Gerar mensagem com Spintax + variáveis do lead
-    const templateRaw =
-      queueItem.numero_sequencia === 1
+    let templateRaw = "";
+    if (queueItem.whatsapp_funnel_steps) {
+      templateRaw = queueItem.whatsapp_funnel_steps.mensagem_template;
+    } else if (campaign) {
+      templateRaw = queueItem.numero_sequencia === 1
         ? campaign.template_msg1
         : campaign.template_msg2 || campaign.template_msg1;
+    }
 
     const mensagemGerada = interpolate(processSpintax(templateRaw), {
       nome: lead.nome?.split(" ")[0] || "",
@@ -193,17 +199,22 @@ serve(async (req) => {
         .eq("id", queueItem.id);
 
       // Atualizar lead no Kanban
+      const leadUpdate: any = {
+        kanban_status: "mensagem_enviada",
+        ultima_mensagem_at: new Date().toISOString(),
+        mensagens_enviadas: (lead.mensagens_enviadas || 0) + 1,
+      };
+
+      // Se for a campanha antiga, faz o agendamento automático do passo 2
+      if (!queueItem.funnel_step_id && campaign) {
+        leadUpdate.proxima_mensagem_at = new Date(
+          Date.now() + randomDelay(campaign.delay_min_segundos, campaign.delay_max_segundos)
+        ).toISOString();
+      }
+
       await supabase
         .from("prospecting_leads")
-        .update({
-          kanban_status: "mensagem_enviada",
-          ultima_mensagem_at: new Date().toISOString(),
-          mensagens_enviadas: (lead.mensagens_enviadas || 0) + 1,
-          // Agendar próxima mensagem com delay aleatório
-          proxima_mensagem_at: new Date(
-            Date.now() + randomDelay(campaign.delay_min_segundos, campaign.delay_max_segundos)
-          ).toISOString(),
-        })
+        .update(leadUpdate)
         .eq("id", lead.id);
 
       // Incrementar contador do chip

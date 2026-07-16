@@ -3,7 +3,6 @@ import { Client } from 'ssh2';
 const conn = new Client();
 
 const commands = `
-echo "=== Atualizando Docker Compose para usar PostgreSQL ==="
 cat > /opt/evolution/docker-compose.yml << 'DOCKEREOF'
 version: '3.8'
 services:
@@ -35,21 +34,20 @@ services:
       DATABASE_PROVIDER: postgresql
       DATABASE_CONNECTION_URI: postgresql://evolution:evolutionpassword@postgres:5432/evolution?schema=public
       QRCODE_LIMIT: 30
-      LOG_LEVEL: ERROR
+      LOG_LEVEL: DEBUG
       WEBHOOK_GLOBAL_ENABLED: "true"
+      WEBHOOK_GLOBAL_BASE64: "true"
+      WEBHOOK_BASE64: "true"
+      CACHE_REDIS_ENABLED: "false"
+      CACHE_LOCAL_ENABLED: "true"
+      RABBITMQ_ENABLED: "false"
+      WEBSOCKET_ENABLED: "false"
     volumes:
       - ./evolution_instances:/evolution/instances
 DOCKEREOF
 
 cd /opt/evolution
-docker compose down
 docker compose up -d
-
-echo "=== Aguardando inicialização ==="
-sleep 15
-docker ps
-echo "=== Testando API ==="
-curl -s http://localhost:8080/ | head -c 100
 `;
 
 conn.on('ready', () => {

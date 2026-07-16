@@ -32,7 +32,8 @@ import {
   MessageCircle,
   FolderOpen,
   Smartphone,
-  Inbox
+  Inbox,
+  GitMerge
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -143,6 +144,12 @@ const items = [
     icon: Inbox,
     group: "WHATSAPP"
   },
+  {
+    title: "Funis de Cadência",
+    url: "/funnels",
+    icon: GitMerge,
+    group: "WHATSAPP"
+  }
 ];
 
 // Agrupa os itens por grupo
