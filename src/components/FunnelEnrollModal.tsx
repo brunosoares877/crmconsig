@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { GitMerge, Loader2 } from "lucide-react";
 import { Funnel } from "@/pages/Funnels";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface FunnelEnrollModalProps {
   isOpen: boolean;
@@ -19,6 +20,7 @@ interface FunnelEnrollModalProps {
 }
 
 export function FunnelEnrollModal({ isOpen, onClose, leadId, leadName, leadPhone, instanceId }: FunnelEnrollModalProps) {
+  const { user } = useAuth();
   const [funnels, setFunnels] = useState<Funnel[]>([]);
   const [selectedFunnel, setSelectedFunnel] = useState<string>("");
   const [instances, setInstances] = useState<any[]>([]);
@@ -104,7 +106,8 @@ export function FunnelEnrollModal({ isOpen, onClose, leadId, leadName, leadPhone
           status: "pendente",
           agendado_para: agendadoPara.toISOString(),
           funnel_step_id: step.id,
-          numero_sequencia: step.ordem_etapa
+          numero_sequencia: step.ordem_etapa,
+          user_id: user?.id
         };
       });
 
