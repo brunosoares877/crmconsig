@@ -100,6 +100,42 @@ export default function WhatsAppConnect() {
     return () => clearInterval(interval);
   }, [fetchInstances]);
 
+  const handleSyncWebhooks = async () => {
+    if (instances.length === 0) {
+      toast.info("Nenhuma instância para sincronizar");
+      return;
+    }
+    const toastId = toast.loading("Sincronizando webhooks das instâncias...");
+    
+    let sucessos = 0;
+    for (const inst of instances) {
+      try {
+        const evolutionUrl = inst.evolution_api_url.replace(/\/$/, "");
+        await fetch(`${evolutionUrl}/webhook/set/${inst.instance_name}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: inst.api_key,
+          },
+          body: JSON.stringify({
+            webhook: {
+              enabled: true,
+              url: "https://wjljrytblpsnzjwvugqg.supabase.co/functions/v1/whatsapp-webhook",
+              byEvents: false,
+              base64: false,
+              events: ["MESSAGES_UPSERT", "MESSAGES_UPDATE", "CONNECTION_UPDATE"]
+            }
+          })
+        });
+        sucessos++;
+      } catch (err) {
+        console.error("Erro na inst: ", inst.instance_name, err);
+      }
+    }
+    
+    toast.success(`${sucessos} webhooks sincronizados com sucesso!`, { id: toastId });
+  };
+
   const handleCreate = async () => {
     if (!user) return;
     if (!form.instance_name || !form.api_key) {
@@ -264,8 +300,8 @@ export default function WhatsAppConnect() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 p-6">
       {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center gap-3 mb-2">
+      <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center shadow-lg shadow-emerald-500/30">
             <Smartphone className="h-5 w-5 text-white" />
           </div>
@@ -274,6 +310,9 @@ export default function WhatsAppConnect() {
             <p className="text-slate-400 text-sm">Gerencie seus chips e instâncias da Evolution API</p>
           </div>
         </div>
+        <Button onClick={handleSyncWebhooks} variant="outline" className="border-slate-700 hover:bg-slate-800 text-slate-300">
+          <RefreshCw className="h-4 w-4 mr-2" /> Forçar Webhooks
+        </Button>
       </div>
 
       {/* Chips overview */}
