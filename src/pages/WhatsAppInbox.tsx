@@ -21,6 +21,11 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
   DropdownMenuLabel,
+  DropdownMenuGroup,
+  DropdownMenuPortal,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -43,6 +48,22 @@ interface Conversation {
   tags: string[];
   instance_id: string;
   whatsapp_instances?: { instance_name: string };
+}
+
+interface FunnelStep {
+  id: string;
+  funnel_id: string;
+  ordem_etapa: number;
+  mensagem_template: string;
+  tipo_midia: string | null;
+  media_url: string | null;
+}
+
+interface Funnel {
+  id: string;
+  nome: string;
+  descricao: string;
+  steps?: FunnelStep[];
 }
 
 interface Message {
@@ -97,6 +118,7 @@ export default function WhatsAppInbox() {
   
   const [tags, setTags] = useState<WhatsAppTag[]>([]);
   const [quickReplies, setQuickReplies] = useState<WhatsAppQuickReply[]>([]);
+  const [funnels, setFunnels] = useState<Funnel[]>([]);
   const [showSettings, setShowSettings] = useState(false);
   const [selectedInstanceFilter, setSelectedInstanceFilter] = useState<string>("all");
   
@@ -122,6 +144,18 @@ export default function WhatsAppInbox() {
           return customStage ? { ...defaultStage, label: customStage.label } : defaultStage;
         });
         setFunnelStages(mergedStages);
+      }
+
+      // Buscar funis para disparo manual
+      const { data: funnelsData } = await supabase.from("whatsapp_funnels").select("*").eq("user_id", user.id).order("created_at", { ascending: true });
+      const { data: stepsData } = await supabase.from("whatsapp_funnel_steps").select("*").order("ordem_etapa", { ascending: true });
+      
+      if (funnelsData && stepsData) {
+        const funnelsWithSteps = funnelsData.map(f => ({
+          ...f,
+          steps: stepsData.filter(s => s.funnel_id === f.id)
+        }));
+        setFunnels(funnelsWithSteps);
       }
     } catch (e) {
       console.error("Erro ao buscar config do CRM:", e);
@@ -476,6 +510,79 @@ export default function WhatsAppInbox() {
       fetchConversations();
     } catch (err: any) {
       toast.error("Erro ao enviar: " + (err.message || "Desconhecido"));
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const handleSendManualFunnelStep = async (step: FunnelStep) => {
+    if (!step.tipo_midia || step.tipo_midia === "texto") {
+      setNewMessage(prev => prev + (prev ? " " : "") + step.mensagem_template);
+      return;
+    }
+
+    if (!selectedConv || !user) return;
+    setSending(true);
+
+    const instance = instances.find((i) => i.id === selectedConv.instance_id);
+    if (!instance) {
+      toast.error("Instância não conectada");
+      setSending(false);
+      return;
+    }
+
+    const digits = selectedConv.telefone.replace(/\D/g, "");
+    const normalized = digits.startsWith("55") ? digits : `55${digits}`;
+
+    try {
+      let result;
+      let endpoint = `/message/sendMedia/${instance.instance_name}`;
+      let body: any = {
+        number: normalized,
+        delay: 1000
+      };
+
+      if (step.tipo_midia === "audio") {
+        endpoint = `/message/sendWhatsAppAudio/${instance.instance_name}`;
+        body.audio = step.media_url;
+      } else {
+        body.media = step.media_url;
+        body.mediatype = step.tipo_midia === "video" ? "video" : "image";
+        body.caption = step.mensagem_template || "";
+      }
+
+      const response = await fetch(`${instance.evolution_api_url.replace(/\/$/, "")}${endpoint}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", apikey: instance.api_key },
+        body: JSON.stringify(body),
+      });
+
+      if (!response.ok) throw new Error(`Falha ao enviar ${step.tipo_midia}`);
+      result = await response.json();
+
+      const { data: savedMsg } = await supabase.from("whatsapp_messages").insert({
+        conversation_id: selectedConv.id,
+        evolution_message_id: result?.key?.id || result?.messageId,
+        direcao: "enviada",
+        tipo: step.tipo_midia,
+        conteudo: step.mensagem_template || (step.tipo_midia === "audio" ? "Áudio enviado do funil" : "Mídia do funil"),
+        media_url: step.media_url,
+        status: "enviado",
+        timestamp_whatsapp: new Date().toISOString(),
+      }).select().single();
+
+      if (savedMsg) setMessages((prev) => [...prev, savedMsg as Message]);
+
+      await supabase.from("whatsapp_conversations").update({
+        ultima_mensagem: step.mensagem_template || (step.tipo_midia === "audio" ? "Áudio enviado do funil" : "Mídia do funil"),
+        ultima_mensagem_at: new Date().toISOString(),
+        direcao_ultima: "enviada",
+      }).eq("id", selectedConv.id);
+
+      toast.success("Etapa enviada!");
+      fetchConversations();
+    } catch (err: any) {
+      toast.error("Erro ao enviar etapa: " + (err.message || "Desconhecido"));
     } finally {
       setSending(false);
     }
@@ -940,6 +1047,48 @@ export default function WhatsAppInbox() {
                           <span className="text-slate-300 line-clamp-2">{reply.text}</span>
                         </DropdownMenuItem>
                       ))}
+                      
+                      {funnels.length > 0 && (
+                        <>
+                          <DropdownMenuSeparator className="bg-slate-700 mt-2" />
+                          <DropdownMenuLabel className="text-xs text-slate-400">Funis Manuais</DropdownMenuLabel>
+                          <DropdownMenuSeparator className="bg-slate-700" />
+                          {funnels.map(funnel => (
+                            <DropdownMenuSub key={funnel.id}>
+                              <DropdownMenuSubTrigger className="text-xs cursor-pointer hover:bg-slate-700/50 flex justify-between p-2">
+                                <span className="font-semibold text-amber-400">{funnel.nome}</span>
+                              </DropdownMenuSubTrigger>
+                              <DropdownMenuPortal>
+                                <DropdownMenuSubContent className="bg-slate-800 border-slate-700 text-white w-64 shadow-xl">
+                                  <DropdownMenuLabel className="text-xs text-slate-400">Etapas: {funnel.nome}</DropdownMenuLabel>
+                                  <DropdownMenuSeparator className="bg-slate-700" />
+                                  {funnel.steps && funnel.steps.length > 0 ? (
+                                    funnel.steps.map(step => (
+                                      <DropdownMenuItem 
+                                        key={step.id}
+                                        onClick={() => handleSendManualFunnelStep(step)}
+                                        className="text-xs cursor-pointer hover:bg-slate-700/50 flex items-start gap-2 p-2"
+                                      >
+                                        <div className="mt-0.5 opacity-70">
+                                          {step.tipo_midia === "audio" ? <Mic className="w-3 h-3 text-blue-400" /> : 
+                                           step.tipo_midia === "imagem" || step.tipo_midia === "video" ? <ImageIcon className="w-3 h-3 text-emerald-400" /> : 
+                                           <FileText className="w-3 h-3 text-slate-300" />}
+                                        </div>
+                                        <div className="flex flex-col">
+                                          <span className="font-semibold">Etapa {step.ordem_etapa}</span>
+                                          <span className="text-slate-400 line-clamp-1">{step.mensagem_template || `Mídia: ${step.tipo_midia}`}</span>
+                                        </div>
+                                      </DropdownMenuItem>
+                                    ))
+                                  ) : (
+                                    <div className="p-2 text-xs text-slate-500">Nenhuma etapa cadastrada.</div>
+                                  )}
+                                </DropdownMenuSubContent>
+                              </DropdownMenuPortal>
+                            </DropdownMenuSub>
+                          ))}
+                        </>
+                      )}
                     </DropdownMenuContent>
                   </DropdownMenu>
 
