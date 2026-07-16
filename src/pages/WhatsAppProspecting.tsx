@@ -383,19 +383,20 @@ function CampaignModal({
 }) {
   return (
     <Dialog open={open} onOpenChange={(val) => !val && onClose()}>
-      <DialogContent className="bg-slate-900 border-slate-700 text-white sm:max-w-[500px]">
+      <DialogContent className="bg-slate-900 border-slate-700 text-white sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Send className="h-5 w-5 text-indigo-400" />
-            Configurar Disparo em Massa
+            Configuração Anti-Ban (Disparo em Massa)
           </DialogTitle>
           <DialogDescription className="text-slate-400">
-            Configure o limite e os textos (spintax) para evitar bloqueios.
+            Configure o intervalo de tempo humano e defina múltiplas variações de mensagens.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-2">
-          <div className="grid grid-cols-3 gap-4">
+        <div className="space-y-6 py-2">
+          {/* Quantidade e Delays */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <Label className="text-slate-300 text-xs">Quantidade</Label>
               <Input
@@ -406,39 +407,112 @@ function CampaignModal({
               />
             </div>
             <div>
-              <Label className="text-slate-300 text-xs">Delay Mín. (s)</Label>
-              <Input
-                type="number"
-                value={settings.delayMin}
-                onChange={(e) => setSettings({ ...settings, delayMin: e.target.value })}
-                className="mt-1 bg-slate-800 border-slate-600 text-white text-xs h-8"
-              />
+              <Label className="text-slate-300 text-xs">Aguardar (Mínimo)</Label>
+              <div className="flex gap-2 mt-1">
+                <div className="flex items-center gap-1">
+                  <Input
+                    type="number"
+                    value={settings.delayMinMins}
+                    onChange={(e) => setSettings({ ...settings, delayMinMins: e.target.value })}
+                    className="w-14 bg-slate-800 border-slate-600 text-white text-xs h-8 px-2 text-center"
+                  />
+                  <span className="text-xs text-slate-500">m</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Input
+                    type="number"
+                    value={settings.delayMinSecs}
+                    onChange={(e) => setSettings({ ...settings, delayMinSecs: e.target.value })}
+                    className="w-14 bg-slate-800 border-slate-600 text-white text-xs h-8 px-2 text-center"
+                  />
+                  <span className="text-xs text-slate-500">s</span>
+                </div>
+              </div>
             </div>
             <div>
-              <Label className="text-slate-300 text-xs">Delay Máx. (s)</Label>
-              <Input
-                type="number"
-                value={settings.delayMax}
-                onChange={(e) => setSettings({ ...settings, delayMax: e.target.value })}
-                className="mt-1 bg-slate-800 border-slate-600 text-white text-xs h-8"
-              />
+              <Label className="text-slate-300 text-xs">Aguardar (Máximo)</Label>
+              <div className="flex gap-2 mt-1">
+                <div className="flex items-center gap-1">
+                  <Input
+                    type="number"
+                    value={settings.delayMaxMins}
+                    onChange={(e) => setSettings({ ...settings, delayMaxMins: e.target.value })}
+                    className="w-14 bg-slate-800 border-slate-600 text-white text-xs h-8 px-2 text-center"
+                  />
+                  <span className="text-xs text-slate-500">m</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Input
+                    type="number"
+                    value={settings.delayMaxSecs}
+                    onChange={(e) => setSettings({ ...settings, delayMaxSecs: e.target.value })}
+                    className="w-14 bg-slate-800 border-slate-600 text-white text-xs h-8 px-2 text-center"
+                  />
+                  <span className="text-xs text-slate-500">s</span>
+                </div>
+              </div>
             </div>
           </div>
 
-          <div>
-            <Label className="text-slate-300 text-xs">Mensagem (Use {'{nome}'} e Spintax: {'Olá|Oi'})</Label>
-            <Textarea
-              value={settings.message}
-              onChange={(e) => setSettings({ ...settings, message: e.target.value })}
-              className="mt-1 bg-slate-800 border-slate-600 text-white font-mono text-xs min-h-[100px]"
-            />
+          {/* Dicas de Tags */}
+          <div className="bg-slate-800/50 border border-slate-700/50 rounded-lg p-3 text-xs text-slate-400">
+            <p className="font-semibold text-slate-300 mb-1">💡 Tags Inteligentes (Copie e cole):</p>
+            <ul className="list-disc pl-4 space-y-1">
+              <li><code className="text-emerald-400">{'{nome}'}</code> = Primeiro nome (Ex: João)</li>
+              <li><code className="text-emerald-400">{'{nome_completo}'}</code> = Nome todo (Ex: João Silva)</li>
+              <li><code className="text-emerald-400">{'{saudacao}'}</code> = Bom dia / Boa tarde / Boa noite (Automático!)</li>
+              <li><code className="text-emerald-400">{'Oi|Olá|Opa'}</code> = Sorteia uma das 3 palavras (Spintax)</li>
+            </ul>
+          </div>
+
+          {/* Mensagens */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <Label className="text-slate-300 text-sm font-semibold">Variações de Mensagem</Label>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setSettings({ ...settings, messages: [...settings.messages, ""] })}
+                className="h-7 text-xs bg-slate-800 border-slate-600 text-slate-300 hover:text-white"
+              >
+                <Plus className="h-3 w-3 mr-1" /> Adicionar Variação
+              </Button>
+            </div>
+            
+            {settings.messages.map((msg: string, idx: number) => (
+              <div key={idx} className="relative">
+                <Textarea
+                  value={msg}
+                  onChange={(e) => {
+                    const newMessages = [...settings.messages];
+                    newMessages[idx] = e.target.value;
+                    setSettings({ ...settings, messages: newMessages });
+                  }}
+                  placeholder={`Variação ${idx + 1}...`}
+                  className="bg-slate-800 border-slate-600 text-white text-sm min-h-[80px] pr-10"
+                />
+                {settings.messages.length > 1 && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute top-2 right-2 h-6 w-6 text-slate-500 hover:text-red-400"
+                    onClick={() => {
+                      const newMessages = settings.messages.filter((_: any, i: number) => i !== idx);
+                      setSettings({ ...settings, messages: newMessages });
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            ))}
           </div>
         </div>
 
         <DialogFooter>
           <Button variant="ghost" onClick={onClose} className="text-slate-400">Cancelar</Button>
           <Button onClick={onStart} className="bg-indigo-600 hover:bg-indigo-700">
-            <Play className="h-4 w-4 mr-2" /> Iniciar
+            <Play className="h-4 w-4 mr-2" /> Iniciar Disparo
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -459,7 +533,12 @@ export default function WhatsAppProspecting() {
   const [validating, setValidating] = useState(false);
   const [validationProgress, setValidationProgress] = useState({ current: 0, total: 0 });
   const [showCampaign, setShowCampaign] = useState(false);
-  const [campaignSettings, setCampaignSettings] = useState({ limit: "50", delayMin: "20", delayMax: "45", message: "Olá {nome}, tudo bem?" });
+  const [campaignSettings, setCampaignSettings] = useState({ 
+    limit: "50", 
+    delayMinMins: "0", delayMinSecs: "20", 
+    delayMaxMins: "0", delayMaxSecs: "45", 
+    messages: ["Olá {saudacao} {nome}, tudo bem?"] 
+  });
   const [sending, setSending] = useState(false);
   const [sendProgress, setSendProgress] = useState({ current: 0, total: 0 });
 
@@ -591,20 +670,46 @@ export default function WhatsAppProspecting() {
       const lead = toSend[i];
       if (!lead.tel_valido) continue;
       
-      const delay = Math.floor(Math.random() * (parseInt(campaignSettings.delayMax) - parseInt(campaignSettings.delayMin) + 1) + parseInt(campaignSettings.delayMin)) * 1000;
+      const minSecs = (parseInt(campaignSettings.delayMinMins) * 60) + parseInt(campaignSettings.delayMinSecs);
+      const maxSecs = (parseInt(campaignSettings.delayMaxMins) * 60) + parseInt(campaignSettings.delayMaxSecs);
       
+      let delaySecs = minSecs;
+      if (maxSecs > minSecs) {
+        delaySecs = Math.floor(Math.random() * (maxSecs - minSecs + 1)) + minSecs;
+      }
+      const delay = delaySecs * 1000;
+      
+      const getSaudacao = () => {
+        const h = new Date().getHours();
+        if (h < 12) return "Bom dia";
+        if (h < 18) return "Boa tarde";
+        return "Boa noite";
+      };
+
       const spintax = (text: string) => {
-        return text.replace(/\{([^{}]+)\}/g, (match, p1) => {
-          if (p1.toLowerCase() === "nome") {
+        let result = text.replace(/\{([^{}]+)\}/gi, (match, p1) => {
+          const tag = p1.toLowerCase();
+          if (tag === "nome") {
             const firstName = lead.nome ? lead.nome.split(" ")[0] : "Cliente";
             return firstName.charAt(0).toUpperCase() + firstName.slice(1).toLowerCase();
           }
+          if (tag === "nome_completo") {
+            return lead.nome || "Cliente";
+          }
+          if (tag === "saudacao") {
+            return getSaudacao();
+          }
           const parts = p1.split("|");
-          return parts[Math.floor(Math.random() * parts.length)];
+          if (parts.length > 1) {
+            return parts[Math.floor(Math.random() * parts.length)];
+          }
+          return match;
         });
+        return result;
       };
 
-      const finalMessage = spintax(campaignSettings.message);
+      const template = campaignSettings.messages[Math.floor(Math.random() * campaignSettings.messages.length)] || "";
+      const finalMessage = spintax(template);
       
       try {
         const evolutionUrl = inst.evolution_api_url.replace(/\/$/, "");
