@@ -117,13 +117,23 @@ export default function WhatsAppInbox() {
         funnel_stage: c.funnel_stage || 'novo_contato'
       }));
       setConversations(processed as Conversation[]);
-      if (selectedConv) {
-        const updatedSelected = processed.find(c => c.id === selectedConv.id);
-        if (updatedSelected) setSelectedConv(updatedSelected as Conversation);
-      }
+      
+      // Atualizar o selectedConv sem causar loop infinito
+      setSelectedConv(prev => {
+        if (!prev) return null;
+        const updatedSelected = processed.find(c => c.id === prev.id);
+        if (updatedSelected) {
+          // Se for idêntico, retorna o prev para evitar re-render desnecessário
+          if (JSON.stringify(prev) === JSON.stringify(updatedSelected)) {
+            return prev;
+          }
+          return updatedSelected as Conversation;
+        }
+        return prev;
+      });
     }
     setLoading(false);
-  }, [user, selectedConv]);
+  }, [user]);
 
   const fetchInstances = useCallback(async () => {
     if (!user) return;
