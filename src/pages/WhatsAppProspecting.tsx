@@ -367,6 +367,85 @@ function ImportLeadsModal({
   );
 }
 
+// ─── Campaign Modal ────────────────────────────────────────────────────────────
+function CampaignModal({
+  open,
+  onClose,
+  onStart,
+  settings,
+  setSettings
+}: {
+  open: boolean;
+  onClose: () => void;
+  onStart: () => void;
+  settings: any;
+  setSettings: any;
+}) {
+  return (
+    <Dialog open={open} onOpenChange={(val) => !val && onClose()}>
+      <DialogContent className="bg-slate-900 border-slate-700 text-white sm:max-w-[500px]">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Send className="h-5 w-5 text-indigo-400" />
+            Configurar Disparo em Massa
+          </DialogTitle>
+          <DialogDescription className="text-slate-400">
+            Configure o limite e os textos (spintax) para evitar bloqueios.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4 py-2">
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <Label className="text-slate-300 text-xs">Quantidade</Label>
+              <Input
+                type="number"
+                value={settings.limit}
+                onChange={(e) => setSettings({ ...settings, limit: e.target.value })}
+                className="mt-1 bg-slate-800 border-slate-600 text-white text-xs h-8"
+              />
+            </div>
+            <div>
+              <Label className="text-slate-300 text-xs">Delay Mín. (s)</Label>
+              <Input
+                type="number"
+                value={settings.delayMin}
+                onChange={(e) => setSettings({ ...settings, delayMin: e.target.value })}
+                className="mt-1 bg-slate-800 border-slate-600 text-white text-xs h-8"
+              />
+            </div>
+            <div>
+              <Label className="text-slate-300 text-xs">Delay Máx. (s)</Label>
+              <Input
+                type="number"
+                value={settings.delayMax}
+                onChange={(e) => setSettings({ ...settings, delayMax: e.target.value })}
+                className="mt-1 bg-slate-800 border-slate-600 text-white text-xs h-8"
+              />
+            </div>
+          </div>
+
+          <div>
+            <Label className="text-slate-300 text-xs">Mensagem (Use {'{nome}'} e Spintax: {'Olá|Oi'})</Label>
+            <Textarea
+              value={settings.message}
+              onChange={(e) => setSettings({ ...settings, message: e.target.value })}
+              className="mt-1 bg-slate-800 border-slate-600 text-white font-mono text-xs min-h-[100px]"
+            />
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="ghost" onClick={onClose} className="text-slate-400">Cancelar</Button>
+          <Button onClick={onStart} className="bg-indigo-600 hover:bg-indigo-700">
+            <Play className="h-4 w-4 mr-2" /> Iniciar
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // ─── Página principal ──────────────────────────────────────────────────────────
 export default function WhatsAppProspecting() {
   const { user } = useAuth();
@@ -379,6 +458,10 @@ export default function WhatsAppProspecting() {
   const [selectedInstance, setSelectedInstance] = useState<string>("");
   const [validating, setValidating] = useState(false);
   const [validationProgress, setValidationProgress] = useState({ current: 0, total: 0 });
+  const [showCampaign, setShowCampaign] = useState(false);
+  const [campaignSettings, setCampaignSettings] = useState({ limit: "50", delayMin: "20", delayMax: "45", message: "Olá {nome}, tudo bem?" });
+  const [sending, setSending] = useState(false);
+  const [sendProgress, setSendProgress] = useState({ current: 0, total: 0 });
 
   const fetchData = useCallback(async () => {
     if (!user) return;
@@ -485,6 +568,130 @@ export default function WhatsAppProspecting() {
     }
   };
 
+  const handleStartCampaign = async () => {
+    if (!selectedInstance) { toast.error("Selecione uma instância conectada"); return; }
+    const inst = instances.find(i => i.id === selectedInstance);
+    if (!inst) return;
+
+    const leadsFila = leads.filter(l => l.kanban_status === "fila_disparo");
+    const limit = parseInt(campaignSettings.limit);
+    const toSend = leadsFila.slice(0, limit);
+
+    if (toSend.length === 0) {
+      toast.error("Nenhum lead na Fila de Disparo");
+      return;
+    }
+
+    setSending(true);
+    setShowCampaign(false);
+    setSendProgress({ current: 0, total: toSend.length });
+    let successCount = 0;
+
+    for (let i = 0; i < toSend.length; i++) {
+      const lead = toSend[i];
+      if (!lead.tel_valido) continue;
+      
+      const delay = Math.floor(Math.random() * (parseInt(campaignSettings.delayMax) - parseInt(campaignSettings.delayMin) + 1) + parseInt(campaignSettings.delayMin)) * 1000;
+      
+      const spintax = (text: string) => {
+        return text.replace(/\{([^{}]+)\}/g, (match, p1) => {
+          if (p1.toLowerCase() === "nome") {
+            const firstName = lead.nome ? lead.nome.split(" ")[0] : "Cliente";
+            return firstName.charAt(0).toUpperCase() + firstName.slice(1).toLowerCase();
+          }
+          const parts = p1.split("|");
+          return parts[Math.floor(Math.random() * parts.length)];
+        });
+      };
+
+      const finalMessage = spintax(campaignSettings.message);
+      
+      try {
+        const evolutionUrl = inst.evolution_api_url.replace(/\/$/, "");
+        const res = await fetch(`${evolutionUrl}/message/sendText/${inst.instance_name}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", apikey: inst.api_key },
+          body: JSON.stringify({
+            number: lead.tel_valido.startsWith("55") ? lead.tel_valido : `55${lead.tel_valido}`,
+            text: finalMessage,
+            delay: 1500
+          })
+        });
+
+        if (res.ok || res.status === 201) {
+          successCount++;
+          await supabase.from("prospecting_leads").update({
+            kanban_status: "mensagem_enviada",
+            mensagens_enviadas: (lead.mensagens_enviadas || 0) + 1,
+            ultima_mensagem_at: new Date().toISOString()
+          }).eq("id", lead.id);
+
+          // Salvar na Caixa de Entrada também
+          try {
+            const phoneStr = lead.tel_valido.startsWith("55") ? lead.tel_valido : `55${lead.tel_valido}`;
+            const jidStr = `${phoneStr}@s.whatsapp.net`;
+
+            // Tenta achar com ou sem o @s.whatsapp.net
+            let { data: conv } = await supabase.from("whatsapp_conversations")
+              .select("id")
+              .eq("instance_id", inst.id)
+              .or(`telefone.eq.${phoneStr},telefone.eq.${jidStr}`)
+              .limit(1)
+              .maybeSingle();
+            
+            let convId = conv?.id;
+            if (!convId && user) {
+              const { data: newConv } = await supabase.from("whatsapp_conversations").insert({
+                user_id: user.id,
+                instance_id: inst.id,
+                telefone: jidStr, // Padronizar com @s.whatsapp.net para o webhook achar depois
+                nome_contato: lead.nome,
+                nao_lidas: 0,
+                status: "aberta",
+                ultima_mensagem: finalMessage,
+                ultima_mensagem_at: new Date().toISOString(),
+                direcao_ultima: "enviada"
+              }).select("id").single();
+              convId = newConv?.id;
+            } else if (convId) {
+              await supabase.from("whatsapp_conversations").update({
+                ultima_mensagem: finalMessage,
+                ultima_mensagem_at: new Date().toISOString(),
+                direcao_ultima: "enviada"
+              }).eq("id", convId);
+            }
+
+            if (convId) {
+              await supabase.from("whatsapp_messages").insert({
+                conversation_id: convId,
+                direcao: "enviada",
+                tipo: "texto",
+                conteudo: finalMessage,
+                status: "enviado",
+                timestamp_whatsapp: new Date().toISOString()
+              });
+            }
+          } catch(err) {
+            console.error("Erro ao salvar na inbox:", err);
+          }
+        } else {
+          console.error("Erro no envio API:", await res.text());
+        }
+      } catch (e) {
+        console.error("Erro ao enviar mensagem", e);
+      }
+      
+      setSendProgress(prev => ({ ...prev, current: i + 1 }));
+      if (i < toSend.length - 1) {
+        await new Promise(r => setTimeout(r, delay));
+      }
+    }
+
+    toast.success(`Disparo concluído: ${successCount} enviadas!`);
+    setSending(false);
+    fetchData();
+  };
+
   const filteredLeads = leads.filter((l) =>
     !search ||
     l.nome?.toLowerCase().includes(search.toLowerCase()) ||
@@ -541,6 +748,17 @@ export default function WhatsAppProspecting() {
               <Trash2 className="h-3.5 w-3.5 mr-1.5" /> Limpar Tudo
             </Button>
 
+            {/* Disparar */}
+            <Button
+              size="sm"
+              onClick={() => setShowCampaign(true)}
+              disabled={sending || validating || !selectedInstance}
+              className="bg-purple-600 hover:bg-purple-700 text-white text-xs h-8"
+            >
+              {sending ? <RefreshCw className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <Send className="h-3.5 w-3.5 mr-1.5" />}
+              {sending ? "Enviando..." : "Disparar Lote"}
+            </Button>
+
             {/* Validar lote */}
             <Button
               size="sm"
@@ -563,12 +781,21 @@ export default function WhatsAppProspecting() {
           </div>
         </div>
 
-        {/* Progress Bar */}
-        {validating && validationProgress.total > 0 && (
+        {/* Progress Bar (Validation or Sending) */}
+        {(validating && validationProgress.total > 0) && (
           <div className="absolute bottom-0 left-0 w-full bg-slate-800 h-1">
             <div 
-              className="bg-emerald-500 h-1 transition-all duration-300 ease-out shadow-[0_0_10px_rgba(16,185,129,0.5)]" 
+              className="bg-amber-500 h-1 transition-all duration-300 ease-out shadow-[0_0_10px_rgba(245,158,11,0.5)]" 
               style={{ width: `${(validationProgress.current / validationProgress.total) * 100}%` }}
+            />
+          </div>
+        )}
+        
+        {(sending && sendProgress.total > 0) && (
+          <div className="absolute bottom-0 left-0 w-full bg-slate-800 h-1">
+            <div 
+              className="bg-purple-500 h-1 transition-all duration-300 ease-out shadow-[0_0_10px_rgba(168,85,247,0.5)]" 
+              style={{ width: `${(sendProgress.current / sendProgress.total) * 100}%` }}
             />
           </div>
         )}
@@ -639,11 +866,21 @@ export default function WhatsAppProspecting() {
         </div>
       </div>
 
-      {/* Import Modal */}
       <ImportLeadsModal
         open={showImport}
         onClose={() => setShowImport(false)}
-        onSuccess={fetchData}
+        onSuccess={() => {
+          setShowImport(false);
+          fetchData();
+        }}
+      />
+      
+      <CampaignModal
+        open={showCampaign}
+        onClose={() => setShowCampaign(false)}
+        onStart={handleStartCampaign}
+        settings={campaignSettings}
+        setSettings={setCampaignSettings}
       />
 
       {/* Lead Detail Modal */}
