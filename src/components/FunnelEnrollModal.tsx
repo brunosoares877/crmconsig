@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { GitMerge, Loader2 } from "lucide-react";
 import { Funnel } from "@/pages/Funnels";
+import { useNavigate } from "react-router-dom";
 
 interface FunnelEnrollModalProps {
   isOpen: boolean;
@@ -23,6 +24,7 @@ export function FunnelEnrollModal({ isOpen, onClose, leadId, leadName, leadPhone
   const [selectedInstance, setSelectedInstance] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
   const [isEnrolling, setIsEnrolling] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (isOpen) {
@@ -147,7 +149,12 @@ export function FunnelEnrollModal({ isOpen, onClose, leadId, leadName, leadPhone
                 </SelectTrigger>
                 <SelectContent>
                   {funnels.length === 0 ? (
-                    <div className="p-2 text-sm text-slate-500 text-center">Nenhum funil ativo encontrado.</div>
+                    <div className="p-4 flex flex-col items-center justify-center space-y-3 bg-slate-50 rounded-md">
+                      <span className="text-sm text-slate-500 text-center">Nenhum funil ativo encontrado.</span>
+                      <Button size="sm" variant="outline" className="border-blue-200 text-blue-600 hover:bg-blue-50" onClick={() => { onClose(); navigate("/funnels"); }}>
+                        Criar Novo Funil
+                      </Button>
+                    </div>
                   ) : (
                     funnels.map(f => (
                       <SelectItem key={f.id} value={f.id}>{f.nome}</SelectItem>
