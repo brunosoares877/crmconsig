@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Plus, Save, Trash2, Clock, MessageSquare, AlertCircle } from "lucide-react";
+import { ArrowLeft, Plus, Save, Trash2, Clock, MessageSquare, AlertCircle, Image as ImageIcon, Mic, FileText, Upload, Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import Header from "@/components/Header";
 import { AppSidebar } from "@/components/AppSidebar";
@@ -20,6 +21,7 @@ interface FunnelStep {
   delay_minutos: number;
   mensagem_template: string;
   tipo_midia: string | null;
+  media_url?: string | null;
   isNew?: boolean;
 }
 
@@ -30,6 +32,7 @@ const FunnelDetails = () => {
   const [steps, setSteps] = useState<FunnelStep[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [uploadingMediaIndex, setUploadingMediaIndex] = useState<number | null>(null);
 
   useEffect(() => {
     if (id) {
@@ -74,7 +77,8 @@ const FunnelDetails = () => {
         ordem_etapa: steps.length + 1,
         delay_minutos: steps.length === 0 ? 0 : 1440, // default 1 day for subsequent steps
         mensagem_template: "",
-        tipo_midia: null,
+        tipo_midia: "texto",
+        media_url: null,
         isNew: true
       }
     ]);
@@ -94,6 +98,37 @@ const FunnelDetails = () => {
       step.ordem_etapa = i + 1;
     });
     setSteps(newSteps);
+  };
+
+  const handleFileUpload = async (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setUploadingMediaIndex(index);
+      
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
+      const filePath = `${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('funnel-media')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data } = supabase.storage
+        .from('funnel-media')
+        .getPublicUrl(filePath);
+
+      handleUpdateStep(index, 'media_url', data.publicUrl);
+      toast.success("Mídia carregada com sucesso!");
+    } catch (error: any) {
+      console.error(error);
+      toast.error("Erro ao fazer upload da mídia: " + error.message);
+    } finally {
+      setUploadingMediaIndex(null);
+    }
   };
 
   const handleSave = async () => {
@@ -123,14 +158,16 @@ const FunnelDetails = () => {
             ordem_etapa: step.ordem_etapa,
             delay_minutos: step.delay_minutos,
             mensagem_template: step.mensagem_template,
-            tipo_midia: step.tipo_midia
+            tipo_midia: step.tipo_midia,
+            media_url: step.media_url
           });
         } else {
           await supabase.from("whatsapp_funnel_steps").update({
             ordem_etapa: step.ordem_etapa,
             delay_minutos: step.delay_minutos,
             mensagem_template: step.mensagem_template,
-            tipo_midia: step.tipo_midia
+            tipo_midia: step.tipo_midia,
+            media_url: step.media_url
           }).eq("id", step.id);
         }
       }
@@ -232,16 +269,70 @@ const FunnelDetails = () => {
                                 <span className="text-sm text-slate-500">minutos (0 = imediato)</span>
                               </div>
 
-                              <div className="space-y-2">
+                              <div className="space-y-4">
                                 <Label className="flex items-center gap-2">
-                                  <MessageSquare className="h-4 w-4 text-slate-500" /> Mensagem
+                                  <FileText className="h-4 w-4 text-slate-500" /> Tipo de Mensagem
                                 </Label>
-                                <Textarea 
-                                  placeholder="Digite a mensagem..." 
-                                  className="min-h-[100px] resize-y"
-                                  value={step.mensagem_template}
-                                  onChange={(e) => handleUpdateStep(index, "mensagem_template", e.target.value)}
-                                />
+                                <Select
+                                  value={step.tipo_midia || "texto"}
+                                  onValueChange={(value) => {
+                                    handleUpdateStep(index, "tipo_midia", value);
+                                    if (value === "texto") handleUpdateStep(index, "media_url", null);
+                                  }}
+                                >
+                                  <SelectTrigger className="w-[200px]">
+                                    <SelectValue placeholder="Selecione o tipo" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="texto">Apenas Texto</SelectItem>
+                                    <SelectItem value="audio">Áudio (Gravado)</SelectItem>
+                                    <SelectItem value="imagem">Imagem</SelectItem>
+                                    <SelectItem value="video">Vídeo</SelectItem>
+                                  </SelectContent>
+                                </Select>
+
+                                {(step.tipo_midia === "audio" || step.tipo_midia === "imagem" || step.tipo_midia === "video") && (
+                                  <div className="p-4 bg-slate-50 border rounded-lg space-y-3">
+                                    <Label className="flex items-center gap-2">
+                                      {step.tipo_midia === "audio" ? <Mic className="h-4 w-4 text-blue-500" /> : <ImageIcon className="h-4 w-4 text-blue-500" />}
+                                      Arquivo de Mídia
+                                    </Label>
+                                    {step.media_url ? (
+                                      <div className="flex items-center justify-between bg-white p-3 border rounded-md">
+                                        <a href={step.media_url} target="_blank" rel="noreferrer" className="text-sm text-blue-600 hover:underline truncate max-w-[250px]">
+                                          Mídia anexada (Clique para ver)
+                                        </a>
+                                        <Button variant="ghost" size="sm" onClick={() => handleUpdateStep(index, "media_url", null)}>
+                                          <X className="h-4 w-4 text-red-500" />
+                                        </Button>
+                                      </div>
+                                    ) : (
+                                      <div className="flex items-center gap-4">
+                                        <Input
+                                          type="file"
+                                          accept={step.tipo_midia === "audio" ? "audio/*" : step.tipo_midia === "video" ? "video/*" : "image/*"}
+                                          className="max-w-[300px]"
+                                          onChange={(e) => handleFileUpload(index, e)}
+                                          disabled={uploadingMediaIndex === index}
+                                        />
+                                        {uploadingMediaIndex === index && <Loader2 className="h-4 w-4 animate-spin text-blue-600" />}
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+
+                                <div className="space-y-2">
+                                  <Label className="flex items-center gap-2">
+                                    <MessageSquare className="h-4 w-4 text-slate-500" /> {step.tipo_midia === "imagem" || step.tipo_midia === "video" ? "Legenda da Mídia" : "Mensagem / Texto"}
+                                  </Label>
+                                  <Textarea 
+                                    placeholder={step.tipo_midia === "audio" ? "Envio de áudio não aceita legenda na Evolution API. Deixe em branco." : "Digite a mensagem..."}
+                                    className="min-h-[100px] resize-y"
+                                    value={step.mensagem_template}
+                                    disabled={step.tipo_midia === "audio"}
+                                    onChange={(e) => handleUpdateStep(index, "mensagem_template", e.target.value)}
+                                  />
+                                </div>
                               </div>
                             </div>
                           </CardContent>

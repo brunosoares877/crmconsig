@@ -60,6 +60,84 @@ async function sendViaEvolution(
   }
 }
 
+// ─── Envia áudio (Voice Note) via Evolution API ──────────────────────────────
+async function sendAudioViaEvolution(
+  apiUrl: string,
+  apiKey: string,
+  instanceName: string,
+  phone: string,
+  audioUrl: string
+): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  const digits = phone.replace(/\D/g, "");
+  const normalized = digits.startsWith("55") ? digits : `55${digits}`;
+
+  try {
+    const response = await fetch(`${apiUrl}/message/sendWhatsAppAudio/${instanceName}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: apiKey,
+      },
+      body: JSON.stringify({
+        number: normalized,
+        audio: audioUrl,
+        delay: 2000,
+      }),
+    });
+
+    if (!response.ok) {
+      const err = await response.text();
+      return { success: false, error: err };
+    }
+
+    const data = await response.json();
+    return { success: true, messageId: data?.key?.id || data?.id };
+  } catch (err) {
+    return { success: false, error: String(err) };
+  }
+}
+
+// ─── Envia Mídia via Evolution API ───────────────────────────────────────────
+async function sendMediaViaEvolution(
+  apiUrl: string,
+  apiKey: string,
+  instanceName: string,
+  phone: string,
+  mediaUrl: string,
+  mediatype: string,
+  caption: string
+): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  const digits = phone.replace(/\D/g, "");
+  const normalized = digits.startsWith("55") ? digits : `55${digits}`;
+
+  try {
+    const response = await fetch(`${apiUrl}/message/sendMedia/${instanceName}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: apiKey,
+      },
+      body: JSON.stringify({
+        number: normalized,
+        media: mediaUrl,
+        mediatype: mediatype,
+        caption: caption,
+        delay: 2000,
+      }),
+    });
+
+    if (!response.ok) {
+      const err = await response.text();
+      return { success: false, error: err };
+    }
+
+    const data = await response.json();
+    return { success: true, messageId: data?.key?.id || data?.id };
+  } catch (err) {
+    return { success: false, error: String(err) };
+  }
+}
+
 // ─── Calcula delay aleatório em ms ───────────────────────────────────────────
 function randomDelay(minSec: number, maxSec: number): number {
   return (Math.floor(Math.random() * (maxSec - minSec + 1)) + minSec) * 1000;
@@ -77,7 +155,14 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    const body = await req.json();
+    let body: any = {};
+    try {
+      if (req.body) {
+        body = await req.json();
+      }
+    } catch (e) {
+      // Ignore
+    }
     const { queue_id } = body;
 
     // Se queue_id informado, processa item específico
@@ -172,19 +257,45 @@ serve(async (req) => {
     }
 
     const mensagemGerada = interpolate(processSpintax(templateRaw), {
-      nome: lead.nome?.split(" ")[0] || "",
-      municipio: lead.municipio || "",
-      beneficio: lead.beneficio || "",
+      nome: lead?.nome?.split(" ")[0] || "",
+      municipio: lead?.municipio || "",
+      beneficio: lead?.beneficio || "",
     });
 
-    // Enviar via Evolution API
-    const result = await sendViaEvolution(
-      instance.evolution_api_url,
-      instance.api_key,
-      instance.instance_name,
-      queueItem.telefone,
-      mensagemGerada
-    );
+    // Enviar via Evolution API dependendo do tipo
+    let result: { success: boolean; messageId?: string; error?: string };
+
+    if (queueItem.whatsapp_funnel_steps && queueItem.whatsapp_funnel_steps.media_url) {
+      const tipoMidia = queueItem.whatsapp_funnel_steps.tipo_midia || "imagem";
+      
+      if (tipoMidia === "audio") {
+        result = await sendAudioViaEvolution(
+          instance.evolution_api_url,
+          instance.api_key,
+          instance.instance_name,
+          queueItem.telefone,
+          queueItem.whatsapp_funnel_steps.media_url
+        );
+      } else {
+        result = await sendMediaViaEvolution(
+          instance.evolution_api_url,
+          instance.api_key,
+          instance.instance_name,
+          queueItem.telefone,
+          queueItem.whatsapp_funnel_steps.media_url,
+          tipoMidia === "video" ? "video" : "image",
+          mensagemGerada
+        );
+      }
+    } else {
+      result = await sendViaEvolution(
+        instance.evolution_api_url,
+        instance.api_key,
+        instance.instance_name,
+        queueItem.telefone,
+        mensagemGerada
+      );
+    }
 
     if (result.success) {
       // Atualizar fila
@@ -198,24 +309,26 @@ serve(async (req) => {
         })
         .eq("id", queueItem.id);
 
-      // Atualizar lead no Kanban
-      const leadUpdate: any = {
-        kanban_status: "mensagem_enviada",
-        ultima_mensagem_at: new Date().toISOString(),
-        mensagens_enviadas: (lead.mensagens_enviadas || 0) + 1,
-      };
+      // Atualizar lead no Kanban se ele existir
+      if (lead) {
+        const leadUpdate: any = {
+          kanban_status: "mensagem_enviada",
+          ultima_mensagem_at: new Date().toISOString(),
+          mensagens_enviadas: (lead.mensagens_enviadas || 0) + 1,
+        };
 
-      // Se for a campanha antiga, faz o agendamento automático do passo 2
-      if (!queueItem.funnel_step_id && campaign) {
-        leadUpdate.proxima_mensagem_at = new Date(
-          Date.now() + randomDelay(campaign.delay_min_segundos, campaign.delay_max_segundos)
-        ).toISOString();
+        // Se for a campanha antiga, faz o agendamento automático do passo 2
+        if (!queueItem.funnel_step_id && campaign) {
+          leadUpdate.proxima_mensagem_at = new Date(
+            Date.now() + randomDelay(campaign.delay_min_segundos, campaign.delay_max_segundos)
+          ).toISOString();
+        }
+
+        await supabase
+          .from("prospecting_leads")
+          .update(leadUpdate)
+          .eq("id", lead.id);
       }
-
-      await supabase
-        .from("prospecting_leads")
-        .update(leadUpdate)
-        .eq("id", lead.id);
 
       // Incrementar contador do chip
       await supabase.rpc("increment_messages_sent", { p_instance_id: instance.id });
