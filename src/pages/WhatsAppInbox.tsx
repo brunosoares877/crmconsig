@@ -102,12 +102,16 @@ export default function WhatsAppInbox() {
 
   const fetchCRMConfig = useCallback(async () => {
     if (!user) return;
-    const [tagsRes, repliesRes] = await Promise.all([
-      supabase.from("whatsapp_tags").select("*").eq("user_id", user.id).order("created_at", { ascending: true }),
-      supabase.from("whatsapp_quick_replies").select("*").eq("user_id", user.id).order("created_at", { ascending: true })
-    ]);
-    if (tagsRes.data) setTags(tagsRes.data as WhatsAppTag[]);
-    if (repliesRes.data) setQuickReplies(repliesRes.data as WhatsAppQuickReply[]);
+    try {
+      const [tagsRes, repliesRes] = await Promise.all([
+        supabase.from("whatsapp_tags").select("*").eq("user_id", user.id).order("created_at", { ascending: true }),
+        supabase.from("whatsapp_quick_replies").select("*").eq("user_id", user.id).order("created_at", { ascending: true })
+      ]);
+      if (tagsRes.data) setTags(tagsRes.data as WhatsAppTag[]);
+      if (repliesRes.data) setQuickReplies(repliesRes.data as WhatsAppQuickReply[]);
+    } catch (e) {
+      console.error("Erro ao buscar config do CRM:", e);
+    }
   }, [user]);
 
   const [search, setSearch] = useState("");
@@ -644,7 +648,7 @@ export default function WhatsAppInbox() {
                           className="text-xs cursor-pointer hover:bg-slate-700/50 flex justify-between items-center"
                         >
                           <div className="flex items-center gap-2">
-                            <div className={`w-2 h-2 rounded-full ${tagObj.color.split(' ')[0]}`}></div>
+                            <div className={`w-2 h-2 rounded-full ${(tagObj.color || 'bg-slate-500').split(' ')[0]}`}></div>
                             {tagObj.label}
                           </div>
                           {selectedConv.tags?.includes(tagObj.label) && <Check className="h-3.5 w-3.5 text-emerald-400" />}
@@ -754,7 +758,7 @@ export default function WhatsAppInbox() {
                           onClick={() => setNewMessage(prev => prev + (prev ? " " : "") + reply.text)}
                           className="text-xs cursor-pointer hover:bg-slate-700/50 flex flex-col items-start gap-1 p-2"
                         >
-                          <span className="font-semibold text-emerald-400">{reply.label}</span>
+                          <span className="font-semibold text-emerald-400">{reply.title}</span>
                           <span className="text-slate-300 line-clamp-2">{reply.text}</span>
                         </DropdownMenuItem>
                       ))}
