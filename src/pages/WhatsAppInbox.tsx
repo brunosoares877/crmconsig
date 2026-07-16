@@ -23,6 +23,7 @@ import {
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { WhatsAppCRMSettings, WhatsAppTag, WhatsAppQuickReply } from "@/components/WhatsAppCRMSettings";
 
 interface Conversation {
   id: string;
@@ -76,29 +77,6 @@ const FUNNEL_STAGES = [
   { id: "perdido", label: "Perdido", color: "border-red-500", bg: "bg-red-900/40" }
 ];
 
-const AVAILABLE_TAGS = [
-  { id: "INSS", label: "INSS", color: "bg-blue-500/20 text-blue-400 border-blue-500/30" },
-  { id: "BPC", label: "BPC", color: "bg-purple-500/20 text-purple-400 border-purple-500/30" },
-  { id: "FGTS", label: "FGTS", color: "bg-orange-500/20 text-orange-400 border-orange-500/30" },
-  { id: "Siape", label: "Siape", color: "bg-teal-500/20 text-teal-400 border-teal-500/30" },
-  { id: "Quente", label: "Quente", color: "bg-red-500/20 text-red-400 border-red-500/30" },
-  { id: "Frio", label: "Frio", color: "bg-cyan-500/20 text-cyan-400 border-cyan-500/30" },
-  { id: "Urgente", label: "Urgente", color: "bg-rose-500/20 text-rose-400 border-rose-500/30" },
-  { id: "Retorno", label: "Retorno", color: "bg-amber-500/20 text-amber-400 border-amber-500/30" }
-];
-
-const QUICK_REPLIES = [
-  { id: "portabilidade", label: "Portabilidade", text: "Olá! Vi que você tem interesse em fazer a portabilidade do seu contrato. Podemos fazer uma simulação sem compromisso?" },
-  { id: "margem_nova", label: "Margem Nova", text: "Oi! Identificamos que você possui uma nova margem disponível para contratação. Gostaria de conferir os valores?" },
-  { id: "crefaz", label: "Crefaz (Luz)", text: "Olá! Sabia que você pode fazer um empréstimo com desconto direto na conta de luz pela Crefaz? É bem rápido!" },
-  { id: "governo", label: "Governo (Siape)", text: "Oi! Temos condições especiais de crédito consignado para servidores federais (Siape). Vamos simular?" }
-];
-
-const getTagColor = (tagId: string) => {
-  const tag = AVAILABLE_TAGS.find(t => t.id === tagId);
-  return tag ? tag.color : "bg-slate-700 text-slate-300 border-slate-600";
-};
-
 const toBase64 = (file: File) => new Promise<string>((resolve, reject) => {
   const reader = new FileReader();
   reader.readAsDataURL(file);
@@ -113,6 +91,25 @@ export default function WhatsAppInbox() {
   const [selectedConv, setSelectedConv] = useState<Conversation | null>(null);
   const [instances, setInstances] = useState<WhatsAppInstance[]>([]);
   
+  const [tags, setTags] = useState<WhatsAppTag[]>([]);
+  const [quickReplies, setQuickReplies] = useState<WhatsAppQuickReply[]>([]);
+  const [showSettings, setShowSettings] = useState(false);
+  
+  const getTagColor = useCallback((label: string) => {
+    const tag = tags.find(t => t.label === label);
+    return tag ? tag.color : "bg-slate-700 text-slate-300 border-slate-600";
+  }, [tags]);
+
+  const fetchCRMConfig = useCallback(async () => {
+    if (!user) return;
+    const [tagsRes, repliesRes] = await Promise.all([
+      supabase.from("whatsapp_tags").select("*").eq("user_id", user.id).order("created_at", { ascending: true }),
+      supabase.from("whatsapp_quick_replies").select("*").eq("user_id", user.id).order("created_at", { ascending: true })
+    ]);
+    if (tagsRes.data) setTags(tagsRes.data as WhatsAppTag[]);
+    if (repliesRes.data) setQuickReplies(repliesRes.data as WhatsAppQuickReply[]);
+  }, [user]);
+
   const [search, setSearch] = useState("");
   const [newMessage, setNewMessage] = useState("");
   const [sending, setSending] = useState(false);
@@ -183,9 +180,10 @@ export default function WhatsAppInbox() {
   useEffect(() => {
     fetchConversations();
     fetchInstances();
+    fetchCRMConfig();
     const interval = setInterval(fetchConversations, 10000);
     return () => clearInterval(interval);
-  }, [fetchConversations, fetchInstances]);
+  }, [fetchConversations, fetchInstances, fetchCRMConfig]);
 
   useEffect(() => {
     if (selectedConv) {
@@ -478,6 +476,9 @@ export default function WhatsAppInbox() {
                 <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-slate-400 hover:text-emerald-400" onClick={() => setShowNewContactModal(true)}>
                   <MessageSquarePlus className="h-5 w-5" />
                 </Button>
+                <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-slate-400 hover:text-emerald-400" onClick={() => setShowSettings(true)}>
+                  <Settings className="h-5 w-5" />
+                </Button>
                 <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-slate-400 hover:text-emerald-400" onClick={() => setViewMode("funnel")}>
                   <KanbanSquare className="h-5 w-5" />
                 </Button>
@@ -636,17 +637,17 @@ export default function WhatsAppInbox() {
                     <DropdownMenuContent className="bg-slate-800 border-slate-700 text-white w-48">
                       <DropdownMenuLabel className="text-xs text-slate-400">Adicionar/Remover Etiqueta</DropdownMenuLabel>
                       <DropdownMenuSeparator className="bg-slate-700" />
-                      {AVAILABLE_TAGS.map(tagObj => (
+                      {tags.map(tagObj => (
                         <DropdownMenuItem 
                           key={tagObj.id}
-                          onClick={(e) => { e.preventDefault(); handleToggleTag(selectedConv, tagObj.id); }}
+                          onClick={(e) => { e.preventDefault(); handleToggleTag(selectedConv, tagObj.label); }}
                           className="text-xs cursor-pointer hover:bg-slate-700/50 flex justify-between items-center"
                         >
                           <div className="flex items-center gap-2">
                             <div className={`w-2 h-2 rounded-full ${tagObj.color.split(' ')[0]}`}></div>
                             {tagObj.label}
                           </div>
-                          {selectedConv.tags?.includes(tagObj.id) && <Check className="h-3.5 w-3.5 text-emerald-400" />}
+                          {selectedConv.tags?.includes(tagObj.label) && <Check className="h-3.5 w-3.5 text-emerald-400" />}
                         </DropdownMenuItem>
                       ))}
                     </DropdownMenuContent>
@@ -747,7 +748,7 @@ export default function WhatsAppInbox() {
                     <DropdownMenuContent className="bg-slate-800 border-slate-700 text-white w-64 mb-2">
                       <DropdownMenuLabel className="text-xs text-slate-400">Mensagens Prontas</DropdownMenuLabel>
                       <DropdownMenuSeparator className="bg-slate-700" />
-                      {QUICK_REPLIES.map(reply => (
+                      {quickReplies.map(reply => (
                         <DropdownMenuItem 
                           key={reply.id}
                           onClick={() => setNewMessage(prev => prev + (prev ? " " : "") + reply.text)}
@@ -814,6 +815,14 @@ export default function WhatsAppInbox() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <WhatsAppCRMSettings 
+        open={showSettings} 
+        onOpenChange={setShowSettings} 
+        tags={tags} 
+        quickReplies={quickReplies} 
+        onUpdate={fetchCRMConfig} 
+      />
     </div>
   );
 }
