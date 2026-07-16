@@ -15,9 +15,10 @@ interface FunnelEnrollModalProps {
   leadId: string;
   leadName?: string;
   leadPhone: string;
+  instanceId?: string;
 }
 
-export function FunnelEnrollModal({ isOpen, onClose, leadId, leadName, leadPhone }: FunnelEnrollModalProps) {
+export function FunnelEnrollModal({ isOpen, onClose, leadId, leadName, leadPhone, instanceId }: FunnelEnrollModalProps) {
   const [funnels, setFunnels] = useState<Funnel[]>([]);
   const [selectedFunnel, setSelectedFunnel] = useState<string>("");
   const [instances, setInstances] = useState<any[]>([]);
@@ -42,7 +43,9 @@ export function FunnelEnrollModal({ isOpen, onClose, leadId, leadName, leadPhone
         .eq("status", "open");
         
       setInstances(instData || []);
-      if (instData && instData.length > 0) {
+      if (instanceId) {
+        setSelectedInstance(instanceId);
+      } else if (instData && instData.length > 0) {
         setSelectedInstance(instData[0].id);
       }
 
@@ -164,23 +167,25 @@ export function FunnelEnrollModal({ isOpen, onClose, leadId, leadName, leadPhone
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <Label>Enviar através do Chip</Label>
-              <Select value={selectedInstance} onValueChange={setSelectedInstance}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione um número..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {instances.length === 0 ? (
-                    <div className="p-2 text-sm text-red-500 text-center">Nenhum chip conectado.</div>
-                  ) : (
-                    instances.map(i => (
-                      <SelectItem key={i.id} value={i.id}>{i.instance_name}</SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
+            {!instanceId && (
+              <div className="space-y-2">
+                <Label>Enviar através do Chip</Label>
+                <Select value={selectedInstance} onValueChange={setSelectedInstance}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione um número..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {instances.length === 0 ? (
+                      <div className="p-2 text-sm text-red-500 text-center">Nenhum chip conectado.</div>
+                    ) : (
+                      instances.map(i => (
+                        <SelectItem key={i.id} value={i.id}>{i.instance_name}</SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             
             <div className="text-sm text-slate-500 bg-slate-50 p-3 rounded-lg border border-slate-100">
               💡 As mensagens serão pré-agendadas baseadas nos tempos do funil. Se o cliente responder a qualquer momento, o resto do funil é automaticamente cancelado.

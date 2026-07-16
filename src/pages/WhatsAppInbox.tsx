@@ -915,6 +915,7 @@ export default function WhatsAppInbox() {
           leadId={selectedConv.lead_id || selectedConv.id}
           leadName={selectedConv.nome_contato}
           leadPhone={selectedConv.telefone}
+          instanceId={selectedConv.instance_id}
         />
       )}
 
