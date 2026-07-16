@@ -135,6 +135,33 @@ export default function WhatsAppConnect() {
       return;
     }
 
+    // 1.5 Configurar Webhook para receber as mensagens
+    try {
+      const evolutionUrl = form.evolution_api_url.replace(/\/$/, "");
+      await fetch(`${evolutionUrl}/webhook/set/${instanceName}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: form.api_key,
+        },
+        body: JSON.stringify({
+          webhook: {
+            enabled: true,
+            url: "https://wjljrytblpsnzjwvugqg.supabase.co/functions/v1/whatsapp-webhook",
+            byEvents: false,
+            base64: false,
+            events: [
+              "MESSAGES_UPSERT",
+              "MESSAGES_UPDATE",
+              "CONNECTION_UPDATE"
+            ]
+          }
+        })
+      });
+    } catch (err) {
+      console.error("Erro ao configurar webhook", err);
+    }
+
     // 2. Salvar no Supabase
     const { error } = await supabase.from("whatsapp_instances").insert({
       user_id: user.id,
