@@ -23,10 +23,14 @@ import {
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { WhatsAppCRMSettings, WhatsAppTag, WhatsAppQuickReply } from "@/components/WhatsAppCRMSettings";
 
 interface Conversation {
   id: string;
+  user_id: string;
+  lead_id?: string;
+  instance_id?: string;
   telefone: string;
   nome_contato: string;
   ultima_mensagem: string;
@@ -94,6 +98,7 @@ export default function WhatsAppInbox() {
   const [tags, setTags] = useState<WhatsAppTag[]>([]);
   const [quickReplies, setQuickReplies] = useState<WhatsAppQuickReply[]>([]);
   const [showSettings, setShowSettings] = useState(false);
+  const [selectedInstanceFilter, setSelectedInstanceFilter] = useState<string>("all");
   
   const getTagColor = useCallback((label: string) => {
     const tag = tags.find(t => t.label === label);
@@ -382,10 +387,11 @@ export default function WhatsAppInbox() {
 
   const filteredConvs = conversations.filter(
     (c) =>
-      !search ||
-      c.nome_contato?.toLowerCase().includes(search.toLowerCase()) ||
-      c.telefone?.includes(search) ||
-      c.tags?.some(t => t.toLowerCase().includes(search.toLowerCase()))
+      (!search ||
+        c.nome_contato?.toLowerCase().includes(search.toLowerCase()) ||
+        c.telefone?.includes(search) ||
+        c.tags?.some(t => t.toLowerCase().includes(search.toLowerCase()))) &&
+      (selectedInstanceFilter === "all" || c.instance_id === selectedInstanceFilter)
   );
 
   const formatTime = (date: string) => {
@@ -488,7 +494,7 @@ export default function WhatsAppInbox() {
                 </Button>
               </div>
             </div>
-            <div className="relative">
+            <div className="relative mb-2">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-500" />
               <Input
                 value={search}
@@ -497,6 +503,20 @@ export default function WhatsAppInbox() {
                 className="pl-9 h-8 bg-slate-800 border-slate-700 text-white text-sm"
               />
             </div>
+            
+            <Select value={selectedInstanceFilter} onValueChange={setSelectedInstanceFilter}>
+              <SelectTrigger className="h-8 bg-slate-800 border-slate-700 text-white text-xs w-full">
+                <SelectValue placeholder="Todas as instâncias" />
+              </SelectTrigger>
+              <SelectContent className="bg-slate-800 border-slate-700 text-white">
+                <SelectItem value="all" className="text-xs">Todas as Instâncias</SelectItem>
+                {instances.map(inst => (
+                  <SelectItem key={inst.id} value={inst.id} className="text-xs">
+                    {inst.instance_name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Lista */}
