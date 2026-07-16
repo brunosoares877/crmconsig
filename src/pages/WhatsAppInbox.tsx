@@ -6,7 +6,7 @@ import {
   MessageSquare, Send, RefreshCw, Search, Phone, CheckCheck,
   Check, Clock, AlertCircle, User, Smile, Paperclip, ArrowLeft,
   Circle, CheckCircle, MoreVertical, Archive, ExternalLink,
-  KanbanSquare, List, X, Tag, Plus, UploadCloud, ImageIcon, FileText, Film, Zap, Trash2, MessageSquarePlus, Settings, GitMerge
+  KanbanSquare, List, X, Tag, Plus, UploadCloud, ImageIcon, FileText, Film, Zap, Trash2, MessageSquarePlus, Settings, GitMerge, Mic, Square, Trash, Play
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -41,7 +41,6 @@ interface Conversation {
   status: string;
   funnel_stage: string;
   tags: string[];
-  lead_id?: string;
   instance_id: string;
   whatsapp_instances?: { instance_name: string };
 }
@@ -135,6 +134,14 @@ export default function WhatsAppInbox() {
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"list" | "funnel">("list");
   
+  // Audio Recording State
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const [recordedAudio, setRecordedAudio] = useState<Blob | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<BlobPart[]>([]);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   
   const [showNewContactModal, setShowNewContactModal] = useState(false);
@@ -304,6 +311,60 @@ export default function WhatsAppInbox() {
     }
   };
 
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        setRecordedAudio(audioBlob);
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+      setRecordingTime(0);
+      
+      timerRef.current = setInterval(() => {
+        setRecordingTime(prev => prev + 1);
+      }, 1000);
+    } catch (err) {
+      toast.error("Não foi possível acessar o microfone.");
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+      if (timerRef.current) clearInterval(timerRef.current);
+    }
+  };
+
+  const cancelRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+    }
+    setIsRecording(false);
+    setRecordedAudio(null);
+    if (timerRef.current) clearInterval(timerRef.current);
+  };
+
+  const formatRecordingTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+    const s = (seconds % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
+  };
+
   const handleSend = async () => {
     if (!selectedConv || (!newMessage.trim() && !selectedFile) || !user) return;
     setSending(true);
@@ -323,7 +384,30 @@ export default function WhatsAppInbox() {
       let msgTipo = "texto";
       let base64Data = null;
 
-      if (selectedFile) {
+      if (recordedAudio) {
+        // Enviar Audio Gravado
+        const reader = new FileReader();
+        base64Data = await new Promise((resolve) => {
+          reader.onloadend = () => resolve(reader.result);
+          reader.readAsDataURL(recordedAudio);
+        }) as string;
+        
+        msgTipo = "audio";
+        const response = await fetch(
+          `${instance.evolution_api_url.replace(/\/$/, "")}/message/sendWhatsAppAudio/${instance.instance_name}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json", apikey: instance.api_key },
+            body: JSON.stringify({
+              number: normalized,
+              audio: base64Data.split(",")[1],
+              delay: 1000
+            }),
+          }
+        );
+        if (!response.ok) throw new Error("Falha ao enviar áudio");
+        result = await response.json();
+      } else if (selectedFile) {
         // Enviar Mídia
         base64Data = await toBase64(selectedFile);
         let mediatype = "document";
@@ -381,13 +465,14 @@ export default function WhatsAppInbox() {
 
       // Atualizar última mensagem da conversa
       await supabase.from("whatsapp_conversations").update({
-        ultima_mensagem: newMessage.trim() || selectedFile?.name || "Mídia enviada",
+        ultima_mensagem: newMessage.trim() || selectedFile?.name || (recordedAudio ? "Áudio gravado" : "Mídia enviada"),
         ultima_mensagem_at: new Date().toISOString(),
         direcao_ultima: "enviada",
       }).eq("id", selectedConv.id);
 
       setNewMessage("");
       setSelectedFile(null);
+      setRecordedAudio(null);
       fetchConversations();
     } catch (err: any) {
       toast.error("Erro ao enviar: " + (err.message || "Desconhecido"));
@@ -771,10 +856,14 @@ export default function WhatsAppInbox() {
                         <div className="mb-2 rounded-xl overflow-hidden bg-black/20">
                           <video src={msg.media_url} controls className="w-full max-h-64" />
                         </div>
-                      ) : (msg.tipo === 'documento' || msg.tipo === 'audio') && msg.media_url ? (
+                      ) : msg.tipo === 'audio' && msg.media_url ? (
+                        <div className="mb-2">
+                          <audio src={msg.media_url} controls className="w-[250px] max-w-full h-10" />
+                        </div>
+                      ) : msg.tipo === 'documento' && msg.media_url ? (
                          <div className="mb-2 p-3 rounded-lg bg-black/20 flex items-center gap-3">
-                           {msg.tipo === 'audio' ? <Film className="h-6 w-6 opacity-80" /> : <FileText className="h-6 w-6 opacity-80" />}
-                           <p className="text-xs truncate">{msg.conteudo || "Arquivo recebido"}</p>
+                           <FileText className="h-6 w-6 opacity-80" />
+                           <p className="text-xs truncate">{msg.conteudo || "Documento recebido"}</p>
                          </div>
                       ) : null}
                       
@@ -826,6 +915,7 @@ export default function WhatsAppInbox() {
                     size="icon" 
                     className="h-10 w-10 shrink-0 text-slate-400 hover:text-emerald-400 hover:bg-slate-800 rounded-full"
                     onClick={() => fileInputRef.current?.click()}
+                    disabled={isRecording || !!recordedAudio}
                   >
                     <Paperclip className="h-5 w-5" />
                   </Button>
@@ -853,22 +943,58 @@ export default function WhatsAppInbox() {
                     </DropdownMenuContent>
                   </DropdownMenu>
 
-                  <Textarea
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    placeholder="Digite uma mensagem..."
-                    rows={1}
-                    className="flex-1 bg-slate-800 border-slate-700 text-white resize-none min-h-[40px] max-h-32 text-sm rounded-xl"
-                  />
+                  {isRecording ? (
+                    <div className="flex-1 flex items-center justify-between bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl px-4 h-10">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+                        <span className="text-sm font-medium">Gravando... {formatRecordingTime(recordingTime)}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-red-400 hover:text-red-300 hover:bg-red-500/20 rounded-full" onClick={cancelRecording}>
+                          <Trash className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/20 rounded-full" onClick={stopRecording}>
+                          <Square className="h-4 w-4 fill-current" />
+                        </Button>
+                      </div>
+                    </div>
+                  ) : recordedAudio ? (
+                    <div className="flex-1 flex items-center justify-between bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-xl px-4 h-10">
+                      <div className="flex items-center gap-2">
+                        <Mic className="h-4 w-4" />
+                        <span className="text-sm font-medium">Áudio Pronto</span>
+                      </div>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-red-400 hover:text-red-300 hover:bg-red-500/20 rounded-full" onClick={() => setRecordedAudio(null)}>
+                        <Trash className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <Textarea
+                      value={newMessage}
+                      onChange={(e) => setNewMessage(e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      placeholder="Digite uma mensagem..."
+                      rows={1}
+                      className="flex-1 bg-slate-800 border-slate-700 text-white resize-none min-h-[40px] max-h-32 text-sm rounded-xl"
+                    />
+                  )}
                   
-                  <Button
-                    onClick={handleSend}
-                    disabled={(!newMessage.trim() && !selectedFile) || sending}
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white h-10 w-10 p-0 shrink-0 rounded-full shadow-lg shadow-emerald-900/20"
-                  >
-                    {sending ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4 ml-1" />}
-                  </Button>
+                  {(!newMessage.trim() && !selectedFile && !recordedAudio && !isRecording) ? (
+                    <Button
+                      onClick={startRecording}
+                      className="bg-slate-700 hover:bg-slate-600 text-slate-300 h-10 w-10 p-0 shrink-0 rounded-full"
+                    >
+                      <Mic className="h-5 w-5" />
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={handleSend}
+                      disabled={sending || isRecording}
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white h-10 w-10 p-0 shrink-0 rounded-full shadow-lg shadow-emerald-900/20"
+                    >
+                      {sending ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4 ml-1" />}
+                    </Button>
+                  )}
                 </div>
               </div>
             </>

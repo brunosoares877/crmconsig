@@ -351,12 +351,17 @@ serve(async (req) => {
           })
           .eq("id", existingConv.id);
 
+        const isMedia = queueItem.whatsapp_funnel_steps && queueItem.whatsapp_funnel_steps.media_url;
+        const finalTipo = isMedia ? (queueItem.whatsapp_funnel_steps.tipo_midia || "imagem") : "texto";
+        const finalMediaUrl = isMedia ? queueItem.whatsapp_funnel_steps.media_url : null;
+        
         await supabase.from("whatsapp_messages").insert({
           conversation_id: existingConv.id,
           evolution_message_id: result.messageId,
           direcao: "enviada",
-          tipo: "texto",
-          conteudo: mensagemGerada,
+          tipo: finalTipo,
+          conteudo: mensagemGerada || (finalTipo === "audio" ? "Áudio enviado" : "Mídia enviada"),
+          media_url: finalMediaUrl,
           status: "enviado",
           timestamp_whatsapp: new Date().toISOString(),
         });
@@ -376,13 +381,18 @@ serve(async (req) => {
           .select()
           .single();
 
+        const isMedia = queueItem.whatsapp_funnel_steps && queueItem.whatsapp_funnel_steps.media_url;
+        const finalTipo = isMedia ? (queueItem.whatsapp_funnel_steps.tipo_midia || "imagem") : "texto";
+        const finalMediaUrl = isMedia ? queueItem.whatsapp_funnel_steps.media_url : null;
+
         if (newConv) {
           await supabase.from("whatsapp_messages").insert({
             conversation_id: newConv.id,
             evolution_message_id: result.messageId,
             direcao: "enviada",
-            tipo: "texto",
-            conteudo: mensagemGerada,
+            tipo: finalTipo,
+            conteudo: mensagemGerada || (finalTipo === "audio" ? "Áudio enviado" : "Mídia enviada"),
+            media_url: finalMediaUrl,
             status: "enviado",
             timestamp_whatsapp: new Date().toISOString(),
           });
