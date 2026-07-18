@@ -16,22 +16,12 @@ const LoginSchema = z.object({
   email: z.string().email("Email inválido"),
   password: z.string().min(6, "A senha deve ter pelo menos 6 caracteres")
 });
-const SignupSchema = z.object({
-  fullName: z.string().min(3, "Nome completo é obrigatório"),
-  email: z.string().email("Email inválido"),
-  whatsapp: z.string().regex(phoneRegex, "WhatsApp inválido - use o formato (99) 99999-9999"),
-  password: z.string().min(6, "A senha deve ter pelo menos 6 caracteres")
-});
 
 const Login = () => {
   const navigate = useNavigate();
-  const { signIn, signUp } = useAuth();
-  const { startTrial } = useSubscription();
+  const { signIn } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [fullName, setFullName] = useState("");
-  const [whatsapp, setWhatsapp] = useState("");
-  const [isLogin, setIsLogin] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -54,11 +44,7 @@ const Login = () => {
 
   const validateForm = () => {
     try {
-      if (isLogin) {
-        LoginSchema.parse({ email, password });
-      } else {
-        SignupSchema.parse({ fullName, email, whatsapp, password });
-      }
+      LoginSchema.parse({ email, password });
       setErrors({});
       return true;
     } catch (error) {
@@ -83,39 +69,8 @@ const Login = () => {
 
     setIsLoading(true);
     try {
-      if (isLogin) {
-        await signIn(email, password);
-        toast.success("Login realizado com sucesso");
-      } else {
-        const { data: authData, error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: {
-              full_name: fullName,
-              whatsapp: whatsapp
-            }
-          }
-        });
-        if (error) throw error;
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        if (authData.user) {
-          const { error: profileError } = await supabase
-            .from('profiles')
-            .update({
-              first_name: fullName.split(' ')[0],
-              last_name: fullName.split(' ').slice(1).join(' '),
-              whatsapp: whatsapp
-            })
-            .eq('id', authData.user.id);
-          if (profileError) {
-            console.error("Error updating profile:", profileError);
-          }
-        }
-        startTrial();
-        toast.success("Conta criada com sucesso! Seu período de teste de 7 dias começou.");
-        await signIn(email, password);
-      }
+      await signIn(email, password);
+      toast.success("Login realizado com sucesso");
     } catch (error: any) {
       console.error("Erro na autenticação:", error);
       toast.error(error.message || "Ocorreu um erro ao processar sua solicitação");
@@ -215,61 +170,15 @@ const Login = () => {
                     <Zap className="w-10 h-10 text-white fill-white" />
                   </div>
                   <h2 className="text-3xl font-bold text-gray-900 mb-3">
-                    {isLogin ? "Bem-vindo de volta" : "Criar sua conta"}
+                    Bem-vindo de volta
                   </h2>
                   <p className="text-gray-600 text-lg">
-                    {isLogin ? "Entre na sua conta para continuar" : "Comece seu período de teste gratuito"}
+                    Entre na sua conta para continuar
                   </p>
                 </div>
 
                 {/* Formulário */}
                 <form onSubmit={handleSubmit} className="space-y-7">
-
-                  {/* Campos do cadastro */}
-                  {!isLogin && (
-                    <div className="space-y-6 animate-in slide-in-from-top duration-500 delay-300">
-                      <div className="space-y-3">
-                        <Label htmlFor="fullName" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                          <div className="w-5 h-5 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-md flex items-center justify-center">
-                            <User className="w-3 h-3 text-white" />
-                          </div>
-                          Nome Completo
-                        </Label>
-                        <Input
-                          id="fullName"
-                          placeholder="Seu nome completo"
-                          type="text"
-                          required
-                          className={`h-14 rounded-2xl border-2 border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all duration-300 text-lg px-4 ${errors.fullName ? "border-red-500 focus:border-red-500 focus:ring-red-500/10" : "hover:border-gray-300"}`}
-                          value={fullName}
-                          onChange={e => setFullName(e.target.value)}
-                          disabled={isLoading}
-                        />
-                        {errors.fullName && <p className="text-sm text-red-500 flex items-center gap-2 animate-in slide-in-from-top duration-200"><span className="text-red-500">⚠</span>{errors.fullName}</p>}
-                      </div>
-
-                      <div className="space-y-3">
-                        <Label htmlFor="whatsapp" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                          <div className="w-5 h-5 bg-gradient-to-r from-green-500 to-emerald-500 rounded-md flex items-center justify-center">
-                            <Phone className="w-3 h-3 text-white" />
-                          </div>
-                          WhatsApp
-                        </Label>
-                        <Input
-                          id="whatsapp"
-                          type="text"
-                          required
-                          placeholder="(99) 99999-9999"
-                          className={`h-14 rounded-2xl border-2 border-gray-200 focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all duration-300 text-lg px-4 ${errors.whatsapp ? "border-red-500 focus:border-red-500 focus:ring-red-500/10" : "hover:border-gray-300"}`}
-                          value={whatsapp}
-                          onChange={handlePhoneChange}
-                          maxLength={15}
-                          disabled={isLoading}
-                        />
-                        {errors.whatsapp && <p className="text-sm text-red-500 flex items-center gap-2 animate-in slide-in-from-top duration-200"><span className="text-red-500">⚠</span>{errors.whatsapp}</p>}
-                      </div>
-                    </div>
-                  )}
 
                   {/* Email */}
                   <div className="space-y-3">
@@ -307,7 +216,7 @@ const Login = () => {
                         type={showPassword ? "text" : "password"}
                         required
                         placeholder="••••••••"
-                        autoComplete={isLogin ? "current-password" : "new-password"}
+                        autoComplete="current-password"
                         className={`h-14 rounded-2xl border-2 border-gray-200 focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 pr-14 transition-all duration-300 text-lg px-4 ${errors.password ? "border-red-500 focus:border-red-500 focus:ring-red-500/10" : "hover:border-gray-300"}`}
                         value={password}
                         onChange={e => setPassword(e.target.value)}
@@ -323,19 +232,17 @@ const Login = () => {
                     </div>
                     {errors.password && <p className="text-sm text-red-500 flex items-center gap-2 animate-in slide-in-from-top duration-200"><span className="text-red-500">⚠</span>{errors.password}</p>}
 
-                    {/* Link Esqueci minha senha - só no login */}
-                    {isLogin && (
-                      <div className="flex justify-end">
-                        <button
-                          type="button"
-                          onClick={() => setShowForgotPassword(true)}
-                          className="text-sm font-medium text-blue-600 hover:text-blue-500 transition-all duration-300 hover:underline hover:scale-105"
-                          disabled={isLoading}
-                        >
-                          Esqueci minha senha
-                        </button>
-                      </div>
-                    )}
+                    {/* Link Esqueci minha senha */}
+                    <div className="flex justify-end">
+                      <button
+                        type="button"
+                        onClick={() => setShowForgotPassword(true)}
+                        className="text-sm font-medium text-blue-600 hover:text-blue-500 transition-all duration-300 hover:underline hover:scale-105"
+                        disabled={isLoading}
+                      >
+                        Esqueci minha senha
+                      </button>
+                    </div>
                   </div>
 
                   {/* Botão principal */}
@@ -347,11 +254,11 @@ const Login = () => {
                     {isLoading ? (
                       <div className="flex items-center justify-center gap-3">
                         <div className="h-6 w-6 animate-spin rounded-full border-3 border-white/30 border-t-white"></div>
-                        <span>{isLogin ? "Entrando..." : "Criando conta..."}</span>
+                        <span>Entrando...</span>
                       </div>
                     ) : (
                       <div className="flex items-center justify-center gap-2">
-                        <span>{isLogin ? "Entrar na conta" : "Criar conta grátis"}</span>
+                        <span>Entrar na conta</span>
                         <Zap className="w-5 h-5 ml-1" />
                       </div>
                     )}
@@ -360,19 +267,18 @@ const Login = () => {
 
                 </form>
 
-                {/* Toggle Login/Cadastro */}
+                {/* Toggle Login/Cadastro -> Link Checkout */}
                 <div className="mt-10 text-center">
                   <div className="bg-gradient-to-r from-gray-50 to-blue-50 rounded-2xl p-6 border border-gray-100">
                     <p className="text-gray-600 text-lg mb-3">
-                      {isLogin ? "Não tem uma conta? " : "Já tem uma conta? "}
+                      Ainda não tem uma conta?
                     </p>
-                    <button
-                      onClick={() => setIsLogin(!isLogin)}
+                    <a
+                      href="#"
                       className="font-bold text-blue-600 hover:text-blue-500 transition-all duration-300 hover:underline hover:scale-105 text-lg"
-                      disabled={isLoading}
                     >
-                      {isLogin ? "Criar conta grátis" : "Fazer login"}
-                    </button>
+                      Assine agora e conheça nossos planos
+                    </a>
                   </div>
                 </div>
 

@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { CheckCircle, Users, BarChart3, Bell, Calculator, Shield, Target, Star, MessageCircle, ArrowRight, Play, Zap, TrendingUp, Award, BookOpen, Gift, CreditCard, Lock } from "lucide-react";
 import { useEffect } from "react";
 import Testimonials from "@/components/sales/Testimonials";
+import SubscriptionPlans from "@/components/sales/SubscriptionPlans";
 
 const Sales = () => {
   const navigate = useNavigate();
@@ -330,104 +331,8 @@ const Sales = () => {
             <p className="text-xl text-slate-400 max-w-2xl mx-auto font-medium">Escolha o plano que melhor se adapta ao momento da sua operação.</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            {/* Plano Mensal */}
-            {/* Plano Mensal */}
-            <Card className="bg-slate-800/40 border-white/5 p-8 flex flex-col justify-between hover:border-white/20 transition-all">
-              <div>
-                <CardTitle className="text-2xl font-black text-white mb-2">PLANO MENSAL</CardTitle>
-                <div className="flex items-baseline gap-1 mb-6">
-                  <span className="text-4xl font-black text-white">R$37</span>
-                  <span className="text-xl font-bold text-slate-400">,90/mês</span>
-                </div>
-                <ul className="space-y-4 mb-8">
-                  {[
-                    "Acesso completo ao sistema",
-                    "Dashboard em tempo real",
-                    "Leads ilimitados",
-                    "Cálculo de comissões",
-                    "Suporte por email"
-                  ].map((item, i) => (
-                    <li key={i} className="flex items-center gap-3 text-slate-300 font-medium">
-                      <CheckCircle className="w-5 h-5 text-blue-500 flex-shrink-0" />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <Button
-                className="w-full h-14 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black rounded-xl shadow-lg hover:shadow-blue-500/25 transition-all hover:scale-[1.02] active:scale-[0.98]"
-                onClick={() => handlePayment("https://buy.stripe.com/test_6oE03haZsbuP5sAeUU")}
-              >
-                ASSINAR AGORA
-              </Button>
-            </Card>
-
-            {/* Plano Semestral - Recomendado */}
-            <Card className="bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 border-0 p-8 flex flex-col justify-between scale-105 shadow-[0_0_60px_rgba(59,130,246,0.8)] relative overflow-hidden group">
-              <div className="absolute top-0 right-0 bg-yellow-400 text-[#0F172A] px-4 py-1 text-xs font-black uppercase tracking-widest rotate-45 translate-x-8 translate-y-4">RECOMENDADO</div>
-              <div>
-                <CardTitle className="text-2xl font-black text-white mb-2">PLANO SEMESTRAL</CardTitle>
-                <div className="flex items-baseline gap-1 mb-2">
-                  <span className="text-4xl font-black text-white">R$187</span>
-                  <span className="text-xl font-bold text-blue-100">,00/6 meses</span>
-                </div>
-                <p className="text-emerald-300 font-bold text-sm mb-6 uppercase tracking-wider">Economize 17%</p>
-                <ul className="space-y-4 mb-8">
-                  {[
-                    "Acesso completo ao sistema",
-                    "Dashboard em tempo real",
-                    "Leads ilimitados",
-                    "Cálculo de comissões",
-                    "Suporte PRIORITÁRIO"
-                  ].map((item, i) => (
-                    <li key={i} className="flex items-center gap-3 text-blue-50 font-medium">
-                      <CheckCircle className="w-5 h-5 text-blue-200 flex-shrink-0" />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <Button
-                className="w-full h-14 bg-gradient-to-r from-yellow-400 to-orange-400 hover:from-yellow-500 hover:to-orange-500 text-blue-950 font-black rounded-xl shadow-[0_10px_40px_rgba(251,191,36,0.5)] transition-all hover:scale-[1.05] active:scale-[0.98] border-0"
-                onClick={() => handlePayment("https://buy.stripe.com/test_28o03h8RkgP92go3cd")}
-              >
-                GARANTIR DESCONTO
-              </Button>
-            </Card>
-
-            {/* Plano Anual */}
-            {/* Plano Anual */}
-            <Card className="bg-slate-800/40 border-white/5 p-8 flex flex-col justify-between hover:border-white/20 transition-all">
-              <div>
-                <CardTitle className="text-2xl font-black text-white mb-2">PLANO ANUAL</CardTitle>
-                <div className="flex items-baseline gap-1 mb-2">
-                  <span className="text-4xl font-black text-white">R$297</span>
-                  <span className="text-xl font-bold text-slate-400">,00/ano</span>
-                </div>
-                <p className="text-blue-400 font-bold text-sm mb-6 uppercase tracking-wider">Economize 34%</p>
-                <ul className="space-y-4 mb-8">
-                  {[
-                    "Tudo do plano Semestral",
-                    "O melhor custo-benefício",
-                    "Suporte VIP via WhatsApp",
-                    "Treinamentos exclusivos",
-                    "Acesso imediato"
-                  ].map((item, i) => (
-                    <li key={i} className="flex items-center gap-3 text-slate-300 font-medium">
-                      <CheckCircle className="w-5 h-5 text-blue-500 flex-shrink-0" />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <Button
-                className="w-full h-14 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black rounded-xl shadow-lg hover:shadow-blue-500/25 transition-all hover:scale-[1.02] active:scale-[0.98]"
-                onClick={() => handlePayment("https://buy.stripe.com/test_5kA5nBd7A2YjcV23ce")}
-              >
-                APROVEITAR OFERTA
-              </Button>
-            </Card>
+          <div className="mt-12">
+            <SubscriptionPlans />
           </div>
         </div>
       </section>
