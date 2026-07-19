@@ -592,18 +592,32 @@ export default function WhatsAppInbox() {
       if (!response.ok) throw new Error(`Falha ao enviar ${step.tipo_midia}`);
       result = await response.json();
 
-      const { data: savedMsg } = await supabase.from("whatsapp_messages").insert({
-        conversation_id: selectedConv.id,
-        evolution_message_id: result?.key?.id || result?.messageId,
-        direcao: "enviada",
-        tipo: step.tipo_midia,
-        conteudo: step.mensagem_template || (step.tipo_midia === "audio" ? "Áudio enviado do funil" : "Mídia do funil"),
-        media_url: step.media_url,
-        status: "enviado",
-        timestamp_whatsapp: new Date().toISOString(),
-      }).select().single();
+      const evolutionMsgId = result?.key?.id || result?.messageId || result?.id;
+      
+      // Check if webhook already inserted it
+      const { data: existingMsg } = evolutionMsgId ? await supabase.from("whatsapp_messages").select("*").eq("evolution_message_id", evolutionMsgId).maybeSingle() : { data: null };
+      
+      let savedMsg = existingMsg;
 
-      if (savedMsg) setMessages((prev) => [...prev, savedMsg as Message]);
+      if (!savedMsg) {
+        const { data, error: insertError } = await supabase.from("whatsapp_messages").insert({
+          conversation_id: selectedConv.id,
+          evolution_message_id: evolutionMsgId,
+          direcao: "enviada",
+          tipo: step.tipo_midia,
+          conteudo: step.mensagem_template || (step.tipo_midia === "audio" ? "Áudio enviado do funil" : "Mídia do funil"),
+          media_url: step.media_url,
+          status: "enviado",
+          timestamp_whatsapp: new Date().toISOString(),
+        }).select().single();
+        if (insertError) console.error("Error inserting msg:", insertError);
+        savedMsg = data;
+      }
+
+      if (savedMsg) setMessages((prev) => {
+        if (prev.some(m => m.id === savedMsg.id)) return prev;
+        return [...prev, savedMsg as Message];
+      });
 
       await supabase.from("whatsapp_conversations").update({
         ultima_mensagem: step.mensagem_template || (step.tipo_midia === "audio" ? "Áudio enviado do funil" : "Mídia do funil"),
@@ -646,12 +660,17 @@ export default function WhatsAppInbox() {
         throw new Error(`Falha na API (${response.status}): ${errText}`);
       }
 
-      await supabase.from("whatsapp_messages").update({
+      const { error: updateError } = await supabase.from("whatsapp_messages").update({
         conteudo: "🚫 Mensagem apagada",
         tipo: "texto",
         media_url: null,
         status: "apagado"
       }).eq("id", msgId);
+
+      if (updateError) {
+        console.error("Supabase Update Error:", updateError);
+        throw new Error("Erro ao atualizar status no banco: " + updateError.message);
+      }
 
       setMessages(prev => prev.map(m => m.id === msgId ? { ...m, conteudo: "🚫 Mensagem apagada", tipo: "texto", media_url: null, status: "apagado" } : m));
       toast.success("Mensagem apagada para todos");
