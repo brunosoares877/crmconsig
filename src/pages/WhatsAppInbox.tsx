@@ -637,10 +637,14 @@ export default function WhatsAppInbox() {
       const response = await fetch(`${instance.evolution_api_url.replace(/\/$/, "")}/chat/deleteMessageForEveryone/${instance.instance_name}`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json", apikey: instance.api_key },
-        body: JSON.stringify({ remoteJid, id: evolutionMsgId, fromMe: true })
+        body: JSON.stringify({ remoteJid, id: evolutionMsgId, messageId: evolutionMsgId, fromMe: true })
       });
 
-      if (!response.ok) throw new Error("Falha ao apagar na API. O tempo limite pode ter expirado.");
+      if (!response.ok) {
+        const errText = await response.text();
+        console.error("Evolution API Delete Error:", response.status, errText);
+        throw new Error(`Falha na API (${response.status}): ${errText}`);
+      }
 
       await supabase.from("whatsapp_messages").update({
         conteudo: "🚫 Mensagem apagada",
