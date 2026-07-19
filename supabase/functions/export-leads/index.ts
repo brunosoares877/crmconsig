@@ -18,7 +18,7 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Get parameters from URL query string (useful for window.open or direct links)
+    // Get parameters from URL query string
     const urlParams = new URL(req.url).searchParams;
     const token = urlParams.get("token");
     
@@ -41,6 +41,19 @@ serve(async (req) => {
     const dateTo = urlParams.get("dateTo");
     const searchQuery = urlParams.get("search");
     const selectedIdsStr = urlParams.get("selectedIds");
+
+    // Fetch all employees to map UUID -> Name
+    const { data: employeesData } = await supabase
+      .from("employees")
+      .select("id, name")
+      .eq("user_id", user.id);
+
+    const employeeMap: Record<string, string> = {};
+    if (employeesData) {
+      employeesData.forEach((emp) => {
+        employeeMap[emp.id] = emp.name;
+      });
+    }
 
     // Build query
     let query = supabase
@@ -96,6 +109,9 @@ serve(async (req) => {
     const csvRows = [
       "\uFEFF" + headers.join(";"),
       ...filteredLeads.map((lead) => {
+        // Obter nome legível do funcionário
+        const employeeName = lead.employee ? (employeeMap[lead.employee] || lead.employee) : "";
+
         return [
           lead.name || "",
           lead.cpf || "",
@@ -105,7 +121,7 @@ serve(async (req) => {
           lead.product || "",
           lead.bank || "",
           lead.amount || "",
-          lead.employee || "",
+          employeeName,
           (lead.obs || "").replace(/[\n\r;]/g, " "),
           lead.created_at ? new Date(lead.created_at).toLocaleDateString("pt-BR") : ""
         ].map(field => `"${String(field).replace(/"/g, '""')}"`).join(";");
