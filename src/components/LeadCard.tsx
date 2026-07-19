@@ -368,50 +368,6 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete, isSelecte
     }
   };
 
-
-    setIsUpdating(true);
-    try {
-      const { data: userData } = await supabase.auth.getUser();
-      if (!userData.user) {
-        toast.error("Usuário não autenticado");
-        return;
-      }
-
-      // Inserir dados completos da comissão
-      const { error } = await supabase
-        .from("commissions")
-        .insert({
-          user_id: userData.user.id,
-          lead_id: lead.id,
-          amount: calculatedCommission.amount,
-          commission_value: calculatedCommission.value,
-          percentage: calculatedCommission.percentage,
-          product: lead.product,
-          employee: lead.employee && lead.employee.trim() !== '' ? lead.employee.trim() : 'Não informado',
-          status: 'in_progress',
-          payment_period: 'monthly'
-        });
-
-      if (error) throw error;
-
-      toast.success(`Comissão de R$ ${calculatedCommission.value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} gerada com sucesso!`);
-      setIsCommissionDialogOpen(false);
-      setCalculatedCommission(null);
-
-      // Navegar para página de comissões
-      setTimeout(() => {
-        navigate('/commission');
-      }, 1000);
-
-    } catch (error) {
-      const err = error as PostgrestError;
-      logger.error("Error creating commission", err);
-      toast.error(`Erro ao gerar comissão: ${err.message}`);
-    } finally {
-      setIsUpdating(false);
-    }
-  };
-
   const formatCurrency = (value: string) => {
     if (!value) return "Não informado";
     const numericValue = parseFloat(value.replace(/[^\d,]/g, '').replace(',', '.'));
