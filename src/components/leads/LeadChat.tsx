@@ -170,12 +170,18 @@ const LeadChat: React.FC<LeadChatProps> = ({ leadId, leadName, leadPhone }) => {
                                         }`}
                                 >
                                     {msg.tipo === 'imagem' && msg.media_url ? (
-                                        <div className="mb-2 rounded-lg overflow-hidden bg-black/10">
+                                        <div className="mb-2 rounded-lg overflow-hidden bg-black/10 relative group">
                                             <img src={msg.media_url} alt="Mídia" className="max-w-[200px] h-auto rounded" />
+                                            <a href={msg.media_url} target="_blank" download className="absolute bottom-2 right-2 bg-black/60 p-1.5 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                                            </a>
                                         </div>
                                     ) : msg.tipo === 'video' && msg.media_url ? (
-                                        <div className="mb-2 rounded-lg overflow-hidden bg-black/10">
+                                        <div className="mb-2 rounded-lg overflow-hidden bg-black/10 relative group">
                                             <video src={msg.media_url} controls className="max-w-[200px] max-h-48 rounded" />
+                                            <a href={msg.media_url} target="_blank" download className="absolute top-2 right-2 bg-black/60 p-1.5 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                                            </a>
                                         </div>
                                     ) : msg.tipo === 'audio' && msg.media_url ? (
                                         <div className="mb-2">
