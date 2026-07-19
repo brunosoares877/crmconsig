@@ -32,17 +32,13 @@ export const formSchema = z.object({
 
 export type FormData = z.infer<typeof formSchema>;
 
-export type ProcessedFormData = FormData & {
-  commission_config?: CommissionConfig;
-};
+export type ProcessedFormData = FormData;
 
 import BenefitTypeSelect from "@/components/forms/BenefitTypeSelect";
 import { BankSelect } from "@/components/forms/BankSelect";
 import EmployeeSelect from "@/components/EmployeeSelect";
-import CommissionConfigSelector from "@/components/forms/CommissionConfigSelector";
 import { useAuth } from "@/contexts/AuthContext";
 import { getEmployees, Employee } from "@/utils/employees";
-import type { CommissionConfig } from "@/types/database.types";
 import logger from "@/utils/logger";
 
 interface LeadFormProps {
@@ -98,7 +94,6 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [isInitialized, setIsInitialized] = useState(false);
-  const [selectedCommissionConfig, setSelectedCommissionConfig] = useState<CommissionConfig | null>(null);
   const [employeeList, setEmployeeList] = useState<Employee[]>([]);
 
   // Processar dados iniciais
@@ -253,7 +248,6 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
         : null,
       date: data.date || format(new Date(), "yyyy-MM-dd"),
       payment_period: data.payment_period || null,
-      commission_config: selectedCommissionConfig,
     };
 
     logger.debug("📤 LeadForm - Processed data to send", {
@@ -262,11 +256,17 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
       name: processedData.name,
       originalEmployee: data.employee,
       currentEmployeeFromWatch: currentEmployee,
-      commission_config: selectedCommissionConfig,
       allProcessedData: processedData
     });
 
-    onSubmit(processedData);
+     if (!isSubmitting) {
+      setIsSubmitting(true);
+      try {
+        await onSubmit(processedData);
+      } finally {
+        setIsSubmitting(false);
+      }
+    };
   };
 
   if (!user) {
@@ -430,19 +430,6 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
         </div>
       </div>
 
-      {/* Seção de Configuração de Comissão */}
-      {currentProduct && currentProduct !== "none" && (
-        <div className="space-y-4">
-          <div className="border-t pt-4">
-            <h3 className="text-lg font-semibold mb-4">💰 Configuração de Comissão</h3>
-            <CommissionConfigSelector
-              selectedProduct={currentProduct}
-              onConfigSelect={setSelectedCommissionConfig}
-              selectedConfig={selectedCommissionConfig}
-            />
-          </div>
-        </div>
-      )}
 
       {/* Seção de Representante */}
       {representativeMode === "sim" && (

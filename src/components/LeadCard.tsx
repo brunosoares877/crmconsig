@@ -21,8 +21,6 @@ import { cn } from "@/lib/utils";
 import { getBankName } from "@/utils/bankUtils";
 import { useBanks } from "@/hooks/useBanks";
 import { formatLeadDate } from "@/utils/dateUtils";
-import CommissionConfigSelector from "@/components/forms/CommissionConfigSelector";
-import { CommissionCalculationResult } from "@/hooks/useCommissionConfig";
 import { getEmployees, Employee } from "@/utils/employees";
 import { AdminPasswordDialog } from "@/components/AdminPasswordDialog";
 import { hasAdminPassword } from "@/utils/adminPassword";
@@ -103,18 +101,8 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete, isSelecte
   const [tags, setTags] = useState<LeadTag[]>([]);
   const [tagsLoading, setTagsLoading] = useState(true);
 
-  const [isCommissionDialogOpen, setIsCommissionDialogOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false); // Add state for Chat Dialog
-  const [calculatedCommission, setCalculatedCommission] = useState<{
-    value: number;
-    percentage: number;
-    amount: number;
-  } | null>(null);
-  const [editCommissionResult, setEditCommissionResult] = useState<CommissionCalculationResult | null>(null);
   const [employeeList, setEmployeeList] = useState<Employee[]>([]);
-  const [isStatusChangeConfirmOpen, setIsStatusChangeConfirmOpen] = useState(false);
-  const [pendingNewStatus, setPendingNewStatus] = useState<string | null>(null);
-  const [hasCommission, setHasCommission] = useState(false);
   const [showAdminPasswordDialog, setShowAdminPasswordDialog] = useState(false);
   const [pendingAction, setPendingAction] = useState<'delete' | 'edit' | null>(null);
   const [hasAdminPwd, setHasAdminPwd] = useState(false);
@@ -126,30 +114,6 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete, isSelecte
     hasAdminPassword().then(setHasAdminPwd);
   }, []);
 
-  // Verificar se o lead tem comissão gerada
-  useEffect(() => {
-    const checkCommission = async () => {
-      if (lead.status === 'convertido') {
-        try {
-          const { data: userData } = await supabase.auth.getUser();
-          if (userData.user) {
-            const { data: commission } = await supabase
-              .from("commissions")
-              .select("id")
-              .eq("lead_id", lead.id)
-              .eq("user_id", userData.user.id)
-              .single();
-            setHasCommission(!!commission);
-          }
-        } catch (error) {
-          setHasCommission(false);
-        }
-      } else {
-        setHasCommission(false);
-      }
-    };
-    checkCommission();
-  }, [lead.id, lead.status]);
 
   const getEmployeeNameById = (employeeId: string | undefined, list: Employee[] = employeeList): string => {
     if (!employeeId || employeeId === "none") return "Nenhum funcionário";
@@ -372,166 +336,7 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete, isSelecte
   };
 
   const handleStatusChange = async (newStatus: string) => {
-    // Se o lead está como "concluido" e tem comissão, e está sendo mudado para outro status, pedir confirmação
-    if (lead.status === 'concluido' && hasCommission && newStatus !== 'concluido') {
-      setPendingNewStatus(newStatus);
-      setIsStatusChangeConfirmOpen(true);
-      return;
-    }
-
-    // Se o status for "concluido" ou "convertido" e o lead tiver valor, calcular e criar comissão automaticamente
-    if ((newStatus === 'concluido' || newStatus === 'convertido') && lead.amount) {
-      await calculateAndShowCommission(newStatus);
-      return;
-    }
-
-    // Para outros status, atualizar normalmente
     await updateLeadStatus(newStatus);
-  };
-
-  const handleConfirmStatusChange = async () => {
-    if (pendingNewStatus) {
-      setIsStatusChangeConfirmOpen(false);
-      await updateLeadStatus(pendingNewStatus);
-      setPendingNewStatus(null);
-    }
-  };
-
-  const calculateAndShowCommission = async (newStatus: string) => {
-    setIsUpdating(true);
-    try {
-      const { data: userData } = await supabase.auth.getUser();
-      if (!userData.user) {
-        toast.error("Usuário não autenticado");
-        return;
-      }
-
-      // Verificar se já existe comissão para este lead
-      const { data: existingCommission } = await supabase
-        .from("commissions")
-        .select("id")
-        .eq("lead_id", lead.id)
-        .eq("user_id", userData.user.id)
-        .single();
-
-      if (existingCommission) {
-        // Se já existe comissão, atualizar o status e navegar para página de comissões
-        await updateLeadStatus(newStatus);
-        if (newStatus === 'concluido') {
-          toast.info("Lead já possui comissão gerada. Redirecionando para página de comissões...");
-          setTimeout(() => {
-            navigate('/commission');
-          }, 1000);
-        } else {
-          toast.info("Lead já possui comissão gerada anteriormente.");
-        }
-        return;
-      }
-
-      // Converter valor corretamente removendo caracteres não numéricos
-      const cleanAmount = lead.amount.replace(/[^\d,]/g, '').replace(',', '.');
-      const leadAmount = parseFloat(cleanAmount) || 0;
-
-      // Usar o novo sistema integrado de comissões
-      const { mapProductToCommissionConfig } = await import('@/utils/productMapping');
-      const mappedProduct = mapProductToCommissionConfig(lead.product || '');
-
-      let commissionValue = 0;
-      let percentage = 5; // Padrão
-
-      // Buscar taxa fixa primeiro
-      const { data: rates } = await supabase
-        .from('commission_rates')
-        .select('*')
-        .eq('product', mappedProduct)
-        .eq('active', true);
-
-      if (rates && rates.length > 0) {
-        const rate = rates[0] as any;
-        if (rate.commission_type === 'fixed') {
-          commissionValue = rate.fixed_value || 0;
-          percentage = leadAmount > 0 ? (commissionValue / leadAmount) * 100 : 0;
-        } else {
-          percentage = rate.percentage;
-          commissionValue = (leadAmount * percentage) / 100;
-        }
-      } else {
-        // Buscar por faixas de valor ou período
-        const { data: tiers } = await supabase
-          .from('commission_tiers')
-          .select('*')
-          .eq('product', mappedProduct)
-          .eq('active', true);
-
-        if (tiers && tiers.length > 0) {
-          // Tentar faixas de período primeiro se o lead tem período
-          if (lead.payment_period) {
-            const periodTiers = tiers.filter((t: any) => t.tier_type === 'period');
-            for (const tier of periodTiers) {
-              const tierData = tier as any;
-              const period = parseInt(lead.payment_period.toString());
-              if (tierData.min_period <= period &&
-                (!tierData.max_period || period <= tierData.max_period)) {
-                if (tierData.commission_type === 'fixed') {
-                  commissionValue = tierData.fixed_value || 0;
-                  percentage = leadAmount > 0 ? (commissionValue / leadAmount) * 100 : 0;
-                } else {
-                  percentage = tierData.percentage;
-                  commissionValue = (leadAmount * percentage) / 100;
-                }
-                break;
-              }
-            }
-          }
-
-          // Se não encontrou por período, tentar por valor
-          if (commissionValue === 0) {
-            const valueTiers = tiers.filter((t: any) => !t.tier_type || t.tier_type === 'value');
-            for (const tier of valueTiers) {
-              const tierData = tier as any;
-              if (tierData.min_amount <= leadAmount &&
-                (!tierData.max_amount || leadAmount <= tierData.max_amount)) {
-                if (tierData.commission_type === 'fixed') {
-                  commissionValue = tierData.fixed_value || 0;
-                  percentage = leadAmount > 0 ? (commissionValue / leadAmount) * 100 : 0;
-                } else {
-                  percentage = tierData.percentage;
-                  commissionValue = (leadAmount * percentage) / 100;
-                }
-                break;
-              }
-            }
-          }
-        }
-
-        // Taxa padrão se não encontrou nenhuma configuração
-        if (commissionValue === 0) {
-          commissionValue = 0; // Removido fallback de 5%
-          percentage = 0;
-        }
-      }
-
-      setCalculatedCommission({
-        value: commissionValue,
-        percentage: percentage,
-        amount: leadAmount
-      });
-
-      // Primeiro atualizar o status do lead
-      await updateLeadStatus(newStatus);
-
-      // Sempre mostrar a caixa de diálogo para eles poderem editar ou confirmar a comissão
-      setIsCommissionDialogOpen(true);
-
-    } catch (error) {
-      const err = error as PostgrestError;
-      logger.error("Error calculating commission", err);
-      toast.error(`Erro ao calcular comissão: ${err.message}`);
-      // Em caso de erro, atualizar o status mesmo assim
-      await updateLeadStatus(newStatus);
-    } finally {
-      setIsUpdating(false);
-    }
   };
 
   const updateLeadStatus = async (newStatus: string) => {
@@ -563,65 +368,6 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete, isSelecte
     }
   };
 
-  // Função para criar comissão automaticamente e navegar
-  const createCommissionAndNavigate = async (commissionValue: number, percentage: number, leadAmount: number) => {
-    if (leadAmount >= 100000000 || commissionValue >= 100000000) {
-      toast.error("Valor muito alto. O limite do sistema é R$ 99.999.999,99.");
-      return;
-    }
-
-    setIsUpdating(true);
-    try {
-      const { data: userData } = await supabase.auth.getUser();
-      if (!userData.user) {
-        toast.error("Usuário não autenticado");
-        return;
-      }
-
-      const employeeName = lead.employee && lead.employee.trim() !== '' ? lead.employee.trim() : 'Não informado';
-
-      // Inserir dados completos da comissão
-      const { data: createdCommission, error } = await supabase
-        .from("commissions")
-        .insert({
-          user_id: userData.user.id,
-          lead_id: lead.id,
-          amount: leadAmount,
-          commission_value: commissionValue,
-          percentage: percentage,
-          product: lead.product,
-          employee: employeeName,
-          status: 'in_progress',
-          payment_period: 'monthly'
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      toast.success(`Comissão de R$ ${commissionValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} gerada com sucesso!`);
-
-      // Navegar para a página de comissões após um pequeno delay para o toast aparecer
-      setTimeout(() => {
-        navigate('/commission');
-      }, 1000);
-
-    } catch (error) {
-      const err = error as PostgrestError;
-      logger.error("Error creating commission", err);
-      toast.error(`Erro ao gerar comissão: ${err.message}`);
-    } finally {
-      setIsUpdating(false);
-    }
-  };
-
-  const handleCreateCommission = async () => {
-    if (!calculatedCommission) return;
-
-    if (calculatedCommission.amount >= 100000000 || calculatedCommission.value >= 100000000) {
-      toast.error("Valor muito alto. O limite do sistema é R$ 99.999.999,99.");
-      return;
-    }
 
     setIsUpdating(true);
     try {
@@ -998,138 +744,6 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete, isSelecte
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Modal de Geração de Comissão */}
-      <Dialog open={isCommissionDialogOpen} onOpenChange={setIsCommissionDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Calculator className="h-5 w-5 text-green-600" />
-              Gerar Comissão?
-            </DialogTitle>
-            <DialogDescription>
-              O lead foi marcado como <strong>Concluído</strong>. Deseja gerar a comissão automaticamente?
-            </DialogDescription>
-          </DialogHeader>
-
-          {calculatedCommission && (
-            <div className="space-y-4 py-4">
-              <div className="bg-gray-50 rounded-lg p-4 space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium text-gray-600">Cliente:</span>
-                  <span className="font-semibold">{lead.name}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium text-gray-600">Produto:</span>
-                  <span className="font-medium">{lead.product || 'Não informado'}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium text-gray-600">Valor da Venda:</span>
-                  <span className="font-semibold text-green-600">
-                    {calculatedCommission.amount.toLocaleString('pt-BR', {
-                      style: 'currency',
-                      currency: 'BRL'
-                    })}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium text-gray-600">Percentual:</span>
-                  <div className="flex items-center gap-1">
-                    <Input 
-                      type="number" 
-                      className="w-20 h-8 text-right font-semibold text-blue-600"
-                      value={calculatedCommission.percentage}
-                      onChange={(e) => {
-                         const pct = parseFloat(e.target.value) || 0;
-                         setCalculatedCommission({
-                            ...calculatedCommission,
-                            percentage: pct,
-                            value: (calculatedCommission.amount * pct) / 100
-                         });
-                      }}
-                    />
-                    <span className="font-semibold text-blue-600">%</span>
-                  </div>
-                </div>
-                <div className="border-t pt-2 mt-2">
-                  <div className="flex justify-between items-center">
-                    <span className="font-medium text-gray-800">Comissão:</span>
-                    <div className="flex items-center gap-1">
-                      <span className="font-medium text-green-600">R$</span>
-                      <Input 
-                        type="number" 
-                        className="w-28 h-8 text-right text-lg font-bold text-green-600"
-                        value={calculatedCommission.value}
-                        onChange={(e) => {
-                           const val = parseFloat(e.target.value) || 0;
-                           setCalculatedCommission({
-                              ...calculatedCommission,
-                              value: val,
-                              percentage: calculatedCommission.amount > 0 ? (val / calculatedCommission.amount) * 100 : 0
-                           });
-                        }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          <DialogFooter className="gap-2">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setIsCommissionDialogOpen(false);
-                setCalculatedCommission(null);
-              }}
-              disabled={isUpdating}
-            >
-              Agora Não
-            </Button>
-            <Button
-              onClick={handleCreateCommission}
-              disabled={isUpdating}
-              className="bg-green-600 hover:bg-green-700"
-            >
-              {isUpdating ? "Gerando..." : "✓ Gerar Comissão"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Dialog de confirmação para mudança de status quando há comissão */}
-      <AlertDialog open={isStatusChangeConfirmOpen} onOpenChange={setIsStatusChangeConfirmOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-amber-500" />
-              Confirmação de Mudança de Status
-            </AlertDialogTitle>
-            <AlertDialogDescription className="space-y-2">
-              <p>
-                Este lead está marcado como <strong>Concluído</strong> e já possui uma <strong>comissão gerada</strong>.
-              </p>
-              <p>
-                Tem certeza que deseja alterar o status para <strong>{statusLabels[pendingNewStatus as keyof typeof statusLabels] || pendingNewStatus}</strong>?
-              </p>
-              <p className="text-amber-600 font-medium mt-3">
-                ⚠️ A comissão existente não será removida, mas a mudança de status pode afetar relatórios e cálculos futuros.
-              </p>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setPendingNewStatus(null)}>
-              Cancelar
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleConfirmStatusChange}
-              className="bg-amber-600 hover:bg-amber-700"
-            >
-              Sim, Tenho Certeza
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
 
       {/* Dialog de confirmação com senha administrativa */}
       <AdminPasswordDialog
