@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Target, Plus, Trash2, Calendar, Phone, Eye, ArrowRight, Lightbulb } from "lucide-react";
 import { Link } from "react-router-dom";
+import { TableSkeleton } from "@/components/skeletons/Skeletons";
 
 interface Rule {
   id: string;
@@ -234,10 +235,7 @@ const Opportunities = () => {
                   </CardHeader>
                   <CardContent>
                     {loadingOpps ? (
-                      <div className="flex flex-col items-center justify-center py-10 space-y-2">
-                        <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-                        <p className="text-sm text-slate-500">Calculando oportunidades...</p>
-                      </div>
+                      <div className="py-6"><TableSkeleton /></div>
                     ) : opportunities.length === 0 ? (
                       <div className="flex flex-col items-center justify-center py-12 text-center space-y-3">
                         <div className="bg-slate-100 p-4 rounded-full">
@@ -379,9 +377,7 @@ const Opportunities = () => {
                   </CardHeader>
                   <CardContent>
                     {loadingRules ? (
-                      <div className="flex items-center justify-center py-8">
-                        <div className="w-6 h-6 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-                      </div>
+                      <div className="py-4"><TableSkeleton /></div>
                     ) : rules.length === 0 ? (
                       <p className="text-sm text-slate-400 italic py-6 text-center">Nenhuma regra de oportunidade criada ainda.</p>
                     ) : (

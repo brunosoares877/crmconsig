@@ -11,6 +11,7 @@ import { formatLeadDate } from "@/utils/dateUtils";
 import { getEmployees, Employee } from "@/utils/employees";
 import type { Lead } from "@/types/database.types";
 import logger from "@/utils/logger";
+import { DashboardMetricsSkeleton } from "@/components/skeletons/Skeletons";
 
 const Dashboard = () => {
   const [metrics, setMetrics] = useState({
@@ -366,42 +367,53 @@ const Dashboard = () => {
 
   return (
     <div className="w-full px-2 sm:px-4 md:px-0 lg:px-0 space-y-4 sm:space-y-6">
-      {/* Metrics Cards Grid (status cards no topo) */}
-      <div className="w-full grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 md:gap-4 lg:gap-6">
-        {otherMetrics.map((metric, index) => (
-          <MetricsCard key={index} {...metric} />
-        ))}
-      </div>
-
-      {/* Main Content Grid */}
-      <div className="w-full grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6">
-        <div className="flex flex-col gap-4 sm:gap-6">
-          <ProductionCard
-            dailyProduction={dailyProduction}
-            isLoading={isLoading}
-          />
-
-          {/* Três principais cards de métricas abaixo do ProductionCard */}
-          <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 md:gap-4 lg:gap-6">
-            {mainMetrics.map((metric, index) => (
+      {isLoading ? (
+        <>
+          <DashboardMetricsSkeleton />
+          <div className="mt-8">
+             <DashboardMetricsSkeleton />
+          </div>
+        </>
+      ) : (
+        <>
+          {/* Metrics Cards Grid (status cards no topo) */}
+          <div className="w-full grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 md:gap-4 lg:gap-6">
+            {otherMetrics.map((metric, index) => (
               <MetricsCard key={index} {...metric} />
             ))}
           </div>
-        </div>
 
-        <EmployeePerformanceCard
-          employeeSales={employeeSalesArray}
-          isLoading={isLoading}
-        />
-      </div>
+          {/* Main Content Grid */}
+          <div className="w-full grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6">
+            <div className="flex flex-col gap-4 sm:gap-6">
+              <ProductionCard
+                dailyProduction={dailyProduction}
+                isLoading={isLoading}
+              />
 
-      {/* Latest Leads Full Width */}
-      <div className="w-full">
-        <LatestLeadsCard
-          latestLeads={latestLeads}
-          isLoading={isLoading}
-        />
-      </div>
+              {/* Três principais cards de métricas abaixo do ProductionCard */}
+              <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 md:gap-4 lg:gap-6">
+                {mainMetrics.map((metric, index) => (
+                  <MetricsCard key={index} {...metric} />
+                ))}
+              </div>
+            </div>
+
+            <EmployeePerformanceCard
+              employeeSales={employeeSalesArray}
+              isLoading={isLoading}
+            />
+          </div>
+
+          {/* Latest Leads Full Width */}
+          <div className="w-full">
+            <LatestLeadsCard
+              latestLeads={latestLeads}
+              isLoading={isLoading}
+            />
+          </div>
+        </>
+      )}
     </div>
   );
 };

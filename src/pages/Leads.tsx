@@ -14,6 +14,7 @@ import AddLeadButton from "@/components/leads/AddLeadButton";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import Header from "@/components/Header";
+import { Skeleton } from "@/components/ui/skeleton";
 import { getBankName } from "@/utils/bankUtils";
 import { getEmployees, Employee } from "@/utils/employees";
 import { useProducts } from "@/hooks/useProducts";
@@ -214,13 +215,13 @@ const Leads = () => {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-2xl">{isLoading ? "..." : leadStats.total}</CardTitle>
+              <CardTitle className="text-2xl">{isLoading ? <Skeleton className="h-8 w-16" /> : leadStats.total}</CardTitle>
               <CardDescription>Total de Leads</CardDescription>
             </CardHeader>
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-2xl text-blue-600">{isLoading ? "..." : leadStats.new}</CardTitle>
+              <CardTitle className="text-2xl text-blue-600">{isLoading ? <Skeleton className="h-8 w-16" /> : leadStats.new}</CardTitle>
               <CardDescription>Novos Leads</CardDescription>
             </CardHeader>
             <CardContent>
@@ -231,7 +232,7 @@ const Leads = () => {
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-2xl text-amber-600">{isLoading ? "..." : leadStats.qualified}</CardTitle>
+              <CardTitle className="text-2xl text-amber-600">{isLoading ? <Skeleton className="h-8 w-16" /> : leadStats.qualified}</CardTitle>
               <CardDescription>Leads Qualificados</CardDescription>
             </CardHeader>
             <CardContent>
@@ -242,7 +243,7 @@ const Leads = () => {
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-2xl text-green-600">{isLoading ? "..." : leadStats.converted}</CardTitle>
+              <CardTitle className="text-2xl text-green-600">{isLoading ? <Skeleton className="h-8 w-16" /> : leadStats.converted}</CardTitle>
               <CardDescription>Concluídos</CardDescription>
             </CardHeader>
             <CardContent>
