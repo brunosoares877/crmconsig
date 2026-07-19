@@ -192,6 +192,10 @@ const LeadChat: React.FC<LeadChatProps> = ({ leadId, leadName, leadPhone }) => {
                                             <FileText className="h-4 w-4 opacity-80" />
                                             <p className="text-xs truncate">{msg.conteudo || "Documento recebido"}</p>
                                         </div>
+                                    ) : msg.tipo === 'figurinha' && msg.media_url ? (
+                                        <div className="mb-1">
+                                            <img src={msg.media_url} alt="Figurinha" className="w-24 h-24 object-contain bg-transparent" />
+                                        </div>
                                     ) : null}
 
                                     {(msg.content || msg.conteudo) && (msg.content || msg.conteudo) !== "[Áudio]" && (msg.content || msg.conteudo) !== "[mídia]" && (

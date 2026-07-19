@@ -624,6 +624,38 @@ export default function WhatsAppInbox() {
     }
   };
 
+  const handleDeleteMessage = async (msgId: string, evolutionMsgId: string) => {
+    if (!selectedConv || !evolutionMsgId) return;
+    try {
+      const instance = instances.find((i) => i.id === selectedConv.instance_id);
+      if (!instance) throw new Error("Instância não encontrada");
+      
+      const digits = selectedConv.telefone.replace(/\D/g, "");
+      const normalized = digits.startsWith("55") ? digits : `55${digits}`;
+      const remoteJid = `${normalized}@s.whatsapp.net`;
+
+      const response = await fetch(`${instance.evolution_api_url.replace(/\/$/, "")}/chat/deleteMessageForEveryone/${instance.instance_name}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json", apikey: instance.api_key },
+        body: JSON.stringify({ remoteJid, id: evolutionMsgId, fromMe: true })
+      });
+
+      if (!response.ok) throw new Error("Falha ao apagar na API. O tempo limite pode ter expirado.");
+
+      await supabase.from("whatsapp_messages").update({
+        conteudo: "🚫 Mensagem apagada",
+        tipo: "texto",
+        media_url: null,
+        status: "apagado"
+      }).eq("id", msgId);
+
+      setMessages(prev => prev.map(m => m.id === msgId ? { ...m, conteudo: "🚫 Mensagem apagada", tipo: "texto", media_url: null, status: "apagado" } : m));
+      toast.success("Mensagem apagada para todos");
+    } catch (err: any) {
+      toast.error("Erro ao apagar: " + (err.message || "Desconhecido"));
+    }
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -985,12 +1017,22 @@ export default function WhatsAppInbox() {
                 {messages.map((msg) => (
                   <div key={msg.id} className={`flex ${msg.direcao === "enviada" ? "justify-end" : "justify-start"}`}>
                     <div
-                      className={`max-w-[85%] lg:max-w-md rounded-2xl px-4 py-2.5 ${
+                      className={`max-w-[85%] lg:max-w-md rounded-2xl px-4 py-2.5 relative group/msg ${
                         msg.direcao === "enviada"
                           ? "bg-emerald-700 text-white rounded-br-sm shadow-sm"
                           : "bg-slate-700/80 text-white rounded-bl-sm shadow-sm border border-slate-600/30"
                       }`}
                     >
+                      {msg.direcao === "enviada" && msg.status !== "apagado" && msg.evolution_message_id && (
+                        <button
+                          onClick={() => handleDeleteMessage(msg.id, msg.evolution_message_id)}
+                          className="absolute -left-10 top-1/2 -translate-y-1/2 p-2 bg-red-500/80 hover:bg-red-600 text-white rounded-full opacity-0 group-hover/msg:opacity-100 transition-opacity"
+                          title="Apagar para todos"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                        </button>
+                      )}
+
                       {msg.tipo === 'imagem' && msg.media_url ? (
                         <div className="mb-2 rounded-xl overflow-hidden bg-black/20 relative group">
                           <img src={msg.media_url} alt="Mídia" className="w-full h-auto object-cover max-h-64" />
@@ -1014,6 +1056,10 @@ export default function WhatsAppInbox() {
                            <FileText className="h-6 w-6 opacity-80" />
                            <p className="text-xs truncate">{msg.conteudo || "Documento recebido"}</p>
                          </div>
+                       ) : msg.tipo === 'figurinha' && msg.media_url ? (
+                         <div className="mb-1">
+                           <img src={msg.media_url} alt="Figurinha" className="w-32 h-32 object-contain bg-transparent" />
+                         </div>
                       ) : null}
                       
                       {msg.conteudo && msg.conteudo !== "[Áudio]" && msg.conteudo !== "[mídia]" && (
@@ -1022,7 +1068,7 @@ export default function WhatsAppInbox() {
                       
                       <div className={`flex items-center gap-1 mt-1 ${msg.direcao === "enviada" ? "justify-end" : "justify-start"}`}>
                         <span className="text-[10px] opacity-60 font-medium">{formatTime(msg.created_at)}</span>
-                        {msg.direcao === "enviada" && STATUS_ICONS[msg.status as keyof typeof STATUS_ICONS]}
+                        {msg.direcao === "enviada" && msg.status !== "apagado" && STATUS_ICONS[msg.status as keyof typeof STATUS_ICONS]}
                       </div>
                     </div>
                   </div>
