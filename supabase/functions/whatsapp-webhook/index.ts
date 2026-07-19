@@ -48,14 +48,31 @@ serve(async (req) => {
 
       // O conteúdo da mensagem em si
       const msgContent = msgPayload?.message || msgPayload;
+
+      // 🛑 Verificar se é uma mensagem apagada (REVOKE)
+      const isRevoke = msgContent?.protocolMessage?.type === 0 || msgContent?.protocolMessage?.type === "REVOKE";
+      if (isRevoke) {
+        const revokedMsgId = msgContent.protocolMessage.key?.id;
+        if (revokedMsgId) {
+          await supabase.from("whatsapp_messages").update({
+            conteudo: "🚫 Mensagem apagada",
+            tipo: "texto",
+            media_url: null,
+            status: "apagado"
+          }).eq("evolution_message_id", revokedMsgId);
+        }
+        return new Response("ok", { headers: corsHeaders });
+      }
       
       const pushName = msgPayload?.pushName || data?.pushName || null;
+      const groupName = msgPayload?.groupName || data?.groupName || msgPayload?.message?.groupName || null;
       
       let text =
         msgContent?.conversation ||
         msgContent?.extendedTextMessage?.text ||
         msgContent?.imageMessage?.caption ||
-        (msgContent?.audioMessage ? "[Áudio]" : "[mídia]");
+        msgContent?.videoMessage?.caption ||
+        (msgContent?.audioMessage ? "[Áudio]" : msgContent?.videoMessage ? "[Vídeo]" : msgContent?.stickerMessage ? "[Figurinha]" : "[mídia]");
 
       // Se for grupo, adicionar o nome de quem mandou na mensagem
       if (isGroup && pushName && !fromMe) {
@@ -105,7 +122,7 @@ serve(async (req) => {
 
       let finalContactName = lead?.nome || pushName || phone;
       if (isGroup) {
-        finalContactName = lead?.nome || `Grupo ${phone.slice(0, 8)}...`;
+        finalContactName = lead?.nome || groupName || `Grupo ${phone.slice(0, 8)}...`;
       }
 
       // OTIMIZAÇÃO: Chamar a função atômica (RPC) para fazer o Upsert e incremento de não lidas de uma só vez
@@ -128,13 +145,15 @@ serve(async (req) => {
         return new Response("ok", { headers: corsHeaders });
       }
 
-      // Baixar mídia e salvar no Storage se houver imagem/áudio/documento
+      // Baixar mídia e salvar no Storage se houver imagem/áudio/documento/vídeo/figurinha
       let mediaUrl = null;
       const isImage = !!msgContent?.imageMessage;
       const isAudio = !!msgContent?.audioMessage;
+      const isVideo = !!msgContent?.videoMessage;
       const isDoc = !!msgContent?.documentMessage;
+      const isSticker = !!msgContent?.stickerMessage;
 
-      if ((isImage || isAudio || isDoc) && instanceData.evolution_api_url && instanceData.api_key) {
+      if ((isImage || isAudio || isVideo || isDoc || isSticker) && instanceData.evolution_api_url && instanceData.api_key) {
         try {
           console.log("Mídia detectada. Baixando da Evolution API...");
           const mediaRes = await fetch(
@@ -171,6 +190,7 @@ serve(async (req) => {
                 "audio/mpeg": "mp3",
                 "audio/amr": "amr",
                 "audio/mp4": "m4a",
+                "video/mp4": "mp4",
                 "application/pdf": "pdf",
               };
               const ext = mimeToExt[mimeType] || "bin";
@@ -214,12 +234,24 @@ serve(async (req) => {
       }
 
       // Salvar mensagem individual com a URL da mídia (se houver)
-      if (conversationId) {
+      if (conversationId && key?.id) {
+        // Evitar duplicidade
+        const { data: existingMsg } = await supabase
+          .from("whatsapp_messages")
+          .select("id")
+          .eq("evolution_message_id", key.id)
+          .single();
+
+        if (existingMsg) {
+          console.log("Mensagem já existe (CRM já inseriu), ignorando.");
+          return new Response("ok", { headers: corsHeaders });
+        }
+
         await supabase.from("whatsapp_messages").insert({
           conversation_id: conversationId,
-          evolution_message_id: key?.id,
+          evolution_message_id: key.id,
           direcao: direcaoMsg,
-          tipo: isImage ? "imagem" : isAudio ? "audio" : isDoc ? "documento" : "texto",
+          tipo: isImage ? "imagem" : isVideo ? "video" : isAudio ? "audio" : isDoc ? "documento" : isSticker ? "figurinha" : "texto",
           conteudo: text,
           media_url: mediaUrl,
           status: fromMe ? "enviado" : "entregue",
