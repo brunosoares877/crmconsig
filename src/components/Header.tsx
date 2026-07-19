@@ -2,7 +2,8 @@
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { Bell, Menu } from "lucide-react";
+import { Bell, Menu, Calendar, Clock } from "lucide-react";
+import { TodayAgendaModal } from "./TodayAgendaModal";
 import { useSidebar } from "@/components/ui/sidebar";
 import { useIsMobile } from "@/hooks/use-mobile";
 import SupportButton from "@/components/SupportButton";
@@ -30,6 +31,7 @@ const Header = () => {
   const sidebar = useSidebar();
 
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [showAgendaModal, setShowAgendaModal] = useState(false);
   const [loadingNotifs, setLoadingNotifs] = useState(false);
 
   const handleLogout = async () => {
@@ -55,24 +57,28 @@ const Header = () => {
         setLoadingNotifs(true);
         const now = new Date();
         const nowIso = now.toISOString();
-        const windowMinutes = 60; // próximos 60 minutos
-        const windowDate = new Date(now.getTime() + windowMinutes * 60000).toISOString();
 
-        // Lembretes: due_date até a próxima 1h e não completados
+        // 1. Lembretes: vencidos ou marcados para hoje e não concluídos
+        const endOfToday = new Date();
+        endOfToday.setHours(23, 59, 59, 999);
+        const endOfTodayIso = endOfToday.toISOString();
+
         const { data: reminders, error: remErr } = await supabase
           .from("reminders")
           .select("id, title, due_date")
           .eq("user_id", user.id)
           .eq("is_completed", false)
-          .lte("due_date", windowDate);
+          .lte("due_date", endOfTodayIso);
         if (remErr) throw remErr;
 
-        // Agendamentos: data/hora até próxima 1h
+        // 2. Agendamentos: agendados para hoje ou datas passadas (pendentes)
+        const todayStr = now.toISOString().split("T")[0];
         const { data: appointments, error: appErr } = await supabase
           .from("appointments")
           .select("id, title, date, time")
           .eq("user_id", user.id)
-          .lte("date", windowDate.split("T")[0]);
+          .eq("status", "scheduled")
+          .lte("date", todayStr);
         if (appErr) throw appErr;
 
         const parsedReminders = (reminders || []).map((r) => ({
@@ -83,18 +89,16 @@ const Header = () => {
           dueAt: new Date(r.due_date),
         }));
 
-        const parsedApps = (appointments || []).flatMap((a) => {
-          if (!a.date) return [];
+        const parsedApps = (appointments || []).map((a) => {
           const dtStr = a.time ? `${a.date}T${a.time}` : `${a.date}T00:00:00`;
           const dueAt = new Date(dtStr);
-          if (dueAt.getTime() > new Date(windowDate).getTime()) return [];
-          return [{
+          return {
             id: `app-${a.id}`,
             title: a.title || "Agendamento",
             type: "appointment" as const,
             href: "/leads/scheduled",
             dueAt,
-          }];
+          };
         });
 
         const all = [...parsedReminders, ...parsedApps]
@@ -143,6 +147,18 @@ const Header = () => {
 
       <div className="flex items-center gap-1 md:gap-2">
         <SupportButton />
+        
+        {/* Botão de Agenda do Dia */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setShowAgendaModal(true)}
+          className="relative h-8 w-8 md:h-10 md:w-10 text-slate-600 hover:text-blue-600 hover:bg-slate-100 rounded-xl"
+          title="Agenda do Dia"
+        >
+          <Calendar className="h-4 w-4 md:h-5 md:w-5" />
+        </Button>
+
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
@@ -150,9 +166,11 @@ const Header = () => {
               size="icon"
               className="relative h-8 w-8 md:h-10 md:w-10"
             >
-              <Bell className="h-4 w-4 md:h-5 md:w-5" />
+              <Bell className={`h-4 w-4 md:h-5 md:w-5 ${hasNotifications ? 'animate-bounce text-amber-500' : 'text-slate-600'}`} />
               {hasNotifications && (
-                <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-red-500" />
+                <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-600 text-[10px] font-bold text-white flex items-center justify-center animate-pulse border border-white">
+                  {notifications.length}
+                </span>
               )}
             </Button>
           </DropdownMenuTrigger>
@@ -222,6 +240,8 @@ const Header = () => {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+      {/* Modal global de Agenda Diária */}
+      <TodayAgendaModal triggerOpen={showAgendaModal} onCloseTrigger={() => setShowAgendaModal(false)} />
     </header>
   );
 };
