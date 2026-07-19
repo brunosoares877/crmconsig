@@ -32,7 +32,8 @@ import {
   MessageCircle,
   Smartphone,
   Inbox,
-  GitMerge
+  GitMerge,
+  Target
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -79,6 +80,12 @@ const items = [
     title: "Leads",
     url: "/leads",
     icon: Users,
+    group: "LEADS"
+  },
+  {
+    title: "Oportunidades",
+    url: "/leads/opportunities",
+    icon: Target,
     group: "LEADS"
   },
   {
