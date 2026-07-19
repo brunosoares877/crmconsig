@@ -40,8 +40,9 @@ serve(async (req) => {
       }
 
       const fromMe = key?.fromMe || false;
-      if (fromMe) return new Response("ok", { headers: corsHeaders }); // Ignorar msgs enviadas
+      const direcaoMsg = fromMe ? "enviada" : "recebida";
 
+      const isGroup = key?.remoteJid?.includes("@g.us");
       const phone = key?.remoteJid?.replace("@s.whatsapp.net", "").replace("@g.us", "");
       if (!phone) return new Response("ok", { headers: corsHeaders });
 
@@ -50,11 +51,16 @@ serve(async (req) => {
       
       const pushName = msgPayload?.pushName || data?.pushName || null;
       
-      const text =
+      let text =
         msgContent?.conversation ||
         msgContent?.extendedTextMessage?.text ||
         msgContent?.imageMessage?.caption ||
         (msgContent?.audioMessage ? "[Áudio]" : "[mídia]");
+
+      // Se for grupo, adicionar o nome de quem mandou na mensagem
+      if (isGroup && pushName && !fromMe) {
+        text = `${pushName}: ${text}`;
+      }
 
       // Buscar instância pelo nome incluindo credenciais para baixar mídias
       const { data: instanceData } = await supabase
@@ -97,7 +103,10 @@ serve(async (req) => {
         .eq("status", "pendente")
         .not("funnel_step_id", "is", null);
 
-      const finalContactName = lead?.nome || pushName || phone;
+      let finalContactName = lead?.nome || pushName || phone;
+      if (isGroup) {
+        finalContactName = lead?.nome || `Grupo ${phone.slice(0, 8)}...`;
+      }
 
       // OTIMIZAÇÃO: Chamar a função atômica (RPC) para fazer o Upsert e incremento de não lidas de uma só vez
       const { data: conversationId, error: rpcError } = await supabase.rpc(
@@ -109,7 +118,7 @@ serve(async (req) => {
           p_telefone: phone,
           p_nome_contato: finalContactName,
           p_ultima_mensagem: text,
-          p_direcao_ultima: "recebida",
+          p_direcao_ultima: direcaoMsg,
           p_status: lead ? "em_atendimento" : "aberta"
         }
       );
@@ -209,11 +218,11 @@ serve(async (req) => {
         await supabase.from("whatsapp_messages").insert({
           conversation_id: conversationId,
           evolution_message_id: key?.id,
-          direcao: "recebida",
+          direcao: direcaoMsg,
           tipo: isImage ? "imagem" : isAudio ? "audio" : isDoc ? "documento" : "texto",
           conteudo: text,
           media_url: mediaUrl,
-          status: "entregue",
+          status: fromMe ? "enviado" : "entregue",
           timestamp_whatsapp: new Date().toISOString(),
         });
       }
