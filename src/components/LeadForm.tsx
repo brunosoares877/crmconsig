@@ -215,7 +215,7 @@ const LeadForm: React.FC<LeadFormProps> = ({ onSubmit, onCancel, initialData, is
     getEmployees().then(setEmployeeList);
   }, []);
 
-  const onFormSubmit = (data: FormData) => {
+  const onFormSubmit = async (data: FormData) => {
     logger.debug("🚀 LeadForm - Submitting data", data);
 
     if (!data.name || data.name.trim() === "") {
