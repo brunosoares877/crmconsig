@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, Phone, User, Loader2 } from "lucide-react";
+import { Send, Phone, User, Loader2, FileText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Lead } from "@/types/models";
@@ -19,6 +19,8 @@ interface Message {
     direction: 'inbound' | 'outbound';
     created_at: string;
     status: string;
+    tipo?: 'texto' | 'imagem' | 'video' | 'audio' | 'documento';
+    media_url?: string;
 }
 
 // URL do backend (deve vir de env em produção)
@@ -167,7 +169,28 @@ const LeadChat: React.FC<LeadChatProps> = ({ leadId, leadName, leadPhone }) => {
                                         : 'bg-white border text-gray-800 rounded-tl-none shadow-sm'
                                         }`}
                                 >
-                                    <p>{msg.content}</p>
+                                    {msg.tipo === 'imagem' && msg.media_url ? (
+                                        <div className="mb-2 rounded-lg overflow-hidden bg-black/10">
+                                            <img src={msg.media_url} alt="Mídia" className="max-w-[200px] h-auto rounded" />
+                                        </div>
+                                    ) : msg.tipo === 'video' && msg.media_url ? (
+                                        <div className="mb-2 rounded-lg overflow-hidden bg-black/10">
+                                            <video src={msg.media_url} controls className="max-w-[200px] max-h-48 rounded" />
+                                        </div>
+                                    ) : msg.tipo === 'audio' && msg.media_url ? (
+                                        <div className="mb-2">
+                                            <audio src={msg.media_url} controls className="w-[220px] max-w-full h-8" />
+                                        </div>
+                                    ) : msg.tipo === 'documento' && msg.media_url ? (
+                                        <div className="mb-2 p-2 rounded bg-black/10 flex items-center gap-2">
+                                            <FileText className="h-4 w-4 opacity-80" />
+                                            <p className="text-xs truncate">{msg.conteudo || "Documento recebido"}</p>
+                                        </div>
+                                    ) : null}
+
+                                    {(msg.content || msg.conteudo) && (msg.content || msg.conteudo) !== "[Áudio]" && (msg.content || msg.conteudo) !== "[mídia]" && (
+                                        <p className="mt-1">{msg.content || msg.conteudo}</p>
+                                    )}
                                     <span className="text-[10px] text-gray-400 block text-right mt-1">
                                         {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                     </span>

@@ -1010,7 +1010,9 @@ export default function WhatsAppInbox() {
                          </div>
                       ) : null}
                       
-                      <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">{msg.conteudo}</p>
+                      {msg.conteudo && msg.conteudo !== "[Áudio]" && msg.conteudo !== "[mídia]" && (
+                          <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">{msg.conteudo}</p>
+                      )}
                       
                       <div className={`flex items-center gap-1 mt-1 ${msg.direcao === "enviada" ? "justify-end" : "justify-start"}`}>
                         <span className="text-[10px] opacity-60 font-medium">{formatTime(msg.created_at)}</span>
