@@ -663,8 +663,7 @@ export default function WhatsAppInbox() {
       const { error: updateError } = await supabase.from("whatsapp_messages").update({
         conteudo: "🚫 Mensagem apagada",
         tipo: "texto",
-        media_url: null,
-        status: "apagado"
+        media_url: null
       }).eq("id", msgId);
 
       if (updateError) {
@@ -672,7 +671,7 @@ export default function WhatsAppInbox() {
         throw new Error("Erro ao atualizar status no banco: " + updateError.message);
       }
 
-      setMessages(prev => prev.map(m => m.id === msgId ? { ...m, conteudo: "🚫 Mensagem apagada", tipo: "texto", media_url: null, status: "apagado" } : m));
+      setMessages(prev => prev.map(m => m.id === msgId ? { ...m, conteudo: "🚫 Mensagem apagada", tipo: "texto", media_url: null } : m));
       toast.success("Mensagem apagada para todos");
     } catch (err: any) {
       toast.error("Erro ao apagar: " + (err.message || "Desconhecido"));
@@ -1046,7 +1045,7 @@ export default function WhatsAppInbox() {
                           : "bg-slate-700/80 text-white rounded-bl-sm shadow-sm border border-slate-600/30"
                       }`}
                     >
-                      {msg.direcao === "enviada" && msg.status !== "apagado" && msg.evolution_message_id && (
+                      {msg.direcao === "enviada" && msg.conteudo !== "🚫 Mensagem apagada" && msg.evolution_message_id && (
                         <button
                           onClick={() => handleDeleteMessage(msg.id, msg.evolution_message_id)}
                           className="absolute -left-10 top-1/2 -translate-y-1/2 p-2 bg-red-500/80 hover:bg-red-600 text-white rounded-full opacity-0 group-hover/msg:opacity-100 transition-opacity"

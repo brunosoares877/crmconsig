@@ -57,8 +57,7 @@ serve(async (req) => {
           await supabase.from("whatsapp_messages").update({
             conteudo: "🚫 Mensagem apagada",
             tipo: "texto",
-            media_url: null,
-            status: "apagado"
+            media_url: null
           }).eq("evolution_message_id", revokedMsgId);
         }
         return new Response("ok", { headers: corsHeaders });
