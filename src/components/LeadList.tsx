@@ -74,115 +74,29 @@ const LeadList: React.FC<LeadListProps> = ({
   const exportAllLeads = async () => {
     setIsExporting(true);
     try {
-      const { data: userData, error: userError } = await supabase.auth.getUser();
-      if (userError) throw userError;
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !session) throw new Error("Usuário não autenticado");
 
-      let dataQuery = supabase
-        .from("leads")
-        .select("*")
-        .eq('user_id', userData.user.id);
+      const token = session.access_token;
+      const url = new URL("https://wjljrytblpsnzjwvugqg.supabase.co/functions/v1/export-leads");
+      url.searchParams.set("token", token);
 
-      // Se houver seleção ativa, exporta apenas os selecionados
       if (selectedLeads.size > 0) {
-        dataQuery = dataQuery.in('id', Array.from(selectedLeads));
+        url.searchParams.set("selectedIds", Array.from(selectedLeads).join(","));
       } else {
-        // Senão, aplica os filtros ativos de busca
-        if (statusFilter) {
-          dataQuery = dataQuery.eq('status', statusFilter);
-        }
-        if (employeeFilter) {
-          dataQuery = dataQuery.eq('employee', employeeFilter);
-        }
-        if (productFilter) {
-          dataQuery = dataQuery.eq('product', productFilter);
-        }
-        if (bankFilter) {
-          dataQuery = dataQuery.eq('bank', bankFilter);
-        }
-        if (dateFrom) {
-          dataQuery = dataQuery.gte('date', dateFrom);
-        }
-        if (dateTo) {
-          dataQuery = dataQuery.lte('date', dateTo);
-        }
-      }
-
-      const { data, error } = await dataQuery.order("created_at", { ascending: false });
-
-      if (error) throw error;
-      if (!data || data.length === 0) {
-        toast.info("Não há leads para exportar.");
-        return;
-      }
-
-      // Filtrar por texto da busca localmente (se não for exportação por seleção)
-      let exportData = data;
-      if (selectedLeads.size === 0) {
-        const searchTerms = internalSearchQuery || searchQuery;
-        if (searchTerms) {
-          const lowerQuery = searchTerms.toLowerCase();
-          exportData = data.filter(
-            lead =>
-              (lead.name && lead.name.toLowerCase().includes(lowerQuery)) ||
-              (lead.cpf && lead.cpf.includes(lowerQuery)) ||
-              (lead.phone && lead.phone.includes(lowerQuery))
-          );
-        }
-      }
-
-      if (exportData.length === 0) {
-        toast.info("Nenhum lead corresponde aos filtros ativos.");
-        return;
-      }
-
-      const headers = [
-        "Nome",
-        "CPF",
-        "Telefone",
-        "E-mail",
-        "Status",
-        "Produto",
-        "Banco",
-        "Valor",
-        "Funcionário",
-        "Observação",
-        "Data de Cadastro"
-      ];
-
-      const csvRows = [
-        "\uFEFF" + headers.join(";"),
-        ...exportData.map(lead => {
-          return [
-            lead.name || "",
-            lead.cpf || "",
-            lead.phone || "",
-            lead.email || "",
-            lead.status || "novo",
-            lead.product || "",
-            lead.bank || "",
-            lead.amount || "",
-            lead.employee || "",
-            (lead.obs || "").replace(/[\n\r;]/g, " "),
-            lead.created_at ? new Date(lead.created_at).toLocaleDateString("pt-BR") : ""
-          ].map(field => `"${String(field).replace(/"/g, '""')}"`).join(";");
-        })
-      ];
-
-      const csvString = csvRows.join("\n");
-      const link = document.createElement("a");
-      
-      const fileName = selectedLeads.size > 0 
-        ? `leads_selecionados_${new Date().toISOString().split('T')[0]}.csv`
-        : `backup_leads_${new Date().toISOString().split('T')[0]}.csv`;
+        if (statusFilter) url.searchParams.set("status", statusFilter);
+        if (employeeFilter) url.searchParams.set("employee", employeeFilter);
+        if (productFilter) url.searchParams.set("product", productFilter);
+        if (bankFilter) url.searchParams.set("bank", bankFilter);
+        if (dateFrom) url.searchParams.set("dateFrom", dateFrom);
+        if (dateTo) url.searchParams.set("dateTo", dateTo);
         
-      link.href = "data:text/csv;charset=utf-8,\uFEFF" + encodeURIComponent(csvString);
-      link.download = fileName;
-      document.body.appendChild(link);
-      link.click();
-      
-      setTimeout(() => {
-        document.body.removeChild(link);
-      }, 100);
+        const searchTerms = internalSearchQuery || searchQuery;
+        if (searchTerms) url.searchParams.set("search", searchTerms);
+      }
+
+      // Abre a URL em uma nova aba/janela para disparar o download direto via headers HTTP
+      window.open(url.toString(), "_blank");
       
       toast.success(selectedLeads.size > 0 ? "Leads selecionados exportados!" : "Backup de leads exportado!");
     } catch (error: any) {
