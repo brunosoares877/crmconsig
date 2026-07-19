@@ -196,6 +196,8 @@ const Leads = () => {
                         className="pl-10 py-2 w-full" 
                         value={searchQuery} 
                         onChange={e => setSearchQuery(e.target.value)} 
+                        autoComplete="off"
+                        name="leadSearchQuery"
                       />
                     </div>
                     <Button asChild variant="outline" className="flex items-center gap-2 shrink-0">

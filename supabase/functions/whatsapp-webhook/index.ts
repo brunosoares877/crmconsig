@@ -56,10 +56,10 @@ serve(async (req) => {
         msgContent?.imageMessage?.caption ||
         (msgContent?.audioMessage ? "[Áudio]" : "[mídia]");
 
-      // Buscar instância pelo nome
+      // Buscar instância pelo nome incluindo credenciais para baixar mídias
       const { data: instanceData } = await supabase
         .from("whatsapp_instances")
-        .select("id, user_id")
+        .select("id, user_id, evolution_api_url, api_key")
         .eq("instance_name", instance)
         .single();
 
@@ -99,60 +99,120 @@ serve(async (req) => {
 
       const finalContactName = lead?.nome || pushName || phone;
 
-      // Buscar ou criar conversa
-      let conversationId: string;
-      const { data: existingConv } = await supabase
-        .from("whatsapp_conversations")
-        .select("id, nao_lidas")
-        .eq("telefone", phone)
-        .eq("instance_id", instanceData.id)
-        .single();
+      // OTIMIZAÇÃO: Chamar a função atômica (RPC) para fazer o Upsert e incremento de não lidas de uma só vez
+      const { data: conversationId, error: rpcError } = await supabase.rpc(
+        "upsert_whatsapp_conversation",
+        {
+          p_user_id: instanceData.user_id,
+          p_lead_id: lead?.id || null,
+          p_instance_id: instanceData.id,
+          p_telefone: phone,
+          p_nome_contato: finalContactName,
+          p_ultima_mensagem: text,
+          p_direcao_ultima: "recebida",
+          p_status: lead ? "em_atendimento" : "aberta"
+        }
+      );
 
-      if (existingConv) {
-        await supabase
-          .from("whatsapp_conversations")
-          .update({
-            nome_contato: finalContactName,
-            ultima_mensagem: text,
-            ultima_mensagem_at: new Date().toISOString(),
-            direcao_ultima: "recebida",
-            nao_lidas: (existingConv.nao_lidas || 0) + 1,
-            status: lead ? "em_atendimento" : "aberta",
-          })
-          .eq("id", existingConv.id);
-
-        conversationId = existingConv.id;
-      } else {
-        const { data: newConv } = await supabase
-          .from("whatsapp_conversations")
-          .insert({
-            user_id: instanceData.user_id,
-            lead_id: lead?.id || null,
-            instance_id: instanceData.id,
-            telefone: phone,
-            nome_contato: finalContactName,
-            ultima_mensagem: text,
-            ultima_mensagem_at: new Date().toISOString(),
-            direcao_ultima: "recebida",
-            nao_lidas: 1,
-            status: lead ? "em_atendimento" : "aberta",
-          })
-          .select()
-          .single();
-
-        conversationId = newConv?.id;
+      if (rpcError) {
+        console.error("Erro na execução do RPC upsert_whatsapp_conversation:", rpcError);
+        return new Response("ok", { headers: corsHeaders });
       }
 
-      // Salvar mensagem individual
+      // Baixar mídia e salvar no Storage se houver imagem/áudio/documento
+      let mediaUrl = null;
+      const isImage = !!msgContent?.imageMessage;
+      const isAudio = !!msgContent?.audioMessage;
+      const isDoc = !!msgContent?.documentMessage;
+
+      if ((isImage || isAudio || isDoc) && instanceData.evolution_api_url && instanceData.api_key) {
+        try {
+          console.log("Mídia detectada. Baixando da Evolution API...");
+          const mediaRes = await fetch(
+            `${instanceData.evolution_api_url}/chat/getBase64FromMediaMessage/${instance}`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "apikey": instanceData.api_key,
+              },
+              body: JSON.stringify({ message: msgPayload }),
+            }
+          );
+
+          if (mediaRes.ok) {
+            const mediaData = await mediaRes.json();
+            let base64Str = mediaData.base64 || mediaData;
+
+            if (base64Str) {
+              let mimeType = "application/octet-stream";
+              if (base64Str.startsWith("data:")) {
+                const parts = base64Str.split(";base64,");
+                mimeType = parts[0].substring(5);
+                base64Str = parts[1];
+              }
+
+              const mimeToExt: Record<string, string> = {
+                "image/jpeg": "jpg",
+                "image/png": "png",
+                "image/gif": "gif",
+                "image/webp": "webp",
+                "audio/ogg": "ogg",
+                "audio/mp3": "mp3",
+                "audio/mpeg": "mp3",
+                "audio/amr": "amr",
+                "audio/mp4": "m4a",
+                "application/pdf": "pdf",
+              };
+              const ext = mimeToExt[mimeType] || "bin";
+
+              // Converter base64 para binário
+              const binaryString = atob(base64Str);
+              const bytes = new Uint8Array(binaryString.length);
+              for (let i = 0; i < binaryString.length; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+              }
+
+              const storagePath = `${instanceData.user_id}/whatsapp-media/${key.id}.${ext}`;
+
+              // Salvar no bucket público 'lead-documents'
+              const { error: storageError } = await supabase.storage
+                .from("lead-documents")
+                .upload(storagePath, bytes, {
+                  contentType: mimeType,
+                  upsert: true,
+                });
+
+              if (storageError) {
+                console.error("Erro ao subir mídia no storage:", storageError);
+              } else {
+                const { data: publicData } = supabase.storage
+                  .from("lead-documents")
+                  .getPublicUrl(storagePath);
+
+                if (publicData?.publicUrl) {
+                  mediaUrl = publicData.publicUrl;
+                  console.log("Mídia salva no Storage:", mediaUrl);
+                }
+              }
+            }
+          } else {
+            console.error("Erro ao resgatar base64 da API:", mediaRes.status, await mediaRes.text());
+          }
+        } catch (mediaErr) {
+          console.error("Falha no download/upload da mídia:", mediaErr);
+        }
+      }
+
+      // Salvar mensagem individual com a URL da mídia (se houver)
       if (conversationId) {
         await supabase.from("whatsapp_messages").insert({
           conversation_id: conversationId,
           evolution_message_id: key?.id,
           direcao: "recebida",
-          tipo: msgContent?.imageMessage ? "imagem" :
-                msgContent?.audioMessage ? "audio" :
-                msgContent?.documentMessage ? "documento" : "texto",
+          tipo: isImage ? "imagem" : isAudio ? "audio" : isDoc ? "documento" : "texto",
           conteudo: text,
+          media_url: mediaUrl,
           status: "entregue",
           timestamp_whatsapp: new Date().toISOString(),
         });

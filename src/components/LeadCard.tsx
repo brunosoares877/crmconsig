@@ -166,10 +166,6 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete, isSelecte
     return getBankName(bankCode);
   };
 
-  // Debug apenas quando necessário
-  if (lead.employee) {
-    logger.debug("LeadCard - Employee:", lead.employee);
-  }
 
   useEffect(() => {
     // Buscar as tags atribuídas ao lead

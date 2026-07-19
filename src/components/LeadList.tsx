@@ -4,7 +4,7 @@ import EmptyState from "./EmptyState";
 import { Lead } from "@/types/models";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Search, Plus, Filter, X, ChevronLeft, ChevronRight, Trash2, Check, Square, CheckSquare } from "lucide-react";
+import { Search, Plus, Filter, X, ChevronLeft, ChevronRight, Trash2, Check, Square, CheckSquare, Download } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -68,6 +68,130 @@ const LeadList: React.FC<LeadListProps> = ({
   useEffect(() => {
     hasAdminPassword().then(setHasAdminPwd);
   }, []);
+
+  const [isExporting, setIsExporting] = useState(false);
+
+  const exportAllLeads = async () => {
+    setIsExporting(true);
+    try {
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (userError) throw userError;
+
+      let dataQuery = supabase
+        .from("leads")
+        .select("*")
+        .eq('user_id', userData.user.id);
+
+      // Se houver seleção ativa, exporta apenas os selecionados
+      if (selectedLeads.size > 0) {
+        dataQuery = dataQuery.in('id', Array.from(selectedLeads));
+      } else {
+        // Senão, aplica os filtros ativos de busca
+        if (statusFilter) {
+          dataQuery = dataQuery.eq('status', statusFilter);
+        }
+        if (employeeFilter) {
+          dataQuery = dataQuery.eq('employee', employeeFilter);
+        }
+        if (productFilter) {
+          dataQuery = dataQuery.eq('product', productFilter);
+        }
+        if (bankFilter) {
+          dataQuery = dataQuery.eq('bank', bankFilter);
+        }
+        if (dateFrom) {
+          dataQuery = dataQuery.gte('date', dateFrom);
+        }
+        if (dateTo) {
+          dataQuery = dataQuery.lte('date', dateTo);
+        }
+      }
+
+      const { data, error } = await dataQuery.order("created_at", { ascending: false });
+
+      if (error) throw error;
+      if (!data || data.length === 0) {
+        toast.info("Não há leads para exportar.");
+        return;
+      }
+
+      // Filtrar por texto da busca localmente (se não for exportação por seleção)
+      let exportData = data;
+      if (selectedLeads.size === 0) {
+        const searchTerms = internalSearchQuery || searchQuery;
+        if (searchTerms) {
+          const lowerQuery = searchTerms.toLowerCase();
+          exportData = data.filter(
+            lead =>
+              (lead.name && lead.name.toLowerCase().includes(lowerQuery)) ||
+              (lead.cpf && lead.cpf.includes(lowerQuery)) ||
+              (lead.phone && lead.phone.includes(lowerQuery))
+          );
+        }
+      }
+
+      if (exportData.length === 0) {
+        toast.info("Nenhum lead corresponde aos filtros ativos.");
+        return;
+      }
+
+      const headers = [
+        "Nome",
+        "CPF",
+        "Telefone",
+        "E-mail",
+        "Status",
+        "Produto",
+        "Banco",
+        "Valor",
+        "Funcionário",
+        "Observação",
+        "Data de Cadastro"
+      ];
+
+      const csvRows = [
+        "\uFEFF" + headers.join(";"),
+        ...exportData.map(lead => {
+          return [
+            lead.name || "",
+            lead.cpf || "",
+            lead.phone || "",
+            lead.email || "",
+            lead.status || "novo",
+            lead.product || "",
+            lead.bank || "",
+            lead.amount || "",
+            lead.employee || "",
+            (lead.obs || "").replace(/[\n\r;]/g, " "),
+            lead.created_at ? new Date(lead.created_at).toLocaleDateString("pt-BR") : ""
+          ].map(field => `"${String(field).replace(/"/g, '""')}"`).join(";");
+        })
+      ];
+
+      const csvString = csvRows.join("\n");
+      const link = document.createElement("a");
+      
+      const fileName = selectedLeads.size > 0 
+        ? `leads_selecionados_${new Date().toISOString().split('T')[0]}.csv`
+        : `backup_leads_${new Date().toISOString().split('T')[0]}.csv`;
+        
+      link.href = "data:text/csv;charset=utf-8,\uFEFF" + encodeURIComponent(csvString);
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      
+      setTimeout(() => {
+        document.body.removeChild(link);
+      }, 100);
+      
+      toast.success(selectedLeads.size > 0 ? "Leads selecionados exportados!" : "Backup de leads exportado!");
+    } catch (error: any) {
+      console.error("Error exporting leads:", error);
+      toast.error(`Erro ao exportar: ${error.message}`);
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   const fetchLeads = async (page = 1) => {
     setIsLoading(true);
@@ -609,6 +733,16 @@ const LeadList: React.FC<LeadListProps> = ({
               </>
             )}
           </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={exportAllLeads}
+            disabled={isExporting}
+            className="flex items-center gap-2 border-green-600 text-green-700 hover:bg-green-50 hover:text-green-800"
+          >
+            <Download className="h-4 w-4" />
+            {isExporting ? "Exportando..." : selectedLeads.size > 0 ? `Exportar Selecionados (${selectedLeads.size})` : "Exportar Backup"}
+          </Button>
           <LeadImportButton />
         </div>
       </div>
@@ -714,13 +848,13 @@ const LeadList: React.FC<LeadListProps> = ({
       </AlertDialog>
 
       <AdminPasswordDialog
-        isOpen={showAdminPasswordDialog}
-        onClose={() => setShowAdminPasswordDialog(false)}
-        onSuccess={() => {
+        open={showAdminPasswordDialog}
+        onOpenChange={setShowAdminPasswordDialog}
+        onConfirm={() => {
           setShowAdminPasswordDialog(false);
           setIsDeleteDialogOpen(true);
         }}
-        action="excluir os leads selecionados"
+        itemName="os leads selecionados"
       />
     </div>
   );

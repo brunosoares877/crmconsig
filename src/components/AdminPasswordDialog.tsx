@@ -1,12 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -144,70 +144,25 @@ export const AdminPasswordDialog: React.FC<AdminPasswordDialogProps> = ({
       onOpenChange(false);
       return;
     }
-
-    // Abrindo novamente: resetar proteção
-    setInternalOpen(true);
-    canCloseRef.current = false;
   };
 
   return (
-    <Dialog 
-      open={internalOpen} 
-      onOpenChange={handleInternalOpenChange}
-    >
-      <DialogContent 
-        className="sm:max-w-md z-[100]"
-        onInteractOutside={(e) => {
-          // SEMPRE bloquear cliques fora
-          e.preventDefault();
-          e.stopPropagation();
-          try {
-            if ((e as any).nativeEvent?.stopImmediatePropagation) {
-              (e as any).nativeEvent.stopImmediatePropagation();
-            }
-          } catch (err) {
-            // Ignorar
-          }
-        }}
-        onPointerDownOutside={(e) => {
-          // SEMPRE bloquear eventos de pointer
-          e.preventDefault();
-          e.stopPropagation();
-          try {
-            if ((e as any).nativeEvent?.stopImmediatePropagation) {
-              (e as any).nativeEvent.stopImmediatePropagation();
-            }
-          } catch (err) {
-            // Ignorar
-          }
-        }}
-        onEscapeKeyDown={(e) => {
-          // SEMPRE bloquear ESC - só fecha com botão Cancelar ou Confirmar
-          e.preventDefault();
-          e.stopPropagation();
-          try {
-            if ((e as any).nativeEvent?.stopImmediatePropagation) {
-              (e as any).nativeEvent.stopImmediatePropagation();
-            }
-          } catch (err) {
-            // Ignorar
-          }
-        }}
-      >
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Shield className="w-5 h-5 text-red-600" />
+    <AlertDialog open={internalOpen} onOpenChange={handleInternalOpenChange}>
+      <AlertDialogContent className="sm:max-w-md !z-[99999]" style={{ zIndex: 99999 }}>
+        <AlertDialogHeader>
+          <AlertDialogTitle className="flex items-center gap-2 text-red-600">
+            <AlertTriangle className="h-5 w-5" />
             {title}
-          </DialogTitle>
-          <DialogDescription>
+          </AlertDialogTitle>
+          <AlertDialogDescription>
             {description}
             {itemName && (
               <span className="block mt-2 font-semibold text-gray-900">
                 Item: {itemName}
               </span>
             )}
-          </DialogDescription>
-        </DialogHeader>
+          </AlertDialogDescription>
+        </AlertDialogHeader>
 
         <div className="space-y-4 py-4">
           <Alert className="border-orange-500 bg-orange-50">
@@ -217,6 +172,9 @@ export const AdminPasswordDialog: React.FC<AdminPasswordDialogProps> = ({
             </AlertDescription>
           </Alert>
 
+          {/* Inputs ocultos para capturar o autofill do Chrome e impedir que ele preencha a barra de pesquisa de leads */}
+          <input type="text" name="email" autoComplete="username" style={{ display: 'none' }} readOnly />
+          
           <div className="space-y-2">
             <Label htmlFor="admin-password" className="text-sm font-medium">
               Senha Administrativa
@@ -225,6 +183,7 @@ export const AdminPasswordDialog: React.FC<AdminPasswordDialogProps> = ({
               <Input
                 id="admin-password"
                 type={showPassword ? "text" : "password"}
+                autoComplete="new-password"
                 value={password}
                 onChange={(e) => {
                   setPassword(e.target.value);
@@ -257,8 +216,9 @@ export const AdminPasswordDialog: React.FC<AdminPasswordDialogProps> = ({
           </div>
         </div>
 
-        <DialogFooter>
+        <AlertDialogFooter className="sm:justify-end gap-2 mt-6">
           <Button
+            type="button"
             variant="outline"
             onClick={handleClose}
             disabled={isVerifying}
@@ -266,24 +226,22 @@ export const AdminPasswordDialog: React.FC<AdminPasswordDialogProps> = ({
             Cancelar
           </Button>
           <Button
+            type="button"
+            variant="destructive"
             onClick={handleVerify}
             disabled={isVerifying || !password.trim()}
-            className="bg-red-600 hover:bg-red-700"
           >
             {isVerifying ? (
               <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Verificando...
               </>
             ) : (
-              <>
-                <Shield className="w-4 h-4 mr-2" />
-                Confirmar
-              </>
+              'Confirmar'
             )}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 };

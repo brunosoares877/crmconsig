@@ -30,7 +30,6 @@ import {
   Briefcase,
   FileText,
   MessageCircle,
-  FolderOpen,
   Smartphone,
   Inbox,
   GitMerge
@@ -50,6 +49,31 @@ const items = [
     url: "/dashboard",
     icon: BarChart3,
     group: "PRINCIPAL"
+  },
+  {
+    title: "Conectar Chip",
+    url: "/whatsapp/connect",
+    icon: Smartphone,
+    group: "WHATSAPP"
+  },
+  {
+    title: "Prospecção Kanban",
+    url: "/whatsapp/prospecting",
+    icon: MessageCircle,
+    group: "WHATSAPP",
+    highlight: false
+  },
+  {
+    title: "Caixa de Entrada",
+    url: "/whatsapp/inbox",
+    icon: Inbox,
+    group: "WHATSAPP"
+  },
+  {
+    title: "Funis de Cadência",
+    url: "/funnels",
+    icon: GitMerge,
+    group: "WHATSAPP"
   },
   {
     title: "Leads",
@@ -106,12 +130,6 @@ const items = [
     icon: DollarSign,
     group: "NEGÓCIOS"
   },
-  {
-    title: "Roteiros Operacionais",
-    url: "/roteiros",
-    icon: FolderOpen,
-    group: "ROTEIROS"
-  },
 
   {
     title: "Funcionários",
@@ -124,31 +142,6 @@ const items = [
     url: "/settings",
     icon: Settings,
     group: "ADMINISTRAÇÃO"
-  },
-  {
-    title: "Conectar Chip",
-    url: "/whatsapp/connect",
-    icon: Smartphone,
-    group: "WHATSAPP"
-  },
-  {
-    title: "Prospecção Kanban",
-    url: "/whatsapp/prospecting",
-    icon: MessageCircle,
-    group: "WHATSAPP",
-    highlight: false
-  },
-  {
-    title: "Caixa de Entrada",
-    url: "/whatsapp/inbox",
-    icon: Inbox,
-    group: "WHATSAPP"
-  },
-  {
-    title: "Funis de Cadência",
-    url: "/funnels",
-    icon: GitMerge,
-    group: "WHATSAPP"
   }
 ];
 

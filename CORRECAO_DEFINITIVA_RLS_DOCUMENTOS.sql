@@ -19,7 +19,7 @@ DROP POLICY IF EXISTS "Authenticated users can insert documents" ON public.docum
 
 CREATE POLICY "Authenticated users can select documents" ON public.documents FOR SELECT TO authenticated USING (true);
 CREATE POLICY "Authenticated users can insert documents" ON public.documents FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "Users can delete their own documents" ON public.documents FOR DELETE TO authenticated USING (auth.uid() = user_id OR (SELECT email FROM auth.users WHERE id = auth.uid()) IN ('brunosoares877@gmail.com', 'solutioninveste@gmail.com'));
+CREATE POLICY "Users can delete their own documents" ON public.documents FOR DELETE TO authenticated USING (auth.uid() = user_id OR auth.jwt()->>'email' IN ('brunosoares877@gmail.com', 'solutioninveste@gmail.com'));
 
 -----------------------------------------------------------------------
 -- 📝 2. CORREÇÃO PARA TABELA: notes

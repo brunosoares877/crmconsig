@@ -54,6 +54,38 @@ const WhatsAppInbox = lazy(() => import("@/pages/WhatsAppInbox"));
 const Funnels = lazy(() => import("@/pages/Funnels"));
 const FunnelDetails = lazy(() => import("@/pages/FunnelDetails"));
 
+class GlobalErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean, error: Error | null}> {
+  constructor(props: {children: React.ReactNode}) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error('ErrorBoundary caught an error:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ padding: '20px', background: 'red', color: 'white', minHeight: '100vh', width: '100vw', zIndex: 999999, position: 'fixed', top: 0, left: 0 }}>
+          <h1 style={{ fontSize: '24px', fontWeight: 'bold' }}>REACT CRASH DETECTADO!</h1>
+          <p>Tire um print desta tela imediatamente e envie para mim:</p>
+          <pre style={{ background: 'darkred', padding: '10px', marginTop: '10px', whiteSpace: 'pre-wrap' }}>
+            {this.state.error?.stack || this.state.error?.message || 'Erro desconhecido'}
+          </pre>
+          <button onClick={() => window.location.reload()} style={{ marginTop: '20px', background: 'white', color: 'red', padding: '10px 20px', borderRadius: '5px' }}>Recarregar</button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+
 function App() {
   // Capturar erros globais
   React.useEffect(() => {
@@ -76,7 +108,8 @@ function App() {
 
   return (
     <div className="w-full min-h-screen">
-      <Router>
+      <GlobalErrorBoundary>
+        <Router>
         <AuthProvider>
           <ThemeProvider>
             <SubscriptionProvider>
@@ -128,8 +161,10 @@ function App() {
               <SonnerToaster />
             </SubscriptionProvider>
           </ThemeProvider>
+          
         </AuthProvider>
       </Router>
+      </GlobalErrorBoundary>
     </div>
   );
 }
