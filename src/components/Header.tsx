@@ -132,12 +132,12 @@ const Header = () => {
           </Button>
         )}
 
-        {/* Logo aumentada com cores brancas elegantes */}
-        <div className="flex items-center">
-          <div className="w-10 h-10 md:w-12 md:h-12 bg-white border-2 border-gray-200 rounded-xl flex items-center justify-center mr-3 md:mr-4 shadow-md">
-            <div className="w-5 h-5 md:w-6 md:h-6 bg-blue-600 rounded-md"></div>
+        {/* Logo aumentada com cores brancas elegantes - Oculta no Desktop para não duplicar */}
+        <div className="flex items-center md:hidden">
+          <div className="w-10 h-10 bg-white border-2 border-gray-200 rounded-xl flex items-center justify-center mr-3 shadow-md">
+            <div className="w-5 h-5 bg-blue-600 rounded-md"></div>
           </div>
-          <h1 className="text-2xl md:text-3xl font-bold text-slate-900">LeadConsig</h1>
+          <h1 className="text-2xl font-bold text-slate-900">LeadConsig</h1>
         </div>
       </div>
 
