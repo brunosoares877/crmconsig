@@ -333,7 +333,6 @@ const Opportunities = () => {
                           <SelectTrigger className="w-full">
                             <SelectValue placeholder="Selecione o produto contratado" />
                           </SelectTrigger>
-                          <SelectTrigger className="w-full" />
                           <SelectContent>
                             {products.map(p => (
                               <SelectItem key={p} value={p}>{p}</SelectItem>
