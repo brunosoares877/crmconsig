@@ -30,7 +30,6 @@ const MaquinaDeLeads = lazy(() => import("@/pages/MaquinaDeLeads"));
 const LeadNew = lazy(() => import("@/pages/LeadNew"));
 const LeadImport = lazy(() => import("@/pages/LeadImport"));
 const LeadsConfig = lazy(() => import("@/pages/LeadsConfig"));
-const LeadScheduling = lazy(() => import("@/pages/LeadScheduling"));
 const LeadsTrash = lazy(() => import("@/pages/LeadsTrash"));
 const Opportunities = lazy(() => import("@/pages/Opportunities"));
 const ResetPassword = lazy(() => import("@/pages/ResetPassword"));
@@ -123,7 +122,6 @@ function App() {
                   <Route path="/leads/new" element={<ProtectedRoute><LeadNew /></ProtectedRoute>} />
                   <Route path="/leads/import" element={<ProtectedRoute><LeadImport /></ProtectedRoute>} />
                   <Route path="/leads/config" element={<ProtectedRoute><LeadsConfig /></ProtectedRoute>} />
-                  <Route path="/leads/scheduled" element={<ProtectedRoute><LeadScheduling /></ProtectedRoute>} />
                   <Route path="/leads/opportunities" element={<ProtectedRoute><Opportunities /></ProtectedRoute>} />
                   <Route path="/leads/trash" element={<ProtectedRoute><LeadsTrash /></ProtectedRoute>} />
                   <Route path="/portability" element={<ProtectedRoute><Portability /></ProtectedRoute>} />

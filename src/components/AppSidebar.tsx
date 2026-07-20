@@ -96,34 +96,28 @@ const items = [
     highlight: true
   },
   {
-    title: "Agendamentos",
-    url: "/leads/scheduled",
-    icon: Calendar,
-    group: "LEADS"
-  },
-  {
     title: "Config. Leads",
     url: "/leads/config",
     icon: Cog,
     group: "LEADS"
   },
   {
-    title: "Lembretes",
+    title: "Painel de Agendamentos",
     url: "/reminders",
     icon: Bell,
-    group: "LEMBRETES"
+    group: "AGENDAMENTOS"
   },
   {
     title: "Calendário",
     url: "/reminders/calendar",
     icon: CalendarDays,
-    group: "LEMBRETES"
+    group: "AGENDAMENTOS"
   },
   {
     title: "Notas",
     url: "/notes",
     icon: FileText,
-    group: "LEMBRETES"
+    group: "AGENDAMENTOS"
   },
   {
     title: "Portabilidade",

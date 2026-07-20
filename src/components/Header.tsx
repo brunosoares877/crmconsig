@@ -60,48 +60,25 @@ const Header = () => {
 
         // 1. Lembretes: vencidos ou marcados para hoje e não concluídos
         const endOfToday = new Date();
-        endOfToday.setHours(23, 59, 59, 999);
-        const endOfTodayIso = endOfToday.toISOString();
+        const todayIso = now.toISOString();
 
         const { data: reminders, error: remErr } = await supabase
           .from("reminders")
           .select("id, title, due_date")
           .eq("user_id", user.id)
           .eq("is_completed", false)
-          .lte("due_date", endOfTodayIso);
+          .lte("due_date", todayIso);
         if (remErr) throw remErr;
-
-        // 2. Agendamentos: agendados para hoje ou datas passadas (pendentes)
-        const todayStr = now.toISOString().split("T")[0];
-        const { data: appointments, error: appErr } = await supabase
-          .from("appointments")
-          .select("id, title, date, time")
-          .eq("user_id", user.id)
-          .eq("status", "scheduled")
-          .lte("date", todayStr);
-        if (appErr) throw appErr;
 
         const parsedReminders = (reminders || []).map((r) => ({
           id: `rem-${r.id}`,
-          title: r.title || "Lembrete",
+          title: r.title || "Agendamento",
           type: "reminder" as const,
           href: "/reminders",
           dueAt: new Date(r.due_date),
         }));
 
-        const parsedApps = (appointments || []).map((a) => {
-          const dtStr = a.time ? `${a.date}T${a.time}` : `${a.date}T00:00:00`;
-          const dueAt = new Date(dtStr);
-          return {
-            id: `app-${a.id}`,
-            title: a.title || "Agendamento",
-            type: "appointment" as const,
-            href: "/leads/scheduled",
-            dueAt,
-          };
-        });
-
-        const all = [...parsedReminders, ...parsedApps]
+        const all = [...parsedReminders]
           .filter(n => !isNaN(n.dueAt.getTime()))
           .sort((a, b) => a.dueAt.getTime() - b.dueAt.getTime());
 
@@ -195,9 +172,7 @@ const Header = () => {
                 className="flex flex-col items-start text-xs"
                 onClick={() => navigate(n.href)}
               >
-                <span className="font-semibold">
-                  {n.type === "reminder" ? "Lembrete" : "Agendamento"}
-                </span>
+                <span className="font-medium text-slate-800">Agendamento:</span>
                 <span className="text-muted-foreground">{n.title}</span>
                 <span className="text-[10px] text-muted-foreground">
                   {n.dueAt.toLocaleString("pt-BR")}
