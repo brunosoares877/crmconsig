@@ -6,13 +6,14 @@ import {
   MessageSquare, Send, RefreshCw, Search, Phone, CheckCheck,
   Check, Clock, AlertCircle, User, Smile, Paperclip, ArrowLeft,
   Circle, CheckCircle, MoreVertical, Archive, ExternalLink,
-  KanbanSquare, List, X, Tag, Plus, UploadCloud, ImageIcon, FileText, Film, Zap, Trash2, MessageSquarePlus, Settings, GitMerge, Mic, Square, Trash, Play, Pencil, CheckSquare
+  KanbanSquare, List, X, Tag, Plus, UploadCloud, ImageIcon, FileText, Film, Zap, Trash2, MessageSquarePlus, Settings, GitMerge, Mic, Square, Trash, Play, Pencil, CheckSquare, CalendarClock
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { formatDistanceToNow } from "date-fns";
+import { Label } from "@/components/ui/label";
+import { addMonths, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   DropdownMenu,
@@ -180,6 +181,11 @@ export default function WhatsAppInbox() {
   const [selectedConvsIds, setSelectedConvsIds] = useState<string[]>([]);
   const [showAdminPasswordDialog, setShowAdminPasswordDialog] = useState(false);
 
+  const [showReminderModal, setShowReminderModal] = useState(false);
+  const [reminderNotes, setReminderNotes] = useState("");
+  const [reminderDate, setReminderDate] = useState<Date | undefined>(new Date());
+  const [isSubmittingReminder, setIsSubmittingReminder] = useState(false);
+
   const [profilePics, setProfilePics] = useState<Record<string, string>>(() => {
     try {
       const saved = localStorage.getItem("whatsapp_profile_pics");
@@ -269,6 +275,39 @@ export default function WhatsAppInbox() {
       toast.success("Conversas excluídas com sucesso");
     } catch (e) {
       toast.error("Erro ao excluir conversas");
+    }
+  };
+
+  const handleCreateReminder = async () => {
+    if (!selectedConv || !reminderDate) {
+      toast.error("Selecione uma data para o lembrete.");
+      return;
+    }
+    
+    setIsSubmittingReminder(true);
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) throw new Error("Não autenticado");
+
+      const { error } = await supabase.from("reminders").insert({
+        user_id: userData.user.id,
+        employee_id: userData.user.id,
+        title: `Retorno WhatsApp: ${selectedConv.nome_contato || selectedConv.telefone}`,
+        description: `${reminderNotes}\n\n[Lembrete originado do WhatsApp]`,
+        due_date: reminderDate.toISOString(),
+        priority: "medium",
+        status: "pending",
+        is_completed: false
+      });
+
+      if (error) throw error;
+      toast.success("Lembrete agendado com sucesso!");
+      setShowReminderModal(false);
+      setReminderNotes("");
+    } catch (e: any) {
+      toast.error("Erro ao agendar retorno: " + (e.message || ""));
+    } finally {
+      setIsSubmittingReminder(false);
     }
   };
 
@@ -1115,7 +1154,19 @@ export default function WhatsAppInbox() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
+                <div className="flex items-center gap-2 mt-3 sm:mt-0">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 text-xs bg-slate-800 border-slate-700 text-slate-300 hover:text-emerald-400 hover:border-emerald-500/50"
+                    onClick={() => {
+                      setReminderDate(addMonths(new Date(), 2));
+                      setShowReminderModal(true);
+                    }}
+                  >
+                    <CalendarClock className="h-3.5 w-3.5 mr-1.5" /> Agendar Retorno
+                  </Button>
+
                   <Button size="sm" variant="outline" className="h-8 bg-slate-800 border-slate-700 text-xs text-blue-400 hover:text-blue-300 hover:bg-slate-700" onClick={() => setIsFunnelModalOpen(true)}>
                     <GitMerge className="h-3.5 w-3.5 mr-1.5" /> Inscrever no Funil
                   </Button>
