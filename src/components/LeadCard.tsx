@@ -669,16 +669,7 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onUpdate, onDelete, isSelecte
               isEditing={true}
             />
 
-            {/* Seletor de Comissão na Edição */}
-            {lead.product && (
-              <div className="mt-6 w-full">
-                <CommissionConfigSelector
-                  selectedProduct={lead.product}
-                  onConfigSelect={() => { }}
-                  selectedConfig={lead.commission_config}
-                />
-              </div>
-            )}
+
           </div>
         </DialogContent>
       </Dialog>
