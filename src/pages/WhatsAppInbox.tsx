@@ -497,19 +497,31 @@ export default function WhatsAppInbox() {
         result = await response.json();
       }
 
-      // Salvar mensagem localmente
-      const { data: savedMsg } = await supabase.from("whatsapp_messages").insert({
-        conversation_id: selectedConv.id,
-        evolution_message_id: result?.key?.id,
-        direcao: "enviada",
-        tipo: msgTipo,
-        conteudo: newMessage.trim() || selectedFile?.name || "Mídia enviada",
-        media_url: base64Data, // Salva o base64 para preview imediato (se não for gigante)
-        status: "enviado",
-        timestamp_whatsapp: new Date().toISOString(),
-      }).select().single();
+      const evolutionMsgId = result?.key?.id || result?.messageId || result?.id;
+      
+      const { data: existingMsg } = evolutionMsgId ? await supabase.from("whatsapp_messages").select("*").eq("evolution_message_id", evolutionMsgId).maybeSingle() : { data: null };
+      
+      let savedMsg = existingMsg;
 
-      if (savedMsg) setMessages((prev) => [...prev, savedMsg as Message]);
+      if (!savedMsg) {
+        const { data, error: insertError } = await supabase.from("whatsapp_messages").insert({
+          conversation_id: selectedConv.id,
+          evolution_message_id: evolutionMsgId,
+          direcao: "enviada",
+          tipo: msgTipo,
+          conteudo: newMessage.trim() || selectedFile?.name || (recordedAudio ? "Áudio gravado" : "Mídia enviada"),
+          media_url: base64Data, // Salva o base64 para preview imediato (se não for gigante)
+          status: "enviado",
+          timestamp_whatsapp: new Date().toISOString(),
+        }).select().single();
+        if (insertError) console.error("Error inserting msg:", insertError);
+        savedMsg = data;
+      }
+
+      if (savedMsg) setMessages((prev) => {
+        if (prev.some(m => m.id === savedMsg.id)) return prev;
+        return [...prev, savedMsg as Message];
+      });
 
       // Atualizar última mensagem da conversa
       await supabase.from("whatsapp_conversations").update({
