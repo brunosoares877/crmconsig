@@ -6,7 +6,7 @@ import {
   MessageSquare, Send, RefreshCw, Search, Phone, CheckCheck,
   Check, Clock, AlertCircle, User, Smile, Paperclip, ArrowLeft,
   Circle, CheckCircle, MoreVertical, Archive, ExternalLink,
-  KanbanSquare, List, X, Tag, Plus, UploadCloud, ImageIcon, FileText, Film, Zap, Trash2, MessageSquarePlus, Settings, GitMerge, Mic, Square, Trash, Play
+  KanbanSquare, List, X, Tag, Plus, UploadCloud, ImageIcon, FileText, Film, Zap, Trash2, MessageSquarePlus, Settings, GitMerge, Mic, Square, Trash, Play, Pencil
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -651,6 +651,7 @@ export default function WhatsAppInbox() {
   };
 
   const handleDeleteMessage = async (msgId: string, evolutionMsgId: string) => {
+    if (!window.confirm("Tem certeza que deseja apagar esta mensagem para todos?")) return;
     if (!selectedConv || !evolutionMsgId) return;
     try {
       const instance = instances.find((i) => i.id === selectedConv.instance_id);
@@ -970,7 +971,27 @@ export default function WhatsAppInbox() {
                     </span>
                   </div>
                   <div>
-                    <p className="font-semibold text-white">{selectedConv.nome_contato || selectedConv.telefone}</p>
+                    <div className="flex items-center gap-2 group">
+                      <p className="font-semibold text-white">{selectedConv.nome_contato || selectedConv.telefone}</p>
+                      <button 
+                        onClick={async () => {
+                          const newName = window.prompt("Digite o novo nome para este contato:", selectedConv.nome_contato || "");
+                          if (newName === null || newName.trim() === selectedConv.nome_contato) return;
+                          
+                          try {
+                            await supabase.from("whatsapp_conversations").update({ nome_contato: newName.trim() }).eq("id", selectedConv.id);
+                            setConversations(prev => prev.map(c => c.id === selectedConv.id ? { ...c, nome_contato: newName.trim() } : c));
+                            toast.success("Nome atualizado com sucesso!");
+                          } catch (e) {
+                            toast.error("Erro ao atualizar nome.");
+                          }
+                        }}
+                        className="text-slate-500 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity" 
+                        title="Editar Nome"
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
                     <div className="flex items-center gap-2">
                       <p className="text-xs text-slate-400">{selectedConv.telefone}</p>
                       {selectedConv.tags?.map(tagId => {
