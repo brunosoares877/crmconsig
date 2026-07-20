@@ -64,12 +64,22 @@ const LeadList: React.FC<LeadListProps> = ({
   const [isDeletingMultiple, setIsDeletingMultiple] = useState(false);
   const [showAdminPasswordDialog, setShowAdminPasswordDialog] = useState(false);
   const [hasAdminPwd, setHasAdminPwd] = useState(false);
+  const [pendingAdminAction, setPendingAdminAction] = useState<"delete" | "export" | null>(null);
 
   useEffect(() => {
     hasAdminPassword().then(setHasAdminPwd);
   }, []);
 
   const [isExporting, setIsExporting] = useState(false);
+
+  const attemptExport = () => {
+    if (hasAdminPwd) {
+      setPendingAdminAction("export");
+      setShowAdminPasswordDialog(true);
+    } else {
+      exportAllLeads();
+    }
+  };
 
   const exportAllLeads = async () => {
     setIsExporting(true);
@@ -514,6 +524,7 @@ const LeadList: React.FC<LeadListProps> = ({
     if (selectedLeads.size === 0) return;
     
     if (hasAdminPwd) {
+      setPendingAdminAction("delete");
       setShowAdminPasswordDialog(true);
       setIsDeleteDialogOpen(false);
     } else {
@@ -650,7 +661,7 @@ const LeadList: React.FC<LeadListProps> = ({
           <Button
             variant="outline"
             size="sm"
-            onClick={exportAllLeads}
+            onClick={attemptExport}
             disabled={isExporting}
             className="flex items-center gap-2 border-green-600 text-green-700 hover:bg-green-50 hover:text-green-800"
           >
@@ -766,9 +777,14 @@ const LeadList: React.FC<LeadListProps> = ({
         onOpenChange={setShowAdminPasswordDialog}
         onConfirm={() => {
           setShowAdminPasswordDialog(false);
-          setIsDeleteDialogOpen(true);
+          if (pendingAdminAction === "delete") {
+            setIsDeleteDialogOpen(true);
+          } else if (pendingAdminAction === "export") {
+            exportAllLeads();
+          }
+          setPendingAdminAction(null);
         }}
-        itemName="os leads selecionados"
+        itemName={pendingAdminAction === "export" ? (selectedLeads.size > 0 ? "exportar os leads selecionados" : "exportar o backup de leads") : "excluir os leads selecionados"}
       />
     </div>
   );

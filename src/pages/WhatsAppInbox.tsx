@@ -292,7 +292,7 @@ export default function WhatsAppInbox() {
       const { error } = await supabase.from("reminders").insert({
         user_id: userData.user.id,
         employee: userData.user.id,
-        title: `Retorno WhatsApp: ${selectedConv.nome_contato || selectedConv.telefone}`,
+        title: `[OPORTUNIDADE MANUAL] - Retorno WhatsApp: ${selectedConv.nome_contato || selectedConv.telefone}`,
         notes: `${reminderNotes}\n\n[Lembrete originado do WhatsApp]`,
         due_date: reminderDate.toISOString(),
         priority: "media",

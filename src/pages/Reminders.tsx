@@ -1056,12 +1056,12 @@ const Reminders = () => {
                                     <span className="text-slate-900 font-medium">{getBankName(reminder.bank)}</span>
                                   </div>
                                 )}
-                                {reminder.employee && (
+                                {reminder.employee && employeeMap[reminder.employee] && (
                                   <div className="flex items-center gap-2 text-sm text-slate-600">
                                     <User className="h-4 w-4 text-slate-400" />
                                     <span className="font-medium">Responsável:</span>
                                     <span className="text-slate-900 font-medium">
-                                      {employeeMap[reminder.employee] || reminder.employee}
+                                      {employeeMap[reminder.employee]}
                                     </span>
                                   </div>
                                 )}
