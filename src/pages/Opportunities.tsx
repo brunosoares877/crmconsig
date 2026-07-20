@@ -13,9 +13,13 @@ import { Badge } from "@/components/ui/badge";
 import { useProducts } from "@/hooks/useProducts";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Target, Plus, Trash2, Calendar, Phone, Eye, ArrowRight, Lightbulb } from "lucide-react";
+import { Target, Plus, Trash2, Calendar, Phone, Eye, ArrowRight, Lightbulb, UserPlus, Clock } from "lucide-react";
 import { Link } from "react-router-dom";
 import { TableSkeleton } from "@/components/skeletons/Skeletons";
+import { addMonths } from "date-fns";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 
 interface Rule {
   id: string;
@@ -43,6 +47,15 @@ const Opportunities = () => {
   const [daysAfter, setDaysAfter] = useState("");
   const [oppTitle, setOppTitle] = useState("");
   const [submittingRule, setSubmittingRule] = useState(false);
+
+  // Form states for manual opportunity
+  const [showManualOppModal, setShowManualOppModal] = useState(false);
+  const [manualOppClientName, setManualOppClientName] = useState("");
+  const [manualOppPhone, setManualOppPhone] = useState("");
+  const [manualOppTitle, setManualOppTitle] = useState("");
+  const [manualOppDate, setManualOppDate] = useState<Date | undefined>(new Date());
+  const [manualOppNotes, setManualOppNotes] = useState("");
+  const [submittingManualOpp, setSubmittingManualOpp] = useState(false);
 
   useEffect(() => {
     fetchRules();
@@ -121,6 +134,47 @@ const Opportunities = () => {
         });
       });
 
+      // Buscar oportunidades manuais (salvas como lembretes com prefixo [OPORTUNIDADE MANUAL])
+      const { data: manualReminders, error: manualError } = await supabase
+        .from("reminders")
+        .select("*")
+        .eq("user_id", userData.user.id)
+        .like("title", "[OPORTUNIDADE MANUAL]%")
+        .eq("is_completed", false);
+
+      if (!manualError && manualReminders) {
+        manualReminders.forEach(reminder => {
+          const remDate = new Date(reminder.due_date);
+          const timeDiff = now.getTime() - remDate.getTime();
+          const daysDiff = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+
+          // Apenas mostra se a data programada já chegou ou passou
+          if (now >= remDate) {
+            // Extrair dados do 'notes' e 'title'
+            const cleanTitle = reminder.title.replace("[OPORTUNIDADE MANUAL] - ", "");
+            const lines = (reminder.notes || "").split("\n");
+            let clientName = "Desconhecido";
+            let phone = "";
+            if (lines.length > 0 && lines[0].startsWith("Cliente: ")) {
+              const nameMatch = lines[0].match(/Cliente: (.*?) \((.*?)\)/);
+              if (nameMatch) {
+                clientName = nameMatch[1];
+                phone = nameMatch[2];
+              } else {
+                clientName = lines[0].replace("Cliente: ", "");
+              }
+            }
+
+            calculatedOpps.push({
+              id: `manual-${reminder.id}`,
+              lead: { id: reminder.id, name: clientName, phone: phone, product: "Manual" },
+              rule: { id: "manual", product_source: "Manual", days_after: 0, opportunity_title: cleanTitle },
+              daysDiff: daysDiff >= 0 ? daysDiff : 0
+            });
+          }
+        });
+      }
+
       // Ordenar por maior tempo atrasado (prioridade)
       calculatedOpps.sort((a, b) => b.daysDiff - a.daysDiff);
       setOpportunities(calculatedOpps);
@@ -128,6 +182,43 @@ const Opportunities = () => {
       toast.error("Erro ao calcular oportunidades: " + err.message);
     } finally {
       setLoadingOpps(false);
+    }
+  };
+
+  const handleCreateManualOpportunity = async () => {
+    if (!manualOppClientName || !manualOppTitle || !manualOppDate) {
+      toast.error("Preencha o nome, o título da oportunidade e a data.");
+      return;
+    }
+
+    setSubmittingManualOpp(true);
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData?.user) throw new Error("Não autenticado");
+
+      const { error } = await supabase.from("reminders").insert({
+        user_id: userData.user.id,
+        employee: userData.user.id,
+        title: `[OPORTUNIDADE MANUAL] - ${manualOppTitle}`,
+        notes: `Cliente: ${manualOppClientName} (${manualOppPhone})\n\n${manualOppNotes}`,
+        due_date: manualOppDate.toISOString(),
+        priority: "alta",
+        is_completed: false
+      });
+
+      if (error) throw error;
+      
+      toast.success("Oportunidade manual agendada com sucesso!");
+      setShowManualOppModal(false);
+      setManualOppClientName("");
+      setManualOppPhone("");
+      setManualOppTitle("");
+      setManualOppNotes("");
+      fetchOpportunities();
+    } catch (err: any) {
+      toast.error("Erro ao salvar oportunidade: " + err.message);
+    } finally {
+      setSubmittingManualOpp(false);
     }
   };
 
@@ -209,6 +300,13 @@ const Opportunities = () => {
                   Monitore e crie ações de pós-venda, renovação e cross-sell automáticas com base na data de cadastro dos seus leads.
                 </p>
               </div>
+              <Button 
+                onClick={() => setShowManualOppModal(true)} 
+                className="bg-indigo-600 hover:bg-indigo-700 text-white shrink-0"
+              >
+                <UserPlus className="h-4 w-4 mr-2" />
+                Criar Oportunidade Manual
+              </Button>
             </div>
 
             <Tabs defaultValue="active" className="w-full space-y-4">
@@ -420,6 +518,113 @@ const Opportunities = () => {
           </main>
         </div>
       </div>
+
+      <Dialog open={showManualOppModal} onOpenChange={setShowManualOppModal}>
+        <DialogContent className="bg-slate-900 border-slate-700 text-white max-w-md">
+          <DialogHeader>
+            <DialogTitle>Nova Oportunidade Manual</DialogTitle>
+            <DialogDescription className="text-slate-400">
+              Agende uma oportunidade futura para um cliente específico. Ela aparecerá na sua lista quando chegar o dia.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-slate-300">Nome do Cliente</Label>
+                <Input
+                  value={manualOppClientName}
+                  onChange={(e) => setManualOppClientName(e.target.value)}
+                  placeholder="Ex: Maria José"
+                  className="bg-slate-800 border-slate-700 text-white"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-slate-300">Telefone</Label>
+                <Input
+                  value={manualOppPhone}
+                  onChange={(e) => setManualOppPhone(e.target.value)}
+                  placeholder="Ex: 11999999999"
+                  className="bg-slate-800 border-slate-700 text-white"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-slate-300">O que vai ser oferecido? (Título)</Label>
+              <Input
+                value={manualOppTitle}
+                onChange={(e) => setManualOppTitle(e.target.value)}
+                placeholder="Ex: Tem margem INSS livre"
+                className="bg-slate-800 border-slate-700 text-white"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-slate-300">Quando a oportunidade deve aparecer?</Label>
+              <div className="grid grid-cols-3 gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="bg-slate-800 border-slate-700 hover:border-indigo-500 hover:text-indigo-400 text-xs"
+                  onClick={() => setManualOppDate(addMonths(new Date(), 2))}
+                >
+                  Daqui a 2 Meses
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="bg-slate-800 border-slate-700 hover:border-indigo-500 hover:text-indigo-400 text-xs"
+                  onClick={() => setManualOppDate(addMonths(new Date(), 12))}
+                >
+                  Daqui a 12 Meses
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="bg-slate-800 border-slate-700 hover:border-indigo-500 hover:text-indigo-400 text-xs"
+                  onClick={() => setManualOppDate(addMonths(new Date(), 48))}
+                >
+                  Daqui a 48 Meses
+                </Button>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-slate-300">Data e Hora Específica</Label>
+              <Input
+                type="datetime-local"
+                value={manualOppDate ? new Date(manualOppDate.getTime() - manualOppDate.getTimezoneOffset() * 60000).toISOString().slice(0,16) : ""}
+                onChange={(e) => setManualOppDate(new Date(e.target.value))}
+                className="bg-slate-800 border-slate-700 text-white"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-slate-300">Observações adicionais</Label>
+              <Textarea 
+                placeholder="Ex: Cliente disse que talvez consiga quitar outro empréstimo..."
+                value={manualOppNotes}
+                onChange={e => setManualOppNotes(e.target.value)}
+                className="bg-slate-800 border-slate-700 text-white h-20"
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="ghost" className="text-slate-400 hover:text-white" onClick={() => setShowManualOppModal(false)}>
+              Cancelar
+            </Button>
+            <Button 
+              className="bg-indigo-600 hover:bg-indigo-700 text-white"
+              disabled={submittingManualOpp}
+              onClick={handleCreateManualOpportunity}
+            >
+              {submittingManualOpp ? "Salvando..." : "Criar Oportunidade"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </SidebarProvider>
   );
 };
