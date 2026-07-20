@@ -27,8 +27,9 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AdminPasswordDialog } from "@/components/AdminPasswordDialog";
 import { WhatsAppCRMSettings, WhatsAppTag, WhatsAppQuickReply } from "@/components/WhatsAppCRMSettings";
 import { FunnelEnrollModal } from "@/components/FunnelEnrollModal";
 
@@ -138,7 +139,6 @@ export default function WhatsAppInbox() {
       if (tagsRes.data) setTags(tagsRes.data as WhatsAppTag[]);
       if (repliesRes.data) setQuickReplies(repliesRes.data as WhatsAppQuickReply[]);
       if (stagesRes.data && stagesRes.data.length > 0) {
-        // Mesclar com os padrões
         const mergedStages = DEFAULT_FUNNEL_STAGES.map(defaultStage => {
           const customStage = stagesRes.data.find(s => s.stage_id === defaultStage.id);
           return customStage ? { ...defaultStage, label: customStage.label } : defaultStage;
@@ -146,7 +146,6 @@ export default function WhatsAppInbox() {
         setFunnelStages(mergedStages);
       }
 
-      // Buscar funis para disparo manual
       const { data: funnelsData } = await supabase.from("whatsapp_funnels").select("*").eq("user_id", user.id).order("created_at", { ascending: true });
       const { data: stepsData } = await supabase.from("whatsapp_funnel_steps").select("*").order("ordem_etapa", { ascending: true });
       
@@ -168,7 +167,6 @@ export default function WhatsAppInbox() {
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"list" | "funnel">("list");
   
-  // Audio Recording State
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [recordedAudio, setRecordedAudio] = useState<Blob | null>(null);
@@ -180,6 +178,7 @@ export default function WhatsAppInbox() {
   
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedConvsIds, setSelectedConvsIds] = useState<string[]>([]);
+  const [showAdminPasswordDialog, setShowAdminPasswordDialog] = useState(false);
   
   const [showNewContactModal, setShowNewContactModal] = useState(false);
   const [newContactPhone, setNewContactPhone] = useState("");
@@ -193,6 +192,19 @@ export default function WhatsAppInbox() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  const executeBulkDelete = async (bypassPassword = false) => {
+    try {
+      await supabase.from("whatsapp_conversations").delete().in("id", selectedConvsIds);
+      setConversations(prev => prev.filter(c => !selectedConvsIds.includes(c.id)));
+      if (selectedConv && selectedConvsIds.includes(selectedConv.id)) setSelectedConv(null);
+      setIsSelectionMode(false);
+      setSelectedConvsIds([]);
+      toast.success("Conversas excluídas com sucesso");
+    } catch (e) {
+      toast.error("Erro ao excluir conversas");
+    }
+  };
+
   const fetchConversations = useCallback(async () => {
     if (!user) return;
     const { data } = await supabase
@@ -202,7 +214,6 @@ export default function WhatsAppInbox() {
       .order("ultima_mensagem_at", { ascending: false });
 
     if (data) {
-      // Garantir valores default
       const processed = data.map(c => ({
         ...c,
         tags: c.tags || [],
@@ -210,12 +221,10 @@ export default function WhatsAppInbox() {
       }));
       setConversations(processed as Conversation[]);
       
-      // Atualizar o selectedConv sem causar loop infinito
       setSelectedConv(prev => {
         if (!prev) return null;
         const updatedSelected = processed.find(c => c.id === prev.id);
         if (updatedSelected) {
-          // Se for idêntico, retorna o prev para evitar re-render desnecessário
           if (JSON.stringify(prev) === JSON.stringify(updatedSelected)) {
             return prev;
           }
@@ -413,20 +422,6 @@ export default function WhatsAppInbox() {
       return;
     }
 
-    // Validação de Aquecimento de Chip (Limite Diário)
-    const chipAgeDays = (() => {
-      if (!instance.chip_connected_at) return 0;
-      const diff = Date.now() - new Date(instance.chip_connected_at).getTime();
-      return Math.floor(diff / (1000 * 60 * 60 * 24));
-    })();
-    const dailyLimit = chipAgeDays < 15 ? 20 : (chipAgeDays < 30 ? 65 : 125);
-
-    if (instance.messages_sent_today >= dailyLimit) {
-      toast.error(`Limite diário do chip atingido (${dailyLimit} msgs). Aguarde até amanhã para proteger o chip!`);
-      setSending(false);
-      return;
-    }
-
     const digits = selectedConv.telefone.replace(/\D/g, "");
     const normalized = digits.startsWith("55") ? digits : `55${digits}`;
 
@@ -436,7 +431,6 @@ export default function WhatsAppInbox() {
       let base64Data = null;
 
       if (recordedAudio) {
-        // Enviar Audio Gravado
         const reader = new FileReader();
         base64Data = await new Promise((resolve) => {
           reader.onloadend = () => resolve(reader.result);
@@ -459,7 +453,6 @@ export default function WhatsAppInbox() {
         if (!response.ok) throw new Error("Falha ao enviar áudio");
         result = await response.json();
       } else if (selectedFile) {
-        // Enviar Mídia
         base64Data = await toBase64(selectedFile);
         let mediatype = "document";
         if (selectedFile.type.startsWith("image/")) { mediatype = "image"; msgTipo = "imagem"; }
@@ -478,7 +471,7 @@ export default function WhatsAppInbox() {
                 mediatype: mediatype,
                 fileName: selectedFile.name,
                 caption: newMessage.trim(),
-                media: base64Data.split(",")[1] // Remove o data:image/jpeg;base64,
+                media: base64Data.split(",")[1]
               }
             }),
           }
@@ -487,7 +480,6 @@ export default function WhatsAppInbox() {
         result = await response.json();
         
       } else {
-        // Enviar Texto Normal
         const response = await fetch(
           `${instance.evolution_api_url.replace(/\/$/, "")}/message/sendText/${instance.instance_name}`,
           {
@@ -513,7 +505,7 @@ export default function WhatsAppInbox() {
           direcao: "enviada",
           tipo: msgTipo,
           conteudo: newMessage.trim() || selectedFile?.name || (recordedAudio ? "Áudio gravado" : "Mídia enviada"),
-          media_url: base64Data, // Salva o base64 para preview imediato (se não for gigante)
+          media_url: base64Data,
           status: "enviado",
           timestamp_whatsapp: new Date().toISOString(),
         }).select().single();
@@ -526,14 +518,12 @@ export default function WhatsAppInbox() {
         return [...prev, savedMsg as Message];
       });
 
-      // Atualizar última mensagem da conversa
       await supabase.from("whatsapp_conversations").update({
         ultima_mensagem: newMessage.trim() || selectedFile?.name || (recordedAudio ? "Áudio gravado" : "Mídia enviada"),
         ultima_mensagem_at: new Date().toISOString(),
         direcao_ultima: "enviada",
       }).eq("id", selectedConv.id);
 
-      // Incrementar contador de disparos (Aquecimento)
       await supabase.rpc("increment_messages_sent", { p_instance_id: instance.id });
       setInstances(prev => prev.map(i => i.id === instance.id ? { ...i, messages_sent_today: (i.messages_sent_today || 0) + 1 } : i));
 
@@ -560,20 +550,6 @@ export default function WhatsAppInbox() {
     const instance = instances.find((i) => i.id === selectedConv.instance_id);
     if (!instance) {
       toast.error("Instância não conectada");
-      setSending(false);
-      return;
-    }
-
-    // Validação de Aquecimento de Chip (Limite Diário)
-    const chipAgeDays = (() => {
-      if (!instance.chip_connected_at) return 0;
-      const diff = Date.now() - new Date(instance.chip_connected_at).getTime();
-      return Math.floor(diff / (1000 * 60 * 60 * 24));
-    })();
-    const dailyLimit = chipAgeDays < 15 ? 20 : (chipAgeDays < 30 ? 65 : 125);
-
-    if (instance.messages_sent_today >= dailyLimit) {
-      toast.error(`Limite diário do chip atingido (${dailyLimit} msgs). Aguarde até amanhã para proteger o chip!`);
       setSending(false);
       return;
     }
@@ -609,7 +585,6 @@ export default function WhatsAppInbox() {
 
       const evolutionMsgId = result?.key?.id || result?.messageId || result?.id;
       
-      // Check if webhook already inserted it
       const { data: existingMsg } = evolutionMsgId ? await supabase.from("whatsapp_messages").select("*").eq("evolution_message_id", evolutionMsgId).maybeSingle() : { data: null };
       
       let savedMsg = existingMsg;
@@ -640,7 +615,6 @@ export default function WhatsAppInbox() {
         direcao_ultima: "enviada",
       }).eq("id", selectedConv.id);
 
-      // Incrementar contador de disparos (Aquecimento)
       await supabase.rpc("increment_messages_sent", { p_instance_id: instance.id });
       setInstances(prev => prev.map(i => i.id === instance.id ? { ...i, messages_sent_today: (i.messages_sent_today || 0) + 1 } : i));
 
@@ -740,7 +714,6 @@ export default function WhatsAppInbox() {
       return;
     }
     
-    // Atualização otimista
     setFunnelStages(prev => prev.map(s => s.id === stageId ? { ...s, label: editingStageLabel } : s));
     setEditingStageId(null);
     
@@ -763,7 +736,6 @@ export default function WhatsAppInbox() {
     }
   };
 
-  // KANBAN VIEW RENDERER
   const renderKanban = () => {
     return (
       <div className="flex-1 flex overflow-x-auto p-4 gap-4 bg-slate-950">
@@ -832,10 +804,8 @@ export default function WhatsAppInbox() {
   return (
     <div className="flex h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 overflow-hidden">
       
-      {/* Sidebar de conversas (Lista) */}
       {viewMode === "list" && (
         <div className={`w-80 border-r border-slate-700/50 bg-slate-900/60 backdrop-blur flex flex-col shrink-0 ${selectedConv ? "hidden lg:flex" : "flex"}`}>
-          {/* Header */}
           <div className="p-4 border-b border-slate-700/50 shrink-0">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
@@ -920,17 +890,10 @@ export default function WhatsAppInbox() {
                     className="flex-1 h-8 text-xs"
                     disabled={selectedConvsIds.length === 0}
                     onClick={async () => {
-                      if (!window.confirm(`Tem certeza que deseja apagar ${selectedConvsIds.length} ${selectedConvsIds.length === 1 ? 'conversa' : 'conversas'}?`)) return;
-                      try {
-                        const { error } = await supabase.from("whatsapp_conversations").delete().in("id", selectedConvsIds);
-                        if (error) throw error;
-                        setConversations(prev => prev.filter(c => !selectedConvsIds.includes(c.id)));
-                        if (selectedConv && selectedConvsIds.includes(selectedConv.id)) setSelectedConv(null);
-                        setSelectedConvsIds([]);
-                        setIsSelectionMode(false);
-                        toast.success("Conversas excluídas!");
-                      } catch (e) {
-                        toast.error("Erro ao excluir conversas.");
+                      if (selectedConvsIds.length > 5) {
+                        setShowAdminPasswordDialog(true);
+                      } else {
+                        executeBulkDelete();
                       }
                     }}
                   >
@@ -941,7 +904,6 @@ export default function WhatsAppInbox() {
             )}
           </div>
 
-          {/* Lista */}
           <div className="flex-1 overflow-y-auto">
             {loading ? (
               <div className="flex items-center justify-center h-24">
@@ -1014,7 +976,6 @@ export default function WhatsAppInbox() {
         </div>
       )}
 
-      {/* Main View (Funnel or Chat area) */}
       {viewMode === "funnel" && !selectedConv ? (
         <div className="flex-1 flex flex-col h-full overflow-hidden">
           <div className="p-4 border-b border-slate-700/50 bg-slate-900/60 flex justify-between items-center">
@@ -1031,7 +992,6 @@ export default function WhatsAppInbox() {
           {renderKanban()}
         </div>
       ) : (
-        /* Área de chat */
         <div className={`flex-1 flex flex-col ${!selectedConv && viewMode === "list" ? "hidden lg:flex" : "flex"}`}>
           {!selectedConv ? (
             <div className="flex-1 flex flex-col items-center justify-center text-center px-8">
@@ -1043,7 +1003,6 @@ export default function WhatsAppInbox() {
             </div>
           ) : (
             <>
-              {/* Chat Header com CRM Tools */}
               <div className="px-4 py-3 border-b border-slate-700/50 bg-slate-900/50 shrink-0 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
                   <button onClick={() => setSelectedConv(null)} className="text-slate-400 hover:text-white">
@@ -1095,7 +1054,6 @@ export default function WhatsAppInbox() {
                     <GitMerge className="h-3.5 w-3.5 mr-1.5" /> Inscrever no Funil
                   </Button>
 
-                  {/* Dropdown de Funil */}
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button size="sm" variant="outline" className="h-8 bg-slate-800 border-slate-700 text-xs text-slate-300 hover:text-white hover:bg-slate-700">
@@ -1118,7 +1076,6 @@ export default function WhatsAppInbox() {
                     </DropdownMenuContent>
                   </DropdownMenu>
 
-                  {/* Dropdown de Etiquetas */}
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button size="sm" variant="outline" className="h-8 bg-slate-800 border-slate-700 text-xs text-slate-300 hover:text-white hover:bg-slate-700">
@@ -1144,14 +1101,12 @@ export default function WhatsAppInbox() {
                     </DropdownMenuContent>
                   </DropdownMenu>
 
-                  {/* Lixeira */}
                   <Button size="sm" variant="outline" className="h-8 bg-red-500/10 border-red-500/20 text-red-400 hover:text-red-300 hover:bg-red-500/20 px-2" onClick={() => handleDeleteConversation(selectedConv.id)}>
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
 
-              {/* Mensagens */}
               <div className="flex-1 overflow-y-auto p-4 space-y-2 bg-[#0b101a]/40">
                 {messages.map((msg) => (
                   <div key={msg.id} className={`flex ${msg.direcao === "enviada" ? "justify-end" : "justify-start"}`}>
@@ -1215,7 +1170,6 @@ export default function WhatsAppInbox() {
                 <div ref={messagesEndRef} />
               </div>
 
-              {/* Input Area */}
               <div className="p-4 border-t border-slate-700/50 bg-slate-900/80 shrink-0">
                 {selectedFile && (
                   <div className="mb-3 p-2 bg-slate-800 rounded-lg flex items-center justify-between border border-emerald-500/30">
@@ -1236,7 +1190,6 @@ export default function WhatsAppInbox() {
                     className="hidden" 
                     onChange={(e) => {
                       if (e.target.files && e.target.files[0]) {
-                        // Limite simples de 15MB para base64 nao quebrar memoria
                         if (e.target.files[0].size > 15 * 1024 * 1024) {
                           toast.error("Arquivo muito grande. Máximo 15MB.");
                           return;
@@ -1256,7 +1209,6 @@ export default function WhatsAppInbox() {
                     <Paperclip className="h-5 w-5" />
                   </Button>
 
-                  {/* Respostas Rápidas */}
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="icon" className="h-10 w-10 shrink-0 text-slate-400 hover:text-emerald-400 hover:bg-slate-800 rounded-full">
@@ -1429,6 +1381,13 @@ export default function WhatsAppInbox() {
         tags={tags} 
         quickReplies={quickReplies} 
         onUpdate={fetchCRMConfig} 
+      />
+      <AdminPasswordDialog
+        open={showAdminPasswordDialog}
+        onOpenChange={setShowAdminPasswordDialog}
+        onSuccess={() => executeBulkDelete(true)}
+        title="Exclusão em Massa"
+        description={`Por segurança, insira a senha administrativa para apagar ${selectedConvsIds.length} conversas de uma só vez.`}
       />
     </div>
   );
