@@ -179,6 +179,64 @@ export default function WhatsAppInbox() {
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedConvsIds, setSelectedConvsIds] = useState<string[]>([]);
   const [showAdminPasswordDialog, setShowAdminPasswordDialog] = useState(false);
+
+  const [profilePics, setProfilePics] = useState<Record<string, string>>(() => {
+    try {
+      const saved = localStorage.getItem("whatsapp_profile_pics");
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  useEffect(() => {
+    localStorage.setItem("whatsapp_profile_pics", JSON.stringify(profilePics));
+  }, [profilePics]);
+
+  useEffect(() => {
+    if (!filteredConvs.length || !instances.length) return;
+    
+    const fetchPics = async () => {
+      const toFetch = filteredConvs.slice(0, 15).filter(c => !profilePics[c.telefone]);
+      if (toFetch.length === 0) return;
+      
+      const newPics = { ...profilePics };
+      let updated = false;
+
+      for (const conv of toFetch) {
+        const instance = instances.find(i => i.id === conv.instance_id) || instances[0];
+        if (!instance) continue;
+
+        try {
+          const response = await fetch(`${instance.evolution_api_url.replace(/\/$/, "")}/chat/fetchProfilePictureUrl/${instance.instance_name}`, {
+            method: "POST",
+            headers: {
+              "apikey": instance.api_key,
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ number: conv.telefone })
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            newPics[conv.telefone] = data?.profilePictureUrl || data?.picture || "none";
+          } else {
+            newPics[conv.telefone] = "none";
+          }
+          updated = true;
+        } catch (e) {
+          newPics[conv.telefone] = "none";
+          updated = true;
+        }
+      }
+      
+      if (updated) {
+        setProfilePics(newPics);
+      }
+    };
+    
+    fetchPics();
+  }, [filteredConvs, instances]);
   
   const [showNewContactModal, setShowNewContactModal] = useState(false);
   const [newContactPhone, setNewContactPhone] = useState("");
@@ -943,11 +1001,19 @@ export default function WhatsAppInbox() {
                   >
                   <div className="flex items-center gap-3">
                     <div className="relative shrink-0">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
-                        <span className="text-sm font-bold text-white">
-                          {(conv.nome_contato || conv.telefone).charAt(0).toUpperCase()}
-                        </span>
-                      </div>
+                      {profilePics[conv.telefone] && profilePics[conv.telefone] !== "none" ? (
+                        <img 
+                          src={profilePics[conv.telefone]} 
+                          alt={conv.nome_contato || conv.telefone} 
+                          className="w-10 h-10 rounded-full object-cover border border-slate-700 bg-slate-800"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
+                          <span className="text-sm font-bold text-white">
+                            {(conv.nome_contato || conv.telefone).charAt(0).toUpperCase()}
+                          </span>
+                        </div>
+                      )}
                       {conv.nao_lidas > 0 && (
                         <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 flex items-center justify-center">
                           <span className="text-xs text-white font-bold">{conv.nao_lidas > 9 ? "9+" : conv.nao_lidas}</span>
