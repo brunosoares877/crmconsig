@@ -193,6 +193,15 @@ export default function WhatsAppInbox() {
     localStorage.setItem("whatsapp_profile_pics", JSON.stringify(profilePics));
   }, [profilePics]);
 
+  const filteredConvs = conversations.filter(
+    (c) =>
+      (!search ||
+        c.nome_contato?.toLowerCase().includes(search.toLowerCase()) ||
+        c.telefone?.includes(search) ||
+        c.tags?.some(t => t.toLowerCase().includes(search.toLowerCase()))) &&
+      (selectedInstanceFilter === "all" || c.instance_id === selectedInstanceFilter)
+  );
+
   useEffect(() => {
     if (!filteredConvs.length || !instances.length) return;
     
@@ -732,15 +741,6 @@ export default function WhatsAppInbox() {
       handleSend();
     }
   };
-
-  const filteredConvs = conversations.filter(
-    (c) =>
-      (!search ||
-        c.nome_contato?.toLowerCase().includes(search.toLowerCase()) ||
-        c.telefone?.includes(search) ||
-        c.tags?.some(t => t.toLowerCase().includes(search.toLowerCase()))) &&
-      (selectedInstanceFilter === "all" || c.instance_id === selectedInstanceFilter)
-  );
 
   const formatTime = (date: string) => {
     try {
