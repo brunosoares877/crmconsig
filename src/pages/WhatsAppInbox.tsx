@@ -884,9 +884,9 @@ export default function WhatsAppInbox() {
             </Select>
 
             {isSelectionMode && (
-              <div className="flex items-center justify-between mt-2 bg-slate-800/80 p-2 rounded-md border border-slate-700">
-                <span className="text-xs text-slate-300 font-medium">{selectedConvsIds.length} selecionadas</span>
-                <div className="flex gap-2">
+              <div className="flex flex-col gap-2 mt-2 bg-slate-800/80 p-2.5 rounded-md border border-slate-700">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-slate-300 font-medium">{selectedConvsIds.length} {selectedConvsIds.length === 1 ? 'selecionada' : 'selecionadas'}</span>
                   <Button 
                     size="sm" 
                     variant="ghost" 
@@ -901,10 +901,12 @@ export default function WhatsAppInbox() {
                   >
                     {selectedConvsIds.length === filteredConvs.length && filteredConvs.length > 0 ? "Desmarcar" : "Marcar Todas"}
                   </Button>
+                </div>
+                <div className="flex gap-2 w-full">
                   <Button 
                     size="sm" 
-                    variant="ghost" 
-                    className="h-6 px-2 text-xs text-slate-400 hover:text-white"
+                    variant="outline" 
+                    className="flex-1 h-8 text-xs text-slate-300 hover:text-white border-slate-700 bg-slate-800"
                     onClick={() => {
                       setIsSelectionMode(false);
                       setSelectedConvsIds([]);
@@ -915,10 +917,10 @@ export default function WhatsAppInbox() {
                   <Button 
                     size="sm" 
                     variant="destructive" 
-                    className="h-6 px-2 text-xs"
+                    className="flex-1 h-8 text-xs"
                     disabled={selectedConvsIds.length === 0}
                     onClick={async () => {
-                      if (!window.confirm(`Tem certeza que deseja apagar ${selectedConvsIds.length} conversas?`)) return;
+                      if (!window.confirm(`Tem certeza que deseja apagar ${selectedConvsIds.length} ${selectedConvsIds.length === 1 ? 'conversa' : 'conversas'}?`)) return;
                       try {
                         const { error } = await supabase.from("whatsapp_conversations").delete().in("id", selectedConvsIds);
                         if (error) throw error;
@@ -932,7 +934,7 @@ export default function WhatsAppInbox() {
                       }
                     }}
                   >
-                    Apagar
+                    <Trash2 className="h-3.5 w-3.5 mr-1.5" /> Apagar
                   </Button>
                 </div>
               </div>
