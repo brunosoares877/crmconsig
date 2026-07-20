@@ -6,7 +6,7 @@ import {
   MessageSquare, Send, RefreshCw, Search, Phone, CheckCheck,
   Check, Clock, AlertCircle, User, Smile, Paperclip, ArrowLeft,
   Circle, CheckCircle, MoreVertical, Archive, ExternalLink,
-  KanbanSquare, List, X, Tag, Plus, UploadCloud, ImageIcon, FileText, Film, Zap, Trash2, MessageSquarePlus, Settings, GitMerge, Mic, Square, Trash, Play, Pencil
+  KanbanSquare, List, X, Tag, Plus, UploadCloud, ImageIcon, FileText, Film, Zap, Trash2, MessageSquarePlus, Settings, GitMerge, Mic, Square, Trash, Play, Pencil, CheckSquare
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -177,6 +177,9 @@ export default function WhatsAppInbox() {
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedConvsIds, setSelectedConvsIds] = useState<string[]>([]);
   
   const [showNewContactModal, setShowNewContactModal] = useState(false);
   const [newContactPhone, setNewContactPhone] = useState("");
@@ -842,6 +845,9 @@ export default function WhatsAppInbox() {
                 <h1 className="font-bold text-white">Caixa de Entrada</h1>
               </div>
               <div className="flex gap-1">
+                <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-slate-400 hover:text-emerald-400" onClick={() => { setIsSelectionMode(!isSelectionMode); setSelectedConvsIds([]); }} title="Selecionar Conversas">
+                  <CheckSquare className="h-5 w-5" />
+                </Button>
                 <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-slate-400 hover:text-emerald-400" onClick={() => setShowNewContactModal(true)}>
                   <MessageSquarePlus className="h-5 w-5" />
                 </Button>
@@ -876,6 +882,47 @@ export default function WhatsAppInbox() {
                 ))}
               </SelectContent>
             </Select>
+
+            {isSelectionMode && (
+              <div className="flex items-center justify-between mt-2 bg-slate-800/80 p-2 rounded-md border border-slate-700">
+                <span className="text-xs text-slate-300 font-medium">{selectedConvsIds.length} selecionadas</span>
+                <div className="flex gap-2">
+                  <Button 
+                    size="sm" 
+                    variant="ghost" 
+                    className="h-6 px-2 text-xs text-slate-400 hover:text-white"
+                    onClick={() => {
+                      setIsSelectionMode(false);
+                      setSelectedConvsIds([]);
+                    }}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant="destructive" 
+                    className="h-6 px-2 text-xs"
+                    disabled={selectedConvsIds.length === 0}
+                    onClick={async () => {
+                      if (!window.confirm(`Tem certeza que deseja apagar ${selectedConvsIds.length} conversas?`)) return;
+                      try {
+                        const { error } = await supabase.from("whatsapp_conversations").delete().in("id", selectedConvsIds);
+                        if (error) throw error;
+                        setConversations(prev => prev.filter(c => !selectedConvsIds.includes(c.id)));
+                        if (selectedConv && selectedConvsIds.includes(selectedConv.id)) setSelectedConv(null);
+                        setSelectedConvsIds([]);
+                        setIsSelectionMode(false);
+                        toast.success("Conversas excluídas!");
+                      } catch (e) {
+                        toast.error("Erro ao excluir conversas.");
+                      }
+                    }}
+                  >
+                    Apagar
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Lista */}
@@ -891,11 +938,31 @@ export default function WhatsAppInbox() {
               </div>
             ) : (
               filteredConvs.map((conv) => (
-                <button
-                  key={conv.id}
-                  onClick={() => setSelectedConv(conv)}
-                  className={`w-full text-left px-4 py-3 border-b border-slate-800/50 hover:bg-slate-800/50 transition-colors ${selectedConv?.id === conv.id ? "bg-slate-800/80 border-l-2 border-l-emerald-500" : ""}`}
-                >
+                <div key={conv.id} className="relative group">
+                  {isSelectionMode && (
+                    <div className="absolute left-3 top-1/2 -translate-y-1/2 z-10">
+                      <input 
+                        type="checkbox"
+                        checked={selectedConvsIds.includes(conv.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) setSelectedConvsIds(prev => [...prev, conv.id]);
+                          else setSelectedConvsIds(prev => prev.filter(id => id !== conv.id));
+                        }}
+                        className="w-4 h-4 rounded border-slate-600 bg-slate-800 text-emerald-500 focus:ring-emerald-500 focus:ring-offset-slate-900 cursor-pointer"
+                      />
+                    </div>
+                  )}
+                  <button
+                    onClick={() => {
+                      if (isSelectionMode) {
+                        if (selectedConvsIds.includes(conv.id)) setSelectedConvsIds(prev => prev.filter(id => id !== conv.id));
+                        else setSelectedConvsIds(prev => [...prev, conv.id]);
+                        return;
+                      }
+                      setSelectedConv(conv);
+                    }}
+                    className={`w-full text-left py-3 border-b border-slate-800/50 hover:bg-slate-800/50 transition-colors ${selectedConv?.id === conv.id && !isSelectionMode ? "bg-slate-800/80 border-l-2 border-l-emerald-500 px-4" : "px-4"} ${isSelectionMode ? "pl-10" : ""}`}
+                  >
                   <div className="flex items-center gap-3">
                     <div className="relative shrink-0">
                       <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
@@ -924,6 +991,7 @@ export default function WhatsAppInbox() {
                     </div>
                   </div>
                 </button>
+              </div>
               ))
             )}
           </div>
