@@ -1505,6 +1505,86 @@ export default function WhatsAppInbox() {
         title="Exclusão em Massa"
         description={`Por segurança, insira a senha administrativa para apagar ${selectedConvsIds.length} conversas de uma só vez.`}
       />
+
+      <Dialog open={showReminderModal} onOpenChange={setShowReminderModal}>
+        <DialogContent className="bg-slate-900 border-slate-700 text-white max-w-md">
+          <DialogHeader>
+            <DialogTitle>Agendar Retorno</DialogTitle>
+            <DialogDescription className="text-slate-400">
+              Crie um lembrete no CRM para retomar o contato com este cliente.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label className="text-slate-300">Prazos Rápidos</Label>
+              <div className="grid grid-cols-3 gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="bg-slate-800 border-slate-700 hover:border-emerald-500 hover:text-emerald-400 text-xs"
+                  onClick={() => setReminderDate(addMonths(new Date(), 2))}
+                >
+                  2 Meses
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="bg-slate-800 border-slate-700 hover:border-emerald-500 hover:text-emerald-400 text-xs"
+                  onClick={() => setReminderDate(addMonths(new Date(), 12))}
+                >
+                  12 Meses
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="bg-slate-800 border-slate-700 hover:border-emerald-500 hover:text-emerald-400 text-xs"
+                  onClick={() => setReminderDate(addMonths(new Date(), 48))}
+                >
+                  48 Meses
+                </Button>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-slate-300">Data Personalizada</Label>
+              <Input
+                type="datetime-local"
+                value={reminderDate ? new Date(reminderDate.getTime() - reminderDate.getTimezoneOffset() * 60000).toISOString().slice(0,16) : ""}
+                onChange={(e) => setReminderDate(new Date(e.target.value))}
+                className="bg-slate-800 border-slate-700 text-white"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-slate-300">Observações (Motivo do reagendamento)</Label>
+              <Textarea 
+                placeholder="Ex: Cliente não aceitou no momento. Refazer simulação no futuro."
+                value={reminderNotes}
+                onChange={e => setReminderNotes(e.target.value)}
+                className="bg-slate-800 border-slate-700 text-white min-h-[100px]"
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="ghost" className="text-slate-400 hover:text-white" onClick={() => setShowReminderModal(false)}>
+              Cancelar
+            </Button>
+            <Button 
+              className="bg-emerald-600 hover:bg-emerald-700 text-white"
+              disabled={isSubmittingReminder}
+              onClick={handleCreateReminder}
+            >
+              {isSubmittingReminder ? (
+                <>Salvando...</>
+              ) : (
+                <>Salvar Lembrete</>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
