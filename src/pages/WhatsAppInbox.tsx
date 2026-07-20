@@ -890,6 +890,20 @@ export default function WhatsAppInbox() {
                   <Button 
                     size="sm" 
                     variant="ghost" 
+                    className="h-6 px-2 text-xs text-blue-400 hover:text-blue-300"
+                    onClick={() => {
+                      if (selectedConvsIds.length === filteredConvs.length && filteredConvs.length > 0) {
+                        setSelectedConvsIds([]);
+                      } else {
+                        setSelectedConvsIds(filteredConvs.map(c => c.id));
+                      }
+                    }}
+                  >
+                    {selectedConvsIds.length === filteredConvs.length && filteredConvs.length > 0 ? "Desmarcar" : "Marcar Todas"}
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant="ghost" 
                     className="h-6 px-2 text-xs text-slate-400 hover:text-white"
                     onClick={() => {
                       setIsSelectionMode(false);
